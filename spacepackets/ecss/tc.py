@@ -165,7 +165,8 @@ class PusTelecommand:
             data_length = secondary_header_len + app_data_len + 1
             return data_length
         except TypeError:
-            LOGGER.warning("PusTelecommand: Invalid type of application data!")
+            logger = get_console_logger()
+            logger.warning("PusTelecommand: Invalid type of application data!")
             return 0
 
     def pack_command_tuple(self) -> Tuple[bytearray, PusTelecommand]:

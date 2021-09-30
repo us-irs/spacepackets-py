@@ -1,5 +1,4 @@
 from __future__ import annotations
-from abc import abstractmethod
 
 from crcmod import crcmod
 
@@ -92,16 +91,17 @@ class PusTelemetry:
             cls, raw_telemetry: bytearray, pus_version: PusVersion = PusVersion.UNKNOWN
     ) -> PusTelemetry:
         """Attempts to construct a generic PusTelemetry class given a raw bytearray.
+        :param pus_version:
         :raises ValueError: if the format of the raw bytearray is invalid, for example the length
         :param raw_telemetry:
         """
-        if raw_telemetry is None or len(raw_telemetry) == 0:
-            if raw_telemetry is None:
-                logger = get_console_logger()
-                logger.warning("Given byte stream invalid!")
-            elif len(raw_telemetry) == 0:
-                logger = get_console_logger()
-                logger.warning("Given byte stream empty!")
+        if raw_telemetry is None:
+            logger = get_console_logger()
+            logger.warning("Given byte stream invalid!")
+            raise ValueError
+        elif len(raw_telemetry) == 0:
+            logger = get_console_logger()
+            logger.warning("Given byte stream is empty")
             raise ValueError
         pus_tm = cls.__empty(pus_version=pus_version)
         pus_tm.space_packet_header = SpacePacketHeader.unpack(space_packet_raw=raw_telemetry)
