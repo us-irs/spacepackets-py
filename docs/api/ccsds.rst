@@ -5,7 +5,7 @@ Submodules
 ----------
 
 spacepackets.ccsds.spacepacket module
---------------------------------
+-------------------------------------
 
 .. automodule:: spacepackets.ccsds.spacepacket
    :members:
