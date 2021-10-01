@@ -29,15 +29,10 @@ Other pages (online)
 .. _`CCSDS Blue Book 133.0-B-2`: https://public.ccsds.org/Pubs/133x0b2e1.pdf
 .. _`ECSS-E-ST-70-41C standard`: https://ecss.nl/standard/ecss-e-st-70-41c-space-engineering-telemetry-and-telecommand-packet-utilization-15-april-2016/
 
-API Documentation
-===================
-
 .. toctree::
    :maxdepth: 4
 
-   api/ccsds
-   api/ecss
-   api/cfdp
+   api
 
 
 Indices and tables
