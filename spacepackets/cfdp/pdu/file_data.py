@@ -72,7 +72,8 @@ class FileDataPdu:
         file_data_pdu = self.pdu_header.pack()
         if self.pdu_header.segment_metadata_flag:
             if self.segment_metadata_length < 63:
-                LOGGER.warning(
+                logger = get_console_logger()
+                logger.warning(
                     f'Segment metadata length {self.segment_metadata_length} invalid, '
                     f'must be less than 63 bytes'
                 )
@@ -96,7 +97,8 @@ class FileDataPdu:
             file_data_packet.segment_metadata_length = raw_packet[current_idx] & 0x3f
             current_idx += 1
             if current_idx + file_data_packet.segment_metadata_length >= len(raw_packet):
-                LOGGER.warning('Packet too short for detected segment datalength size')
+                logger = get_console_logger()
+                logger.warning('Packet too short for detected segment data length size')
                 raise ValueError
             file_data_packet.segment_metadata = \
                 raw_packet[current_idx: current_idx + file_data_packet.segment_metadata_length]
@@ -105,7 +107,8 @@ class FileDataPdu:
         else:
             struct_arg_tuple = ('!Q', 8)
         if current_idx + struct_arg_tuple[1] >= len(raw_packet):
-            LOGGER.warning('Packet too small to accomodate offset')
+            logger = get_console_logger()
+            logger.warning('Packet too small to accommodate offset')
             raise ValueError
         file_data_packet.offset = struct.unpack(
             struct_arg_tuple[0], raw_packet[current_idx: current_idx + struct_arg_tuple[1]]
