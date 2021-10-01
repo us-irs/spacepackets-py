@@ -32,13 +32,10 @@ Other pages (online)
 API Documentation
 ===================
 
-spacepackets module
----------------------
+.. toctree::
+   :maxdepth: 4
 
-.. automodule:: spacepackets
-   :members:
-   :undoc-members:
-   :show-inheritance:
+   api/ccsds
 
 
 Indices and tables
