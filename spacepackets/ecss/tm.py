@@ -259,9 +259,10 @@ class PusTelemetry:
         return ""
 
     def get_packet_size(self) -> int:
-        """
+        """Retrieve the full packet size when packed
         :return: Size of the TM packet based on the space packet header data length field.
-        The space packet data field is the full length of data field minus one without the space packet header.
+        The space packet data field is the full length of data field minus one without
+        the space packet header.
         """
         return SPACE_PACKET_HEADER_SIZE + self.space_packet_header.data_length + 1
 
