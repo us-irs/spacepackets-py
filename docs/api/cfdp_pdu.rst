@@ -64,7 +64,7 @@ spacepackets.cfdp.pdu.eof module
    :show-inheritance:
 
 spacepackets.cfdp.pdu.keep_alive module
--------------------------------------
+---------------------------------------
 
 .. automodule:: spacepackets.cfdp.pdu.keep_alive
    :members:
@@ -90,13 +90,13 @@ spacepackets.cfdp.pdu.finished module
 spacepackets.cfdp.pdu.header module
 -------------------------------------
 
-.. automodule:: spacepackets.cfdp.pdu.nak
+.. automodule:: spacepackets.cfdp.pdu.header
    :members:
    :undoc-members:
    :show-inheritance:
 
 spacepackets.cfdp.pdu.file_directive module
--------------------------------------
+-------------------------------------------
 
 .. automodule:: spacepackets.cfdp.pdu.file_directive
    :members:

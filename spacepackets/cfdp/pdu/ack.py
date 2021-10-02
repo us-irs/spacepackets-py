@@ -38,9 +38,9 @@ class AckPdu:
         :param trans_mode:
         :param transaction_seq_num:
         :param source_entity_id: If an empty bytearray is passed, the configured default value
-        in the CFDP conf module will be used
+            in the CFDP conf module will be used
         :param dest_entity_id: If an empty bytearray is passed, the configured default value
-        in the CFDP conf module will be used
+            in the CFDP conf module will be used
         :param crc_flag:
         """
         self.pdu_file_directive = FileDirectivePduBase(

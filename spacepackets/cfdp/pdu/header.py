@@ -68,9 +68,9 @@ class PduHeader:
         :param segment_metadata_flag:
         :param transaction_seq_num:
         :param source_entity_id: If an empty bytearray is passed, the configured default value
-        in the CFDP conf module will be used
+            in the CFDP conf module will be used
         :param dest_entity_id: If an empty bytearray is passed, the configured default value
-        in the CFDP conf module will be used
+            in the CFDP conf module will be used
         :param crc_flag: If not supplied, assign the default configuration
         :param seg_ctrl:
         :raise ValueError: If some field are invalid or default values were unset
