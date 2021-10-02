@@ -4,8 +4,9 @@ from unittest import TestCase
 from spacepackets.cfdp.definitions import FileSize
 from spacepackets.cfdp.tlv import CfdpTlv, TlvTypes
 from spacepackets.cfdp.lv import CfdpLv
+from spacepackets.cfdp.definitions import LenInBytes, get_transaction_seq_num_as_bytes
 from spacepackets.cfdp.pdu import PduHeader, PduType, TransmissionModes, Direction, \
-    SegmentMetadataFlag, CrcFlag, SegmentationControl, LenInBytes, get_transaction_seq_num_as_bytes
+    SegmentMetadataFlag, CrcFlag, SegmentationControl
 
 
 class TestCfdp(TestCase):

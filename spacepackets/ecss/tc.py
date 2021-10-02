@@ -99,7 +99,7 @@ class PusTcDataFieldHeader:
         )
 
     @staticmethod
-    def get_header_size(self, pus_version: PusVersion):
+    def get_header_size(pus_version: PusVersion):
         if pus_version == PusVersion.PUS_A:
             return 4
         elif pus_version == PusVersion.PUS_C:
@@ -159,7 +159,7 @@ class PusTelecommand:
             source_id=source_id, pus_tc_version=pus_tc_version
         )
         data_length = self.get_data_length(
-            secondary_header_len=self._data_field_header.get_header_size(),
+            secondary_header_len=self._data_field_header.get_header_size(pus_version=pus_tc_version),
             app_data_len=len(app_data),
         )
         self._space_packet_header = SpacePacketHeader(
@@ -184,8 +184,11 @@ class PusTelecommand:
         """Length of full packet in bytes.
         The header length is 6 bytes and the data length + 1 is the size of the data field.
         """
+        secondary_header_len = self._data_field_header.get_header_size(
+            pus_version=self._data_field_header.pus_tc_version
+        )
         return self.get_data_length(
-            secondary_header_len=self._data_field_header.get_header_size(),
+            secondary_header_len=secondary_header_len,
             app_data_len=len(self.app_data)
         ) + SPACE_PACKET_HEADER_SIZE + 1
 

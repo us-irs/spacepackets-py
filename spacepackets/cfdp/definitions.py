@@ -1,4 +1,5 @@
 import enum
+import struct
 
 
 class LenInBytes(enum.IntEnum):
@@ -8,6 +9,26 @@ class LenInBytes(enum.IntEnum):
     EIGHT_BYTES = 8
     GLOBAL = 90
     NONE = 99
+
+
+def get_transaction_seq_num_as_bytes(
+        transaction_seq_num: int, byte_length: LenInBytes
+) -> bytearray:
+    """Return the byte representation of the transaction sequece number
+    :param transaction_seq_num:
+    :param byte_length:
+    :raises ValueError: Invalid input
+    :return:
+    """
+    if byte_length == LenInBytes.ONE_BYTE and transaction_seq_num < 255:
+        return bytearray([transaction_seq_num])
+    if byte_length == LenInBytes.TWO_BYTES and transaction_seq_num < pow(2, 16) - 1:
+        return bytearray(struct.pack('!H', transaction_seq_num))
+    if byte_length == LenInBytes.FOUR_BYTES and transaction_seq_num < pow(2, 32) - 1:
+        return bytearray(struct.pack('!I', transaction_seq_num))
+    if byte_length == LenInBytes.EIGHT_BYTES and transaction_seq_num < pow(2, 64) - 1:
+        return bytearray(struct.pack('!Q', transaction_seq_num))
+    raise ValueError
 
 
 # File sizes, determine the field sizes of FSS fields
