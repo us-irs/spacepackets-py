@@ -180,7 +180,7 @@ class PusTelecommand:
         return f"TC[{self._data_field_header.service_type}, " \
                f"{self._data_field_header.service_subtype}] with SSC {self._space_packet_header.ssc}"
 
-    def get_total_length(self):
+    def get_total_length(self) -> int:
         """Length of full packet in bytes.
         The header length is 6 bytes and the data length + 1 is the size of the data field.
         """
@@ -227,22 +227,22 @@ class PusTelecommand:
         command_tuple = (self.pack(), self)
         return command_tuple
 
-    def get_service(self):
+    def get_service(self) -> int:
         return self._data_field_header.service_type
 
-    def get_subservice(self):
+    def get_subservice(self) -> int:
         return self._data_field_header.service_subtype
 
-    def get_ssc(self):
+    def get_ssc(self) -> int:
         return self._space_packet_header.ssc
 
-    def get_apid(self):
+    def get_apid(self) -> int:
         return self._space_packet_header.apid
 
-    def get_packet_id(self):
+    def get_packet_id(self) -> int:
         return self._space_packet_header.packet_id
 
-    def get_app_data(self):
+    def get_app_data(self) -> bytearray:
         return self.app_data
 
     def print(self):
