@@ -113,9 +113,6 @@ class PusTelecommand:
     input parameters. The structure of a PUS telecommand is specified in ECSS-E-70-41A on p.42
     and is also shown below (bottom)
     """
-    # This is the current size of a telecommand without application data. Consists of
-    # the 6 byte packet header, 4 byte data field header (1 byte source ID) and 2 byte CRC.
-    CURRENT_NON_APP_DATA_SIZE = 10
 
     def __init__(
             self, service: int, subservice: int, ssc=0,
