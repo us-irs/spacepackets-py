@@ -34,12 +34,12 @@ class PusTelemetry:
             self, service_id: int, subservice_id: int, time: CdsShortTimestamp = None, ssc: int = 0,
             source_data: bytearray = bytearray([]), apid: int = -1, message_counter: int = 0,
             space_time_ref: int = 0b0000, destination_id: int = 0,
-            packet_version: int = 0b000, pus_version: PusVersion = PusVersion.UNKNOWN,
+            packet_version: int = 0b000, pus_version: PusVersion = PusVersion.GLOBAL_CONFIG,
             pus_tm_version: int = 0b0001, ack: int = 0b1111, secondary_header_flag: bool = True,
     ):
         if apid == -1:
             apid = get_tm_apid()
-        if pus_version == PusVersion.UNKNOWN:
+        if pus_version == PusVersion.GLOBAL_CONFIG:
             pus_version = get_pus_tm_version()
         if time is None:
             time = CdsShortTimestamp.init_from_current_time()
@@ -63,7 +63,7 @@ class PusTelemetry:
         self.print_info = ''
 
     @classmethod
-    def __empty(cls, pus_version: PusVersion = PusVersion.UNKNOWN) -> PusTelemetry:
+    def __empty(cls, pus_version: PusVersion = PusVersion.GLOBAL_CONFIG) -> PusTelemetry:
         return PusTelemetry(
             service_id=0, subservice_id=0, time=CdsShortTimestamp.init_from_current_time()
         )
@@ -87,7 +87,7 @@ class PusTelemetry:
 
     @classmethod
     def unpack(
-            cls, raw_telemetry: bytearray, pus_version: PusVersion = PusVersion.UNKNOWN
+            cls, raw_telemetry: bytearray, pus_version: PusVersion = PusVersion.GLOBAL_CONFIG
     ) -> PusTelemetry:
         """Attempts to construct a generic PusTelemetry class given a raw bytearray.
         :param pus_version:
@@ -367,10 +367,11 @@ class PusTmSecondaryHeader:
 
         elif pus_version == PusVersion.PUS_C:
             secondary_header.pus_version = PusVersion.PUS_C
-            if secondary_header.pus_version_number == 0:
+            if secondary_header.pus_version != PusVersion.PUS_C:
                 logger = get_console_logger()
                 logger.warning(
-                    'PUS version field value 0 found where PUS C value (1) was expected!'
+                    f'PUS version field value {secondary_header.pus_version} found where '
+                    f'PUS C value (2) was expected!'
                 )
                 raise ValueError
             secondary_header.pus_version_number = (header_start[current_idx] & 0xF0) >> 4
