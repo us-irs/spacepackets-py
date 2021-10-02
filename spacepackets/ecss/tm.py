@@ -191,22 +191,28 @@ class PusTelemetry:
 
     def get_source_data_length(self, timestamp_len: int, pus_version: PusVersion) -> int:
         """Retrieve size of TM packet data header in bytes.
-        :param timestamp_len: Length of the used timestamp
-        :param pus_version: Used PUS version
         Formula according to PUS Standard: C = (Number of octets in packet source data field) - 1.
         The size of the TM packet is the size of the packet secondary header with
         the timestamp + the length of the application data + PUS timestamp size +
         length of the CRC16 checksum - 1
+
+        :param timestamp_len: Length of the used timestamp
+        :param pus_version: Used PUS version
+        :raises ValueError: Invalid PUS version
         """
         try:
             if pus_version == PusVersion.PUS_A:
                 data_length = \
                     PusTmSecondaryHeader.HEADER_SIZE_WITHOUT_TIME_PUS_A + \
                     timestamp_len + len(self._source_data) + 1
-            else:
+            elif pus_version == PusVersion.PUS_C:
                 data_length = \
                     PusTmSecondaryHeader.HEADER_SIZE_WITHOUT_TIME_PUS_C + \
                     timestamp_len + len(self._source_data) + 1
+            else:
+                logger = get_console_logger()
+                logger.warning(f'PUS version {pus_version} not supported')
+                raise ValueError
             return data_length
         except TypeError:
             print("PusTelecommand: Invalid type of application data!")
@@ -310,7 +316,7 @@ class PusTmSecondaryHeader:
     ):
         """Create a PUS telemetry secondary header object.
 
-        :param pus_version:
+        :param pus_version: PUS version. ESA PUS is not supported
         :param service_id:
         :param subservice_id:
         :param time: Time field
@@ -320,10 +326,11 @@ class PusTmSecondaryHeader:
         """
         self.pus_version = pus_version
         self.spacecraft_time_ref = spacecraft_time_ref
-        if self.pus_version == PusVersion.PUS_A:
-            self.pus_version_number = 0
-        else:
-            self.pus_version_number = 1
+        self.pus_version = pus_version
+        if self.pus_version == PusVersion.GLOBAL_CONFIG:
+            self.pus_version = get_pus_tm_version()
+        if self.pus_version != PusVersion.PUS_A and self.pus_version != PusVersion.PUS_C:
+            raise ValueError
         self.service_id = service_id
         self.subservice_id = subservice_id
         if (self.pus_version == PusVersion.PUS_A and message_counter > 255) or \
@@ -372,7 +379,7 @@ class PusTmSecondaryHeader:
         :raises ValueError: bytearray too short or PUS version missmatch.
         :return:
         """
-        if pus_version == PusVersion.UNKNOWN:
+        if pus_version == PusVersion.GLOBAL_CONFIG:
             pus_version = get_pus_tm_version()
         secondary_header = cls.__empty()
         current_idx = 0

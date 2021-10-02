@@ -2,12 +2,13 @@ import enum
 
 
 class PusVersion(enum.IntEnum):
-    # ESA PSS-07-101
+    # ESA PSS-07-101. Not supported by this package!
     ESA_PUS = 0
     # ECSS-E-70-41A
-    PUS_A = 1,
+    PUS_A = 1
     # ECSS-E-ST-70-41C
-    PUS_C = 2,
+    PUS_C = 2
+    GLOBAL_CONFIG = 98
     UNKNOWN = 99
 
 
