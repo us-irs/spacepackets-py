@@ -149,19 +149,19 @@ class PusTelemetry:
         return f"{self.__class__.__name__}(service={self.secondary_packet_header.service_id!r}, " \
                f"subservice={self.secondary_packet_header.subservice_id!r})"
 
-    def get_service(self):
-        """
+    def get_service(self) -> int:
+        """Get the service type ID
         :return: Service ID
         """
         return self.secondary_packet_header.service_id
 
-    def get_subservice(self):
-        """
+    def get_subservice(self) -> int:
+        """Get the subservice type ID
         :return: Subservice ID
         """
         return self.secondary_packet_header.subservice_id
 
-    def is_valid(self):
+    def is_valid(self) -> bool:
         return self._valid
 
     def get_tm_data(self) -> bytearray:
@@ -170,7 +170,7 @@ class PusTelemetry:
         """
         return self._source_data
 
-    def get_packet_id(self):
+    def get_packet_id(self) -> int:
         return self.space_packet_header.packet_id
 
     def __perform_crc_check(self, raw_telemetry: bytearray) -> bool:
@@ -255,7 +255,7 @@ class PusTelemetry:
         """
         return self.space_packet_header.ssc
 
-    def return_full_packet_string(self):
+    def return_full_packet_string(self) -> str:
         packet_raw = self.pack()
         return get_printable_data_string(packet_raw, len(packet_raw))
 
@@ -270,7 +270,7 @@ class PusTelemetry:
         """
         print(get_printable_data_string(self._source_data, len(self._source_data)))
 
-    def return_source_data_string(self):
+    def return_source_data_string(self) -> str:
         """Returns the source data string"""
         return get_printable_data_string(self._source_data, len(self._source_data))
 
@@ -409,7 +409,7 @@ class PusTmSecondaryHeader:
         )
         return secondary_header
 
-    def get_header_size(self):
+    def get_header_size(self) -> int:
         if self.pus_version == PusVersion.PUS_A:
             return PusTelemetry.PUS_TIMESTAMP_SIZE + 4
         else:
