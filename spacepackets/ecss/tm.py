@@ -355,7 +355,7 @@ class PusTmSecondaryHeader:
         if self.pus_version == PusVersion.PUS_A:
             secondary_header.append((self.pus_version_number & 0x07) << 4)
         elif self.pus_version == PusVersion.PUS_C:
-            secondary_header.append(self.pus_version_number << 4 | self.spacecraft_time_ref)
+            secondary_header.append(self.pus_version << 4 | self.spacecraft_time_ref)
         secondary_header.append(self.service_id)
         secondary_header.append(self.subservice_id)
         if self.pus_version == PusVersion.PUS_A:
