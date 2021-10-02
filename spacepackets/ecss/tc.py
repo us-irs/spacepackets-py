@@ -154,7 +154,7 @@ class PusTelecommand:
         if ssc > pow(2, 14):
             logger.warning("SSC invalid, setting to 0")
             ssc = 0
-        self._data_field_header = PusTcDataFieldHeaderSerialize(
+        self._data_field_header = PusTcDataFieldHeader(
             service_type=service, service_subtype=subservice, ack_flags=ack_flags,
             source_id=source_id, pus_tc_version=pus_tc_version
         )
