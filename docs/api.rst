@@ -22,6 +22,7 @@ can use the ``log`` module of the package to specify a custom logger name.
    api/ccsds
    api/ecss
    api/cfdp
+   api/cfdp_pdu
 
 spacepackets.log module
 -----------------------
