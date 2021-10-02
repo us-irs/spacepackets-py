@@ -232,34 +232,6 @@ class PusTelemetry:
         """
         self.print_info = self.print_info + print_info
 
-    def append_telemetry_content(self, content_list: list):
-        """Default implementation adds the PUS header content to the list which can then be
-        printed with a simple print() command. To add additional content, override this method.
-        Any child class should call this function as well if header information is required.
-
-        :param content_list: Header content will be appended to this list
-        :return:
-        """
-        self.secondary_packet_header.append_data_field_header(content_list=content_list)
-        self.space_packet_header.append_space_packet_header_content(content_list=content_list)
-        if self.is_valid():
-            content_list.append("Yes")
-        else:
-            content_list.append("No")
-
-    def append_telemetry_column_headers(self, header_list: list):
-        """Default implementation adds the PUS header content header (confusing, I know)
-        to the list which can then be  printed with a simple print() command.
-        To add additional headers, override this method. Any child class should
-        call this function as well if header information is required.
-
-        :param header_list: Header content will be appended to this list
-        :return:
-        """
-        self.secondary_packet_header.append_data_field_header_column_header(header_list=header_list)
-        self.space_packet_header.append_space_packet_header_column_headers(header_list=header_list)
-        header_list.append("Packet valid")
-
     def get_custom_printout(self) -> str:
         """Can be used to supply any additional custom printout.
         :return: String which will be printed by TmTcPrinter class as well as logged if specified

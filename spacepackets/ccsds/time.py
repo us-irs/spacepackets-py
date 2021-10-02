@@ -59,15 +59,6 @@ class CcsdsTimeCode:
     def return_time_string(self) -> str:
         return ''
 
-    def add_time_to_content_list(self, content_list: list):
-        content_list.append(self.return_unix_seconds())
-        content_list.append(self.return_time_string())
-
-    @staticmethod
-    def add_time_headers_to_header_list(header_list: list):
-        header_list.append("OBSWTime (s)")
-        header_list.append("Time")
-
 
 class CdsShortTimestamp(CcsdsTimeCode):
     """Unpacks the time datafield of the TM packet. Right now, CDS Short timeformat is used,
