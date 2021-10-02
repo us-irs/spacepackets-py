@@ -1,9 +1,6 @@
 spacepackets.cfdp package
 ==========================
 
-Submodules
-----------
-
 spacepackets.cfdp.conf module
 -------------------------------------
 

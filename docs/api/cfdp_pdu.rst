@@ -28,8 +28,9 @@ Every PDU type has a common PDU header which can be found inside the
 File Data Submodules
 ---------------------------
 
+
 spacepackets.cfdp.pdu.file_data module
----------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. automodule:: spacepackets.cfdp.pdu.file_data
    :members:
@@ -40,7 +41,7 @@ File Directive Submodules
 ---------------------------
 
 spacepackets.cfdp.pdu.ack module
--------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. automodule:: spacepackets.cfdp.pdu.ack
    :members:
@@ -48,7 +49,7 @@ spacepackets.cfdp.pdu.ack module
    :show-inheritance:
 
 spacepackets.cfdp.pdu.nak module
--------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. automodule:: spacepackets.cfdp.pdu.nak
    :members:
@@ -56,7 +57,7 @@ spacepackets.cfdp.pdu.nak module
    :show-inheritance:
 
 spacepackets.cfdp.pdu.eof module
--------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. automodule:: spacepackets.cfdp.pdu.eof
    :members:
@@ -64,7 +65,7 @@ spacepackets.cfdp.pdu.eof module
    :show-inheritance:
 
 spacepackets.cfdp.pdu.keep_alive module
----------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. automodule:: spacepackets.cfdp.pdu.keep_alive
    :members:
@@ -72,7 +73,7 @@ spacepackets.cfdp.pdu.keep_alive module
    :show-inheritance:
 
 spacepackets.cfdp.pdu.metadata module
--------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. automodule:: spacepackets.cfdp.pdu.metadata
    :members:
@@ -80,7 +81,7 @@ spacepackets.cfdp.pdu.metadata module
    :show-inheritance:
 
 spacepackets.cfdp.pdu.finished module
--------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. automodule:: spacepackets.cfdp.pdu.finished
    :members:
@@ -88,7 +89,7 @@ spacepackets.cfdp.pdu.finished module
    :show-inheritance:
 
 spacepackets.cfdp.pdu.header module
--------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. automodule:: spacepackets.cfdp.pdu.header
    :members:
@@ -96,7 +97,7 @@ spacepackets.cfdp.pdu.header module
    :show-inheritance:
 
 spacepackets.cfdp.pdu.file_directive module
--------------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. automodule:: spacepackets.cfdp.pdu.file_directive
    :members:

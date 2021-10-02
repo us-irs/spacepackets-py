@@ -1,9 +1,6 @@
 spacepackets.ecss package
 ==========================
 
-Submodules
-----------
-
 spacepackets.ecss.conf module
 -------------------------------------
 

@@ -1,9 +1,6 @@
 spacepackets.ccsds package
 ==========================
 
-Submodules
-----------
-
 spacepackets.ccsds.spacepacket module
 -------------------------------------
 
