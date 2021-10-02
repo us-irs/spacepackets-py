@@ -6,7 +6,7 @@ class CfdpLv:
     def __init__(self, value: bytes):
         """This class encapsulates CFDP LV fields
         :raise ValueError: If value is invalid and serilization is enabled or if length of bytearray
-        is too large
+            is too large
         :param value:
         """
         if len(value) > 255:

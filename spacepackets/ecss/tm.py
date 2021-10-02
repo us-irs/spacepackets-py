@@ -69,8 +69,7 @@ class PusTelemetry:
         )
 
     def pack(self) -> bytearray:
-        """
-        Serializes the PUS telemetry into a raw packet.
+        """Serializes the PUS telemetry into a raw packet.
         """
         tm_packet_raw = bytearray()
         # PUS Header
@@ -192,7 +191,8 @@ class PusTelemetry:
 
     def get_source_data_length(self, timestamp_len: int, pus_version: PusVersion) -> int:
         """Retrieve size of TM packet data header in bytes.
-
+        :param timestamp_len: Length of the used timestamp
+        :param pus_version: Used PUS version
         Formula according to PUS Standard: C = (Number of octets in packet source data field) - 1.
         The size of the TM packet is the size of the packet secondary header with
         the timestamp + the length of the application data + PUS timestamp size +
@@ -228,8 +228,9 @@ class PusTelemetry:
 
     def append_telemetry_content(self, content_list: list):
         """Default implementation adds the PUS header content to the list which can then be
-        printed with a simple print() command. To add additional content, override this method
-        (don't forget to still call this function with super() if the header is required)
+        printed with a simple print() command. To add additional content, override this method.
+        Any child class should call this function as well if header information is required.
+
         :param content_list: Header content will be appended to this list
         :return:
         """
@@ -243,8 +244,9 @@ class PusTelemetry:
     def append_telemetry_column_headers(self, header_list: list):
         """Default implementation adds the PUS header content header (confusing, I know)
         to the list which can then be  printed with a simple print() command.
-        To add additional headers, override this method
-        (don't forget to still call this function with super() if the header is required)
+        To add additional headers, override this method. Any child class should
+        call this function as well if header information is required.
+
         :param header_list: Header content will be appended to this list
         :return:
         """
@@ -297,7 +299,6 @@ class PusTelemetry:
 
 class PusTmSecondaryHeader:
     """Unpacks the PUS telemetry packet secondary header.
-
     Currently only supports CDS short timestamps"""
     HEADER_SIZE_WITHOUT_TIME_PUS_A = 4
     HEADER_SIZE_WITHOUT_TIME_PUS_C = 7
@@ -312,9 +313,10 @@ class PusTmSecondaryHeader:
         :param pus_version:
         :param service_id:
         :param subservice_id:
-        :param message_counter: 8 bit counter for PUS A, 16 bit counter for PUS C
-        :param spacecraft_time_ref: Space time reference if PUS C is used
         :param time: Time field
+        :param message_counter: 8 bit counter for PUS A, 16 bit counter for PUS C
+        :param destination_id: Destination ID if PUS C is used
+        :param spacecraft_time_ref: Space time reference if PUS C is used
         """
         self.pus_version = pus_version
         self.spacecraft_time_ref = spacecraft_time_ref
@@ -456,9 +458,7 @@ class PusTmSecondaryHeader:
 
 def get_printable_data_string(byte_array: bytearray, length: int) -> str:
     """Returns the TM data in a clean printable string format
-    Prints payload data in default mode
-    and prints the whole packet if full_packet = True is passed.
-    :return:
+    :return: The string
     """
     str_to_print = "["
     for index in range(length):
