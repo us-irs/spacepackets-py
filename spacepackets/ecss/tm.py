@@ -436,26 +436,6 @@ class PusTmSecondaryHeader:
         )
         return secondary_header
 
-    def append_data_field_header(self, content_list: list):
-        """Append important data field header parameters to the passed content list.
-        :param content_list:
-        :return:
-        """
-        content_list.append(str(self.service_id))
-        content_list.append(str(self.subservice_id))
-        content_list.append(str(self.message_counter))
-        self.time.add_time_to_content_list(content_list=content_list)
-
-    def append_data_field_header_column_header(self, header_list: list):
-        """Append important data field header column headers to the passed list.
-        :param header_list:
-        :return:
-        """
-        header_list.append("Service")
-        header_list.append("Subservice")
-        header_list.append("Subcounter")
-        self.time.add_time_headers_to_header_list(header_list=header_list)
-
     def get_header_size(self):
         if self.pus_version == PusVersion.PUS_A:
             return PusTelemetry.PUS_TIMESTAMP_SIZE + 4
@@ -464,7 +444,7 @@ class PusTmSecondaryHeader:
 
 
 def get_printable_data_string(byte_array: bytearray, length: int) -> str:
-    """Returns the TM data in a clean printable string format
+    """Returns the TM data in a clean printable hex string format
     :return: The string
     """
     str_to_print = "["
