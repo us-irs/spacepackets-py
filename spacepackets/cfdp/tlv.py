@@ -13,17 +13,18 @@ class TlvTypes(enum.IntEnum):
 
 
 class CfdpTlv:
-    MINIMAL_LEN = 2
-
     """Encapsulates the CFDP TLV (type-length-value) format.
     For more information, refer to CCSDS 727.0-B-5 p.77
     """
+    MINIMAL_LEN = 2
+
     def __init__(
             self,
             tlv_type: TlvTypes,
             value: bytes
     ):
         """Constructor for TLV field.
+
         :param tlv_type:
         :param value:
         :raise ValueError: Length invalid or value length not equal to specified length
@@ -46,6 +47,7 @@ class CfdpTlv:
     @classmethod
     def unpack(cls, raw_bytes: bytes) -> CfdpTlv:
         """Parses LV field at the start of the given bytearray
+
         :param raw_bytes:
         :raise ValueError: Invalid format of the raw bytearray or type field invalid
         :return:

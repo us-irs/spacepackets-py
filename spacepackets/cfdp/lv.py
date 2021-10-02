@@ -5,6 +5,7 @@ from spacepackets.log import get_console_logger
 class CfdpLv:
     def __init__(self, value: bytes):
         """This class encapsulates CFDP LV fields
+
         :raise ValueError: If value is invalid and serilization is enabled or if length of bytearray
             is too large
         :param value:
@@ -29,6 +30,7 @@ class CfdpLv:
     @classmethod
     def unpack(cls, raw_bytes: bytes) -> CfdpLv:
         """Parses LV field at the start of the given bytearray
+
         :raise ValueError: Invalid length found
         """
         detected_len = raw_bytes[0]

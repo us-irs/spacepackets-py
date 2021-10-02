@@ -2,8 +2,12 @@ import enum
 
 
 class PusVersion(enum.IntEnum):
-    PUS_A = 0,
-    PUS_C = 1,
+    # ESA PSS-07-101
+    ESA_PUS = 0
+    # ECSS-E-70-41A
+    PUS_A = 1,
+    # ECSS-E-ST-70-41C
+    PUS_C = 2,
     UNKNOWN = 99
 
 

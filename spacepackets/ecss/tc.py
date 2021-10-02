@@ -19,7 +19,7 @@ except ImportError:
     sys.exit(1)
 
 
-class PusTcDataFieldHeaderSerialize:
+class PusTcDataFieldHeader:
     def __init__(
             self, service_type: int, service_subtype: int, source_id: int = 0,
             pus_tc_version: PusVersion = PusVersion.PUS_C, ack_flags: int = 0b1111,
@@ -51,10 +51,58 @@ class PusTcDataFieldHeaderSerialize:
             header_raw.append(self.source_id)
         return header_raw
 
-    def get_header_size(self):
-        if self.pus_tc_version == PusVersion.PUS_A:
+    @classmethod
+    def unpack(
+            cls, raw_packet: bytes, pus_version: PusVersion = PusVersion.PUS_C
+    ) -> PusTcDataFieldHeader:
+        min_expected_len = cls.get_header_size(pus_version=pus_version)
+        if len(raw_packet) < min_expected_len:
+            logger = get_console_logger()
+            logger.warning(
+                f'Passed bytearray too short, expected minimum length {min_expected_len}'
+            )
+            raise ValueError
+        version_and_ack_byte = raw_packet[0]
+        secondary_header_flag = 0
+        if pus_version == PusVersion.PUS_C:
+            pus_tc_version = (version_and_ack_byte & 0xf0) >> 4
+            if pus_tc_version != PusVersion.PUS_C:
+                logger = get_console_logger()
+                logger.warning(
+                    f'PUS C expected but TC version field missmatch detected. '
+                    f'Expected {PusVersion.PUS_C}, got {pus_tc_version}'
+                )
+                raise ValueError
+        elif pus_version == PusVersion.PUS_A:
+            if pus_tc_version != PusVersion.PUS_A:
+                logger = get_console_logger()
+                logger.warning(
+                    f'PUS A expected but TC version field missmatch detected. '
+                    f'Expected {PusVersion.PUS_A}, got {pus_tc_version}'
+                )
+                raise ValueError
+            secondary_header_flag = (version_and_ack_byte & 0x80) >> 7
+        ack_flags = version_and_ack_byte & 0x0f
+        service = raw_packet[1]
+        subservice = raw_packet[2]
+        if pus_version == PusVersion.PUS_C:
+            source_id = raw_packet[3] << 8 | raw_packet[4]
+        else:
+            source_id = raw_packet[3]
+        return cls(
+            service_type=service,
+            service_subtype=subservice,
+            secondary_header_flag=secondary_header_flag,
+            ack_flags=ack_flags,
+            source_id=source_id,
+            pus_tc_version=pus_version
+        )
+
+    @staticmethod
+    def get_header_size(self, pus_version: PusVersion):
+        if pus_version == PusVersion.PUS_A:
             return 4
-        elif self.pus_tc_version == PusVersion.PUS_C:
+        elif pus_version == PusVersion.PUS_C:
             return 5
 
 
@@ -75,7 +123,7 @@ class PusTelecommand:
             pus_tc_version: int = PusVersion.UNKNOWN, ack_flags: int = 0b1111, apid: int = -1
     ):
         """Initiate a PUS telecommand from the given parameters. The raw byte representation
-        can then be retrieved with the pack() function.
+        can then be retrieved with the :method:`pack` function.
 
         :param service: PUS service number
         :param subservice: PUS subservice number
