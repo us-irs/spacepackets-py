@@ -8,7 +8,7 @@ ECSS and CCSDS Spacepackets
 
 This package contains generic implementations for various CCSDS
 (Consultative Committee for Space Data Systems) and ECSS
-(European Cooperation for Space Standardization)packet standards.
+(European Cooperation for Space Standardization) packet standards.
 
 Currently, this includes the following components:
 
