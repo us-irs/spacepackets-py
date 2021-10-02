@@ -134,8 +134,7 @@ def get_space_packet_id_num(
 def get_space_packet_sequence_control(
         sequence_flags: SequenceFlags, source_sequence_count: int
 ) -> int:
-    """Get sequence control in integer format
-    """
+    """Get sequence control in integer format"""
     if sequence_flags > 3:
         logger = get_console_logger()
         logger.warning(
