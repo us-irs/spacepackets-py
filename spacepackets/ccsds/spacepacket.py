@@ -52,7 +52,7 @@ class SpacePacketHeader:
         )
 
     def pack(self) -> bytearray:
-        """Serialize raw space packet header.
+        """Serialize raw space packet header into a bytearray
         """
         header = bytearray()
         header.append((self.packet_id & 0xff00) >> 8)
@@ -65,8 +65,9 @@ class SpacePacketHeader:
 
     @classmethod
     def unpack(cls, space_packet_raw: bytes) -> SpacePacketHeader:
-        """Unpack a raw space packet into the space packet header
-        :raise ValueError: Raw packet length invalid"""
+        """Unpack a raw space packet into the space packet header instance
+        :raise ValueError: Raw packet length invalid
+        """
         if len(space_packet_raw) < SPACE_PACKET_HEADER_SIZE:
             logger = get_console_logger()
             logger.warning('Packet size smaller than PUS header size!')
@@ -93,11 +94,13 @@ class SpacePacketHeader:
         )
 
     def append_space_packet_header_content(self, content_list: list):
-        content_list.append(str(hex(self.apid)))
-        content_list.append(str(self.ssc))
+        """Append APID and SSC values to a given list"""
+        content_list.append(f'0x{self.apid:02x}')
+        content_list.append(f'{self.ssc}')
 
     @staticmethod
     def append_space_packet_header_column_headers(header_list: list):
+        """Append APID and SSC string to a given list"""
         header_list.append("APID")
         header_list.append("SSC")
 
@@ -110,7 +113,7 @@ def get_space_packet_id_bytes(
     :param version: Version field of the packet ID. Defined to be 0b000 in the space packet standard
     :param packet_type:
     :param secondary_header_flag: Indicates presence of absence of a Secondary Header
-    in the Space Packet
+        in the Space Packet
     :param apid: Application Process Identifier. Naming mechanism for managed data path, has 11 bits
     :return:
     """
@@ -152,6 +155,7 @@ def get_space_packet_sequence_control(
 def get_space_packet_header(
         packet_id: int, packet_sequence_control: int, data_length: int
 ) -> bytearray:
+    """Retrieve raw space packet header from the three required values"""
     header = bytearray()
     header.append((packet_id & 0xff00) >> 8)
     header.append(packet_id & 0xff)
