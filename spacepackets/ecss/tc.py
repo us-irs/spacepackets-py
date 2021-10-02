@@ -120,7 +120,7 @@ class PusTelecommand:
             pus_tc_version: int = PusVersion.PUS_C, ack_flags: int = 0b1111, apid: int = -1
     ):
         """Initiate a PUS telecommand from the given parameters. The raw byte representation
-        can then be retrieved with the :method:`pack` function.
+        can then be retrieved with the :py:meth:`pack` function.
 
         :param service: PUS service number
         :param subservice: PUS subservice number
