@@ -74,11 +74,11 @@ class PusTcDataFieldHeader:
                 )
                 raise ValueError
         elif pus_version == PusVersion.PUS_A:
-            if pus_tc_version != PusVersion.PUS_A:
+            if pus_version != PusVersion.PUS_A:
                 logger = get_console_logger()
                 logger.warning(
                     f'PUS A expected but TC version field missmatch detected. '
-                    f'Expected {PusVersion.PUS_A}, got {pus_tc_version}'
+                    f'Expected {PusVersion.PUS_A}, got {pus_version}'
                 )
                 raise ValueError
             secondary_header_flag = (version_and_ack_byte & 0x80) >> 7
