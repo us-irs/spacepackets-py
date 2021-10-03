@@ -35,8 +35,9 @@ Other pages (online)
 .. toctree::
    :maxdepth: 4
 
-   api
    packets
+   api
+
 
 
 Indices and tables
