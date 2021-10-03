@@ -97,13 +97,61 @@ class TestTelemetry(TestCase):
         pus_17_tm = PusTelemetry(
             service_id=17,
             subservice_id=2,
-            pus_version=PusVersion.PUS_C,
             ssc=22,
             source_data=bytearray(),
-            time=CdsShortTimestamp.init_from_current_time()
         )
         self.assertEqual(pus_17_tm.get_apid(), 0x22)
+        self.assertEqual(pus_17_tm.secondary_packet_header.pus_version, PusVersion.PUS_C)
+        self.assertTrue(pus_17_tm.is_valid())
+        self.assertEqual(pus_17_tm.get_tm_data(), bytearray())
+        self.assertEqual(pus_17_tm.get_packet_id(), 0x0822)
+        pus_17_raw = pus_17_tm.pack()
+        pus_17_tm_unpacked = PusTelemetry.unpack(
+            raw_telemetry=pus_17_raw, pus_version=PusVersion.PUS_C
+        )
+        print(pus_17_tm)
+        print(pus_17_tm.__repr__())
+        self.assertEqual(pus_17_tm_unpacked.get_apid(), 0x22)
+        self.assertEqual(pus_17_tm_unpacked.secondary_packet_header.pus_version, PusVersion.PUS_C)
+        self.assertTrue(pus_17_tm_unpacked.is_valid())
+        self.assertEqual(pus_17_tm_unpacked.get_tm_data(), bytearray())
+        self.assertEqual(pus_17_tm_unpacked.get_packet_id(), 0x0822)
+        self.assertRaises(ValueError, PusTelemetry.unpack, None, PusVersion.PUS_C)
+        self.assertRaises(ValueError, PusTelemetry.unpack, bytearray(), PusVersion.PUS_C)
 
+        correct_size = pus_17_raw[4] << 8 | pus_17_raw[5]
+        # Set length field invalid
+        pus_17_raw[4] = 0x00
+        pus_17_raw[5] = 0x00
+        self.assertRaises(ValueError, PusTelemetry.unpack, pus_17_raw, PusVersion.PUS_C)
+        pus_17_raw[4] = 0xff
+        pus_17_raw[5] = 0xff
+        self.assertRaises(ValueError, PusTelemetry.unpack, pus_17_raw, PusVersion.PUS_C)
+
+        pus_17_raw[4] = (correct_size & 0xff00) >> 8
+        pus_17_raw[5] = correct_size & 0xff
+        pus_17_raw.append(0)
+        # Should work with a warning
+        pus_17_tm_unpacked = PusTelemetry.unpack(
+            raw_telemetry=pus_17_raw, pus_version=PusVersion.PUS_C
+        )
+
+        # This should cause the CRC calculation to fail
+        incorrect_size = correct_size + 1
+        pus_17_raw[4] = (incorrect_size & 0xff00) >> 8
+        pus_17_raw[5] = incorrect_size & 0xff
+        pus_17_tm_unpacked = PusTelemetry.unpack(
+            raw_telemetry=pus_17_raw, pus_version=PusVersion.PUS_C
+        )
+
+        pus_17_a_type = PusTelemetry(
+            service_id=17,
+            subservice_id=2,
+            ssc=22,
+            source_data=bytearray(),
+            pus_version=PusVersion.PUS_A
+        )
+        self.assertEqual(pus_17_a_type.get_packet_size(), 19)
 
 
 if __name__ == '__main__':

@@ -57,7 +57,7 @@ class SpacePacketHeader:
                 f'Invalid source sequence count, exceeds maximum value {pow(2, 14)- 1}'
             )
             raise ValueError
-        if data_length > pow(2, 14) - 1:
+        if data_length > pow(2, 16) - 1:
             logger = get_console_logger()
             logger.warning(
                 f'Invalid data length value, exceeds maximum value of {pow(2, 16) - 1}'

@@ -59,7 +59,7 @@ class PusTelemetry:
             message_counter=message_counter, destination_id=destination_id,
             spacecraft_time_ref=space_time_ref, time=time
         )
-        self._valid = False
+        self._valid = True
         self._crc16 = 0
 
     @classmethod
@@ -103,12 +103,14 @@ class PusTelemetry:
             logger.warning("Given byte stream is empty")
             raise ValueError
         pus_tm = cls.__empty(pus_version=pus_version)
+        pus_tm._valid = False
         pus_tm.space_packet_header = SpacePacketHeader.unpack(space_packet_raw=raw_telemetry)
         expected_packet_len = get_total_space_packet_len_from_len_field(
             pus_tm.space_packet_header.data_length
         )
         if expected_packet_len > len(raw_telemetry):
             logger = get_console_logger()
+            print(f'raw telem: {len(raw_telemetry)}')
             logger.warning(
                 f'PusTelemetry: Passed packet with length {len(raw_telemetry)} '
                 f'shorter than specified packet length in PUS header {expected_packet_len}'
@@ -118,7 +120,7 @@ class PusTelemetry:
             header_start=raw_telemetry[SPACE_PACKET_HEADER_SIZE:],
             pus_version=pus_version
         )
-        if len(raw_telemetry) - 2 < \
+        if expected_packet_len < \
                 pus_tm.secondary_packet_header.get_header_size() + SPACE_PACKET_HEADER_SIZE:
             logger = get_console_logger()
             logger.warning("Passed packet too short!")
@@ -129,14 +131,14 @@ class PusTelemetry:
                 f'PusTelemetry: Packet length field '
                 f'{pus_tm.space_packet_header.data_length} might be invalid!'
             )
-            logger.warning(f'self.get_packet_size: {pus_tm.get_packet_size()}')
-            logger.warning(f'len(raw_telemetry): {len(raw_telemetry)}')
+            logger.warning(f'Packet size from size field: {pus_tm.get_packet_size()}')
+            logger.warning(f'Length of raw telemetry: {len(raw_telemetry)}')
         pus_tm._source_data = raw_telemetry[
             pus_tm.secondary_packet_header.get_header_size() + SPACE_PACKET_HEADER_SIZE:-2
         ]
         pus_tm._crc = \
             raw_telemetry[expected_packet_len - 2] << 8 | raw_telemetry[expected_packet_len - 1]
-        pus_tm.__perform_crc_check(raw_telemetry)
+        pus_tm.__perform_crc_check(raw_telemetry=raw_telemetry[:expected_packet_len])
         return pus_tm
 
     def __str__(self):
@@ -146,7 +148,8 @@ class PusTelemetry:
 
     def __repr__(self):
         return f"{self.__class__.__name__}(service={self.secondary_packet_header.service_id!r}, " \
-               f"subservice={self.secondary_packet_header.subservice_id!r})"
+               f"subservice={self.secondary_packet_header.subservice_id!r}, " \
+               f"apid={self.get_apid()!r}, ssc={self.get_ssc()!r})"
 
     def get_service(self) -> int:
         """Get the service type ID
@@ -172,22 +175,18 @@ class PusTelemetry:
     def get_packet_id(self) -> int:
         return self.space_packet_header.packet_id
 
-    def __perform_crc_check(self, raw_telemetry: bytearray) -> bool:
+    def __perform_crc_check(self, raw_telemetry: bytes):
         # CRC16-CCITT checksum
         crc_func = mkPredefinedCrcFun(crc_name='crc-ccitt-false')
         full_packet_size = self.get_packet_size()
-        if len(raw_telemetry) < full_packet_size:
-            logger = get_console_logger()
-            logger.warning('Invalid packet length')
-            return False
         data_to_check = raw_telemetry[:full_packet_size]
         crc = crc_func(data_to_check)
         if crc == 0:
             self._valid = True
-            return True
-        logger = get_console_logger()
-        logger.warning('Invalid CRC detected !')
-        return False
+        else:
+            logger = get_console_logger()
+            logger.warning('Invalid CRC detected !')
+            self._valid = False
 
     def get_source_data_length(self, timestamp_len: int, pus_version: PusVersion) -> int:
         """Retrieve size of TM packet data header in bytes.
@@ -200,29 +199,19 @@ class PusTelemetry:
         :param pus_version: Used PUS version
         :raises ValueError: Invalid PUS version
         """
-        try:
-            if pus_version == PusVersion.PUS_A:
-                data_length = \
-                    PusTmSecondaryHeader.HEADER_SIZE_WITHOUT_TIME_PUS_A + \
-                    timestamp_len + len(self._source_data) + 1
-            elif pus_version == PusVersion.PUS_C:
-                data_length = \
-                    PusTmSecondaryHeader.HEADER_SIZE_WITHOUT_TIME_PUS_C + \
-                    timestamp_len + len(self._source_data) + 1
-            else:
-                logger = get_console_logger()
-                logger.warning(f'PUS version {pus_version} not supported')
-                raise ValueError
-            return data_length
-        except TypeError:
-            print("PusTelecommand: Invalid type of application data!")
-            return 0
-
-    def get_custom_printout(self) -> str:
-        """Can be used to supply any additional custom printout.
-        :return: String which will be printed by TmTcPrinter class as well as logged if specified
-        """
-        return ""
+        if pus_version == PusVersion.PUS_A:
+            data_length = \
+                PusTmSecondaryHeader.HEADER_SIZE_WITHOUT_TIME_PUS_A + \
+                timestamp_len + len(self._source_data) + 1
+        elif pus_version == PusVersion.PUS_C:
+            data_length = \
+                PusTmSecondaryHeader.HEADER_SIZE_WITHOUT_TIME_PUS_C + \
+                timestamp_len + len(self._source_data) + 1
+        else:
+            logger = get_console_logger()
+            logger.warning(f'PUS version {pus_version} not supported')
+            raise ValueError
+        return data_length
 
     def get_packet_size(self) -> int:
         """Retrieve the full packet size when packed
