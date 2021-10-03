@@ -1,7 +1,6 @@
 from __future__ import annotations
-from tmtccmd.pus.service_list import PusServices
+from spacepackets.ecss.definitions import PusServices
 from spacepackets.ecss.tm import CdsShortTimestamp, PusVersion, PusTelemetry
-from tmtccmd.tm.base import PusTmInfoBase, PusTmBase
 
 
 class Service17TM:
