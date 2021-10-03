@@ -1,6 +1,16 @@
 Packet Overview
 ===================
 
+CCSDS Space Packet Standard
+-----------------------------
+
+Extended information can be found in `CCSDS 727.0-B-5`_.
+A space packet consists of a packet primary header and a packet data field.
+The packet data field consists of a packet secondary header and a user data field.
+PUS packets are a type of space packets and have been explained in great detail in
+the chapter below. You can also find a concrete example of a Space Packet in form
+of a ping telecommand there.
+
 ECSS Packet Utilisation Standard (PUS)
 ---------------------------------------
 
@@ -111,5 +121,6 @@ PUS A
     d|    0      1       0            |    17     |     2       |       0       |         |        |       |     |          |
       ----------------------------------------------------------------------------------------------------------------------
 
+.. _`CCSDS 727.0-B-5`: https://public.ccsds.org/Pubs/727x0b5.pdf
 .. _`ECSS-E-70-41A`: https://ecss.nl/standard/ecss-e-70-41a-ground-systems-and-operations-telemetry-and-telecommand-packet-utilization/
 .. _`ECSS-ST-E-70-41C`: https://ecss.nl/standard/ecss-e-st-70-41c-space-engineering-telemetry-and-telecommand-packet-utilization-15-april-2016/
