@@ -20,9 +20,10 @@ Telecommands
 Extended information can be found in `ECSS-E-70-41A`_  on p.42 or in `ECSS-ST-E-70-41C`_ starting at
 page 442.
 
-The structure is shown as follows for a TC[17,1] example. The first part is always the the
-Space Packet Header because PUS packets are a subtype of space packets.
-Packet Length is an unsigned integer C = Number of Octets in Packet Data Field - 1.
+The structure is shown as follows for a ping telecommand using the PUS service 17 with the
+subervice ID 1. This can also be denoted more briefly as TC[17,1]. The first part
+of the packet is always the the Space Packet Header because PUS packets are a subtype of space
+packets. The packet length is an unsigned integer C = Number of Octets in Packet Data Field - 1.
 
 .. code-block::
 
@@ -75,9 +76,10 @@ Telemetry
 Extended information can be found in `ECSS-E-70-41A`_  on p.42 or in `ECSS-ST-E-70-41C`_ starting at
 page 442.
 
-The structure is shown as follows for a TC[17,1] example. The first part is always the the
-Space Packet Header because PUS packets are a subtype of space packets.
-Packet Length is an unsigned integer C = Number of Octets in Packet Data Field - 1.
+The structure is shown as follows for a ping reply using the PUS service 17 with the
+subervice ID 2. This can also be denoted more briefly as TM[17,2]. The first part
+of the packet is always the the Space Packet Header because PUS packets are a subtype of space
+packets. The packet length is an unsigned integer C = Number of Octets in Packet Data Field - 1.
 
 .. code-block::
 
