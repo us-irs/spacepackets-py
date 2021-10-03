@@ -6,7 +6,7 @@ from spacepackets.log import get_console_logger
 from spacepackets.ccsds.spacepacket import SpacePacketHeader, SPACE_PACKET_HEADER_SIZE, \
     get_total_space_packet_len_from_len_field, PacketTypes
 from spacepackets.ccsds.time import CdsShortTimestamp, read_p_field
-from spacepackets.ecss.conf import get_pus_tm_version, PusVersion, get_tm_apid
+from spacepackets.ecss.conf import get_pus_tm_version, PusVersion, get_default_tm_apid
 
 
 def get_service_from_raw_pus_packet(raw_bytearray: bytearray) -> int:
@@ -35,10 +35,10 @@ class PusTelemetry:
             source_data: bytearray = bytearray([]), apid: int = -1, message_counter: int = 0,
             space_time_ref: int = 0b0000, destination_id: int = 0,
             packet_version: int = 0b000, pus_version: PusVersion = PusVersion.GLOBAL_CONFIG,
-            pus_tm_version: int = 0b0001, ack: int = 0b1111, secondary_header_flag: bool = True,
+            ack: int = 0b1111, secondary_header_flag: bool = True,
     ):
         if apid == -1:
-            apid = get_tm_apid()
+            apid = get_default_tm_apid()
         if pus_version == PusVersion.GLOBAL_CONFIG:
             pus_version = get_pus_tm_version()
         if time is None:

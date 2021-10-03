@@ -6,7 +6,10 @@ from crcmod import crcmod
 
 from spacepackets.ecss.tc import PusTelecommand
 from spacepackets.ecss.tc import generate_crc, generate_packet_crc
-from spacepackets.ecss.conf import set_default_apid, get_default_apid
+from spacepackets.ecss.conf import set_default_tm_apid, set_default_tc_apid, get_default_tc_apid
+
+from spacepackets.ecss.tm import PusTelemetry, CdsShortTimestamp, PusVersion, \
+    get_service_from_raw_pus_packet
 
 
 class TestTelecommand(TestCase):
@@ -19,12 +22,12 @@ class TestTelecommand(TestCase):
         self.assertTrue(len(command_tuple[0]) == pus_17_telecommand.get_total_length())
         print(repr(pus_17_telecommand))
         print(pus_17_telecommand)
-        self.assertTrue(pus_17_telecommand.get_packet_id() == (0x18 << 8 | 0xef))
+        self.assertTrue(pus_17_telecommand.get_packet_id() == (0x18 << 8 | 0x00))
         self.assertTrue(pus_17_telecommand.get_app_data() == bytearray())
-        self.assertTrue(pus_17_telecommand.get_apid() == get_default_apid())
+        self.assertTrue(pus_17_telecommand.get_apid() == get_default_tc_apid())
 
-        set_default_apid(42)
-        self.assertTrue(get_default_apid() == 42)
+        set_default_tc_apid(42)
+        self.assertTrue(get_default_tc_apid() == 42)
 
         test_app_data = bytearray([1, 2, 3])
         pus_17_telecommand_with_app_data = PusTelecommand(
@@ -70,8 +73,37 @@ class TestTelecommand(TestCase):
         self.assertTrue(pus_17_telecommand.get_service() == 17)
         self.assertTrue(pus_17_telecommand.get_subservice() == 1)
 
+
 class TestTelemetry(TestCase):
-    pass
+    def test_telemetry(self):
+        pus_17_tm = PusTelemetry(
+            service_id=17,
+            subservice_id=2,
+            pus_version=PusVersion.PUS_C,
+            apid=0xef,
+            ssc=22,
+            source_data=bytearray(),
+            time=CdsShortTimestamp.init_from_current_time()
+        )
+        self.assertEqual(pus_17_tm.get_subservice(), 2)
+        self.assertEqual(pus_17_tm.get_service(), 17)
+        self.assertEqual(pus_17_tm.get_ssc(), 22)
+        self.assertEqual(pus_17_tm.get_packet_size(), 22)
+        pus_17_raw = pus_17_tm.pack()
+        self.assertEqual(get_service_from_raw_pus_packet(raw_bytearray=pus_17_raw), 17)
+        self.assertRaises(ValueError, get_service_from_raw_pus_packet, bytearray())
+
+        set_default_tm_apid(0x22)
+        pus_17_tm = PusTelemetry(
+            service_id=17,
+            subservice_id=2,
+            pus_version=PusVersion.PUS_C,
+            ssc=22,
+            source_data=bytearray(),
+            time=CdsShortTimestamp.init_from_current_time()
+        )
+        self.assertEqual(pus_17_tm.get_apid(), 0x22)
+
 
 
 if __name__ == '__main__':

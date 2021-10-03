@@ -13,47 +13,48 @@ class PusVersion(enum.IntEnum):
 
 
 class EcssConfKeys(enum.IntEnum):
-    ECSS_APID = 0,
-    PUS_TM_TYPE = 1,
-    PUS_TC_TYPE = 2,
-    ECSS_TM_APID = 3
+    ECSS_TC_APID = 0
+    ECSS_TM_APID = 1
+    PUS_TM_TYPE = 2
+    PUS_TC_TYPE = 3
 
 
-ECSS_DICT = {
-    EcssConfKeys.ECSS_APID: 0xef,
+
+__ECSS_DICT = {
     EcssConfKeys.PUS_TM_TYPE: PusVersion.PUS_C,
     EcssConfKeys.PUS_TC_TYPE: PusVersion.PUS_C,
-    EcssConfKeys.ECSS_TM_APID: 0xef
+    EcssConfKeys.ECSS_TM_APID: 0x00,
+    EcssConfKeys.ECSS_TC_APID: 0x00
 }
 
 
-def set_default_apid(default_apid: int):
-    ECSS_DICT[EcssConfKeys.ECSS_APID] = default_apid
-
-
-def get_default_apid() -> int:
-    return ECSS_DICT[EcssConfKeys.ECSS_APID]
-
-
 def set_pus_tc_version(pus_type: PusVersion):
-    ECSS_DICT[EcssConfKeys.PUS_TC_TYPE] = pus_type
+    __ECSS_DICT[EcssConfKeys.PUS_TC_TYPE] = pus_type
 
 
 def get_pus_tc_version() -> PusVersion:
-    return ECSS_DICT[EcssConfKeys.PUS_TC_TYPE]
+    return __ECSS_DICT[EcssConfKeys.PUS_TC_TYPE]
 
 
 def set_pus_tm_version(pus_type: PusVersion):
-    ECSS_DICT[EcssConfKeys.PUS_TM_TYPE] = pus_type
+    __ECSS_DICT[EcssConfKeys.PUS_TM_TYPE] = pus_type
 
 
 def get_pus_tm_version() -> PusVersion:
-    return ECSS_DICT[EcssConfKeys.PUS_TM_TYPE]
+    return __ECSS_DICT[EcssConfKeys.PUS_TM_TYPE]
 
 
-def insert_tm_apid(tm_apid: int):
-    ECSS_DICT[EcssConfKeys.ECSS_TM_APID] = tm_apid
+def set_default_tm_apid(tm_apid: int):
+    __ECSS_DICT[EcssConfKeys.ECSS_TM_APID] = tm_apid
 
 
-def get_tm_apid() -> int:
-    return ECSS_DICT[EcssConfKeys.ECSS_TM_APID]
+def get_default_tm_apid() -> int:
+    return __ECSS_DICT[EcssConfKeys.ECSS_TM_APID]
+
+
+def set_default_tc_apid(tc_apid: int):
+    __ECSS_DICT[EcssConfKeys.ECSS_TC_APID] = tc_apid
+
+
+def get_default_tc_apid() -> int:
+    return __ECSS_DICT[EcssConfKeys.ECSS_TC_APID]

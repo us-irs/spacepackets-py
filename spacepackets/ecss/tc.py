@@ -9,7 +9,7 @@ from spacepackets.ccsds.spacepacket import \
     SpacePacketHeader, \
     PacketTypes, \
     SPACE_PACKET_HEADER_SIZE
-from spacepackets.ecss.conf import get_default_apid, PusVersion, get_pus_tc_version
+from spacepackets.ecss.conf import get_default_tc_apid, PusVersion, get_pus_tc_version
 
 
 try:
@@ -134,7 +134,7 @@ class PusTelecommand:
         :raises ValueError: Invalid input parameters
         """
         if apid == -1:
-            apid = get_default_apid()
+            apid = get_default_tc_apid()
         if pus_tc_version == PusVersion.GLOBAL_CONFIG:
             pus_tc_version = get_pus_tc_version()
         secondary_header_flag = 1
