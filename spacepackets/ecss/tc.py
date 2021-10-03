@@ -137,7 +137,6 @@ class PusTelecommand:
             apid = get_default_apid()
         if pus_tc_version == PusVersion.GLOBAL_CONFIG:
             pus_tc_version = get_pus_tc_version()
-        packet_type = PacketTypes.PACKET_TYPE_TC
         secondary_header_flag = 1
         logger = get_console_logger()
         if subservice > 255:
@@ -159,12 +158,13 @@ class PusTelecommand:
             app_data_len=len(app_data),
         )
         self.space_packet_header = SpacePacketHeader(
-            apid=apid, secondary_header_flag=bool(secondary_header_flag), packet_type=packet_type,
-            data_length=data_length, source_sequence_count=ssc
+            apid=apid, secondary_header_flag=bool(secondary_header_flag),
+            packet_type=PacketTypes.PACKET_TYPE_TC, data_length=data_length,
+            source_sequence_count=ssc
         )
         self._app_data = app_data
         self._valid = True
-        self.crc = 0
+        self._crc = 0
 
     def __repr__(self):
         """Returns the representation of a class instance."""
@@ -209,10 +209,10 @@ class PusTelecommand:
         packed_data.extend(self.data_field_header.pack())
         packed_data += self.get_app_data()
         crc_func = mkPredefinedCrcFun(crc_name='crc-ccitt-false')
-        self.crc = crc_func(packed_data)
+        self._crc = crc_func(packed_data)
         self._valid = True
-        packed_data.append((self.crc & 0xff00) >> 8)
-        packed_data.append(self.crc & 0xff)
+        packed_data.append((self._crc & 0xff00) >> 8)
+        packed_data.append(self._crc & 0xff)
         return packed_data
 
     @classmethod
