@@ -27,7 +27,42 @@ class SpacePacketHeader:
             packet_version: int = 0b000, secondary_header_flag: bool = True,
             sequence_flags: SequenceFlags = SequenceFlags.UNSEGMENTED
     ):
+        """Create a space packet header with the given field parameters
+
+        :param packet_type:
+        :param apid: Application Process ID, should not be larger
+            than 11 bits, deciaml 2074 or hex 0x7ff
+        :param source_sequence_count: Sequence counter, should not be larger than 0x3fff or
+            decimal 16383
+        :param data_length: Should not be largen than 65535 bytes
+        :param packet_version:
+        :param secondary_header_flag:
+        :param sequence_flags:
+        :raises ValueError: On invalid parameters
+        """
         self.packet_type = packet_type
+        if apid < 0:
+            logger = get_console_logger()
+            logger.warning(f'Negative APID')
+            raise ValueError
+        if apid > pow(2, 11) - 1:
+            logger = get_console_logger()
+            logger.warning(
+                f'Invalid APID, exceeds maximum value {pow(2, 11) - 1}'
+            )
+            raise ValueError
+        if source_sequence_count > pow(2, 14) - 1:
+            logger = get_console_logger()
+            logger.warning(
+                f'Invalid source sequence count, exceeds maximum value {pow(2, 14)- 1}'
+            )
+            raise ValueError
+        if data_length > pow(2, 14) - 1:
+            logger = get_console_logger()
+            logger.warning(
+                f'Invalid data length value, exceeds maximum value of {pow(2, 16) - 1}'
+            )
+            raise ValueError
         self.apid = apid
         self.ssc = source_sequence_count
         self.secondary_header_flag = secondary_header_flag

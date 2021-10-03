@@ -117,7 +117,7 @@ class PusTelecommand:
     def __init__(
             self, service: int, subservice: int, ssc=0,
             app_data: bytearray = bytearray([]), source_id: int = 0,
-            pus_tc_version: int = PusVersion.PUS_C, ack_flags: int = 0b1111, apid: int = -1
+            pus_tc_version: PusVersion = PusVersion.PUS_C, ack_flags: int = 0b1111, apid: int = -1
     ):
         """Initiate a PUS telecommand from the given parameters. The raw byte representation
         can then be retrieved with the :py:meth:`pack` function.
@@ -131,7 +131,7 @@ class PusTelecommand:
         :param source_id: Source ID will be supplied as well. Can be used to distinguish
             different packet sources (e.g. different ground stations)
         :param pus_tc_version:  PUS TC version. 1 for ECSS-E-70-41A
-
+        :raises ValueError: Invalid input parameters
         """
         if apid == -1:
             apid = get_default_apid()
