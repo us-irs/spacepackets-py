@@ -447,24 +447,6 @@ def get_printable_data_string(byte_array: bytearray, length: int) -> str:
 #
 # Packet Structure for PUS A:
 #
-# -------------------------------------------Packet Header(48)------------------------------------------|   Packet   |
-#  ----------------Packet ID(16)----------------------|Packet Sequence Control (16)| Packet Length (16) | Data Field |
-# Version       | Type(1) |Data Field    |APID(11)    | SequenceFlags(2) |Sequence |                    | (Variable) |
-# Number(3)     |         |Header Flag(1)|            |                  |Count(14)|                    |            |
-#           0x08               |    0x73              |       0xc0       | 0x19    |   0x00  |   0x04   |            |
-#    000      0      1      000|  01110011            | 11  000000       | 00011001|00000000 | 0000100  |            |
-#     0   |   0   |  1     |    115(ASCII s)          | 3 |            25          |   0     |    4     |            |
-#
-#   - Packet Length is an unsigned integer C = Number of Octets in Packet Data Field - 1
-#
-# Packet Data Field Structure:
-#
-# ------------------------------------------------Packet Data Field------------------------------------------------- |
-# ---------------------------------Data Field Header --------------------------------------|AppData|Spare|PacketErrCtr |
-# Spare(1)|TM PUS Ver.(3)|Spare(4)|SrvType (8)|SrvSubtype(8)|Subcounter(8)|Time(7)|Spare(o)|(var)  |(var)|  (16)       |
-#        0x11 (0x1F)              |  0x11     |   0x01      |             |       |        |       |     |     Calc.   |
-#    0     001     0000           |00010001   | 00000001    |             |       |        |       |     |             |
-#    0      1       0             |    17     |     2       |             |       |        |       |     |             |
 #
 # - Thus subcounter is specified optional for PUS A, but for this implementation it is expected the subcounter
 #   is contained in the raw packet
