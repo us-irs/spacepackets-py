@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from crcmod import crcmod
+from crcmod.predefined import mkPredefinedCrcFun
 
 from spacepackets.log import get_console_logger
 from spacepackets.ccsds.spacepacket import SpacePacketHeader, SPACE_PACKET_HEADER_SIZE, \
@@ -60,6 +60,7 @@ class PusTelemetry:
             spacecraft_time_ref=space_time_ref, time=time
         )
         self._valid = False
+        self._crc16 = 0
         self.print_info = ''
 
     @classmethod
@@ -78,11 +79,11 @@ class PusTelemetry:
         tm_packet_raw.extend(self.secondary_packet_header.pack())
         # Source Data
         tm_packet_raw.extend(self._source_data)
-        # CRC16 checksum
-        crc_func = crcmod.mkCrcFun(0x11021, rev=False, initCrc=0xffff, xorOut=0x0000)
-        crc16 = crc_func(tm_packet_raw)
-        tm_packet_raw.append((crc16 & 0xff00) >> 8)
-        tm_packet_raw.append(crc16 & 0xff)
+        # CRC16-CCITT checksum
+        crc_func = mkPredefinedCrcFun(crc_name='crc-ccitt-false')
+        self._crc16 = crc_func(tm_packet_raw)
+        tm_packet_raw.append((self._crc16 & 0xff00) >> 8)
+        tm_packet_raw.append(self._crc16 & 0xff)
         return tm_packet_raw
 
     @classmethod
@@ -135,7 +136,7 @@ class PusTelemetry:
             pus_tm.secondary_packet_header.get_header_size() + SPACE_PACKET_HEADER_SIZE:-2
         ]
         pus_tm._crc = \
-            raw_telemetry[len(raw_telemetry) - 2] << 8 | raw_telemetry[len(raw_telemetry) - 1]
+            raw_telemetry[expected_packet_len - 2] << 8 | raw_telemetry[expected_packet_len - 1]
         pus_tm.print_info = ""
         pus_tm.__perform_crc_check(raw_telemetry)
         return pus_tm
@@ -174,20 +175,21 @@ class PusTelemetry:
         return self.space_packet_header.packet_id
 
     def __perform_crc_check(self, raw_telemetry: bytearray) -> bool:
-        crc_func = crcmod.mkCrcFun(0x11021, rev=False, initCrc=0xFFFF, xorOut=0x0000)
-        if len(raw_telemetry) < self.get_packet_size():
+        # CRC16-CCITT checksum
+        crc_func = mkPredefinedCrcFun(crc_name='crc-ccitt-false')
+        full_packet_size = self.get_packet_size()
+        if len(raw_telemetry) < full_packet_size:
             logger = get_console_logger()
             logger.warning('Invalid packet length')
             return False
-        data_to_check = raw_telemetry[0:self.get_packet_size()]
+        data_to_check = raw_telemetry[:full_packet_size]
         crc = crc_func(data_to_check)
         if crc == 0:
             self._valid = True
             return True
-        else:
-            logger = get_console_logger()
-            logger.warning('Invalid CRC detected !')
-            return False
+        logger = get_console_logger()
+        logger.warning('Invalid CRC detected !')
+        return False
 
     def get_source_data_length(self, timestamp_len: int, pus_version: PusVersion) -> int:
         """Retrieve size of TM packet data header in bytes.
@@ -244,7 +246,7 @@ class PusTelemetry:
         The space packet data field is the full length of data field minus one without
         the space packet header.
         """
-        return SPACE_PACKET_HEADER_SIZE + self.space_packet_header.data_length + 1
+        return self.space_packet_header.get_packet_size()
 
     def get_apid(self) -> int:
         return self.space_packet_header.apid

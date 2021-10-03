@@ -63,6 +63,14 @@ class SpacePacketHeader:
         header.append(self.data_length & 0xff)
         return header
 
+    def get_packet_size(self) -> int:
+        """Retrieve the full space packet size when packed
+        :return: Size of the TM packet based on the space packet header data length field.
+        The space packet data field is the full length of data field minus one without
+        the space packet header.
+        """
+        return SPACE_PACKET_HEADER_SIZE + self.data_length + 1
+
     @classmethod
     def unpack(cls, space_packet_raw: bytes) -> SpacePacketHeader:
         """Unpack a raw space packet into the space packet header instance

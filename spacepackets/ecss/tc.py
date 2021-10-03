@@ -13,7 +13,7 @@ from spacepackets.ecss.conf import get_default_apid, PusVersion, get_pus_tc_vers
 
 
 try:
-    import crcmod
+    from crcmod.predefined import mkPredefinedCrcFun
 except ImportError:
     print("crcmod package not installed!")
     sys.exit(1)
@@ -135,7 +135,6 @@ class PusTelecommand:
         """
         if apid == -1:
             apid = get_default_apid()
-        self.apid = apid
         if pus_tc_version == PusVersion.GLOBAL_CONFIG:
             pus_tc_version = get_pus_tc_version()
         packet_type = PacketTypes.PACKET_TYPE_TC
@@ -151,60 +150,105 @@ class PusTelecommand:
         if ssc > pow(2, 14):
             logger.warning("SSC invalid, setting to 0")
             ssc = 0
-        self._data_field_header = PusTcDataFieldHeader(
+        self.data_field_header = PusTcDataFieldHeader(
             service_type=service, service_subtype=subservice, ack_flags=ack_flags,
             source_id=source_id, pus_tc_version=pus_tc_version
         )
         data_length = self.get_data_length(
-            secondary_header_len=self._data_field_header.get_header_size(pus_version=pus_tc_version),
+            secondary_header_len=self.data_field_header.get_header_size(pus_version=pus_tc_version),
             app_data_len=len(app_data),
         )
-        self._space_packet_header = SpacePacketHeader(
+        self.space_packet_header = SpacePacketHeader(
             apid=apid, secondary_header_flag=bool(secondary_header_flag), packet_type=packet_type,
             data_length=data_length, source_sequence_count=ssc
         )
-        self.app_data = app_data
-        self.packed_data = bytearray()
+        self._app_data = app_data
+        self._valid = True
+        self.crc = 0
 
     def __repr__(self):
         """Returns the representation of a class instance."""
-        return f"{self.__class__.__name__}(service={self._data_field_header.service_type!r}, " \
-               f"subservice={self._data_field_header.service_subtype!r}, " \
-               f"ssc={self._space_packet_header.ssc!r}, apid={self.apid})"
+        return f"{self.__class__.__name__}(service={self.data_field_header.service_type!r}, " \
+               f"subservice={self.data_field_header.service_subtype!r}, " \
+               f"ssc={self.space_packet_header.ssc!r}, apid={self.get_apid()})"
 
     def __str__(self):
         """Returns string representation of a class instance."""
-        return f"TC[{self._data_field_header.service_type}, " \
-               f"{self._data_field_header.service_subtype}] with SSC {self._space_packet_header.ssc}"
+        return f"TC[{self.data_field_header.service_type}, " \
+               f"{self.data_field_header.service_subtype}] with SSC {self.space_packet_header.ssc}"
+
+    def is_valid(self):
+        return self._is_valid
 
     def get_total_length(self) -> int:
         """Length of full packet in bytes.
         The header length is 6 bytes and the data length + 1 is the size of the data field.
         """
-        secondary_header_len = self._data_field_header.get_header_size(
-            pus_version=self._data_field_header.pus_tc_version
+        secondary_header_len = self.data_field_header.get_header_size(
+            pus_version=self.data_field_header.pus_tc_version
         )
         return self.get_data_length(
             secondary_header_len=secondary_header_len,
-            app_data_len=len(self.app_data)
+            app_data_len=len(self._app_data)
         ) + SPACE_PACKET_HEADER_SIZE + 1
+
+    @classmethod
+    def __empty(cls):
+        return cls(
+            service=0,
+            subservice=0,
+            apid=0,
+            ssc=0,
+            app_data=bytearray()
+        )
 
     def pack(self) -> bytearray:
         """Serializes the TC data fields into a bytearray."""
-        self.packed_data = bytearray()
-        self.packed_data.extend(self._space_packet_header.pack())
-        self.packed_data.extend(self._data_field_header.pack())
-        self.packed_data += self.app_data
-        crc_func = crcmod.mkCrcFun(0x11021, rev=False, initCrc=0xFFFF, xorOut=0x0000)
-        crc = crc_func(self.packed_data)
-
-        self.packed_data.append((crc & 0xFF00) >> 8)
-        self.packed_data.append(crc & 0xFF)
-        return self.packed_data
+        packed_data = bytearray()
+        packed_data.extend(self.space_packet_header.pack())
+        packed_data.extend(self.data_field_header.pack())
+        packed_data += self.get_app_data()
+        crc_func = mkPredefinedCrcFun(crc_name='crc-ccitt-false')
+        self.crc = crc_func(packed_data)
+        self._valid = True
+        packed_data.append((self.crc & 0xff00) >> 8)
+        packed_data.append(self.crc & 0xff)
+        return packed_data
 
     @classmethod
-    def unpack(cls, raw_packet: bytes) -> PusTelecommand:
-        pass
+    def unpack(cls, raw_packet: bytes, pus_version: PusVersion) -> PusTelecommand:
+        tc_unpacked = cls.__empty()
+        tc_unpacked._space_packet_header.unpack(space_packet_raw=raw_packet)
+        tc_unpacked._data_field_header.unpack(raw_packet=raw_packet, pus_version=pus_version)
+        header_len = \
+            SPACE_PACKET_HEADER_SIZE + \
+            tc_unpacked._data_field_header.get_header_size(pus_version=pus_version)
+        expected_packet_len = tc_unpacked.get_packet_size()
+        if len(raw_packet) < expected_packet_len:
+            logger = get_console_logger()
+            logger.warning(
+                f'Invalid length of raw telecomamnd packet, expected minimum length '
+                f'{expected_packet_len}'
+            )
+        tc_unpacked.app_data = raw_packet[header_len:expected_packet_len - 2]
+        tc_unpacked.crc = raw_packet[expected_packet_len - 2: expected_packet_len]
+        crc_func = mkPredefinedCrcFun(crc_name='crc-ccitt-false')
+        whole_packet = raw_packet[:expected_packet_len]
+        should_be_zero = crc_func(whole_packet)
+        if should_be_zero == 0:
+            tc_unpacked._valid = True
+        else:
+            logger = get_console_logger()
+            logger.warning('Invalid CRC16 in raw telecommand detected')
+            tc_unpacked._valid = False
+
+    def get_packet_size(self) -> int:
+        """Retrieve the full packet size when packed
+        :return: Size of the TM packet based on the space packet header data length field.
+        The space packet data field is the full length of data field minus one without
+        the space packet header.
+        """
+        return self.space_packet_header.get_packet_size()
 
     @staticmethod
     def get_data_length(app_data_len: int, secondary_header_len: int) -> int:
@@ -229,22 +273,22 @@ class PusTelecommand:
         return command_tuple
 
     def get_service(self) -> int:
-        return self._data_field_header.service_type
+        return self.data_field_header.service_type
 
     def get_subservice(self) -> int:
-        return self._data_field_header.service_subtype
+        return self.data_field_header.service_subtype
 
     def get_ssc(self) -> int:
-        return self._space_packet_header.ssc
+        return self.space_packet_header.ssc
 
     def get_apid(self) -> int:
-        return self._space_packet_header.apid
+        return self.space_packet_header.apid
 
     def get_packet_id(self) -> int:
-        return self._space_packet_header.packet_id
+        return self.space_packet_header.packet_id
 
     def get_app_data(self) -> bytearray:
-        return self.app_data
+        return self._app_data
 
     def print(self):
         """Print the raw command in a clean format.
@@ -264,7 +308,7 @@ def generate_packet_crc(tc_packet: bytearray) -> bytearray:
     CRC16 checksum and adds it as correct Packet Error Control Code.
     Reference: ECSS-E70-41A p. 207-212
     """
-    crc_func = crcmod.mkCrcFun(0x11021, rev=False, initCrc=0xFFFF, xorOut=0x0000)
+    crc_func = mkPredefinedCrcFun(crc_name='crc-ccitt-false')
     crc = crc_func(bytearray(tc_packet[0:len(tc_packet) - 2]))
     tc_packet[len(tc_packet) - 2] = (crc & 0xFF00) >> 8
     tc_packet[len(tc_packet) - 1] = crc & 0xFF
@@ -276,7 +320,7 @@ def generate_crc(data: bytearray) -> bytearray:
     """
     data_with_crc = bytearray()
     data_with_crc += data
-    crc_func = crcmod.mkCrcFun(0x11021, rev=False, initCrc=0xFFFF, xorOut=0x0000)
+    crc_func = mkPredefinedCrcFun(crc_name='crc-ccitt-false')
     crc = crc_func(data)
     data_with_crc.append((crc & 0xFF00) >> 8)
     data_with_crc.append(crc & 0xFF)

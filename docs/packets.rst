@@ -14,6 +14,10 @@ of a ping telecommand there.
 ECSS Packet Utilisation Standard (PUS)
 ---------------------------------------
 
+All packet 16-bit checksums for Telecommands (TCs) and Telemetry (TMs) are calculated with
+CRC-CCITT. In Python, the pre-defined ``crc-ccitt-false`` function from the
+`crcmod package`_  can be used to claculate this checksum.
+
 Telecommands
 ^^^^^^^^^^^^^^^^^^
 
@@ -126,3 +130,4 @@ PUS A
 .. _`CCSDS 727.0-B-5`: https://public.ccsds.org/Pubs/727x0b5.pdf
 .. _`ECSS-E-70-41A`: https://ecss.nl/standard/ecss-e-70-41a-ground-systems-and-operations-telemetry-and-telecommand-packet-utilization/
 .. _`ECSS-ST-E-70-41C`: https://ecss.nl/standard/ecss-e-st-70-41c-space-engineering-telemetry-and-telecommand-packet-utilization-15-april-2016/
+.. _`crcmod package`: http://crcmod.sourceforge.net/crcmod.predefined.html
