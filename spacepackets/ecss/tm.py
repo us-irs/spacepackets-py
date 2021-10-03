@@ -428,29 +428,3 @@ def get_printable_data_string(byte_array: bytearray, length: int) -> str:
     str_to_print = str_to_print.rstrip()
     str_to_print += "]"
     return str_to_print
-
-
-# Structure of a PUS Packet :
-# A PUS packet consists of consecutive bits, the allocation and structure is standardised.
-# Extended information can be found in ECSS-E-70-41A  on p.46
-# The easiest form to send a PUS Packet is in hexadecimal form.
-# A two digit hexadecimal number equals one byte, 8 bits or one octet
-# o = optional, Srv = Service
-#
-# The structure is shown as follows for TM[17,2]
-# 1. Structure Header
-# 2. Structure Subheader
-# 3. Component (size in bits)
-# 4. Hexadecimal number
-# 5. Binary Number
-# 6. Decimal Number
-#
-# Packet Structure for PUS A:
-#
-#
-# - Thus subcounter is specified optional for PUS A, but for this implementation it is expected the subcounter
-#   is contained in the raw packet
-# - In PUS A, the destination ID can be present as one byte in the spare field. It was omitted for the FSFW
-# - In PUS C, the last spare bits of the first byte are replaced by the space time reference field
-# - PUS A and PUS C both use the CDS short seven byte timestamp in the time field
-# - PUS C has a 16 bit counter sequence counter and a 16 bit destination ID before the time field
