@@ -61,7 +61,6 @@ class PusTelemetry:
         )
         self._valid = False
         self._crc16 = 0
-        self.print_info = ''
 
     @classmethod
     def __empty(cls, pus_version: PusVersion = PusVersion.GLOBAL_CONFIG) -> PusTelemetry:
@@ -137,7 +136,6 @@ class PusTelemetry:
         ]
         pus_tm._crc = \
             raw_telemetry[expected_packet_len - 2] << 8 | raw_telemetry[expected_packet_len - 1]
-        pus_tm.print_info = ""
         pus_tm.__perform_crc_check(raw_telemetry)
         return pus_tm
 
@@ -219,20 +217,6 @@ class PusTelemetry:
         except TypeError:
             print("PusTelecommand: Invalid type of application data!")
             return 0
-
-    def specify_packet_info(self, print_info: str):
-        """Caches a print information string for later printing
-        :param print_info:
-        :return:
-        """
-        self.print_info = print_info
-
-    def append_packet_info(self, print_info: str):
-        """Similar to the function above, but appends to the existing information string.
-        :param print_info:
-        :return:
-        """
-        self.print_info = self.print_info + print_info
 
     def get_custom_printout(self) -> str:
         """Can be used to supply any additional custom printout.

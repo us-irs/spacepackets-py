@@ -70,6 +70,9 @@ class TestTelecommand(TestCase):
         self.assertTrue(pus_17_telecommand.get_service() == 17)
         self.assertTrue(pus_17_telecommand.get_subservice() == 1)
 
+class TestTelemetry(TestCase):
+    pass
+
 
 if __name__ == '__main__':
     unittest.main()
