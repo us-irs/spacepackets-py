@@ -36,6 +36,7 @@ Other pages (online)
    :maxdepth: 4
 
    api
+   packets
 
 
 Indices and tables

@@ -202,6 +202,10 @@ class PusTelecommand:
         self.packed_data.append(crc & 0xFF)
         return self.packed_data
 
+    @classmethod
+    def unpack(cls, raw_packet: bytes) -> PusTelecommand:
+        pass
+
     @staticmethod
     def get_data_length(app_data_len: int, secondary_header_len: int) -> int:
         """Retrieve size of TC packet in bytes.
@@ -277,42 +281,3 @@ def generate_crc(data: bytearray) -> bytearray:
     data_with_crc.append((crc & 0xFF00) >> 8)
     data_with_crc.append(crc & 0xFF)
     return data_with_crc
-
-
-# pylint: disable=line-too-long
-
-# Structure of a PUS TC Packet :
-# A PUS wiretapping_packet consists of consecutive bits, the allocation and structure is
-# standardised. Extended information can be found in ECSS-E-70-41A  on p.42
-# The easiest form to send a PUS Packet is in hexadecimal form.
-# A two digit hexadecimal number equals one byte, 8 bits or one octet
-# o = optional, Srv = Service
-#
-# The structure is shown as follows for TC[17,1]
-# 1. Structure Header
-# 2. Structure Subheader
-# 3. Component (size in bits)
-# 4. Hexadecimal number
-# 5. Binary Number
-# 6. Decimal Number
-#
-# -------------------------------------------Packet Header(48)------------------------------------------|   Packet   |
-#  ----------------Packet ID(16)----------------------|Packet Sequence Control (16)| Packet Length (16) | Data Field |
-# Version       | Type(1) |Data Field    |APID(11)    | SequenceFlags(2) |Sequence |                    | (Variable) |
-# Number(3)     |         |Header Flag(1)|            |                  |Count(14)|                    |            |
-#           0x18               |    0x73              |       0xc0       | 0x19    |   0x00  |   0x04   |            |
-#    000      1      1      000|  01110011            | 11  000000       | 00011001|00000000 | 0000100  |            |
-#     0   |   1   |  1     |    115(ASCII s)          | 3 |            25          |   0     |    4     |            |
-#
-#   - Packet Length is an unsigned integer C = Number of Octets in Packet Data Field - 1
-#
-# Packet Data Field Structure:
-#
-# ------------------------------------------------Packet Data Field------------------------------------------------- |
-# ---------------------------------Data Field Header ---------------------------|AppData|Spare|    PacketErrCtr      |
-# CCSDS(1)|TC PUS Ver.(3)|Ack(4)|SrvType (8)|SrvSubtype(8)|Source ID(o)|Spare(o)|  (var)|(var)|         (16)         |
-#        0x11 (0x1F)            |  0x11     |   0x01      |            |        |       |     | 0xA0     |    0xB8   |
-#    0     001     1111         |00010001   | 00000001    |            |        |       |     |          |           |
-#    0      1       1111        |    17     |     1       |            |        |       |     |          |           |
-#
-#   - The source ID is present as one byte. For now, ground = 0x00.
