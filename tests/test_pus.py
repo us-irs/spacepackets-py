@@ -152,6 +152,10 @@ class TestTelemetry(TestCase):
             pus_version=PusVersion.PUS_A
         )
         self.assertEqual(pus_17_a_type.get_packet_size(), 19)
+        self.assertRaises(
+            ValueError,
+            pus_17_a_type.get_source_data_length, timestamp_len=7, pus_version=PusVersion.ESA_PUS
+        )
 
 
 if __name__ == '__main__':

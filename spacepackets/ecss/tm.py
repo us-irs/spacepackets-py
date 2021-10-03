@@ -230,22 +230,19 @@ class PusTelemetry:
         """
         return self.space_packet_header.ssc
 
-    def return_full_packet_string(self) -> str:
+    def get_full_packet_string(self) -> str:
         packet_raw = self.pack()
         return get_printable_data_string(packet_raw, len(packet_raw))
 
     def print_full_packet_string(self):
         """Print the full TM packet in a clean format."""
-        packet_raw = self.pack()
-        print(get_printable_data_string(packet_raw, len(packet_raw)))
+        print(self.get_full_packet_string())
 
     def print_source_data(self):
-        """Prints the TM source data in a clean format
-        :return:
-        """
-        print(get_printable_data_string(self._source_data, len(self._source_data)))
+        """Prints the TM source data in a clean format"""
+        print(self.get_source_data_string())
 
-    def return_source_data_string(self) -> str:
+    def get_source_data_string(self) -> str:
         """Returns the source data string"""
         return get_printable_data_string(self._source_data, len(self._source_data))
 
@@ -395,11 +392,15 @@ def get_printable_data_string(byte_array: bytearray, length: int) -> str:
     """Returns the TM data in a clean printable hex string format
     :return: The string
     """
-    str_to_print = "["
-    for index in range(length):
-        str_to_print += str(hex(byte_array[index])) + " , "
-    str_to_print = str_to_print.rstrip()
-    str_to_print = str_to_print.rstrip(',')
-    str_to_print = str_to_print.rstrip()
-    str_to_print += "]"
-    return str_to_print
+    if length > len(byte_array) or length == 0 or len(byte_array) == 0:
+        return '[]'
+    elif length == 1:
+        return f'[{byte_array[0]}'
+    elif length > 1:
+        str_to_print = "["
+        for index in range(length - 1):
+            str_to_print += f'{hex(byte_array[index])} , '
+        str_to_print += f'{hex(byte_array[length - 1])}]'
+        return str_to_print
+    else:
+        return '[]'
