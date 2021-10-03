@@ -1,10 +1,10 @@
 from __future__ import annotations
 import enum
 
-from typing import Tuple, Deque, List
+from typing import Tuple, Deque, List, Final
 from spacepackets.log import get_console_logger
 
-SPACE_PACKET_HEADER_SIZE = 6
+SPACE_PACKET_HEADER_SIZE: Final = 6
 
 
 class PacketTypes(enum.IntEnum):
@@ -101,16 +101,13 @@ class SpacePacketHeader:
             source_sequence_count=ssc
         )
 
-    def append_space_packet_header_content(self, content_list: list):
-        """Append APID and SSC values to a given list"""
-        content_list.append(f'0x{self.apid:02x}')
-        content_list.append(f'{self.ssc}')
+    def __str__(self):
+        return f"Space Packet with Packet ID 0x{self.packet_id:04x}, APID {self.apid}, " \
+               f"SSC {self.ssc}, Data Length {self.data_length}"
 
-    @staticmethod
-    def append_space_packet_header_column_headers(header_list: list):
-        """Append APID and SSC string to a given list"""
-        header_list.append("APID")
-        header_list.append("SSC")
+    def __repr__(self):
+        return f"{self.__class__.__name__}(packet_type={self.packet_type!r}, " \
+               f"packet_id={self.packet_id!r}, apid={self.apid!r}, ssc={self.ssc!r})"
 
 
 def get_space_packet_id_bytes(
