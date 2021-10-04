@@ -4,10 +4,10 @@ import unittest
 from unittest import TestCase
 from crcmod import crcmod
 
-from spacepackets.ecss.tc import PusTelecommand
+from spacepackets.ecss.tc import PusTelecommand, PusTcDataFieldHeader
 from spacepackets.ecss.tc import generate_crc, generate_packet_crc
 from spacepackets.ecss.conf import set_default_tm_apid, set_default_tc_apid, get_default_tc_apid, \
-    set_pus_tm_version
+    set_pus_tm_version, set_pus_tc_version, get_pus_tc_version
 from spacepackets.util import PrintFormats
 
 from spacepackets.ecss.tm import PusTelemetry, CdsShortTimestamp, PusVersion, \
@@ -17,7 +17,11 @@ from spacepackets.ecss.tm import PusTelemetry, CdsShortTimestamp, PusVersion, \
 class TestTelecommand(TestCase):
 
     def test_generic(self):
-        pus_17_telecommand = PusTelecommand(service=17, subservice=1, ssc=25)
+        set_pus_tc_version(pus_version=PusVersion.PUS_C)
+        self.assertEqual(get_pus_tc_version(), PusVersion.PUS_C)
+        pus_17_telecommand = PusTelecommand(
+            service=17, subservice=1, ssc=25, pus_version=PusVersion.PUS_C
+        )
         pus_17_telecommand.print(PrintFormats.HEX)
         self.assertTrue(pus_17_telecommand.get_total_length() == len(pus_17_telecommand.pack()))
         command_tuple = pus_17_telecommand.pack_command_tuple()
@@ -51,6 +55,44 @@ class TestTelecommand(TestCase):
         )
         self.assertRaises(TypeError, pus_17_telecommand_invalid.get_data_length(
             app_data_len=invalid_input, secondary_header_len=0)
+        )
+
+        pus_17_raw = pus_17_telecommand.pack()
+        pus_17_unpacked = PusTelecommand.unpack(raw_packet=pus_17_raw, pus_version=PusVersion.PUS_C)
+        self.assertEqual(pus_17_unpacked.get_service(), 17)
+        self.assertEqual(pus_17_unpacked.get_subservice(), 1)
+        self.assertEqual(pus_17_unpacked.is_valid(), True)
+        self.assertEqual(pus_17_unpacked.get_ssc(), 25)
+
+        self.assertRaises(
+            ValueError, PusTelecommand.unpack, raw_packet=pus_17_raw, pus_version=PusVersion.PUS_A
+        )
+        # print(len(pus_17_raw))
+        self.assertRaises(
+            ValueError, PusTelecommand.unpack, raw_packet=pus_17_raw[:10],
+            pus_version=PusVersion.PUS_C
+        )
+
+        tc_header_pus_a = PusTcDataFieldHeader(
+            service_type=0,
+            service_subtype=0,
+            pus_version=PusVersion.PUS_A
+        )
+        self.assertEqual(tc_header_pus_a.pus_tc_version, PusVersion.PUS_A)
+        self.assertEqual(PusTcDataFieldHeader.get_header_size(pus_version=PusVersion.PUS_A), 4)
+        self.assertEqual(PusTcDataFieldHeader.get_header_size(pus_version=PusVersion.PUS_C), 5)
+        header_pus_a_packed = tc_header_pus_a.pack()
+        self.assertEqual(len(header_pus_a_packed), 4)
+        tc_header_pus_a.set_add_source_id(add=False)
+        header_pus_a_packed_without_source_id = tc_header_pus_a.pack()
+        self.assertEqual(len(header_pus_a_packed_without_source_id), 3)
+
+        tc_header_pus_a_unpacked = PusTcDataFieldHeader.unpack(
+            raw_packet=header_pus_a_packed, pus_version=PusVersion.PUS_A
+        )
+        self.assertRaises(
+            ValueError, PusTcDataFieldHeader.unpack, raw_packet=bytearray(),
+            pus_version=PusVersion.PUS_C
         )
 
     def test_crc_16(self):

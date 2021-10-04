@@ -19,7 +19,6 @@ class EcssConfKeys(enum.IntEnum):
     PUS_TC_TYPE = 3
 
 
-
 __ECSS_DICT = {
     EcssConfKeys.PUS_TM_TYPE: PusVersion.PUS_C,
     EcssConfKeys.PUS_TC_TYPE: PusVersion.PUS_C,
@@ -28,8 +27,8 @@ __ECSS_DICT = {
 }
 
 
-def set_pus_tc_version(pus_type: PusVersion):
-    __ECSS_DICT[EcssConfKeys.PUS_TC_TYPE] = pus_type
+def set_pus_tc_version(pus_version: PusVersion):
+    __ECSS_DICT[EcssConfKeys.PUS_TC_TYPE] = pus_version
 
 
 def get_pus_tc_version() -> PusVersion:
