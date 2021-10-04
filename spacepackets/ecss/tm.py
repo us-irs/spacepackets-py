@@ -347,7 +347,7 @@ class PusTmSecondaryHeader:
                 )
                 raise ValueError
         elif pus_version == PusVersion.PUS_C:
-            secondary_header.pus_version = (header_start[current_idx] & 0x70) >> 4
+            secondary_header.pus_version = (header_start[current_idx] & 0xF0) >> 4
             if secondary_header.pus_version != PusVersion.PUS_C:
                 logger = get_console_logger()
                 logger.warning(
@@ -355,7 +355,6 @@ class PusTmSecondaryHeader:
                     f'found where PUS C {pus_version} was expected!'
                 )
                 raise ValueError
-            secondary_header.pus_version_number = (header_start[current_idx] & 0xF0) >> 4
             secondary_header.spacecraft_time_ref = header_start[current_idx] & 0x0F
         if len(header_start) < secondary_header.get_header_size():
             logger = get_console_logger()
