@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import enum
-
 from crcmod.predefined import mkPredefinedCrcFun
 
 from spacepackets.util import PrintFormats, get_printable_data_string
@@ -397,4 +395,3 @@ class PusTmSecondaryHeader:
             return PusTelemetry.PUS_TIMESTAMP_SIZE + 4
         else:
             return PusTelemetry.PUS_TIMESTAMP_SIZE + 7
-

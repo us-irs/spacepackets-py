@@ -119,7 +119,6 @@ class TestTelecommand(TestCase):
             ValueError, PusTcDataFieldHeader.unpack, tc_header_pus_c_raw, PusVersion.PUS_A
         )
 
-
     def test_crc_16(self):
         pus_17_telecommand = PusTelecommand(service=17, subservice=1, ssc=25)
         crc_func = crcmod.mkCrcFun(0x11021, rev=False, initCrc=0xFFFF, xorOut=0x0000)
@@ -145,6 +144,7 @@ class TestTelecommand(TestCase):
 
 
 class TestTelemetry(TestCase):
+
     def test_telemetry(self):
         pus_17_tm = PusTelemetry(
             service_id=17,
