@@ -9,6 +9,7 @@ from spacepackets.ccsds.spacepacket import \
     SpacePacketHeader, \
     PacketTypes, \
     SPACE_PACKET_HEADER_SIZE
+from spacepackets.util import get_printable_data_string, PrintFormats
 from spacepackets.ecss.conf import get_default_tc_apid, PusVersion, get_pus_tc_version
 
 
@@ -178,7 +179,7 @@ class PusTelecommand:
                f"{self.data_field_header.service_subtype}] with SSC {self.space_packet_header.ssc}"
 
     def is_valid(self):
-        return self._is_valid
+        return self._valid
 
     def get_total_length(self) -> int:
         """Length of full packet in bytes.
@@ -290,17 +291,11 @@ class PusTelecommand:
     def get_app_data(self) -> bytearray:
         return self._app_data
 
-    def print(self):
+    def print(self, print_format: PrintFormats):
         """Print the raw command in a clean format.
         """
         packet = self.pack()
-        print("Command in Hexadecimal: [", end="")
-        for counter in range(len(packet)):
-            if counter == len(packet) - 1:
-                print(str(hex(packet[counter])), end="")
-            else:
-                print(str(hex(packet[counter])) + ", ", end="")
-        print("]")
+        print(get_printable_data_string(print_format=print_format, data=packet, length=len(packet)))
 
 
 def generate_packet_crc(tc_packet: bytearray) -> bytearray:

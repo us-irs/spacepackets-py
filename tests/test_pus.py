@@ -18,12 +18,13 @@ class TestTelecommand(TestCase):
 
     def test_generic(self):
         pus_17_telecommand = PusTelecommand(service=17, subservice=1, ssc=25)
-        pus_17_telecommand.print()
+        pus_17_telecommand.print(PrintFormats.HEX)
         self.assertTrue(pus_17_telecommand.get_total_length() == len(pus_17_telecommand.pack()))
         command_tuple = pus_17_telecommand.pack_command_tuple()
         self.assertTrue(len(command_tuple[0]) == pus_17_telecommand.get_total_length())
         print(repr(pus_17_telecommand))
         print(pus_17_telecommand)
+        self.assertTrue(pus_17_telecommand.is_valid())
         self.assertTrue(pus_17_telecommand.get_packet_id() == (0x18 << 8 | 0x00))
         self.assertTrue(pus_17_telecommand.get_app_data() == bytearray())
         self.assertTrue(pus_17_telecommand.get_apid() == get_default_tc_apid())
