@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+import enum
+
 from crcmod.predefined import mkPredefinedCrcFun
 
+from spacepackets.util import PrintFormats, get_printable_data_string
 from spacepackets.log import get_console_logger
 from spacepackets.ccsds.spacepacket import SpacePacketHeader, SPACE_PACKET_HEADER_SIZE, \
     get_total_space_packet_len_from_len_field, PacketTypes
@@ -110,7 +113,6 @@ class PusTelemetry:
         )
         if expected_packet_len > len(raw_telemetry):
             logger = get_console_logger()
-            print(f'raw telem: {len(raw_telemetry)}')
             logger.warning(
                 f'PusTelemetry: Passed packet with length {len(raw_telemetry)} '
                 f'shorter than specified packet length in PUS header {expected_packet_len}'
@@ -230,21 +232,28 @@ class PusTelemetry:
         """
         return self.space_packet_header.ssc
 
-    def get_full_packet_string(self) -> str:
+    def get_crc(self) -> int:
+        return self._crc16
+
+    def get_full_packet_string(self, print_format: PrintFormats) -> str:
         packet_raw = self.pack()
-        return get_printable_data_string(packet_raw, len(packet_raw))
+        return get_printable_data_string(
+            print_format=print_format, data=packet_raw, length=len(packet_raw)
+        )
 
-    def print_full_packet_string(self):
+    def print_full_packet_string(self, print_format: PrintFormats):
         """Print the full TM packet in a clean format."""
-        print(self.get_full_packet_string())
+        print(self.get_full_packet_string(print_format=print_format))
 
-    def print_source_data(self):
+    def print_source_data(self, print_format: PrintFormats):
         """Prints the TM source data in a clean format"""
-        print(self.get_source_data_string())
+        print(self.get_source_data_string(print_format=print_format))
 
-    def get_source_data_string(self) -> str:
+    def get_source_data_string(self, print_format: PrintFormats) -> str:
         """Returns the source data string"""
-        return get_printable_data_string(self._source_data, len(self._source_data))
+        return get_printable_data_string(
+            print_format=print_format, data=self._source_data, length=len(self._source_data)
+        )
 
 
 class PusTmSecondaryHeader:
@@ -254,9 +263,9 @@ class PusTmSecondaryHeader:
     HEADER_SIZE_WITHOUT_TIME_PUS_C = 7
 
     def __init__(
-            self, pus_version: PusVersion, service_id: int, subservice_id: int,
+            self, service_id: int, subservice_id: int,
             time: CdsShortTimestamp, message_counter: int, destination_id: int = 0,
-            spacecraft_time_ref: int = 0,
+            spacecraft_time_ref: int = 0, pus_version: PusVersion = PusVersion.GLOBAL_CONFIG,
     ):
         """Create a PUS telemetry secondary header object.
 
@@ -269,16 +278,15 @@ class PusTmSecondaryHeader:
         :param spacecraft_time_ref: Space time reference if PUS C is used
         """
         self.pus_version = pus_version
-        self.spacecraft_time_ref = spacecraft_time_ref
-        self.pus_version = pus_version
         if self.pus_version == PusVersion.GLOBAL_CONFIG:
             self.pus_version = get_pus_tm_version()
         if self.pus_version != PusVersion.PUS_A and self.pus_version != PusVersion.PUS_C:
             raise ValueError
+        self.spacecraft_time_ref = spacecraft_time_ref
         self.service_id = service_id
         self.subservice_id = subservice_id
-        if (self.pus_version == PusVersion.PUS_A and message_counter > 255) or \
-                (self.pus_version == PusVersion.PUS_C and message_counter > 65536):
+        if (self.pus_version == PusVersion.PUS_A and message_counter > pow(2, 8) - 1) or \
+                (self.pus_version == PusVersion.PUS_C and message_counter > pow(2, 16) - 1):
             raise ValueError
         self.message_counter = message_counter
         self.destination_id = destination_id
@@ -297,7 +305,7 @@ class PusTmSecondaryHeader:
     def pack(self) -> bytearray:
         secondary_header = bytearray()
         if self.pus_version == PusVersion.PUS_A:
-            secondary_header.append((self.pus_version_number & 0x07) << 4)
+            secondary_header.append((self.pus_version & 0x07) << 4)
         elif self.pus_version == PusVersion.PUS_C:
             secondary_header.append(self.pus_version << 4 | self.spacecraft_time_ref)
         secondary_header.append(self.service_id)
@@ -323,27 +331,30 @@ class PusTmSecondaryHeader:
         :raises ValueError: bytearray too short or PUS version missmatch.
         :return:
         """
+        if len(header_start) < cls.HEADER_SIZE_WITHOUT_TIME_PUS_A:
+            logger = get_console_logger()
+            logger.warning('Passed bytearray too short')
+            raise ValueError
         if pus_version == PusVersion.GLOBAL_CONFIG:
             pus_version = get_pus_tm_version()
         secondary_header = cls.__empty()
         current_idx = 0
         if pus_version == PusVersion.PUS_A:
-            secondary_header.pus_version = PusVersion.PUS_A
-            secondary_header.pus_version_number = (header_start[current_idx] & 0x70) >> 4
-            if secondary_header.pus_version_number == 1:
+            secondary_header.pus_version = (header_start[current_idx] & 0x70) >> 4
+            if secondary_header.pus_version != PusVersion.PUS_A:
                 logger = get_console_logger()
                 logger.warning(
-                    'PUS version field value 1 found where PUS A value (0) was expected!'
+                    f'PUS version field value {secondary_header.pus_version} '
+                    f'found where PUS A {pus_version} was expected!'
                 )
                 raise ValueError
-
         elif pus_version == PusVersion.PUS_C:
-            secondary_header.pus_version = PusVersion.PUS_C
+            secondary_header.pus_version = (header_start[current_idx] & 0x70) >> 4
             if secondary_header.pus_version != PusVersion.PUS_C:
                 logger = get_console_logger()
                 logger.warning(
-                    f'PUS version field value {secondary_header.pus_version} found where '
-                    f'PUS C value (2) was expected!'
+                    f'PUS version field value {secondary_header.pus_version} '
+                    f'found where PUS C {pus_version} was expected!'
                 )
                 raise ValueError
             secondary_header.pus_version_number = (header_start[current_idx] & 0xF0) >> 4
@@ -387,20 +398,3 @@ class PusTmSecondaryHeader:
         else:
             return PusTelemetry.PUS_TIMESTAMP_SIZE + 7
 
-
-def get_printable_data_string(byte_array: bytearray, length: int) -> str:
-    """Returns the TM data in a clean printable hex string format
-    :return: The string
-    """
-    if length > len(byte_array) or length == 0 or len(byte_array) == 0:
-        return '[]'
-    elif length == 1:
-        return f'[{byte_array[0]}'
-    elif length > 1:
-        str_to_print = "["
-        for index in range(length - 1):
-            str_to_print += f'{hex(byte_array[index])} , '
-        str_to_print += f'{hex(byte_array[length - 1])}]'
-        return str_to_print
-    else:
-        return '[]'

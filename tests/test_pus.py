@@ -6,10 +6,12 @@ from crcmod import crcmod
 
 from spacepackets.ecss.tc import PusTelecommand
 from spacepackets.ecss.tc import generate_crc, generate_packet_crc
-from spacepackets.ecss.conf import set_default_tm_apid, set_default_tc_apid, get_default_tc_apid
+from spacepackets.ecss.conf import set_default_tm_apid, set_default_tc_apid, get_default_tc_apid, \
+    set_pus_tm_version
+from spacepackets.util import PrintFormats
 
 from spacepackets.ecss.tm import PusTelemetry, CdsShortTimestamp, PusVersion, \
-    get_service_from_raw_pus_packet
+    get_service_from_raw_pus_packet, PusTmSecondaryHeader
 
 
 class TestTelecommand(TestCase):
@@ -85,6 +87,9 @@ class TestTelemetry(TestCase):
             source_data=bytearray(),
             time=CdsShortTimestamp.init_from_current_time()
         )
+        self.assertEqual(pus_17_tm.get_source_data_string(PrintFormats.HEX), 'hex []')
+        self.assertEqual(pus_17_tm.get_source_data_string(PrintFormats.DEC), 'dec []')
+        self.assertEqual(pus_17_tm.get_source_data_string(PrintFormats.BIN), 'bin []')
         self.assertEqual(pus_17_tm.get_subservice(), 2)
         self.assertEqual(pus_17_tm.get_service(), 17)
         self.assertEqual(pus_17_tm.get_ssc(), 22)
@@ -94,18 +99,47 @@ class TestTelemetry(TestCase):
         self.assertRaises(ValueError, get_service_from_raw_pus_packet, bytearray())
 
         set_default_tm_apid(0x22)
+        source_data = bytearray([0x42, 0x38])
         pus_17_tm = PusTelemetry(
             service_id=17,
             subservice_id=2,
             ssc=22,
-            source_data=bytearray(),
+            source_data=source_data,
+        )
+        self.assertEqual(pus_17_tm.get_source_data_string(PrintFormats.HEX), 'hex [42,38]')
+        self.assertEqual(pus_17_tm.get_source_data_string(PrintFormats.DEC), 'dec [66,56]')
+        self.assertEqual(
+            pus_17_tm.get_source_data_string(PrintFormats.BIN),
+            'bin [\n0:01000010\n1:00111000\n]'
         )
         self.assertEqual(pus_17_tm.get_apid(), 0x22)
         self.assertEqual(pus_17_tm.secondary_packet_header.pus_version, PusVersion.PUS_C)
         self.assertTrue(pus_17_tm.is_valid())
-        self.assertEqual(pus_17_tm.get_tm_data(), bytearray())
+        self.assertEqual(pus_17_tm.get_tm_data(), source_data)
         self.assertEqual(pus_17_tm.get_packet_id(), 0x0822)
+        pus_17_tm.print_full_packet_string(PrintFormats.HEX)
+        self.assertEqual(pus_17_tm.get_packet_size(), 24)
+        crc16 = pus_17_tm.get_crc()
+        crc_string = f'{(crc16 & 0xff00) >> 8:02x},{crc16 & 0xff:02x}'
+        raw_time = pus_17_tm.secondary_packet_header.time.pack()
+        raw_space_packet_header = pus_17_tm.space_packet_header.pack()
+        sp_header_as_str = raw_space_packet_header.hex(sep=',', bytes_per_sep=1)
+        raw_secondary_packet_header = pus_17_tm.secondary_packet_header.pack()
+        self.assertEqual(raw_secondary_packet_header[0], 0x20)
+        # Service
+        self.assertEqual(raw_secondary_packet_header[1], 17)
+        # Subservice
+        self.assertEqual(raw_secondary_packet_header[2], 2)
+        second_header_as_str = raw_secondary_packet_header.hex(sep=',', bytes_per_sep=1)
+        expected_printout = f'hex [{sp_header_as_str},{second_header_as_str},'
+        expected_printout += '42,38,'
+        expected_printout += f'{crc_string}]'
+        self.assertEqual(
+            pus_17_tm.get_full_packet_string(PrintFormats.HEX),
+            expected_printout
+        )
         pus_17_raw = pus_17_tm.pack()
+
         pus_17_tm_unpacked = PusTelemetry.unpack(
             raw_telemetry=pus_17_raw, pus_version=PusVersion.PUS_C
         )
@@ -114,11 +148,11 @@ class TestTelemetry(TestCase):
         self.assertEqual(pus_17_tm_unpacked.get_apid(), 0x22)
         self.assertEqual(pus_17_tm_unpacked.secondary_packet_header.pus_version, PusVersion.PUS_C)
         self.assertTrue(pus_17_tm_unpacked.is_valid())
-        self.assertEqual(pus_17_tm_unpacked.get_tm_data(), bytearray())
+        self.assertEqual(pus_17_tm_unpacked.get_tm_data(), source_data)
         self.assertEqual(pus_17_tm_unpacked.get_packet_id(), 0x0822)
         self.assertRaises(ValueError, PusTelemetry.unpack, None, PusVersion.PUS_C)
         self.assertRaises(ValueError, PusTelemetry.unpack, bytearray(), PusVersion.PUS_C)
-
+        self.assertRaises(ValueError, PusTelemetry.unpack, pus_17_raw, PusVersion.PUS_A)
         correct_size = pus_17_raw[4] << 8 | pus_17_raw[5]
         # Set length field invalid
         pus_17_raw[4] = 0x00
@@ -148,13 +182,64 @@ class TestTelemetry(TestCase):
             service_id=17,
             subservice_id=2,
             ssc=22,
-            source_data=bytearray(),
+            source_data=bytearray([0x42]),
             pus_version=PusVersion.PUS_A
         )
-        self.assertEqual(pus_17_a_type.get_packet_size(), 19)
+        expected_len = pus_17_a_type.get_packet_size()
+        self.assertEqual(expected_len, 20)
+        self.assertEqual(pus_17_a_type.get_source_data_string(PrintFormats.HEX), 'hex [42]')
+        self.assertEqual(pus_17_a_type.get_source_data_string(PrintFormats.DEC), 'dec [66]')
+        self.assertEqual(pus_17_a_type.get_source_data_string(PrintFormats.BIN), 'bin [0:01000010]')
         self.assertRaises(
             ValueError,
             pus_17_a_type.get_source_data_length, timestamp_len=7, pus_version=PusVersion.ESA_PUS
+        )
+        pus_17_a_type.print_source_data(PrintFormats.HEX)
+        pus_17_a_raw = pus_17_a_type.pack()
+        self.assertEqual(len(pus_17_a_raw), expected_len)
+
+        set_pus_tm_version(PusVersion.PUS_A)
+        pus_17_a_type = PusTelemetry(
+            service_id=17,
+            subservice_id=4,
+            ssc=34,
+            source_data=bytearray([0x42, 0x38]),
+        )
+        self.assertEqual(pus_17_a_type.get_packet_size(), 21)
+        self.assertEqual(pus_17_a_type.get_source_data_string(PrintFormats.HEX), 'hex [42,38]')
+        self.assertEqual(pus_17_a_type.get_source_data_string(PrintFormats.DEC), 'dec [66,56]')
+        self.assertEqual(
+            pus_17_a_type.get_source_data_string(PrintFormats.BIN),
+            'bin [\n0:01000010\n1:00111000\n]'
+        )
+        pus_17_a_type_unpacked = PusTelemetry.unpack(raw_telemetry=pus_17_a_raw)
+        self.assertRaises(ValueError, PusTelemetry.unpack, pus_17_a_raw, PusVersion.PUS_C)
+        self.assertRaises(ValueError, PusTmSecondaryHeader.unpack, bytearray(), PusVersion.PUS_A)
+
+        invalid_secondary_header = bytearray([0x20, 0x00, 0x01, 0x06])
+        self.assertRaises(
+            ValueError, PusTmSecondaryHeader.unpack, invalid_secondary_header, PusVersion.PUS_C
+        )
+        self.assertRaises(
+            ValueError, PusTmSecondaryHeader, pus_version=PusVersion.ESA_PUS, service_id=0,
+            subservice_id=0, time=CdsShortTimestamp.init_from_current_time(),
+            message_counter=0
+        )
+        # Message Counter too large
+        self.assertRaises(
+            ValueError, PusTmSecondaryHeader, pus_version=PusVersion.PUS_C, service_id=0,
+            subservice_id=0, time=CdsShortTimestamp.init_from_current_time(),
+            message_counter=129302
+        )
+        # Message Counter too large
+        self.assertRaises(
+            ValueError, PusTmSecondaryHeader, pus_version=PusVersion.PUS_A, service_id=0,
+            subservice_id=0, time=CdsShortTimestamp.init_from_current_time(),
+            message_counter=9323
+        )
+        valid_secondary_header = PusTmSecondaryHeader(
+            service_id=0, subservice_id=0, time=CdsShortTimestamp.init_from_current_time(),
+            message_counter=22
         )
 
 
