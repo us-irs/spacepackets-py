@@ -262,6 +262,7 @@ class PusTelecommand:
                 f'Invalid length of raw telecommand packet, expected minimum length '
                 f'{expected_packet_len}'
             )
+            raise ValueError
         tc_unpacked._app_data = raw_packet[header_len:expected_packet_len - 2]
         tc_unpacked._crc = raw_packet[expected_packet_len - 2: expected_packet_len]
         crc_func = mkPredefinedCrcFun(crc_name='crc-ccitt-false')

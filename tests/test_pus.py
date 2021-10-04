@@ -67,11 +67,16 @@ class TestTelecommand(TestCase):
         self.assertRaises(
             ValueError, PusTelecommand.unpack, raw_packet=pus_17_raw, pus_version=PusVersion.PUS_A
         )
-        # print(len(pus_17_raw))
         self.assertRaises(
-            ValueError, PusTelecommand.unpack, raw_packet=pus_17_raw[:10],
+            ValueError, PusTelecommand.unpack, raw_packet=pus_17_raw[:11],
             pus_version=PusVersion.PUS_C
         )
+        # Make CRC invalid
+        pus_17_raw[-1] = pus_17_raw[-1] + 1
+        pus_17_unpacked_invalid = PusTelecommand.unpack(
+            raw_packet=pus_17_raw, pus_version=PusVersion.PUS_C
+        )
+        self.assertFalse(pus_17_unpacked_invalid.is_valid())
 
         tc_header_pus_a = PusTcDataFieldHeader(
             service_type=0,
@@ -80,6 +85,10 @@ class TestTelecommand(TestCase):
         )
         self.assertEqual(tc_header_pus_a.pus_tc_version, PusVersion.PUS_A)
         self.assertEqual(PusTcDataFieldHeader.get_header_size(pus_version=PusVersion.PUS_A), 4)
+        self.assertEqual(
+            PusTcDataFieldHeader.get_header_size(pus_version=PusVersion.PUS_A, add_source_id=False),
+            3
+        )
         self.assertEqual(PusTcDataFieldHeader.get_header_size(pus_version=PusVersion.PUS_C), 5)
         header_pus_a_packed = tc_header_pus_a.pack()
         self.assertEqual(len(header_pus_a_packed), 4)
@@ -94,6 +103,22 @@ class TestTelecommand(TestCase):
             ValueError, PusTcDataFieldHeader.unpack, raw_packet=bytearray(),
             pus_version=PusVersion.PUS_C
         )
+        # To avoid size related ValueError
+        header_pus_a_packed.append(0x00)
+        self.assertRaises(
+            ValueError, PusTcDataFieldHeader.unpack, raw_packet=header_pus_a_packed,
+            pus_version=PusVersion.PUS_C
+        )
+        tc_header_pus_c = PusTcDataFieldHeader(
+            service_type=0,
+            service_subtype=0,
+            pus_version=PusVersion.PUS_C
+        )
+        tc_header_pus_c_raw = tc_header_pus_c.pack()
+        self.assertRaises(
+            ValueError, PusTcDataFieldHeader.unpack, tc_header_pus_c_raw, PusVersion.PUS_A
+        )
+
 
     def test_crc_16(self):
         pus_17_telecommand = PusTelecommand(service=17, subservice=1, ssc=25)
