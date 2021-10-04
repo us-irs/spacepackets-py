@@ -48,7 +48,7 @@ class PusTelemetry:
             time = CdsShortTimestamp.init_from_current_time()
         # packet type for telemetry is 0 as specified in standard
         # specified in standard
-        packet_type = PacketTypes.PACKET_TYPE_TM
+        packet_type = PacketTypes.TM
         self._source_data = source_data
         data_length = self.get_source_data_length(
             timestamp_len=PusTelemetry.PUS_TIMESTAMP_SIZE, pus_version=pus_version

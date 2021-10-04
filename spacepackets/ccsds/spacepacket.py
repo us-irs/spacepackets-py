@@ -8,8 +8,8 @@ SPACE_PACKET_HEADER_SIZE: Final = 6
 
 
 class PacketTypes(enum.IntEnum):
-    PACKET_TYPE_TM = 0
-    PACKET_TYPE_TC = 1
+    TM = 0
+    TC = 1
 
 
 class SequenceFlags(enum.IntEnum):
@@ -29,7 +29,7 @@ class SpacePacketHeader:
     ):
         """Create a space packet header with the given field parameters
 
-        :param packet_type:
+        :param packet_type: 0 for Telemetery, 1 for Telecommands
         :param apid: Application Process ID, should not be larger
             than 11 bits, deciaml 2074 or hex 0x7ff
         :param source_sequence_count: Sequence counter, should not be larger than 0x3fff or
@@ -41,26 +41,22 @@ class SpacePacketHeader:
         :raises ValueError: On invalid parameters
         """
         self.packet_type = packet_type
-        if apid < 0:
-            logger = get_console_logger()
-            logger.warning(f'Negative APID')
-            raise ValueError
-        if apid > pow(2, 11) - 1:
+        if apid > pow(2, 11) - 1 or apid < 0:
             logger = get_console_logger()
             logger.warning(
-                f'Invalid APID, exceeds maximum value {pow(2, 11) - 1}'
+                f'Invalid APID, exceeds maximum value {pow(2, 11) - 1} or negative'
             )
             raise ValueError
-        if source_sequence_count > pow(2, 14) - 1:
+        if source_sequence_count > pow(2, 14) - 1 or source_sequence_count < 0:
             logger = get_console_logger()
             logger.warning(
-                f'Invalid source sequence count, exceeds maximum value {pow(2, 14)- 1}'
+                f'Invalid source sequence count, exceeds maximum value {pow(2, 14)- 1} or negative'
             )
             raise ValueError
-        if data_length > pow(2, 16) - 1:
+        if data_length > pow(2, 16) - 1 or data_length < 0:
             logger = get_console_logger()
             logger.warning(
-                f'Invalid data length value, exceeds maximum value of {pow(2, 16) - 1}'
+                f'Invalid data length value, exceeds maximum value of {pow(2, 16) - 1} or negative'
             )
             raise ValueError
         self.apid = apid
@@ -75,15 +71,6 @@ class SpacePacketHeader:
         self.packet_id = get_space_packet_id_num(
             packet_type=self.packet_type, secondary_header_flag=self.secondary_header_flag,
             apid=self.apid
-        )
-
-    @classmethod
-    def __empty(cls) -> SpacePacketHeader:
-        return SpacePacketHeader(
-            packet_type=PacketTypes.PACKET_TYPE_TC,
-            apid=0,
-            source_sequence_count=0,
-            data_length=0
         )
 
     def pack(self) -> bytearray:
@@ -117,9 +104,9 @@ class SpacePacketHeader:
             raise ValueError
         packet_type = space_packet_raw[0] & 0x10
         if packet_type == 0:
-            packet_type = PacketTypes.PACKET_TYPE_TM
+            packet_type = PacketTypes.TM
         else:
-            packet_type = PacketTypes.PACKET_TYPE_TC
+            packet_type = PacketTypes.TC
         packet_version = space_packet_raw[0] >> 5
         secondary_header_flag = (space_packet_raw[0] & 0x8) >> 3
         apid = ((space_packet_raw[0] & 0x7) << 8) | space_packet_raw[1]
@@ -151,7 +138,7 @@ def get_space_packet_id_bytes(
     """This function also includes the first three bits reserved for the version.
 
     :param version: Version field of the packet ID. Defined to be 0b000 in the space packet standard
-    :param packet_type:
+    :param packet_type: 0 for TM, 1 for TC
     :param secondary_header_flag: Indicates presence of absence of a Secondary Header
         in the Space Packet
     :param apid: Application Process Identifier. Naming mechanism for managed data path, has 11 bits
@@ -175,20 +162,17 @@ def get_space_packet_sequence_control(
         sequence_flags: SequenceFlags, source_sequence_count: int
 ) -> int:
     """Get sequence control in integer format"""
-    if sequence_flags > 3:
+    if sequence_flags > SequenceFlags.UNSEGMENTED:
         logger = get_console_logger()
-        logger.warning(
-            "get_sp_packet_sequence_control: Sequence flag value larger than 0b11! "
-            "Setting to 0b11.."
-        )
-        sequence_flags = SequenceFlags.UNSEGMENTED
+        logger.warning('Sequence flag value larger than 0b11')
+        raise ValueError
     if source_sequence_count > 0x3fff:
         logger = get_console_logger()
         logger.warning(
-            "get_sp_packet_sequence_control: Source sequence count largen than 0x3fff. "
-            "Larger bits are cut off!"
+            'get_sp_packet_sequence_control: Source sequence count largen than 0x3fff'
         )
-    return (source_sequence_count & 0x3FFF) | (sequence_flags << 14)
+        raise ValueError
+    return (source_sequence_count & 0x3fff) | (sequence_flags << 14)
 
 
 def get_space_packet_header(
@@ -205,23 +189,15 @@ def get_space_packet_header(
     return header
 
 
-def get_space_packet_header_from_packet_id_bytes(
-        packet_id_byte_one: int, packet_id_byte_two: int, packet_sequence_control: int,
-        data_length: int
-) -> bytearray:
-    header = bytearray()
-    header.append(packet_id_byte_one)
-    header.append(packet_id_byte_two)
-    header.append((packet_sequence_control & 0xFF00) >> 8)
-    header.append(packet_sequence_control & 0xFF)
-    header.append((data_length & 0xFF00) >> 8)
-    header.append(data_length & 0xFF)
-    return header
-
-
 def get_apid_from_raw_space_packet(raw_packet: bytes) -> int:
+    """Retrieve the APID from the raw packet.
+
+    :param raw_packet:
+    :raises ValueError: Passed bytearray too short
+    :return:
+    """
     if len(raw_packet) < 6:
-        return 0
+        raise ValueError
     return ((raw_packet[0] & 0x7) << 8) | raw_packet[1]
 
 
@@ -233,9 +209,10 @@ def get_total_space_packet_len_from_len_field(len_field: int):
 
 
 def parse_space_packets(
-        analysis_queue: Deque[bytearray], packet_id: int, max_len: int
+        analysis_queue: Deque[bytearray], packet_ids: Tuple[int]
 ) -> List[bytearray]:
     """Given a deque of bytearrays, parse for space packets. Any broken headers will be removed.
+    If a packet is detected and the
     Any broken tail packets will be reinserted into the given deque
     :param analysis_queue:
     :param packet_id:
@@ -254,22 +231,14 @@ def parse_space_packets(
         return tm_list
     # Packet ID detected
     while True:
-        if current_idx > max_len - 6 or current_idx > len(concatenated_packets) - 1:
+        if current_idx + 1 >= len(concatenated_packets):
             break
-        try:
-            current_packet_id = \
-                (concatenated_packets[current_idx] << 8) | concatenated_packets[current_idx + 1]
-        except IndexError:
-            logger = get_console_logger()
-            logger.warning(
-                f'Index error, current index {current_idx} larger than length of concatenated '
-                f'packets {len(concatenated_packets)}'
-            )
-            return tm_list
-        if current_packet_id == packet_id:
+        current_packet_id = \
+            (concatenated_packets[current_idx] << 8) | concatenated_packets[current_idx + 1]
+        if current_packet_id in packet_ids:
             result, current_idx = __handle_packet_id_match(
                 concatenated_packets=concatenated_packets, analysis_queue=analysis_queue,
-                max_len=max_len, current_idx=current_idx, tm_list=tm_list
+                current_idx=current_idx, tm_list=tm_list
             )
             if result != 0:
                 break
@@ -280,21 +249,14 @@ def parse_space_packets(
 
 
 def __handle_packet_id_match(
-        concatenated_packets: bytearray, analysis_queue: Deque[bytearray], max_len: int,
+        concatenated_packets: bytearray, analysis_queue: Deque[bytearray],
         current_idx: int, tm_list: List[bytearray]
 ) -> (int, int):
     next_packet_len_field = \
         concatenated_packets[current_idx + 4] | concatenated_packets[current_idx + 5]
     total_packet_len = get_total_space_packet_len_from_len_field(next_packet_len_field)
-    if total_packet_len > max_len:
-        print(
-            f'parse_space_packets: Detected packet length larger than specified maximum'
-            f'length {max_len}. Skipping header..'
-        )
-        # Packet too long. Throw away the header and advance index
-        current_idx += 6
     # Might be part of packet. Put back into analysis queue as whole
-    elif total_packet_len > len(concatenated_packets):
+    if total_packet_len > len(concatenated_packets):
         analysis_queue.appendleft(concatenated_packets)
         return -1, current_idx
     else:
