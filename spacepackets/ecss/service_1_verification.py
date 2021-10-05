@@ -10,6 +10,7 @@ from spacepackets.ecss.tm import PusVersion, PusTelemetry
 
 from spacepackets.log import get_console_logger
 
+
 class Service1TM:
     """Service 1 TM class representation. Can be used to deserialize raw service 1 packets.
     """

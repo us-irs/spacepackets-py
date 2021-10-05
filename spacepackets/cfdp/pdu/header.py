@@ -108,7 +108,7 @@ class PduHeader:
             if source_entity_id == bytes() or dest_entity_id == bytes():
                 logger = get_console_logger()
                 logger.warning(
-                    'Can not set default value for source entity ID or destination entity ID'
+                    'Can not set default value for source entity ID or destination entity ID '
                     'because it has not been set yet'
                 )
                 raise ValueError

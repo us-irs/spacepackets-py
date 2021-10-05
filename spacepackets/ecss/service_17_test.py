@@ -7,8 +7,8 @@ class Service17TM:
     def __init__(
             self, subservice_id: int, time: CdsShortTimestamp = None, ssc: int = 0,
             source_data: bytearray = bytearray([]), apid: int = -1, packet_version: int = 0b000,
-            pus_version: PusVersion = PusVersion.GLOBAL_CONFIG, pus_tm_version: int = 0b0001,
-            ack: int = 0b1111, secondary_header_flag: bool = True, space_time_ref: int = 0b0000,
+            pus_version: PusVersion = PusVersion.GLOBAL_CONFIG, ack: int = 0b1111,
+            secondary_header_flag: bool = True, space_time_ref: int = 0b0000,
             destination_id: int = 0
     ):
         self.pus_tm = PusTelemetry(
@@ -20,7 +20,6 @@ class Service17TM:
             apid=apid,
             packet_version=packet_version,
             pus_version=pus_version,
-            pus_tm_version=pus_tm_version,
             ack=ack,
             secondary_header_flag=secondary_header_flag,
             space_time_ref=space_time_ref,
