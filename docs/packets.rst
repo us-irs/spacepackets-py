@@ -14,9 +14,9 @@ of a ping telecommand there.
 ECSS Packet Utilisation Standard (PUS)
 ---------------------------------------
 
-All packet 16-bit checksums for Telecommands (TCs) and Telemetry (TMs) are calculated with
-CRC-CCITT. In Python, the pre-defined ``crc-ccitt-false`` function from the
-`crcmod package`_  can be used to claculate this checksum.
+All packet 16-bit checksums for Telecommands (TCs) and Telemetry (TMs) are
+calculated with CRC-CCITT. In Python, the pre-defined ``crc-ccitt-false``
+function from the `crcmod package`_  can be used to calculate this checksum.
 
 Telecommands
 ^^^^^^^^^^^^^^^^^^
@@ -28,6 +28,7 @@ The structure is shown as follows for a ping telecommand using the PUS service 1
 subervice ID 1. This can also be denoted more briefly as TC[17,1]. The first part
 of the packet is always the the Space Packet Header because PUS packets are a subtype of space
 packets. The packet length is an unsigned integer C = Number of Octets in Packet Data Field - 1.
+The example below has a source sequence count of 25 and an APID of 0x73.
 
 .. code-block::
 
@@ -54,9 +55,9 @@ PUS C
      / -----------------------------------------------Packet Data Field--------------------------------------- \
      | --------------------------------Data Field Header ------------------ | --------User Data Field--------- |
      |TC PUS Ver.(4)|Ack(4)|SrvType (8)|SrvSubtype(8)|Source ID(16)|Spare(o)|AppData|Spare(o)|PacketErrCtr (16)|
-    h| 0x11 (0x1F)         |    0x11   |   0x01      | 0x00 | 0x00 |        |       |        | 0xA0  |  0xB8   |
+    h|        0x2F         |    0x11   |   0x01      | 0x00 | 0x00 |        |       |        | 0xA0  |  0xB8   |
     b| 0010       1111     |  00010001 | 00000001    | 0..0 | 0..0 |        |       |        |       |         |
-    d| 0010       1111     |    17     |     1       |  0   |  0   |        |       |        |       |         |
+    d|   2          15     |    17     |     1       |  0   |  0   |        |       |        |       |         |
       ----------------------------------------------------------------------------------------------------------
 
 PUS A
@@ -108,9 +109,9 @@ PUS C
      /------------------------------------------------Packet Data Field---------------------------------------------------- \
      |---------------------------------Data Field Header -------------------------------------------- | --User Data Field-- |
      |TM PUS Ver.(4)|TimeRef(4)|SrvType (8)|SrvSubtype(8)|Subcounter(16)|DestId(16)|Time(var)|Spare(o)|Data|Spare| CRC(16)  |
-    h|        0x11 (0x1F)      |  0x11     |   0x01      | 0x00 | 0x00  |0x00|0x00 |         |        |    |     |   Calc.  |
-    b|    0001     0000        |00010001   | 00000001    | 0..0 | 0..0  |0..0|0..0 |         |        |    |     |   Calc.  |
-    d|    01       0           |    17     |     2       |      0       |     0    |         |        |    |     |   Calc.  |
+    h|          0x20           |  0x11     |   0x02      | 0x00 | 0x00  |0x00|0x00 |         |        |    |     |   Calc.  |
+    b|    0010     0000        |00010001   | 00000010    | 0..0 | 0..0  |0..0|0..0 |         |        |    |     |   Calc.  |
+    d|     2         0         |    17     |     2       |      0       |     0    |         |        |    |     |   Calc.  |
       ----------------------------------------------------------------------------------------------------------------------
 
 PUS A
@@ -119,12 +120,12 @@ PUS A
 .. code-block::
 
       ---------------------------------------------------------------------------------------------------------------------
-     /------------------------------------------------Packet Data Field---------------------------------------------------- \
-     |---------------------------------Data Field Header ---------------------------------------|AppData|Spare|PacketErrCtr |
-     |Spare(1)|TM PUS Ver.(3)|Spare(4)|SrvType (8)|SrvSubtype(8)|Subcounter(8,o)|Time(var)|Spare(o)|(var)  |(var)|  (16)    |
-    h|        0x11 (0x1F)             |  0x11     |   0x01      |  0x00         |         |        |       |     |   Calc.  |
-    b|    0     001     0000          |00010001   | 00000001    |    0..0       |         |        |       |     |          |
-    d|    0      1       0            |    17     |     2       |       0       |         |        |       |     |          |
+     /------------------------------------------------Packet Data Field--------------------------------------------------- \
+     |---------------------------------Data Field Header ---------------------------------------|AppData|Spare|PacketErrCt |
+     |Spare(1)|TM PUS Ver.(3)|Spare(4)|SrvType(8)|SrvSubtype(8)|Subcounter(8,o)|Time(var)|Spare(o)|(var)  |(var)|  (16)    |
+    h|        0x11 (0x1F)             |  0x11    |   0x02      |  0x00         |         |        |       |     |   Calc.  |
+    b|    0     001     0000          |00010001  | 00000010    |    0..0       |         |        |       |     |          |
+    d|    0      1       0            |    17    |     2       |       0       |         |        |       |     |          |
       ----------------------------------------------------------------------------------------------------------------------
 
 .. _`CCSDS 727.0-B-5`: https://public.ccsds.org/Pubs/727x0b5.pdf
