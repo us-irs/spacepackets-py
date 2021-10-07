@@ -9,7 +9,7 @@ from spacepackets.cfdp.pdu import PduHeader, PduType, TransmissionModes, Directi
     SegmentMetadataFlag, CrcFlag, SegmentationControl
 
 
-class TestCfdp(TestCase):
+class TestTlvsLvsHeader(TestCase):
 
     def test_tlvs(self):
         test_tlv = CfdpTlv(
@@ -116,7 +116,7 @@ class TestCfdp(TestCase):
         self.assertEqual(
             pdu_header.segmentation_control, SegmentationControl.NO_RECORD_BOUNDARIES_PRESERVATION
         )
-        self.assertEqual(pdu_header.get_packet_len(), 7)
+        self.assertEqual(pdu_header.get_header_len(), 7)
         pdu_header_packed = pdu_header.pack()
         self.check_fields_case_one(pdu_header_packed=pdu_header_packed)
         pdu_header_unpacked = PduHeader.unpack(raw_packet=pdu_header_packed)

@@ -91,7 +91,7 @@ class FileDataPdu:
     def unpack(cls, raw_packet: bytearray) -> FileDataPdu:
         file_data_packet = cls.__empty()
         file_data_packet.pdu_header.unpack(raw_packet=raw_packet)
-        current_idx = file_data_packet.pdu_header.get_packet_len()
+        current_idx = file_data_packet.pdu_header.get_header_len()
         if file_data_packet.pdu_header.segment_metadata_flag:
             file_data_packet.record_continuation_state = raw_packet[current_idx] & 0x80
             file_data_packet.segment_metadata_length = raw_packet[current_idx] & 0x3f

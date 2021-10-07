@@ -48,6 +48,7 @@ class FileDirectivePduBase:
             # PDU Header parameters
             trans_mode: TransmissionModes,
             transaction_seq_num: bytes,
+            directive_param_field_len: int,
             # Only used for PDU forwarding
             direction: Direction = Direction.TOWARDS_RECEIVER,
             source_entity_id: bytes = bytes(),
@@ -60,6 +61,8 @@ class FileDirectivePduBase:
         :param directive_code:
         :param direction:
         :param trans_mode:
+        :param directive_param_field_len: Length of the directive parameter field. The length of
+            the PDU data field will be this length plus the one octet / byte of the directive code
         :param transaction_seq_num:
         :param source_entity_id: If an empty bytearray is passed, the configured default value
             in the CFDP conf module will be used
@@ -72,6 +75,7 @@ class FileDirectivePduBase:
             direction=direction,
             trans_mode=trans_mode,
             crc_flag=crc_flag,
+            pdu_data_field_len=directive_param_field_len + 1,
             source_entity_id=source_entity_id,
             dest_entity_id=dest_entity_id,
             transaction_seq_num=transaction_seq_num,
@@ -79,6 +83,12 @@ class FileDirectivePduBase:
             segment_metadata_flag=SegmentMetadataFlag.NOT_PRESENT
         )
         self.directive_code = directive_code
+
+    def set_pdu_data_field_length(self, directive_param_field_len: int):
+        """Set the PDU data length field based on the length of the directive parameter field
+        The PDU dats field length is the length of the directive parameter field plus the one octet
+        of the directive code"""
+        self.pdu_header.set_pdu_data_field_length(new_length=directive_param_field_len + 1)
 
     def set_file_size(self, file_size: FileSize):
         self.pdu_header.set_file_size(file_size=file_size)
@@ -89,14 +99,20 @@ class FileDirectivePduBase:
             trans_mode=TransmissionModes.UNACKNOWLEDGED,
             crc_flag=CrcFlag.NO_CRC,
             directive_code=DirectiveCodes.NONE,
-            transaction_seq_num=bytes([0])
+            transaction_seq_num=bytes([0]),
+            source_entity_id=bytes([0]),
+            dest_entity_id=bytes([0]),
+            directive_param_field_len=0
         )
+
+    def get_header_len(self) -> int:
+        return self.pdu_header.get_header_len() + 1
 
     def get_packet_len(self) -> int:
         """Get length of the packet when packing it
         :return:
         """
-        return self.pdu_header.get_packet_len() + 1
+        return self.pdu_header.get_pdu_len()
 
     def pack(self) -> bytearray:
         data = bytearray()

@@ -52,7 +52,7 @@ class PduHeader:
             trans_mode: TransmissionModes,
             segment_metadata_flag: SegmentMetadataFlag,
             transaction_seq_num: bytes,
-            data_field_length: int = 0,
+            pdu_data_field_len: int,
             large_file: FileSize = FileSize.GLOBAL_CONFIG,
             direction: Direction = Direction.TOWARDS_RECEIVER,
             source_entity_id: bytes = bytes(),
@@ -78,7 +78,7 @@ class PduHeader:
         self.pdu_type = pdu_type
         self.direction = direction
         self.trans_mode = trans_mode
-        self.pdu_data_field_length = data_field_length
+        self.pdu_data_field_len = pdu_data_field_len
         self.segmentation_control = seg_ctrl
 
         self.source_entity_id = source_entity_id
@@ -156,11 +156,16 @@ class PduHeader:
         """
         if new_length > pow(2, 16) - 1:
             raise ValueError
-        self.pdu_data_field_length = new_length
+        self.pdu_data_field_len = new_length
 
-    def get_packet_len(self) -> int:
+    def get_header_len(self) -> int:
         """Get length of PDU header when packing it"""
         return self.FIXED_LENGTH + 2 * self.len_entity_id + self.len_transaction_seq_num
+
+    def get_pdu_len(self) -> int:
+        """Get the length of the full PDU. This assumes that the length of the PDU data field
+        length was already set"""
+        return self.pdu_data_field_len + self.get_header_len()
 
     def pack(self) -> bytearray:
         header = bytearray()
@@ -168,8 +173,8 @@ class PduHeader:
             self.VERSION_BITS | (self.pdu_type << 4) | (self.direction << 3) |
             (self.trans_mode << 2) | (self.crc_flag << 1) | self.large_file
         )
-        header.append((self.pdu_data_field_length >> 8) & 0xff)
-        header.append(self.pdu_data_field_length & 0xff)
+        header.append((self.pdu_data_field_len >> 8) & 0xff)
+        header.append(self.pdu_data_field_len & 0xff)
         header.append(
             self.segmentation_control << 7 | self.len_entity_id << 4 |
             self.segment_metadata_flag << 3 | self.len_transaction_seq_num
@@ -187,7 +192,8 @@ class PduHeader:
             source_entity_id=bytes([0]),
             dest_entity_id=bytes([0]),
             segment_metadata_flag=SegmentMetadataFlag.NOT_PRESENT,
-            transaction_seq_num=bytes([0])
+            transaction_seq_num=bytes([0]),
+            pdu_data_field_len=0
         )
 
     @classmethod
