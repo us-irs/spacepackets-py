@@ -1,6 +1,7 @@
 from unittest import TestCase
 from spacepackets.cfdp.pdu.ack import AckPdu, ConditionCode, DirectiveCodes, TransactionStatus, \
     TransmissionModes, CrcFlag
+from spacepackets.cfdp.pdu.nak import NakPdu
 from spacepackets.util import get_printable_data_string, PrintFormats
 
 
@@ -44,7 +45,6 @@ class TestPdus(TestCase):
         self.check_fields_packet_1(ack_pdu=ack_pdu_2)
         ack_pdu_raw = ack_pdu_2.pack()
         self.assertEqual(len(ack_pdu_raw), 19)
-        print(ack_pdu_raw.hex(sep=','))
         self.assertEqual(
             ack_pdu_raw,
             # 0x06 because this is the directive code of ACK PDUs
@@ -60,7 +60,7 @@ class TestPdus(TestCase):
                 0x06, 0x40, 0x11
             ])
         )
-
+        # Invalid directive code
         self.assertRaises(
             ValueError, AckPdu,
             directive_code_of_acked_pdu=DirectiveCodes.NAK_PDU,
@@ -111,3 +111,23 @@ class TestPdus(TestCase):
             ack_pdu.pdu_file_directive.pdu_header.trans_mode, TransmissionModes.UNACKNOWLEDGED
         )
         self.assertEqual(ack_pdu.get_packed_len(), 19)
+
+    def test_nak_pdu(self):
+        nak_pdu = NakPdu(
+            start_of_scope=0,
+            end_of_scope=200,
+            trans_mode=TransmissionModes.ACKNOWLEDGED,
+            transaction_seq_num=bytes([0x00, 0x01])
+        )
+
+    def test_finished_pdu(self):
+        pass
+
+    def test_keep_alive_pdu(self):
+        pass
+
+    def test_metadata_pdu(self):
+        pass
+
+    def test_prompt_pdu(self):
+        pass

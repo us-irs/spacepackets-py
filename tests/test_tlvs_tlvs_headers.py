@@ -101,6 +101,7 @@ class TestTlvsLvsHeader(TestCase):
             direction=Direction.TOWARDS_RECEIVER,
             segment_metadata_flag=SegmentMetadataFlag.NOT_PRESENT,
             transaction_seq_num=bytes([0]),
+            pdu_data_field_len=0,
             crc_flag=CrcFlag.NO_CRC,
             seg_ctrl=SegmentationControl.NO_RECORD_BOUNDARIES_PRESERVATION
         )
