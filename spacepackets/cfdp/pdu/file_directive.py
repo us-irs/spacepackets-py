@@ -106,6 +106,7 @@ class FileDirectivePduBase:
         )
 
     def get_header_len(self) -> int:
+        """Returns the lenght of the PDU header plus the directive code octet length"""
         return self.pdu_header.get_header_len() + 1
 
     def get_packet_len(self) -> int:
@@ -121,17 +122,20 @@ class FileDirectivePduBase:
         return data
 
     @classmethod
-    def unpack(cls, raw_packet: bytearray) -> FileDirectivePduBase:
+    def unpack(cls, raw_packet: bytes) -> FileDirectivePduBase:
         """Unpack a raw bytearray into the File Directive PDU object representation
         :param raw_packet: Unpack PDU file directive base
-        :raise ValueError: Passed bytearray is too short.
+        :raise ValueError: Passed bytearray is too short
         :return:
         """
         file_directive = cls.__empty()
         file_directive.pdu_header = PduHeader.unpack(raw_packet=raw_packet)
-        if not check_packet_length(raw_packet_len=len(raw_packet), min_len=5):
+        header_len = file_directive.pdu_header.get_header_len()
+        if not check_packet_length(
+                raw_packet_len=len(raw_packet), min_len=header_len
+        ):
             raise ValueError
-        file_directive.directive_code = raw_packet[4]
+        file_directive.directive_code = raw_packet[header_len]
         return file_directive
 
     def verify_file_len(self, file_size: int) -> bool:

@@ -197,7 +197,7 @@ class PduHeader:
         )
 
     @classmethod
-    def unpack(cls, raw_packet: bytearray) -> PduHeader:
+    def unpack(cls, raw_packet: bytes) -> PduHeader:
         """Unpack a raw bytearray into the PDU header object representation
 
         :param raw_packet:
@@ -214,7 +214,7 @@ class PduHeader:
         pdu_header.trans_mode = (raw_packet[0] & 0x04) >> 2
         pdu_header.crc_flag = (raw_packet[0] & 0x02) >> 1
         pdu_header.large_file = raw_packet[0] & 0x01
-        pdu_header.pdu_data_field_length = raw_packet[1] << 8 | raw_packet[2]
+        pdu_header.set_pdu_data_field_length(new_length=raw_packet[1] << 8 | raw_packet[2])
         pdu_header.segmentation_control = (raw_packet[3] & 0x80) >> 7
         pdu_header.len_entity_id = cls.check_len_in_bytes((raw_packet[3] & 0x70) >> 4)
         pdu_header.segment_metadata_flag = (raw_packet[3] & 0x08) >> 3
