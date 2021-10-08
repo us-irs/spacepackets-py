@@ -1,5 +1,4 @@
-from .header import PduHeader, PduType, Direction, TransmissionModes, CrcFlag, SegmentMetadataFlag, \
-    SegmentationControl
+from .header import PduHeader, PduType, SegmentMetadataFlag
 from .file_directive import FileDirectivePduBase, ConditionCode, DirectiveCodes
 from .ack import TransactionStatus, AckPdu
 from .eof import EofPdu

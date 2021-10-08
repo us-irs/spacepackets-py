@@ -1,9 +1,8 @@
 from __future__ import annotations
 import enum
 
-from spacepackets.cfdp.pdu.file_directive import FileDirectivePduBase, DirectiveCodes, Direction, \
-    TransmissionModes, CrcFlag, ConditionCode
-from spacepackets.cfdp.conf import check_packet_length
+from spacepackets.cfdp.pdu.file_directive import FileDirectivePduBase, DirectiveCodes, ConditionCode
+from spacepackets.cfdp.conf import check_packet_length, PduConfig
 from spacepackets.cfdp.tlv import CfdpTlv
 from spacepackets.log import get_console_logger
 from typing import List
@@ -27,14 +26,9 @@ class FinishedPdu:
 
     def __init__(
             self,
-            direction: Direction,
             delivery_code: DeliveryCode,
             file_delivery_status: FileDeliveryStatus,
-            trans_mode: TransmissionModes,
-            transaction_seq_num: bytes,
-            crc_flag: CrcFlag = CrcFlag.GLOBAL_CONFIG,
-            source_entity_id: bytes = bytes(),
-            dest_entity_id: bytes = bytes(),
+            pdu_conf: PduConfig,
             condition_code: ConditionCode = ConditionCode.NO_ERROR,
             file_store_responses: List[CfdpTlv] = None,
             fault_location: CfdpTlv = None,
@@ -42,12 +36,8 @@ class FinishedPdu:
     ):
         self.pdu_file_directive = FileDirectivePduBase(
             directive_code=DirectiveCodes.FINISHED_PDU,
-            direction=direction,
-            trans_mode=trans_mode,
-            crc_flag=crc_flag,
-            transaction_seq_num=transaction_seq_num,
-            source_entity_id=source_entity_id,
-            dest_entity_id=dest_entity_id
+            pdu_conf=pdu_conf,
+            directive_param_field_len=0
         )
         self.condition_code = condition_code
         self.delivery_code = delivery_code
@@ -64,13 +54,12 @@ class FinishedPdu:
 
     @classmethod
     def __empty(cls) -> FinishedPdu:
+        empty_conf = PduConfig.empty()
         return cls(
-            direction=Direction.TOWARDS_RECEIVER,
             delivery_code=DeliveryCode.DATA_INCOMPLETE,
             file_delivery_status=FileDeliveryStatus.FILE_STATUS_UNREPORTED,
-            trans_mode=TransmissionModes.UNACKNOWLEDGED,
             condition_code=ConditionCode.NO_ERROR,
-            transaction_seq_num=bytes([0]),
+            pdu_conf=empty_conf
         )
 
     def pack(self) -> bytearray:

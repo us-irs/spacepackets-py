@@ -1,6 +1,7 @@
 from unittest import TestCase
 from spacepackets.cfdp.pdu.ack import AckPdu, ConditionCode, DirectiveCodes, TransactionStatus, \
-    TransmissionModes, CrcFlag
+    CrcFlag
+from spacepackets.cfdp.conf import PduConfig, TransmissionModes
 from spacepackets.cfdp.pdu.nak import NakPdu
 from spacepackets.util import get_printable_data_string, PrintFormats
 
@@ -8,15 +9,18 @@ from spacepackets.util import get_printable_data_string, PrintFormats
 class TestPdus(TestCase):
 
     def test_ack_pdu(self):
-        ack_pdu = AckPdu(
-            directive_code_of_acked_pdu=DirectiveCodes.FINISHED_PDU,
-            condition_code_of_acked_pdu=ConditionCode.NO_ERROR,
-            transaction_status=TransactionStatus.TERMINATED,
+        pdu_conf = PduConfig(
             transaction_seq_num=bytes([0x00, 0x01]),
             source_entity_id=bytes([0x00, 0x00]),
             dest_entity_id=bytes([0x00, 0x01]),
             crc_flag=CrcFlag.NO_CRC,
             trans_mode=TransmissionModes.ACKNOWLEDGED
+        )
+        ack_pdu = AckPdu(
+            directive_code_of_acked_pdu=DirectiveCodes.FINISHED_PDU,
+            condition_code_of_acked_pdu=ConditionCode.NO_ERROR,
+            transaction_status=TransactionStatus.TERMINATED,
+            pdu_conf=pdu_conf
         )
         self.check_fields_packet_0(ack_pdu=ack_pdu)
         ack_pdu_raw = ack_pdu.pack()
@@ -32,15 +36,18 @@ class TestPdus(TestCase):
         ack_pdu_unpacked = AckPdu.unpack(raw_packet=ack_pdu_raw)
         self.check_fields_packet_0(ack_pdu=ack_pdu_unpacked)
 
-        ack_pdu_2 = AckPdu(
-            directive_code_of_acked_pdu=DirectiveCodes.EOF_PDU,
-            condition_code_of_acked_pdu=ConditionCode.POSITIVE_ACK_LIMIT_REACHED,
-            transaction_status=TransactionStatus.ACTIVE,
+        pdu_conf = PduConfig(
             transaction_seq_num=bytes([0x50, 0x00, 0x10, 0x01]),
             source_entity_id=bytes([0x10, 0x00, 0x01, 0x02]),
             dest_entity_id=bytes([0x30, 0x00, 0x01, 0x03]),
             crc_flag=CrcFlag.WITH_CRC,
             trans_mode=TransmissionModes.UNACKNOWLEDGED
+        )
+        ack_pdu_2 = AckPdu(
+            directive_code_of_acked_pdu=DirectiveCodes.EOF_PDU,
+            condition_code_of_acked_pdu=ConditionCode.POSITIVE_ACK_LIMIT_REACHED,
+            transaction_status=TransactionStatus.ACTIVE,
+            pdu_conf=pdu_conf
         )
         self.check_fields_packet_1(ack_pdu=ack_pdu_2)
         ack_pdu_raw = ack_pdu_2.pack()
@@ -61,16 +68,13 @@ class TestPdus(TestCase):
             ])
         )
         # Invalid directive code
+        pdu_conf = PduConfig.empty()
         self.assertRaises(
             ValueError, AckPdu,
             directive_code_of_acked_pdu=DirectiveCodes.NAK_PDU,
             condition_code_of_acked_pdu=ConditionCode.POSITIVE_ACK_LIMIT_REACHED,
             transaction_status=TransactionStatus.ACTIVE,
-            transaction_seq_num=bytes([0x50, 0x00, 0x10, 0x01]),
-            source_entity_id=bytes([0x10, 0x00, 0x01, 0x02]),
-            dest_entity_id=bytes([0x30, 0x00, 0x01, 0x03]),
-            crc_flag=CrcFlag.WITH_CRC,
-            trans_mode=TransmissionModes.UNACKNOWLEDGED
+            pdu_conf=pdu_conf
         )
 
     def check_fields_packet_0(self, ack_pdu: AckPdu):
@@ -78,16 +82,17 @@ class TestPdus(TestCase):
         self.assertEqual(ack_pdu.condition_code_of_acked_pdu, ConditionCode.NO_ERROR)
         self.assertEqual(ack_pdu.transaction_status, TransactionStatus.TERMINATED)
         self.assertEqual(
-            ack_pdu.pdu_file_directive.pdu_header.transaction_seq_num, bytes([0x00, 0x01])
+            ack_pdu.pdu_file_directive.pdu_header.pdu_conf.transaction_seq_num, bytes([0x00, 0x01])
         )
         self.assertEqual(
-            ack_pdu.pdu_file_directive.pdu_header.source_entity_id, bytes([0x00, 0x00])
+            ack_pdu.pdu_file_directive.pdu_header.pdu_conf.source_entity_id, bytes([0x00, 0x00])
         )
         self.assertEqual(
-            ack_pdu.pdu_file_directive.pdu_header.dest_entity_id, bytes([0x00, 0x01])
+            ack_pdu.pdu_file_directive.pdu_header.pdu_conf.dest_entity_id, bytes([0x00, 0x01])
         )
         self.assertEqual(
-            ack_pdu.pdu_file_directive.pdu_header.trans_mode, TransmissionModes.ACKNOWLEDGED
+            ack_pdu.pdu_file_directive.pdu_header.pdu_conf.trans_mode,
+            TransmissionModes.ACKNOWLEDGED
         )
         self.assertEqual(ack_pdu.get_packed_len(), 13)
 
@@ -102,22 +107,30 @@ class TestPdus(TestCase):
             bytes([0x50, 0x00, 0x10, 0x01])
         )
         self.assertEqual(
-            ack_pdu.pdu_file_directive.pdu_header.source_entity_id, bytes([0x10, 0x00, 0x01, 0x02])
+            ack_pdu.pdu_file_directive.pdu_header.pdu_conf.source_entity_id,
+            bytes([0x10, 0x00, 0x01, 0x02])
         )
         self.assertEqual(
-            ack_pdu.pdu_file_directive.pdu_header.dest_entity_id, bytes([0x30, 0x00, 0x01, 0x03])
+            ack_pdu.pdu_file_directive.pdu_header.pdu_conf.dest_entity_id,
+            bytes([0x30, 0x00, 0x01, 0x03])
         )
         self.assertEqual(
-            ack_pdu.pdu_file_directive.pdu_header.trans_mode, TransmissionModes.UNACKNOWLEDGED
+            ack_pdu.pdu_file_directive.pdu_header.pdu_conf.trans_mode,
+            TransmissionModes.UNACKNOWLEDGED
         )
         self.assertEqual(ack_pdu.get_packed_len(), 19)
 
     def test_nak_pdu(self):
+        pdu_conf = PduConfig(
+            trans_mode=TransmissionModes.ACKNOWLEDGED,
+            transaction_seq_num=bytes([0x00, 0x01]),
+            source_entity_id=bytes([0]),
+            dest_entity_id=bytes([0])
+        )
         nak_pdu = NakPdu(
             start_of_scope=0,
             end_of_scope=200,
-            trans_mode=TransmissionModes.ACKNOWLEDGED,
-            transaction_seq_num=bytes([0x00, 0x01])
+            pdu_conf=pdu_conf
         )
 
     def test_finished_pdu(self):

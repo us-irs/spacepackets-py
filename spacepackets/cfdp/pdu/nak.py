@@ -3,7 +3,7 @@ import struct
 from typing import List, Tuple
 
 from spacepackets.cfdp.pdu.file_directive import FileDirectivePduBase, DirectiveCodes, FileSize
-from spacepackets.cfdp.pdu.header import Direction, TransmissionModes, CrcFlag
+from spacepackets.cfdp.conf import PduConfig
 from spacepackets.log import get_console_logger
 
 
@@ -14,27 +14,16 @@ class NakPdu:
         self,
         start_of_scope: int,
         end_of_scope: int,
-        # PDU file directive arguments
-        trans_mode: TransmissionModes,
-        transaction_seq_num: bytes,
-        segment_requests: List[Tuple[int, int]] = None,
-        direction: Direction = Direction.TOWARDS_RECEIVER,
-        crc_flag: CrcFlag = CrcFlag.GLOBAL_CONFIG,
-        source_entity_id: bytes = bytes(),
-        dest_entity_id: bytes = bytes(),
+        pdu_conf: PduConfig,
+        segment_requests: List[Tuple[int, int]] = None
     ):
         """Create a NAK PDU object instance
 
         :param start_of_scope:
         :param end_of_scope:
-        :param trans_mode:
-        :param transaction_seq_num:
+        :param pdu_conf: Common PDU configuration
         :param segment_requests: A list of segment request pair tuples, where the first entry of
             list element is the start offset and the second entry is the end offset
-        :param direction:
-        :param crc_flag:
-        :param source_entity_id:
-        :param dest_entity_id:
         """
         if segment_requests is None:
             segment_requests = []
@@ -43,25 +32,20 @@ class NakPdu:
         directive_param_field_len = 8 + len(segment_requests) * 8
         self.pdu_file_directive = FileDirectivePduBase(
             directive_code=DirectiveCodes.ACK_PDU,
-            direction=direction,
-            trans_mode=trans_mode,
-            crc_flag=crc_flag,
-            transaction_seq_num=transaction_seq_num,
-            source_entity_id=source_entity_id,
-            dest_entity_id=dest_entity_id,
-            directive_param_field_len=directive_param_field_len
+            directive_param_field_len=directive_param_field_len,
+            pdu_conf=pdu_conf
         )
         self.start_of_scope = start_of_scope
         self.end_of_scope = end_of_scope
 
     @classmethod
     def __empty(cls) -> NakPdu:
+        empty_conf = PduConfig.empty()
         return cls(
-            trans_mode=TransmissionModes.UNACKNOWLEDGED,
             start_of_scope=0,
             end_of_scope=0,
             segment_requests=[],
-            transaction_seq_num=bytes([0]),
+            pdu_conf=empty_conf
         )
 
     def set_file_size(self, file_size: FileSize):

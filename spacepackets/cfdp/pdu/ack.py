@@ -3,7 +3,8 @@ import enum
 
 from spacepackets.cfdp.pdu.file_directive import FileDirectivePduBase, DirectiveCodes, \
     ConditionCode
-from spacepackets.cfdp.pdu.header import Direction, TransmissionModes, CrcFlag
+from spacepackets.cfdp.pdu.header import CrcFlag
+from spacepackets.cfdp.conf import PduConfig
 
 
 class TransactionStatus(enum.IntEnum):
@@ -22,37 +23,20 @@ class AckPdu:
         directive_code_of_acked_pdu: DirectiveCodes,
         condition_code_of_acked_pdu: ConditionCode,
         transaction_status: TransactionStatus,
-        trans_mode: TransmissionModes,
-        transaction_seq_num: bytes,
-        direction: Direction = Direction.TOWARDS_RECEIVER,
-        source_entity_id: bytes = bytes(),
-        dest_entity_id: bytes = bytes(),
-        crc_flag: CrcFlag = CrcFlag.GLOBAL_CONFIG,
+        pdu_conf: PduConfig
     ):
         """Construct a ACK PDU object
 
         :param directive_code_of_acked_pdu:
         :param condition_code_of_acked_pdu:
         :param transaction_status:
-        :param direction:
-        :param trans_mode:
-        :param transaction_seq_num:
-        :param source_entity_id: If an empty bytearray is passed, the configured default value
-            in the CFDP conf module will be used
-        :param dest_entity_id: If an empty bytearray is passed, the configured default value
-            in the CFDP conf module will be used
-        :param crc_flag:
+        :param pdu_conf: PDU configuration parameters
         :raises ValueError: Directive code invalid. Only EOF and Finished PDUs can be acknowledged
         """
         self.pdu_file_directive = FileDirectivePduBase(
             directive_code=DirectiveCodes.ACK_PDU,
-            direction=direction,
-            trans_mode=trans_mode,
-            crc_flag=crc_flag,
-            transaction_seq_num=transaction_seq_num,
-            source_entity_id=source_entity_id,
             directive_param_field_len=2,
-            dest_entity_id=dest_entity_id
+            pdu_conf=pdu_conf
         )
         if directive_code_of_acked_pdu not in [DirectiveCodes.FINISHED_PDU, DirectiveCodes.EOF_PDU]:
             raise ValueError
@@ -70,16 +54,13 @@ class AckPdu:
 
     @classmethod
     def __empty(cls) -> AckPdu:
+        empty_conf = PduConfig.empty()
         return cls(
             # Still set valid directive code, otherwise ctor will explode
             directive_code_of_acked_pdu=DirectiveCodes.FINISHED_PDU,
             condition_code_of_acked_pdu=ConditionCode.NO_ERROR,
             transaction_status=TransactionStatus.UNDEFINED,
-            direction=Direction.TOWARDS_SENDER,
-            trans_mode=TransmissionModes.UNACKNOWLEDGED,
-            transaction_seq_num=bytes([0]),
-            source_entity_id=bytes([0]),
-            dest_entity_id=bytes([0])
+            pdu_conf=empty_conf
         )
 
     def pack(self) -> bytearray:

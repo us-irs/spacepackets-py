@@ -2,6 +2,39 @@ import enum
 import struct
 
 
+class PduType(enum.IntEnum):
+    FILE_DIRECTIVE = 0
+    FILE_DATA = 1
+
+
+class Direction(enum.IntEnum):
+    TOWARDS_RECEIVER = 0
+    TOWARDS_SENDER = 1
+
+
+class TransmissionModes(enum.IntEnum):
+    ACKNOWLEDGED = 0
+    UNACKNOWLEDGED = 1
+
+
+class CrcFlag(enum.IntEnum):
+    NO_CRC = 0
+    WITH_CRC = 1
+    GLOBAL_CONFIG = 2
+
+
+class SegmentMetadataFlag(enum.IntEnum):
+    """Aways 0 and ignored for File Directive PDUs (CCSDS 727.0-B-5 p.75)"""
+    NOT_PRESENT = 0
+    PRESENT = 1
+
+
+class SegmentationControl(enum.IntEnum):
+    """Always 0 and ignored for File Directive PDUs (CCSDS 727.0-B-5 p.75)"""
+    NO_RECORD_BOUNDARIES_PRESERVATION = 0
+    RECORD_BOUNDARIES_PRESERVATION = 1
+
+
 class LenInBytes(enum.IntEnum):
     ONE_BYTE = 1
     TWO_BYTES = 2

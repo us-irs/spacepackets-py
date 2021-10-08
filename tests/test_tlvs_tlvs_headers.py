@@ -5,8 +5,9 @@ from spacepackets.cfdp.definitions import FileSize
 from spacepackets.cfdp.tlv import CfdpTlv, TlvTypes
 from spacepackets.cfdp.lv import CfdpLv
 from spacepackets.cfdp.definitions import LenInBytes, get_transaction_seq_num_as_bytes
-from spacepackets.cfdp.pdu import PduHeader, PduType, TransmissionModes, Direction, \
-    SegmentMetadataFlag, CrcFlag, SegmentationControl
+from spacepackets.cfdp.pdu import PduHeader, PduType, SegmentMetadataFlag
+from spacepackets.cfdp.conf import PduConfig, TransmissionModes, Direction, CrcFlag, \
+    SegmentationControl
 
 
 class TestTlvsLvsHeader(TestCase):
@@ -93,17 +94,20 @@ class TestTlvsLvsHeader(TestCase):
         self.assertRaises(
             ValueError, get_transaction_seq_num_as_bytes, 900, LenInBytes.ONE_BYTE
         )
-        pdu_header = PduHeader(
-            pdu_type=PduType.FILE_DIRECTIVE,
+        pdu_conf = PduConfig(
             source_entity_id=bytes([0]),
             dest_entity_id=bytes([0]),
             trans_mode=TransmissionModes.ACKNOWLEDGED,
             direction=Direction.TOWARDS_RECEIVER,
-            segment_metadata_flag=SegmentMetadataFlag.NOT_PRESENT,
-            transaction_seq_num=bytes([0]),
-            pdu_data_field_len=0,
             crc_flag=CrcFlag.NO_CRC,
-            seg_ctrl=SegmentationControl.NO_RECORD_BOUNDARIES_PRESERVATION
+            seg_ctrl=SegmentationControl.NO_RECORD_BOUNDARIES_PRESERVATION,
+            transaction_seq_num=bytes([0])
+        )
+        pdu_header = PduHeader(
+            pdu_type=PduType.FILE_DIRECTIVE,
+            segment_metadata_flag=SegmentMetadataFlag.NOT_PRESENT,
+            pdu_data_field_len=0,
+            pdu_conf=pdu_conf
         )
         self.assertEqual(pdu_header.pdu_type, PduType.FILE_DIRECTIVE)
         self.assertEqual(pdu_header.source_entity_id, bytes([0]))
@@ -115,7 +119,7 @@ class TestTlvsLvsHeader(TestCase):
         self.assertEqual(pdu_header.len_transaction_seq_num, 1)
         self.assertEqual(pdu_header.crc_flag, CrcFlag.NO_CRC)
         self.assertEqual(
-            pdu_header.segmentation_control, SegmentationControl.NO_RECORD_BOUNDARIES_PRESERVATION
+            pdu_header.seg_ctrl, SegmentationControl.NO_RECORD_BOUNDARIES_PRESERVATION
         )
         self.assertEqual(pdu_header.get_header_len(), 7)
         pdu_header_packed = pdu_header.pack()
@@ -126,15 +130,15 @@ class TestTlvsLvsHeader(TestCase):
 
         pdu_header.pdu_type = PduType.FILE_DATA
         pdu_header.set_entity_ids(source_entity_id=bytes([0, 0]), dest_entity_id=bytes([0, 1]))
-        pdu_header.set_transaction_seq_num(
-            get_transaction_seq_num_as_bytes(300, byte_length=LenInBytes.TWO_BYTES)
+        pdu_header.transaction_seq_num = get_transaction_seq_num_as_bytes(
+            300, byte_length=LenInBytes.TWO_BYTES
         )
         pdu_header.trans_mode = TransmissionModes.UNACKNOWLEDGED
         pdu_header.direction = Direction.TOWARDS_SENDER
-        pdu_header.set_crc_flag(crc_flag=CrcFlag.WITH_CRC)
-        pdu_header.set_file_size(file_size=FileSize.LARGE)
-        pdu_header.set_pdu_data_field_length(new_length=300)
-        pdu_header.segmentation_control = SegmentationControl.RECORD_BOUNDARIES_PRESERVATION
+        pdu_header.crc_flag = CrcFlag.WITH_CRC
+        pdu_header.file_size = FileSize.LARGE
+        pdu_header.pdu_data_field_len = 300
+        pdu_header.seg_ctrl = SegmentationControl.RECORD_BOUNDARIES_PRESERVATION
         pdu_header.segment_metadata_flag = SegmentMetadataFlag.PRESENT
 
         pdu_header_packed = pdu_header.pack()
@@ -148,12 +152,10 @@ class TestTlvsLvsHeader(TestCase):
         self.assertRaises(
             ValueError, pdu_header.set_entity_ids, bytes([0, 1, 2, 8]), bytes([2, 3])
         )
-        self.assertRaises(
-            ValueError, pdu_header.set_transaction_seq_num, bytes([0, 1, 2])
-        )
-        self.assertRaises(
-            ValueError, pdu_header.set_pdu_data_field_length, 78292
-        )
+        with self.assertRaises(ValueError):
+            pdu_header.transaction_seq_num = bytes([0, 1, 2])
+        with self.assertRaises(ValueError):
+            pdu_header.pdu_data_field_len = 78292
         invalid_pdu_header = bytearray([0, 1, 2])
         self.assertRaises(ValueError, PduHeader.unpack, invalid_pdu_header)
         self.assertRaises(ValueError, PduHeader.unpack, pdu_header_packed[0:6])

@@ -1,6 +1,37 @@
+from __future__ import annotations
+from dataclasses import dataclass
 from typing import TypedDict, Tuple
-from spacepackets.cfdp.definitions import FileSize
+
+from spacepackets.cfdp.definitions import FileSize, TransmissionModes, CrcFlag, \
+    SegmentationControl, Direction
 from spacepackets.log import get_console_logger
+
+
+@dataclass
+class PduConfig:
+    """Common configuration fields for a PDU.
+
+    The default values for source entity ID and destination entity ID are the the GLOBAL_CONFIG
+    equivalent which should cause the header implementation to assume a globally configured
+    default value.
+    """
+    transaction_seq_num: bytes
+    trans_mode: TransmissionModes
+    file_size: FileSize = FileSize.GLOBAL_CONFIG
+    crc_flag: CrcFlag = CrcFlag.GLOBAL_CONFIG
+    direction: Direction = Direction.TOWARDS_RECEIVER
+    seg_ctrl: SegmentationControl = SegmentationControl.NO_RECORD_BOUNDARIES_PRESERVATION
+    source_entity_id: bytes = bytes()
+    dest_entity_id: bytes = bytes()
+
+    @classmethod
+    def empty(cls) -> PduConfig:
+        return PduConfig(
+            transaction_seq_num=bytes([0]),
+            trans_mode=TransmissionModes.UNACKNOWLEDGED,
+            source_entity_id=bytes([0]),
+            dest_entity_id=bytes([0])
+        )
 
 
 class CfdpDict(TypedDict):

@@ -3,7 +3,7 @@ import struct
 from typing import List
 
 from spacepackets.cfdp.pdu.file_directive import FileDirectivePduBase, DirectiveCodes
-from spacepackets.cfdp.pdu.header import Direction, TransmissionModes, CrcFlag
+from spacepackets.cfdp.conf import PduConfig
 from spacepackets.cfdp.tlv import CfdpTlv
 from spacepackets.cfdp.lv import CfdpLv
 from spacepackets.cfdp.definitions import ChecksumTypes
@@ -21,22 +21,13 @@ class MetadataPdu:
         file_size: int,
         source_file_name: str,
         dest_file_name: str,
-        trans_mode: TransmissionModes,
-        transaction_seq_num: bytes,
+        pdu_conf: PduConfig,
         options: List[CfdpTlv] = None,
-        direction: Direction = Direction.TOWARDS_RECEIVER,
-        crc_flag: CrcFlag = CrcFlag.GLOBAL_CONFIG,
-        source_entity_id: bytes = bytes(),
-        dest_entity_id: bytes = bytes(),
     ):
         self.pdu_file_directive = FileDirectivePduBase(
             directive_code=DirectiveCodes.METADATA_PDU,
-            direction=direction,
-            trans_mode=trans_mode,
-            crc_flag=crc_flag,
-            transaction_seq_num=transaction_seq_num,
-            source_entity_id=source_entity_id,
-            dest_entity_id=dest_entity_id
+            pdu_conf=pdu_conf,
+            directive_param_field_len=0
         )
         self.closure_requested = closure_requested
         self.checksum_type = checksum_type
@@ -56,14 +47,14 @@ class MetadataPdu:
 
     @classmethod
     def __empty(cls) -> MetadataPdu:
+        empty_conf = PduConfig.empty()
         return cls(
             closure_requested=False,
             checksum_type=ChecksumTypes.MODULAR_LEGACY,
             file_size=0,
             source_file_name="",
             dest_file_name="",
-            trans_mode=TransmissionModes.UNACKNOWLEDGED,
-            transaction_seq_num=bytes([0]),
+            pdu_conf=empty_conf
         )
 
     def pack(self):
