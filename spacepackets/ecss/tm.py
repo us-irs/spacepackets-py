@@ -151,13 +151,15 @@ class PusTelemetry:
                f"subservice={self.secondary_packet_header.subservice_id!r}, " \
                f"apid={self.get_apid()!r}, ssc={self.get_ssc()!r})"
 
-    def get_service(self) -> int:
+    @property
+    def service(self) -> int:
         """Get the service type ID
         :return: Service ID
         """
         return self.secondary_packet_header.service_id
 
-    def get_subservice(self) -> int:
+    @property
+    def subservice(self) -> int:
         """Get the subservice type ID
         :return: Subservice ID
         """
