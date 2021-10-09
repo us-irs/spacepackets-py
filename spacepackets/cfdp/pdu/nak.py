@@ -128,13 +128,12 @@ class NakPdu(IsFileDirective):
         if current_idx < len(raw_packet):
             packet_size_check = ((len(raw_packet) - current_idx) % (struct_arg_tuple[1] * 2))
             if packet_size_check != 0:
-                if current_idx >= len(raw_packet):
-                    logger = get_console_logger()
-                    logger.warning(
-                        f'Invalid size for remaining data, '
-                        f'which should be a multiple of {struct_arg_tuple[1] * 2}'
-                    )
-                    raise ValueError
+                logger = get_console_logger()
+                logger.warning(
+                    f'Invalid size for remaining data, '
+                    f'which should be a multiple of {struct_arg_tuple[1] * 2}'
+                )
+                raise ValueError
             segment_requests = []
             while current_idx < len(raw_packet):
                 start_of_segment = struct.unpack(

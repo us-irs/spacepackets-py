@@ -184,7 +184,7 @@ class TestPdus(TestCase):
         nak_unpacked = NakPdu.unpack(raw_packet=nak_packed)
         self.assertEqual(nak_unpacked.pack(), nak_packed)
         nak_repacked.append(0)
-        self.assertRaises(ValueError, NakPdu.unpack)
+        self.assertRaises(ValueError, NakPdu.unpack, raw_packet=nak_repacked)
         nak_pdu.segment_requests = []
         self.assertEqual(nak_pdu.packet_len, 59 - 32)
         nak_packed = nak_pdu.pack()
