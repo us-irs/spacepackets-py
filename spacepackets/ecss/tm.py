@@ -36,7 +36,7 @@ class PusTelemetry:
             source_data: bytearray = bytearray([]), apid: int = -1, message_counter: int = 0,
             space_time_ref: int = 0b0000, destination_id: int = 0,
             packet_version: int = 0b000, pus_version: PusVersion = PusVersion.GLOBAL_CONFIG,
-            ack: int = 0b1111, secondary_header_flag: bool = True,
+            secondary_header_flag: bool = True,
     ):
         if apid == -1:
             apid = get_default_tm_apid()
@@ -149,7 +149,7 @@ class PusTelemetry:
     def __repr__(self):
         return f"{self.__class__.__name__}(service={self.secondary_packet_header.service_id!r}, " \
                f"subservice={self.secondary_packet_header.subservice_id!r}, " \
-               f"apid={self.get_apid()!r}, ssc={self.get_ssc()!r})"
+               f"apid={self.apid!r}, ssc={self.ssc!r})"
 
     @property
     def service(self) -> int:
@@ -165,16 +165,19 @@ class PusTelemetry:
         """
         return self.secondary_packet_header.subservice_id
 
-    def is_valid(self) -> bool:
+    @property
+    def valid(self) -> bool:
         return self._valid
 
-    def get_tm_data(self) -> bytearray:
+    @property
+    def tm_data(self) -> bytearray:
         """
         :return: TM application data (raw)
         """
         return self._source_data
 
-    def get_packet_id(self) -> int:
+    @property
+    def packet_id(self) -> int:
         return self.space_packet_header.packet_id
 
     def __perform_crc_check(self, raw_telemetry: bytes):
@@ -223,16 +226,19 @@ class PusTelemetry:
         """
         return self.space_packet_header.get_packet_size()
 
-    def get_apid(self) -> int:
+    @property
+    def apid(self) -> int:
         return self.space_packet_header.apid
 
-    def get_ssc(self) -> int:
+    @property
+    def ssc(self) -> int:
         """Get the source sequence count
         :return: Source Sequence Count (see below, or PUS documentation)
         """
         return self.space_packet_header.ssc
 
-    def get_crc(self) -> int:
+    @property
+    def crc16(self) -> int:
         return self._crc16
 
     def get_full_packet_string(self, print_format: PrintFormats) -> str:
