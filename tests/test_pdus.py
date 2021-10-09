@@ -1,7 +1,7 @@
 from unittest import TestCase
 from spacepackets.cfdp.pdu.ack import AckPdu, ConditionCode, DirectiveCodes, TransactionStatus, \
     CrcFlag
-from spacepackets.cfdp.conf import PduConfig, TransmissionModes
+from spacepackets.cfdp.conf import PduConfig, TransmissionModes, Direction, FileSize
 from spacepackets.cfdp.pdu.nak import NakPdu
 from spacepackets.util import get_printable_data_string, PrintFormats
 
@@ -94,7 +94,7 @@ class TestPdus(TestCase):
             ack_pdu.pdu_file_directive.pdu_header.pdu_conf.trans_mode,
             TransmissionModes.ACKNOWLEDGED
         )
-        self.assertEqual(ack_pdu.get_packed_len(), 13)
+        self.assertEqual(ack_pdu.packed_len, 13)
 
     def check_fields_packet_1(self, ack_pdu: AckPdu):
         self.assertEqual(ack_pdu.directive_code_of_acked_pdu, DirectiveCodes.EOF_PDU)
@@ -118,20 +118,82 @@ class TestPdus(TestCase):
             ack_pdu.pdu_file_directive.pdu_header.pdu_conf.trans_mode,
             TransmissionModes.UNACKNOWLEDGED
         )
-        self.assertEqual(ack_pdu.get_packed_len(), 19)
+        self.assertEqual(ack_pdu.packed_len, 19)
 
     def test_nak_pdu(self):
         pdu_conf = PduConfig(
             trans_mode=TransmissionModes.ACKNOWLEDGED,
             transaction_seq_num=bytes([0x00, 0x01]),
-            source_entity_id=bytes([0]),
-            dest_entity_id=bytes([0])
+            source_entity_id=bytes([0x00, 0x00]),
+            dest_entity_id=bytes([0x00, 0x01])
         )
         nak_pdu = NakPdu(
             start_of_scope=0,
             end_of_scope=200,
             pdu_conf=pdu_conf
         )
+        self.assertEqual(nak_pdu.segment_requests, [])
+        pdu_header = nak_pdu.pdu_file_directive.pdu_header
+        self.assertEqual(pdu_header.direction, Direction.TOWARDS_RECEIVER)
+        # Start of scope (4) + end of scope (4) + directive code
+        self.assertEqual(pdu_header.pdu_data_field_len, 8 + 1)
+        self.assertEqual(pdu_header.file_size, FileSize.NORMAL)
+        self.assertEqual(pdu_header.trans_mode, TransmissionModes.ACKNOWLEDGED)
+        self.assertEqual(nak_pdu.file_size, FileSize.NORMAL)
+        self.assertEqual(nak_pdu.packet_len, 19)
+        nak_packed = nak_pdu.pack()
+        self.assertEqual(len(nak_packed), 19)
+        nak_pdu.file_size = FileSize.LARGE
+        self.assertEqual(pdu_header.file_size, FileSize.LARGE)
+        self.assertEqual(nak_pdu.file_size, FileSize.LARGE)
+        self.assertEqual(nak_pdu.packet_len, 27)
+        nak_packed = nak_pdu.pack()
+        self.assertEqual(len(nak_packed), 27)
+
+        nak_pdu.file_size = FileSize.NORMAL
+        self.assertEqual(pdu_header.file_size, FileSize.NORMAL)
+        self.assertEqual(nak_pdu.file_size, FileSize.NORMAL)
+        self.assertEqual(nak_pdu.packet_len, 19)
+        nak_packed = nak_pdu.pack()
+        self.assertEqual(len(nak_packed), 19)
+
+        nak_pdu.start_of_scope = pow(2, 32) + 1
+        nak_pdu.end_of_scope = pow(2, 32) + 1
+        self.assertRaises(ValueError, nak_pdu.pack)
+
+        nak_pdu.start_of_scope = 0
+        nak_pdu.end_of_scope = 200
+        segment_requests = [(20, 40), (60, 80)]
+        nak_pdu.segment_requests = segment_requests
+        self.assertEqual(nak_pdu.segment_requests, segment_requests)
+        # Additional 2 segment requests, each has size 8
+        self.assertEqual(nak_pdu.packet_len, 35)
+        nak_packed = nak_pdu.pack()
+        self.assertEqual(len(nak_packed), 35)
+        nak_unpacked = NakPdu.unpack(raw_packet=nak_packed)
+        self.assertEqual(nak_unpacked.pack(), nak_packed)
+
+        nak_pdu.file_size = FileSize.LARGE
+        # 2 segment requests with size 16 each plus 16 for start and end of scope
+        self.assertEqual(nak_pdu.pdu_file_directive.pdu_header.header_len, 10)
+        self.assertEqual(nak_pdu.pdu_file_directive.header_len, 11)
+        self.assertEqual(nak_pdu.packet_len, 11 + 48)
+        nak_packed = nak_pdu.pack()
+        self.assertEqual(len(nak_packed), 59)
+        nak_repacked = nak_unpacked.pack()
+        nak_unpacked = NakPdu.unpack(raw_packet=nak_packed)
+        self.assertEqual(nak_unpacked.pack(), nak_packed)
+        nak_repacked.append(0)
+        self.assertRaises(ValueError, NakPdu.unpack)
+        nak_pdu.segment_requests = []
+        self.assertEqual(nak_pdu.packet_len, 59 - 32)
+        nak_packed = nak_pdu.pack()
+        self.assertEqual(len(nak_packed), 59 - 32)
+
+        nak_pdu.file_size = FileSize.NORMAL
+        segment_requests = [(pow(2, 32) + 1, 40), (60, 80)]
+        nak_pdu.segment_requests = segment_requests
+        self.assertRaises(ValueError, nak_pdu.pack)
 
     def test_finished_pdu(self):
         pass

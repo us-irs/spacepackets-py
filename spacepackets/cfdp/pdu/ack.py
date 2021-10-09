@@ -49,8 +49,9 @@ class AckPdu:
         self.condition_code_of_acked_pdu = condition_code_of_acked_pdu
         self.transaction_status = transaction_status
 
-    def get_packed_len(self) -> int:
-        return self.pdu_file_directive.get_packet_len()
+    @property
+    def packed_len(self) -> int:
+        return self.pdu_file_directive.packet_len
 
     @classmethod
     def __empty(cls) -> AckPdu:
@@ -73,7 +74,7 @@ class AckPdu:
     def unpack(cls, raw_packet: bytearray) -> AckPdu:
         ack_packet = cls.__empty()
         ack_packet.pdu_file_directive = FileDirectivePduBase.unpack(raw_packet=raw_packet)
-        current_idx = ack_packet.pdu_file_directive.get_header_len()
+        current_idx = ack_packet.pdu_file_directive.header_len
         ack_packet.directive_code_of_acked_pdu = (raw_packet[current_idx] & 0xf0) >> 4
         ack_packet.directive_subtype_code = raw_packet[current_idx] & 0x0f
         current_idx += 1

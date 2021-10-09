@@ -61,7 +61,7 @@ class MetadataPdu:
         if not self.pdu_file_directive.verify_file_len(self.file_size):
             raise ValueError
         packet = self.pdu_file_directive.pack()
-        current_idx = self.pdu_file_directive.get_packet_len()
+        current_idx = self.pdu_file_directive.packet_len
         packet.append((self.closure_requested << 6) | self.checksum_type)
         if self.pdu_file_directive.pdu_header.large_file:
             packet.extend(struct.pack('!Q', self.file_size))
@@ -76,7 +76,7 @@ class MetadataPdu:
     def unpack(cls, raw_packet: bytearray) -> MetadataPdu:
         metadata_pdu = cls.__empty()
         metadata_pdu.pdu_file_directive = FileDirectivePduBase.unpack(raw_packet=raw_packet)
-        current_idx = metadata_pdu.pdu_file_directive.get_packet_len()
+        current_idx = metadata_pdu.pdu_file_directive.packet_len
         # Minimal length: 1 byte + FSS (4 byte) + 2 empty LV (1 byte)
         if not check_packet_length(len(raw_packet), current_idx + 7):
             raise ValueError

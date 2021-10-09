@@ -30,7 +30,6 @@ class PduHeader:
         """
         self.pdu_type = pdu_type
         self.pdu_conf = pdu_conf
-        self._pdu_data_field_len = None
         self.pdu_data_field_len = pdu_data_field_len
 
         self.len_entity_id = 0
@@ -119,10 +118,6 @@ class PduHeader:
             self.pdu_conf.crc_flag = crc_flag
 
     @property
-    def pdu_data_field_len(self):
-        return self._pdu_data_field_len
-
-    @property
     def trans_mode(self):
         return self.pdu_conf.trans_mode
 
@@ -146,6 +141,10 @@ class PduHeader:
     def seg_ctrl(self, seg_ctrl: SegmentationControl):
         self.pdu_conf.seg_ctrl = seg_ctrl
 
+    @property
+    def pdu_data_field_len(self):
+        return self._pdu_data_field_len
+
     @pdu_data_field_len.setter
     def pdu_data_field_len(self, new_len: int):
         """Set the PDU data field length
@@ -157,14 +156,16 @@ class PduHeader:
             raise ValueError
         self._pdu_data_field_len = new_len
 
-    def get_header_len(self) -> int:
+    @property
+    def header_len(self) -> int:
         """Get length of PDU header when packing it"""
         return self.FIXED_LENGTH + 2 * self.len_entity_id + self.len_transaction_seq_num
 
-    def get_pdu_len(self) -> int:
+    @property
+    def pdu_len(self) -> int:
         """Get the length of the full PDU. This assumes that the length of the PDU data field
         length was already set"""
-        return self.pdu_data_field_len + self.get_header_len()
+        return self.pdu_data_field_len + self.header_len
 
     def is_large_file(self) -> bool:
         if self.pdu_conf.file_size == FileSize.LARGE:
@@ -217,7 +218,7 @@ class PduHeader:
         pdu_header.direction = (raw_packet[0] & 0x08) >> 3
         pdu_header.trans_mode = (raw_packet[0] & 0x04) >> 2
         pdu_header.crc_flag = (raw_packet[0] & 0x02) >> 1
-        pdu_header.large_file = raw_packet[0] & 0x01
+        pdu_header.file_size = raw_packet[0] & 0x01
         pdu_header.pdu_data_field_len = raw_packet[1] << 8 | raw_packet[2]
         pdu_header.segmentation_control = (raw_packet[3] & 0x80) >> 7
         pdu_header.len_entity_id = cls.check_len_in_bytes((raw_packet[3] & 0x70) >> 4)
@@ -252,3 +253,37 @@ class PduHeader:
             )
             raise ValueError
         return len_in_bytes
+
+
+class HasPduHeader:
+    """Encapsulate common functions for classes which have a PDU header"""
+    def __init__(self, pdu_header: PduHeader):
+        self.pdu_header = pdu_header
+
+    @property
+    def file_size(self):
+        return self.pdu_header.file_size
+
+    @file_size.setter
+    def file_size(self, file_size: FileSize):
+        self.pdu_header.file_size = file_size
+
+    @property
+    def source_entity_id(self):
+        return self.pdu_header.source_entity_id
+
+    @property
+    def dest_entity_id(self):
+        return self.pdu_header.dest_entity_id
+
+    @property
+    def packet_len(self):
+        return self.pdu_header.pdu_len
+
+    @property
+    def crc_flag(self):
+        return self.pdu_header.crc_flag
+
+    @crc_flag.setter
+    def crc_flag(self, crc_flag: CrcFlag):
+        self.pdu_header.crc_flag = crc_flag

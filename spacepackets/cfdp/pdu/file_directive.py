@@ -2,7 +2,7 @@ from __future__ import annotations
 import enum
 import struct
 
-from spacepackets.cfdp.pdu.header import PduHeader, PduType, SegmentMetadataFlag
+from spacepackets.cfdp.pdu.header import PduHeader, PduType, SegmentMetadataFlag, HasPduHeader
 from spacepackets.cfdp.definitions import FileSize
 from spacepackets.cfdp.conf import check_packet_length, PduConfig
 from spacepackets.log import get_console_logger
@@ -69,7 +69,15 @@ class FileDirectivePduBase:
         return self.pdu_header.pdu_data_field_len
 
     @pdu_data_field_len.setter
-    def pdu_data_field_len(self, directive_param_field_len: int):
+    def pdu_data_field_len(self, pdu_data_field_len: int):
+        self.pdu_header.pdu_data_field_len = pdu_data_field_len
+
+    @property
+    def directive_param_field_len(self):
+        return self.pdu_header.pdu_data_field_len - 1
+
+    @directive_param_field_len.setter
+    def directive_param_field_len(self, directive_param_field_len: int):
         self.pdu_header.pdu_data_field_len = directive_param_field_len + 1
 
     def is_large_file(self):
@@ -84,15 +92,17 @@ class FileDirectivePduBase:
             pdu_conf=empty_conf
         )
 
-    def get_header_len(self) -> int:
-        """Returns the lenght of the PDU header plus the directive code octet length"""
-        return self.pdu_header.get_header_len() + 1
+    @property
+    def header_len(self) -> int:
+        """Returns the length of the PDU header plus the directive code octet length"""
+        return self.pdu_header.header_len + 1
 
-    def get_packet_len(self) -> int:
+    @property
+    def packet_len(self) -> int:
         """Get length of the packet when packing it
         :return:
         """
-        return self.pdu_header.get_pdu_len()
+        return self.pdu_header.pdu_len
 
     def pack(self) -> bytearray:
         data = bytearray()
@@ -109,7 +119,7 @@ class FileDirectivePduBase:
         """
         file_directive = cls.__empty()
         file_directive.pdu_header = PduHeader.unpack(raw_packet=raw_packet)
-        header_len = file_directive.pdu_header.get_header_len()
+        header_len = file_directive.pdu_header.header_len
         if not check_packet_length(
                 raw_packet_len=len(raw_packet), min_len=header_len
         ):
@@ -144,3 +154,10 @@ class FileDirectivePduBase:
             file_size = struct.unpack('!I', raw_packet[current_idx: current_idx + 4])
             current_idx += 4
         return current_idx, file_size
+
+
+class IsFileDirective(HasPduHeader):
+    """Encapsulate common functions for classes which are FileDirectives"""
+    def __init__(self, pdu_file_directive: FileDirectivePduBase):
+        self.pdu_file_directive = pdu_file_directive
+        HasPduHeader.__init__(self, pdu_header=pdu_file_directive.pdu_header)

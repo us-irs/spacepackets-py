@@ -3,6 +3,7 @@ import enum
 
 from spacepackets.cfdp.pdu.file_directive import FileDirectivePduBase, DirectiveCodes
 from spacepackets.cfdp.conf import PduConfig
+from spacepackets.cfdp.pdu import IsFileDirective
 
 
 class ResponseRequired(enum.IntEnum):
@@ -10,7 +11,7 @@ class ResponseRequired(enum.IntEnum):
     KEEP_ALIVE = 1
 
 
-class PromptPdu:
+class PromptPdu(IsFileDirective):
     """Encapsulates the Prompt file directive PDU, see CCSDS 727.0-B-5 p.84"""
 
     def __init__(
@@ -23,6 +24,7 @@ class PromptPdu:
             pdu_conf=pdu_conf,
             directive_param_field_len=0
         )
+        IsFileDirective.__init__(self, pdu_file_directive=self.pdu_file_directive)
         self.response_required = reponse_required
 
     @classmethod
@@ -42,6 +44,6 @@ class PromptPdu:
     def unpack(cls, raw_packet: bytearray) -> PromptPdu:
         prompt_pdu = cls.__empty()
         prompt_pdu.pdu_file_directive = FileDirectivePduBase.unpack(raw_packet=raw_packet)
-        current_idx = prompt_pdu.pdu_file_directive.get_packet_len()
+        current_idx = prompt_pdu.pdu_file_directive.packet_len
         prompt_pdu.response_required = raw_packet[current_idx] & 0x80
         return prompt_pdu

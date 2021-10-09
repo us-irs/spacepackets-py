@@ -4,6 +4,7 @@ from unittest import TestCase
 from spacepackets.cfdp.definitions import FileSize
 from spacepackets.cfdp.tlv import CfdpTlv, TlvTypes
 from spacepackets.cfdp.lv import CfdpLv
+from spacepackets.cfdp.pdu.prompt import PromptPdu, ResponseRequired
 from spacepackets.cfdp.definitions import LenInBytes, get_transaction_seq_num_as_bytes
 from spacepackets.cfdp.pdu import PduHeader, PduType, SegmentMetadataFlag
 from spacepackets.cfdp.conf import PduConfig, TransmissionModes, Direction, CrcFlag, \
@@ -115,13 +116,14 @@ class TestTlvsLvsHeader(TestCase):
         self.assertEqual(pdu_header.trans_mode, TransmissionModes.ACKNOWLEDGED)
         self.assertEqual(pdu_header.direction, Direction.TOWARDS_RECEIVER)
         self.assertEqual(pdu_header.segment_metadata_flag, SegmentMetadataFlag.NOT_PRESENT)
+        self.assertFalse(pdu_header.is_large_file())
         self.assertEqual(pdu_header.transaction_seq_num, bytes([0]))
         self.assertEqual(pdu_header.len_transaction_seq_num, 1)
         self.assertEqual(pdu_header.crc_flag, CrcFlag.NO_CRC)
         self.assertEqual(
             pdu_header.seg_ctrl, SegmentationControl.NO_RECORD_BOUNDARIES_PRESERVATION
         )
-        self.assertEqual(pdu_header.get_header_len(), 7)
+        self.assertEqual(pdu_header.header_len, 7)
         pdu_header_packed = pdu_header.pack()
         self.check_fields_case_one(pdu_header_packed=pdu_header_packed)
         pdu_header_unpacked = PduHeader.unpack(raw_packet=pdu_header_packed)
@@ -141,6 +143,7 @@ class TestTlvsLvsHeader(TestCase):
         pdu_header.seg_ctrl = SegmentationControl.RECORD_BOUNDARIES_PRESERVATION
         pdu_header.segment_metadata_flag = SegmentMetadataFlag.PRESENT
 
+        self.assertTrue(pdu_header.is_large_file())
         pdu_header_packed = pdu_header.pack()
         self.check_fields_case_two(pdu_header_packed=pdu_header_packed)
 
@@ -166,6 +169,24 @@ class TestTlvsLvsHeader(TestCase):
             pdu_header_unpacked.transaction_seq_num[0] << 8 |
             pdu_header_unpacked.transaction_seq_num[1], 300
         )
+
+        pdu_conf.source_entity_id = bytes([0])
+        pdu_conf.dest_entity_id = bytes([0])
+        prompt_pdu = PromptPdu(
+            reponse_required=ResponseRequired.KEEP_ALIVE,
+            pdu_conf=pdu_conf
+        )
+        self.assertEqual(prompt_pdu.packet_len, 9)
+        self.assertEqual(prompt_pdu.crc_flag, CrcFlag.WITH_CRC)
+        self.assertEqual(prompt_pdu.source_entity_id, bytes([0]))
+        self.assertEqual(prompt_pdu.dest_entity_id, bytes([0]))
+        self.assertEqual(prompt_pdu.file_size, FileSize.LARGE)
+        prompt_pdu.file_size = FileSize.NORMAL
+        self.assertEqual(prompt_pdu.file_size, FileSize.NORMAL)
+        self.assertEqual(prompt_pdu.pdu_file_directive.pdu_header.file_size, FileSize.NORMAL)
+        prompt_pdu.crc_flag = CrcFlag.NO_CRC
+        self.assertEqual(prompt_pdu.crc_flag, CrcFlag.NO_CRC)
+        self.assertEqual(prompt_pdu.pdu_file_directive.pdu_header.crc_flag, CrcFlag.NO_CRC)
 
     def check_fields_case_one(self, pdu_header_packed: bytes):
         self.assertEqual(len(pdu_header_packed), 7)
