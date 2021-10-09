@@ -83,7 +83,7 @@ class TestCcsds(TestCase):
             subservice_id=2,
             pus_version=PusVersion.PUS_C
         )
-        packet_ids = (tm_packet.get_packet_id(),)
+        packet_ids = (tm_packet.packet_id,)
         tm_packet_raw = tm_packet.pack()
         packet_deque = deque()
         packet_deque.appendleft(tm_packet_raw)

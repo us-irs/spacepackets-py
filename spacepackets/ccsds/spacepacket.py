@@ -85,7 +85,12 @@ class SpacePacketHeader:
         header.append(self.data_length & 0xff)
         return header
 
-    def get_packet_size(self) -> int:
+    @property
+    def header_length(self) -> int:
+        return SPACE_PACKET_HEADER_SIZE
+
+    @property
+    def packet_length(self) -> int:
         """Retrieve the full space packet size when packed
         :return: Size of the TM packet based on the space packet header data length field.
         The space packet data field is the full length of data field minus one without
@@ -215,8 +220,7 @@ def parse_space_packets(
     If a packet is detected and the
     Any broken tail packets will be reinserted into the given deque
     :param analysis_queue:
-    :param packet_id:
-    :param max_len:     Maximum allowed packet length
+    :param packet_ids:
     :return:
     """
     tm_list = []

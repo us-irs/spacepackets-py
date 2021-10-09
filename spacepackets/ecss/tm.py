@@ -121,20 +121,20 @@ class PusTelemetry:
             pus_version=pus_version
         )
         if expected_packet_len < \
-                pus_tm.secondary_packet_header.get_header_size() + SPACE_PACKET_HEADER_SIZE:
+                pus_tm.secondary_packet_header.header_size + SPACE_PACKET_HEADER_SIZE:
             logger = get_console_logger()
             logger.warning("Passed packet too short!")
             raise ValueError
-        if pus_tm.get_packet_size() != len(raw_telemetry):
+        if pus_tm.packet_length != len(raw_telemetry):
             logger = get_console_logger()
             logger.warning(
                 f'PusTelemetry: Packet length field '
                 f'{pus_tm.space_packet_header.data_length} might be invalid!'
             )
-            logger.warning(f'Packet size from size field: {pus_tm.get_packet_size()}')
+            logger.warning(f'Packet size from size field: {pus_tm.packet_length}')
             logger.warning(f'Length of raw telemetry: {len(raw_telemetry)}')
         pus_tm._source_data = raw_telemetry[
-            pus_tm.secondary_packet_header.get_header_size() + SPACE_PACKET_HEADER_SIZE:-2
+            pus_tm.secondary_packet_header.header_size + SPACE_PACKET_HEADER_SIZE:-2
         ]
         pus_tm._crc = \
             raw_telemetry[expected_packet_len - 2] << 8 | raw_telemetry[expected_packet_len - 1]
@@ -183,7 +183,7 @@ class PusTelemetry:
     def __perform_crc_check(self, raw_telemetry: bytes):
         # CRC16-CCITT checksum
         crc_func = mkPredefinedCrcFun(crc_name='crc-ccitt-false')
-        full_packet_size = self.get_packet_size()
+        full_packet_size = self.packet_length
         data_to_check = raw_telemetry[:full_packet_size]
         crc = crc_func(data_to_check)
         if crc == 0:
@@ -218,13 +218,14 @@ class PusTelemetry:
             raise ValueError
         return data_length
 
-    def get_packet_size(self) -> int:
+    @property
+    def packet_length(self) -> int:
         """Retrieve the full packet size when packed
         :return: Size of the TM packet based on the space packet header data length field.
         The space packet data field is the full length of data field minus one without
         the space packet header.
         """
-        return self.space_packet_header.get_packet_size()
+        return self.space_packet_header.packet_length
 
     @property
     def apid(self) -> int:
@@ -364,11 +365,11 @@ class PusTmSecondaryHeader:
                 )
                 raise ValueError
             secondary_header.spacecraft_time_ref = header_start[current_idx] & 0x0F
-        if len(header_start) < secondary_header.get_header_size():
+        if len(header_start) < secondary_header.header_size:
             logger = get_console_logger()
             logger.warning(
                 f'Invalid PUS data field header size, '
-                f'less than expected {secondary_header.get_header_size()} bytes'
+                f'less than expected {secondary_header.header_size} bytes'
             )
             raise ValueError
         current_idx += 1
@@ -397,7 +398,8 @@ class PusTmSecondaryHeader:
         )
         return secondary_header
 
-    def get_header_size(self) -> int:
+    @property
+    def header_size(self) -> int:
         if self.pus_version == PusVersion.PUS_A:
             return PusTelemetry.PUS_TIMESTAMP_SIZE + 4
         else:
