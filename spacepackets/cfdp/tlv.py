@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Tuple
+from typing import Tuple, Optional
 import enum
 from spacepackets.log import get_console_logger
 from spacepackets.cfdp.lv import CfdpLv
@@ -185,6 +185,39 @@ class FileStoreRequestBase:
             tlv_value.extend(second_name_lv.pack())
         return tlv_value
 
+    @staticmethod
+    def common_unpacker(
+            raw_bytes: bytes
+    ) -> Tuple[FilestoreActionCode, str, int, int, Optional[str]]:
+        tlv = CfdpTlv.unpack(raw_bytes=raw_bytes)
+        if tlv.tlv_type != TlvTypes.FILESTORE_REQUEST:
+            raise ValueError
+        current_idx = 0
+        action_code_as_int = (tlv.value[current_idx] & 0xf0) >> 4
+        try:
+            action_code = FilestoreActionCode(action_code_as_int)
+        except IndexError:
+            logger = get_console_logger()
+            logger.warning(
+                f'Invalid action code in file store response with value {action_code_as_int}'
+            )
+            raise ValueError
+        current_idx += 1
+        status_code_as_int = tlv.value[current_idx] & 0x0f
+        first_lv = CfdpLv.unpack(raw_bytes=tlv[current_idx:])
+        current_idx += first_lv.packet_len
+        first_file_name = first_lv.value.decode()
+        if action_code in [
+            FilestoreActionCode.REPLACE_FILE_SNP, FilestoreActionCode.RENAME_FILE_SNP,
+            FilestoreActionCode.APPEND_FILE_SNP
+        ]:
+            second_lv = CfdpLv.unpack(raw_bytes=tlv[current_idx:])
+            current_idx += second_lv.packet_len
+            second_file_name = second_lv.value.decode()
+        else:
+            second_file_name = None
+        return action_code, first_file_name, status_code_as_int, current_idx, second_file_name
+
 
 class FileStoreRequestTlv(FileStoreRequestBase):
     def __init__(
@@ -218,25 +251,13 @@ class FileStoreRequestTlv(FileStoreRequestBase):
     @classmethod
     def unpack(cls, raw_tlv: bytearray) -> FileStoreRequestTlv:
         filestore_req = cls.__empty()
-        tlv = CfdpTlv.unpack(raw_bytes=raw_tlv)
-        if tlv.tlv_type != TlvTypes.FILESTORE_REQUEST:
-            raise ValueError
-        current_idx = 0
-        action_code_as_int = (tlv.value[current_idx] & 0xf0) >> 4
-        try:
-            filestore_req.action_code = FilestoreActionCode(action_code_as_int)
-        except IndexError:
-            logger = get_console_logger()
-            logger.warning(
-                f'Invalid action code in file store response with value {action_code_as_int}'
-            )
-            raise ValueError
-        current_idx += 1
-        first_lv = CfdpLv.unpack(raw_bytes=tlv[current_idx:])
-        filestore_req.first_file_name = first_lv.value.decode()
-        current_idx += first_lv.packet_len
-        second_lv = CfdpLv.unpack(raw_bytes=tlv[current_idx:])
-        filestore_req.second_file_name = second_lv.value.decode()
+        action_code, first_name, status_code, _, second_name = cls.common_unpacker(
+            raw_bytes=raw_tlv
+        )
+        filestore_req.action_code = action_code
+        filestore_req.first_file_name = first_name
+        if second_name is not None:
+            filestore_req.second_file_name = second_name
         return filestore_req
 
 
@@ -279,27 +300,22 @@ class FileStoreResponseTlv(FileStoreRequestBase):
     @classmethod
     def unpack(cls, raw_tlv: bytearray) -> FileStoreResponseTlv:
         filestore_reply = cls.__empty()
-        tlv = CfdpTlv.unpack(raw_bytes=raw_tlv)
-        if tlv.tlv_type != TlvTypes.FILESTORE_REQUEST:
-            raise ValueError
-        current_idx = 0
-        action_code_as_int = (tlv.value[current_idx] & 0xf0) >> 4
+        action_code, first_name, status_code, idx, second_name = cls.common_unpacker(
+            raw_bytes=raw_tlv
+        )
+        filestore_reply.action_code = action_code
+        filestore_reply.first_file_name = first_name
         try:
-            filestore_reply.action_code = FilestoreActionCode(action_code_as_int)
+            status_code_named = FilestoreResponseStatusCode(status_code)
         except IndexError:
             logger = get_console_logger()
             logger.warning(
-                f'Invalid action code in file store response with value {action_code_as_int}'
+                f'Invalid status code in file store response with value {status_code} for '
+                f'action code {action_code}'
             )
             raise ValueError
-        current_idx += 1
-        status_code_as_int = tlv.value[current_idx] & 0x0f
-        filestore_reply.status_code = map_int_status_code_to_enum(
-            action_code=filestore_reply.action_code, status_code=status_code_as_int
-        )
-        first_lv = CfdpLv.unpack(raw_bytes=tlv[current_idx:])
-        filestore_reply.first_file_name = first_lv.value.decode()
-        current_idx += first_lv.packet_len
-        second_lv = CfdpLv.unpack(raw_bytes=tlv[current_idx:])
-        filestore_reply.second_file_name = second_lv.value.decode()
+        filestore_reply.status_code = status_code_named
+        if second_name is not None:
+            filestore_reply.second_file_name = second_name
+        filestore_reply.filestore_msg = CfdpLv(value=raw_tlv[idx:])
         return filestore_reply
