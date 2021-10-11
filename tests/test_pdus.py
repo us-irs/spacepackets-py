@@ -257,7 +257,7 @@ class TestPdus(TestCase):
         with self.assertRaises(ValueError):
             # Invalid type
             fault_location_tlv.tlv_type = TlvTypes.FILESTORE_REQUEST
-            finish_pdu_with_fault_loc = FinishedPdu(
+            FinishedPdu(
                 delivery_code=DeliveryCode.DATA_INCOMPLETE,
                 file_delivery_status=FileDeliveryStatus.DISCARDED_DELIBERATELY,
                 condition_code=ConditionCode.POSITIVE_ACK_LIMIT_REACHED,
@@ -265,6 +265,11 @@ class TestPdus(TestCase):
                 pdu_conf=pdu_conf
             )
 
+        # Now create a packet with filestore responses
+        filestore_response_one = CfdpTlv(
+            tlv_type=TlvTypes.FILESTORE_RESPONSE,
+            value=
+        )
     def test_keep_alive_pdu(self):
         pass
 
