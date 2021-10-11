@@ -50,7 +50,7 @@ class AckPdu:
         self.transaction_status = transaction_status
 
     @property
-    def packed_len(self) -> int:
+    def packet_len(self) -> int:
         return self.pdu_file_directive.packet_len
 
     @classmethod

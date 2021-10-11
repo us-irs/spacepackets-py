@@ -28,7 +28,7 @@ class PduConfig:
     def empty(cls) -> PduConfig:
         return PduConfig(
             transaction_seq_num=bytes([0]),
-            trans_mode=TransmissionModes.UNACKNOWLEDGED,
+            trans_mode=TransmissionModes.ACKNOWLEDGED,
             source_entity_id=bytes([0]),
             dest_entity_id=bytes([0])
         )

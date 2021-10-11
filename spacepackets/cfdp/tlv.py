@@ -78,5 +78,6 @@ class CfdpTlv:
             value=value
         )
 
-    def get_total_length(self) -> int:
+    @property
+    def packet_length(self) -> int:
         return self.MINIMAL_LEN + len(self.value)
