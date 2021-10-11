@@ -266,10 +266,7 @@ class TestPdus(TestCase):
             )
 
         # Now create a packet with filestore responses
-        filestore_response_one = CfdpTlv(
-            tlv_type=TlvTypes.FILESTORE_RESPONSE,
-            value=
-        )
+
     def test_keep_alive_pdu(self):
         pass
 

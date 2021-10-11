@@ -54,7 +54,7 @@ class TestTlvsLvsHeader(TestCase):
         )
         self.assertEqual(test_lv.value, test_values)
         self.assertEqual(test_lv.len, 3)
-        self.assertEqual(test_lv.get_total_len(), 4)
+        self.assertEqual(test_lv.packet_len, 4)
         test_lv_packed = test_lv.pack()
         self.assertEqual(len(test_lv_packed), 4)
         self.assertEqual(test_lv_packed[0], 3)
@@ -63,7 +63,7 @@ class TestTlvsLvsHeader(TestCase):
         CfdpLv.unpack(raw_bytes=test_lv_packed)
         self.assertEqual(test_lv.value, test_values)
         self.assertEqual(test_lv.len, 3)
-        self.assertEqual(test_lv.get_total_len(), 4)
+        self.assertEqual(test_lv.packet_len, 4)
 
         # Too much too pack
         faulty_values = bytearray(300)
