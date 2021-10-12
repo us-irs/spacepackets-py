@@ -19,6 +19,7 @@ Currently, this includes the following components:
   `CCSDS Blue Book 727.0-B-5`_.
 
 Other pages (online)
+---------------------
 
 - `project page on GitHub`_
 - This page, when viewed online is at https://spacepackets.readthedocs.io/en/latest
@@ -35,6 +36,7 @@ Other pages (online)
 .. toctree::
    :maxdepth: 4
 
+   examples
    packets
    api
 

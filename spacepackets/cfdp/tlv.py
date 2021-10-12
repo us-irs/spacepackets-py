@@ -70,6 +70,7 @@ def map_int_status_code_to_enum(
         action_code: FilestoreActionCode, status_code: int
 ) -> FilestoreResponseStatusCode:
     """Maps an action code and the status code of a filestore response to the status code.
+
     :param action_code:
     :param status_code:
     :return: The status code. Will be FilestoreResponseStatusCode.INVALID in case no valid status
