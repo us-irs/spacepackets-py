@@ -79,8 +79,8 @@ class TestCcsds(TestCase):
     def test_sp_parser(self):
         raw_buffer = bytearray()
         tm_packet = PusTelemetry(
-            service_id=17,
-            subservice_id=2,
+            service=17,
+            subservice=2,
             pus_version=PusVersion.PUS_C
         )
         packet_ids = (tm_packet.packet_id,)
@@ -96,8 +96,8 @@ class TestCcsds(TestCase):
         self.assertEqual(sp_list[1], tm_packet_raw)
 
         other_larger_packet = PusTelemetry(
-            service_id=8,
-            subservice_id=128,
+            service=8,
+            subservice=128,
             pus_version=PusVersion.PUS_C,
             source_data=bytearray(64)
         )

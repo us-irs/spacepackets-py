@@ -22,8 +22,8 @@ class Service1TM:
             space_time_ref: int = 0b0000, destination_id: int = 0
     ):
         self.pus_tm = PusTelemetry(
-            service_id=1,
-            subservice_id=subservice_id,
+            service=1,
+            subservice=subservice_id,
             time=time,
             ssc=ssc,
             source_data=source_data,

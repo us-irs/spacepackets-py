@@ -32,7 +32,7 @@ class PusTelemetry:
     PUS_TIMESTAMP_SIZE = CDS_SHORT_SIZE
 
     def __init__(
-            self, service_id: int, subservice_id: int, time: CdsShortTimestamp = None, ssc: int = 0,
+            self, service: int, subservice: int, time: CdsShortTimestamp = None, ssc: int = 0,
             source_data: bytearray = bytearray([]), apid: int = -1, message_counter: int = 0,
             space_time_ref: int = 0b0000, destination_id: int = 0,
             packet_version: int = 0b000, pus_version: PusVersion = PusVersion.GLOBAL_CONFIG,
@@ -56,7 +56,7 @@ class PusTelemetry:
             packet_version=packet_version, data_length=data_length, source_sequence_count=ssc
         )
         self.secondary_packet_header = PusTmSecondaryHeader(
-            pus_version=pus_version, service_id=service_id, subservice_id=subservice_id,
+            pus_version=pus_version, service_id=service, subservice_id=subservice,
             message_counter=message_counter, destination_id=destination_id,
             spacecraft_time_ref=space_time_ref, time=time
         )
@@ -66,7 +66,7 @@ class PusTelemetry:
     @classmethod
     def __empty(cls, pus_version: PusVersion = PusVersion.GLOBAL_CONFIG) -> PusTelemetry:
         return PusTelemetry(
-            service_id=0, subservice_id=0, time=CdsShortTimestamp.init_from_current_time()
+            service=0, subservice=0, time=CdsShortTimestamp.init_from_current_time()
         )
 
     def pack(self) -> bytearray:

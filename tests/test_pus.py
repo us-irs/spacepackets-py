@@ -147,8 +147,8 @@ class TestTelemetry(TestCase):
 
     def test_telemetry(self):
         pus_17_tm = PusTelemetry(
-            service_id=17,
-            subservice_id=2,
+            service=17,
+            subservice=2,
             pus_version=PusVersion.PUS_C,
             apid=0xef,
             ssc=22,
@@ -169,8 +169,8 @@ class TestTelemetry(TestCase):
         set_default_tm_apid(0x22)
         source_data = bytearray([0x42, 0x38])
         pus_17_tm = PusTelemetry(
-            service_id=17,
-            subservice_id=2,
+            service=17,
+            subservice=2,
             ssc=22,
             source_data=source_data,
         )
@@ -247,8 +247,8 @@ class TestTelemetry(TestCase):
         )
 
         pus_17_a_type = PusTelemetry(
-            service_id=17,
-            subservice_id=2,
+            service=17,
+            subservice=2,
             ssc=22,
             source_data=bytearray([0x42]),
             pus_version=PusVersion.PUS_A
@@ -268,8 +268,8 @@ class TestTelemetry(TestCase):
 
         set_pus_tm_version(PusVersion.PUS_A)
         pus_17_a_type = PusTelemetry(
-            service_id=17,
-            subservice_id=4,
+            service=17,
+            subservice=4,
             ssc=34,
             source_data=bytearray([0x42, 0x38]),
         )
