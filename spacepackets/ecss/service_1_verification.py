@@ -18,21 +18,18 @@ class Service1TM:
             self, subservice_id: int, time: CdsShortTimestamp = None,
             tc_packet_id: int = 0, tc_psc: int = 0, ssc: int = 0,
             source_data: bytearray = bytearray([]), apid: int = -1, packet_version: int = 0b000,
-            pus_version: PusVersion = PusVersion.GLOBAL_CONFIG, pus_tm_version: int = 0b0001,
-            ack: int = 0b1111, secondary_header_flag: bool = True, space_time_ref: int = 0b0000,
-            destination_id: int = 0
+            pus_version: PusVersion = PusVersion.GLOBAL_CONFIG, secondary_header_flag: bool = True,
+            space_time_ref: int = 0b0000, destination_id: int = 0
     ):
         self.pus_tm = PusTelemetry(
-            service_id=1,
-            subservice_id=subservice_id,
+            service=1,
+            subservice=subservice_id,
             time=time,
             ssc=ssc,
             source_data=source_data,
             apid=apid,
             packet_version=packet_version,
             pus_version=pus_version,
-            pus_tm_version=pus_tm_version,
-            ack=ack,
             secondary_header_flag=secondary_header_flag,
             space_time_ref=space_time_ref,
             destination_id=destination_id
@@ -69,7 +66,7 @@ class Service1TM:
         service_1_tm.pus_tm = PusTelemetry.unpack(
             raw_telemetry=raw_telemetry, pus_version=pus_version
         )
-        tm_data = service_1_tm.pus_tm.get_tm_data()
+        tm_data = service_1_tm.pus_tm.tm_data
         if len(tm_data) < 4:
             logger = get_console_logger()
             logger.warning("TM data less than 4 bytes!")
@@ -77,7 +74,7 @@ class Service1TM:
         service_1_tm.tc_packet_id = tm_data[0] << 8 | tm_data[1]
         service_1_tm.tc_psc = tm_data[2] << 8 | tm_data[3]
         service_1_tm.tc_ssc = service_1_tm.tc_psc & 0x3fff
-        if service_1_tm.pus_tm.get_subservice() % 2 == 0:
+        if service_1_tm.pus_tm.subservice % 2 == 0:
             service_1_tm._handle_failure_verification()
         else:
             service_1_tm._handle_success_verification()
@@ -87,8 +84,8 @@ class Service1TM:
         """Handle parsing a verification failure packet, subservice ID 2, 4, 6 or 8
         """
         self.has_tc_error_code = True
-        tm_data = self.pus_tm.get_tm_data()
-        subservice = self.pus_tm.get_subservice()
+        tm_data = self.pus_tm.tm_data
+        subservice = self.pus_tm.subservice
         expected_len = 14
         if subservice == 6:
             self.is_step_reply = True
@@ -111,10 +108,10 @@ class Service1TM:
         self.error_param2 = struct.unpack('>I', tm_data[current_idx: current_idx + 4])[0]
 
     def _handle_success_verification(self):
-        if self.pus_tm.get_subservice() == 5:
+        if self.pus_tm.subservice == 5:
             self.is_step_reply = True
-            self.step_number = struct.unpack('>B', self.get_tm_data()[4:5])[0]
-        elif self.pus_tm.get_subservice() not in [1, 3, 7]:
+            self.step_number = struct.unpack('>B', self.pus_tm.tm_data[4:5])[0]
+        elif self.pus_tm.subservice not in [1, 3, 7]:
             logger = get_console_logger()
             logger.warning("Service1TM: Invalid subservice")
 

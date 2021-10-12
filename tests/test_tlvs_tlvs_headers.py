@@ -21,7 +21,7 @@ class TestTlvsLvsHeader(TestCase):
         self.assertEqual(test_tlv.tlv_type, TlvTypes.FILESTORE_REQUEST)
         self.assertEqual(test_tlv.length, 5)
         self.assertEqual(test_tlv.value, bytes([0, 1, 2, 3, 4]))
-        self.assertEqual(test_tlv.get_total_length(), 7)
+        self.assertEqual(test_tlv.packet_length, 7)
 
         test_tlv_package = test_tlv.pack()
         test_tlv_unpacked = CfdpTlv.unpack(raw_bytes=test_tlv_package)
@@ -54,7 +54,7 @@ class TestTlvsLvsHeader(TestCase):
         )
         self.assertEqual(test_lv.value, test_values)
         self.assertEqual(test_lv.len, 3)
-        self.assertEqual(test_lv.get_total_len(), 4)
+        self.assertEqual(test_lv.packet_len, 4)
         test_lv_packed = test_lv.pack()
         self.assertEqual(len(test_lv_packed), 4)
         self.assertEqual(test_lv_packed[0], 3)
@@ -63,7 +63,7 @@ class TestTlvsLvsHeader(TestCase):
         CfdpLv.unpack(raw_bytes=test_lv_packed)
         self.assertEqual(test_lv.value, test_values)
         self.assertEqual(test_lv.len, 3)
-        self.assertEqual(test_lv.get_total_len(), 4)
+        self.assertEqual(test_lv.packet_len, 4)
 
         # Too much too pack
         faulty_values = bytearray(300)

@@ -17,7 +17,8 @@ class CfdpLv:
         self.len = len(value)
         self.value = value
 
-    def get_total_len(self):
+    @property
+    def packet_len(self):
         """Returns length of full LV packet"""
         return self.len + 1
 

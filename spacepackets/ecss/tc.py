@@ -200,27 +200,16 @@ class PusTelecommand:
         """Returns the representation of a class instance."""
         return f"{self.__class__.__name__}(service={self.data_field_header.service_type!r}, " \
                f"subservice={self.data_field_header.service_subtype!r}, " \
-               f"ssc={self.space_packet_header.ssc!r}, apid={self.get_apid()})"
+               f"ssc={self.space_packet_header.ssc!r}, apid={self.apid})"
 
     def __str__(self):
         """Returns string representation of a class instance."""
         return f"TC[{self.data_field_header.service_type}, " \
                f"{self.data_field_header.service_subtype}] with SSC {self.space_packet_header.ssc}"
 
-    def is_valid(self):
+    @property
+    def valid(self):
         return self._valid
-
-    def get_total_length(self) -> int:
-        """Length of full packet in bytes.
-        The header length is 6 bytes and the data length + 1 is the size of the data field.
-        """
-        secondary_header_len = self.data_field_header.get_header_size(
-            pus_version=self.data_field_header.pus_tc_version
-        )
-        return self.get_data_length(
-            secondary_header_len=secondary_header_len,
-            app_data_len=len(self._app_data)
-        ) + SPACE_PACKET_HEADER_SIZE + 1
 
     @classmethod
     def __empty(cls):
@@ -237,7 +226,7 @@ class PusTelecommand:
         packed_data = bytearray()
         packed_data.extend(self.space_packet_header.pack())
         packed_data.extend(self.data_field_header.pack())
-        packed_data += self.get_app_data()
+        packed_data += self.app_data
         crc_func = mkPredefinedCrcFun(crc_name='crc-ccitt-false')
         self._crc = crc_func(packed_data)
         self._valid = True
@@ -255,7 +244,7 @@ class PusTelecommand:
         header_len = \
             SPACE_PACKET_HEADER_SIZE + \
             tc_unpacked.data_field_header.get_header_size(pus_version=pus_version)
-        expected_packet_len = tc_unpacked.get_packet_size()
+        expected_packet_len = tc_unpacked.packet_length
         if len(raw_packet) < expected_packet_len:
             logger = get_console_logger()
             logger.warning(
@@ -276,13 +265,14 @@ class PusTelecommand:
             tc_unpacked._valid = False
         return tc_unpacked
 
-    def get_packet_size(self) -> int:
+    @property
+    def packet_length(self) -> int:
         """Retrieve the full packet size when packed
         :return: Size of the TM packet based on the space packet header data length field.
         The space packet data field is the full length of data field minus one without
         the space packet header.
         """
-        return self.space_packet_header.get_packet_size()
+        return self.space_packet_header.packet_length
 
     @staticmethod
     def get_data_length(app_data_len: int, secondary_header_len: int) -> int:
@@ -306,22 +296,28 @@ class PusTelecommand:
         command_tuple = (self.pack(), self)
         return command_tuple
 
-    def get_service(self) -> int:
+    @property
+    def service(self) -> int:
         return self.data_field_header.service_type
 
-    def get_subservice(self) -> int:
+    @property
+    def subservice(self) -> int:
         return self.data_field_header.service_subtype
 
-    def get_ssc(self) -> int:
+    @property
+    def ssc(self) -> int:
         return self.space_packet_header.ssc
 
-    def get_apid(self) -> int:
+    @property
+    def apid(self) -> int:
         return self.space_packet_header.apid
 
-    def get_packet_id(self) -> int:
+    @property
+    def packet_id(self) -> int:
         return self.space_packet_header.packet_id
 
-    def get_app_data(self) -> bytearray:
+    @property
+    def app_data(self) -> bytearray:
         return self._app_data
 
     def print(self, print_format: PrintFormats):

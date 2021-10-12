@@ -8,7 +8,7 @@ class PrintFormats(enum.IntEnum):
 
 
 def get_printable_data_string(
-        print_format: PrintFormats, data: bytearray, length: int = -1
+        print_format: PrintFormats, data: bytes, length: int = -1
 ) -> str:
     """Returns the TM data in a clean printable hex string format
     :return: The string

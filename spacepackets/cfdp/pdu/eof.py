@@ -23,12 +23,17 @@ class EofPdu:
     ):
         self.pdu_file_directive = FileDirectivePduBase(
             directive_code=DirectiveCodes.EOF_PDU,
-            pdu_conf=pdu_conf
+            pdu_conf=pdu_conf,
+            directive_param_field_len=9
         )
         self.condition_code = condition_code
         self.file_checksum = file_checksum
         self.file_size = file_size
         self.fault_location = fault_location
+
+    @property
+    def packet_len(self) -> int:
+        return self.pdu_file_directive.packet_len
 
     @classmethod
     def __empty(cls) -> EofPdu:
@@ -64,7 +69,7 @@ class EofPdu:
         expected_min_len = cls.MINIMAL_LENGTH
         if not check_packet_length(raw_packet_len=len(raw_packet), min_len=expected_min_len):
             raise ValueError
-        current_idx = eof_pdu.pdu_file_directive.get_packet_len()
+        current_idx = eof_pdu.pdu_file_directive.packet_len
         eof_pdu.condition_code = raw_packet[current_idx] & 0xf0
         expected_min_len = current_idx + 5
         current_idx += 1
