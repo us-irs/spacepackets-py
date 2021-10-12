@@ -4,12 +4,14 @@ from unittest import TestCase
 from spacepackets.cfdp.definitions import FileSize
 from spacepackets.cfdp.tlv import CfdpTlv, TlvTypes
 from spacepackets.cfdp.lv import CfdpLv
+from spacepackets.cfdp.pdu.prompt import PromptPdu, ResponseRequired
 from spacepackets.cfdp.definitions import LenInBytes, get_transaction_seq_num_as_bytes
-from spacepackets.cfdp.pdu import PduHeader, PduType, TransmissionModes, Direction, \
-    SegmentMetadataFlag, CrcFlag, SegmentationControl
+from spacepackets.cfdp.pdu import PduHeader, PduType, SegmentMetadataFlag
+from spacepackets.cfdp.conf import PduConfig, TransmissionModes, Direction, CrcFlag, \
+    SegmentationControl
 
 
-class TestCfdp(TestCase):
+class TestTlvsLvsHeader(TestCase):
 
     def test_tlvs(self):
         test_tlv = CfdpTlv(
@@ -19,7 +21,7 @@ class TestCfdp(TestCase):
         self.assertEqual(test_tlv.tlv_type, TlvTypes.FILESTORE_REQUEST)
         self.assertEqual(test_tlv.length, 5)
         self.assertEqual(test_tlv.value, bytes([0, 1, 2, 3, 4]))
-        self.assertEqual(test_tlv.get_total_length(), 7)
+        self.assertEqual(test_tlv.packet_length, 7)
 
         test_tlv_package = test_tlv.pack()
         test_tlv_unpacked = CfdpTlv.unpack(raw_bytes=test_tlv_package)
@@ -52,7 +54,7 @@ class TestCfdp(TestCase):
         )
         self.assertEqual(test_lv.value, test_values)
         self.assertEqual(test_lv.len, 3)
-        self.assertEqual(test_lv.get_total_len(), 4)
+        self.assertEqual(test_lv.packet_len, 4)
         test_lv_packed = test_lv.pack()
         self.assertEqual(len(test_lv_packed), 4)
         self.assertEqual(test_lv_packed[0], 3)
@@ -61,7 +63,7 @@ class TestCfdp(TestCase):
         CfdpLv.unpack(raw_bytes=test_lv_packed)
         self.assertEqual(test_lv.value, test_values)
         self.assertEqual(test_lv.len, 3)
-        self.assertEqual(test_lv.get_total_len(), 4)
+        self.assertEqual(test_lv.packet_len, 4)
 
         # Too much too pack
         faulty_values = bytearray(300)
@@ -93,16 +95,20 @@ class TestCfdp(TestCase):
         self.assertRaises(
             ValueError, get_transaction_seq_num_as_bytes, 900, LenInBytes.ONE_BYTE
         )
-        pdu_header = PduHeader(
-            pdu_type=PduType.FILE_DIRECTIVE,
+        pdu_conf = PduConfig(
             source_entity_id=bytes([0]),
             dest_entity_id=bytes([0]),
             trans_mode=TransmissionModes.ACKNOWLEDGED,
             direction=Direction.TOWARDS_RECEIVER,
-            segment_metadata_flag=SegmentMetadataFlag.NOT_PRESENT,
-            transaction_seq_num=bytes([0]),
             crc_flag=CrcFlag.NO_CRC,
-            seg_ctrl=SegmentationControl.NO_RECORD_BOUNDARIES_PRESERVATION
+            seg_ctrl=SegmentationControl.NO_RECORD_BOUNDARIES_PRESERVATION,
+            transaction_seq_num=bytes([0])
+        )
+        pdu_header = PduHeader(
+            pdu_type=PduType.FILE_DIRECTIVE,
+            segment_metadata_flag=SegmentMetadataFlag.NOT_PRESENT,
+            pdu_data_field_len=0,
+            pdu_conf=pdu_conf
         )
         self.assertEqual(pdu_header.pdu_type, PduType.FILE_DIRECTIVE)
         self.assertEqual(pdu_header.source_entity_id, bytes([0]))
@@ -110,13 +116,14 @@ class TestCfdp(TestCase):
         self.assertEqual(pdu_header.trans_mode, TransmissionModes.ACKNOWLEDGED)
         self.assertEqual(pdu_header.direction, Direction.TOWARDS_RECEIVER)
         self.assertEqual(pdu_header.segment_metadata_flag, SegmentMetadataFlag.NOT_PRESENT)
+        self.assertFalse(pdu_header.is_large_file())
         self.assertEqual(pdu_header.transaction_seq_num, bytes([0]))
         self.assertEqual(pdu_header.len_transaction_seq_num, 1)
         self.assertEqual(pdu_header.crc_flag, CrcFlag.NO_CRC)
         self.assertEqual(
-            pdu_header.segmentation_control, SegmentationControl.NO_RECORD_BOUNDARIES_PRESERVATION
+            pdu_header.seg_ctrl, SegmentationControl.NO_RECORD_BOUNDARIES_PRESERVATION
         )
-        self.assertEqual(pdu_header.get_packet_len(), 7)
+        self.assertEqual(pdu_header.header_len, 7)
         pdu_header_packed = pdu_header.pack()
         self.check_fields_case_one(pdu_header_packed=pdu_header_packed)
         pdu_header_unpacked = PduHeader.unpack(raw_packet=pdu_header_packed)
@@ -125,17 +132,18 @@ class TestCfdp(TestCase):
 
         pdu_header.pdu_type = PduType.FILE_DATA
         pdu_header.set_entity_ids(source_entity_id=bytes([0, 0]), dest_entity_id=bytes([0, 1]))
-        pdu_header.set_transaction_seq_num(
-            get_transaction_seq_num_as_bytes(300, byte_length=LenInBytes.TWO_BYTES)
+        pdu_header.transaction_seq_num = get_transaction_seq_num_as_bytes(
+            300, byte_length=LenInBytes.TWO_BYTES
         )
         pdu_header.trans_mode = TransmissionModes.UNACKNOWLEDGED
         pdu_header.direction = Direction.TOWARDS_SENDER
-        pdu_header.set_crc_flag(crc_flag=CrcFlag.WITH_CRC)
-        pdu_header.set_file_size(file_size=FileSize.LARGE)
-        pdu_header.set_pdu_data_field_length(new_length=300)
-        pdu_header.segmentation_control = SegmentationControl.RECORD_BOUNDARIES_PRESERVATION
+        pdu_header.crc_flag = CrcFlag.WITH_CRC
+        pdu_header.file_size = FileSize.LARGE
+        pdu_header.pdu_data_field_len = 300
+        pdu_header.seg_ctrl = SegmentationControl.RECORD_BOUNDARIES_PRESERVATION
         pdu_header.segment_metadata_flag = SegmentMetadataFlag.PRESENT
 
+        self.assertTrue(pdu_header.is_large_file())
         pdu_header_packed = pdu_header.pack()
         self.check_fields_case_two(pdu_header_packed=pdu_header_packed)
 
@@ -147,12 +155,10 @@ class TestCfdp(TestCase):
         self.assertRaises(
             ValueError, pdu_header.set_entity_ids, bytes([0, 1, 2, 8]), bytes([2, 3])
         )
-        self.assertRaises(
-            ValueError, pdu_header.set_transaction_seq_num, bytes([0, 1, 2])
-        )
-        self.assertRaises(
-            ValueError, pdu_header.set_pdu_data_field_length, 78292
-        )
+        with self.assertRaises(ValueError):
+            pdu_header.transaction_seq_num = bytes([0, 1, 2])
+        with self.assertRaises(ValueError):
+            pdu_header.pdu_data_field_len = 78292
         invalid_pdu_header = bytearray([0, 1, 2])
         self.assertRaises(ValueError, PduHeader.unpack, invalid_pdu_header)
         self.assertRaises(ValueError, PduHeader.unpack, pdu_header_packed[0:6])
@@ -163,6 +169,24 @@ class TestCfdp(TestCase):
             pdu_header_unpacked.transaction_seq_num[0] << 8 |
             pdu_header_unpacked.transaction_seq_num[1], 300
         )
+
+        pdu_conf.source_entity_id = bytes([0])
+        pdu_conf.dest_entity_id = bytes([0])
+        prompt_pdu = PromptPdu(
+            reponse_required=ResponseRequired.KEEP_ALIVE,
+            pdu_conf=pdu_conf
+        )
+        self.assertEqual(prompt_pdu.packet_len, 9)
+        self.assertEqual(prompt_pdu.crc_flag, CrcFlag.WITH_CRC)
+        self.assertEqual(prompt_pdu.source_entity_id, bytes([0]))
+        self.assertEqual(prompt_pdu.dest_entity_id, bytes([0]))
+        self.assertEqual(prompt_pdu.file_size, FileSize.LARGE)
+        prompt_pdu.file_size = FileSize.NORMAL
+        self.assertEqual(prompt_pdu.file_size, FileSize.NORMAL)
+        self.assertEqual(prompt_pdu.pdu_file_directive.pdu_header.file_size, FileSize.NORMAL)
+        prompt_pdu.crc_flag = CrcFlag.NO_CRC
+        self.assertEqual(prompt_pdu.crc_flag, CrcFlag.NO_CRC)
+        self.assertEqual(prompt_pdu.pdu_file_directive.pdu_header.crc_flag, CrcFlag.NO_CRC)
 
     def check_fields_case_one(self, pdu_header_packed: bytes):
         self.assertEqual(len(pdu_header_packed), 7)

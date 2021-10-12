@@ -2,10 +2,9 @@ from __future__ import annotations
 import enum
 import struct
 
-from spacepackets.cfdp.pdu.header import PduHeader, PduType, Direction, CrcFlag, TransmissionModes, \
-    SegmentMetadataFlag
+from spacepackets.cfdp.pdu.header import PduHeader, PduType, SegmentMetadataFlag, HasPduHeader
 from spacepackets.cfdp.definitions import FileSize
-from spacepackets.cfdp.conf import check_packet_length
+from spacepackets.cfdp.conf import check_packet_length, PduConfig
 from spacepackets.log import get_console_logger
 
 
@@ -45,58 +44,65 @@ class FileDirectivePduBase:
     def __init__(
             self,
             directive_code: DirectiveCodes,
-            # PDU Header parameters
-            trans_mode: TransmissionModes,
-            transaction_seq_num: bytes,
-            # Only used for PDU forwarding
-            direction: Direction = Direction.TOWARDS_RECEIVER,
-            source_entity_id: bytes = bytes(),
-            dest_entity_id: bytes = bytes(),
-            crc_flag: CrcFlag = CrcFlag.GLOBAL_CONFIG,
+            directive_param_field_len: int,
+            pdu_conf: PduConfig
     ):
         """Generic constructor for a file directive PDU. Most arguments are passed on the
         to build the generic PDU header.
 
         :param directive_code:
-        :param direction:
-        :param trans_mode:
-        :param transaction_seq_num:
-        :param source_entity_id: If an empty bytearray is passed, the configured default value
-            in the CFDP conf module will be used
-        :param dest_entity_id: If an empty bytearray is passed, the configured default value
-            in the CFDP conf module will be used
-        :param crc_flag:
+        :param directive_param_field_len: Length of the directive parameter field. The length of
+            the PDU data field will be this length plus the one octet / byte of the directive code
+        :param pdu_conf: Generic PDU transfer configuration
         """
         self.pdu_header = PduHeader(
             pdu_type=PduType.FILE_DIRECTIVE,
-            direction=direction,
-            trans_mode=trans_mode,
-            crc_flag=crc_flag,
-            source_entity_id=source_entity_id,
-            dest_entity_id=dest_entity_id,
-            transaction_seq_num=transaction_seq_num,
+            pdu_data_field_len=directive_param_field_len + 1,
+            pdu_conf=pdu_conf,
             # This flag is not relevant for file directive PDUs
             segment_metadata_flag=SegmentMetadataFlag.NOT_PRESENT
         )
         self.directive_code = directive_code
 
-    def set_file_size(self, file_size: FileSize):
-        self.pdu_header.set_file_size(file_size=file_size)
+    @property
+    def pdu_data_field_len(self):
+        return self.pdu_header.pdu_data_field_len
+
+    @pdu_data_field_len.setter
+    def pdu_data_field_len(self, pdu_data_field_len: int):
+        self.pdu_header.pdu_data_field_len = pdu_data_field_len
+
+    @property
+    def directive_param_field_len(self):
+        return self.pdu_header.pdu_data_field_len - 1
+
+    @directive_param_field_len.setter
+    def directive_param_field_len(self, directive_param_field_len: int):
+        self.pdu_header.pdu_data_field_len = directive_param_field_len + 1
+
+    def is_large_file(self):
+        return self.pdu_header.is_large_file()
 
     @classmethod
     def __empty(cls) -> FileDirectivePduBase:
+        empty_conf = PduConfig.empty()
         return cls(
-            trans_mode=TransmissionModes.UNACKNOWLEDGED,
-            crc_flag=CrcFlag.NO_CRC,
             directive_code=DirectiveCodes.NONE,
-            transaction_seq_num=bytes([0])
+            directive_param_field_len=0,
+            pdu_conf=empty_conf
         )
 
-    def get_packet_len(self) -> int:
+    @property
+    def header_len(self) -> int:
+        """Returns the length of the PDU header plus the directive code octet length"""
+        return self.pdu_header.header_len + 1
+
+    @property
+    def packet_len(self) -> int:
         """Get length of the packet when packing it
         :return:
         """
-        return self.pdu_header.get_packet_len() + 1
+        return self.pdu_header.pdu_len
 
     def pack(self) -> bytearray:
         data = bytearray()
@@ -105,25 +111,28 @@ class FileDirectivePduBase:
         return data
 
     @classmethod
-    def unpack(cls, raw_packet: bytearray) -> FileDirectivePduBase:
+    def unpack(cls, raw_packet: bytes) -> FileDirectivePduBase:
         """Unpack a raw bytearray into the File Directive PDU object representation
         :param raw_packet: Unpack PDU file directive base
-        :raise ValueError: Passed bytearray is too short.
+        :raise ValueError: Passed bytearray is too short
         :return:
         """
         file_directive = cls.__empty()
         file_directive.pdu_header = PduHeader.unpack(raw_packet=raw_packet)
-        if not check_packet_length(raw_packet_len=len(raw_packet), min_len=5):
+        header_len = file_directive.pdu_header.header_len
+        if not check_packet_length(
+                raw_packet_len=len(raw_packet), min_len=header_len
+        ):
             raise ValueError
-        file_directive.directive_code = raw_packet[4]
+        file_directive.directive_code = raw_packet[header_len]
         return file_directive
 
     def verify_file_len(self, file_size: int) -> bool:
-        if self.pdu_header.large_file and file_size > pow(2, 64):
+        if self.pdu_header.pdu_conf.file_size == FileSize.LARGE and file_size > pow(2, 64):
             logger = get_console_logger()
             logger.warning(f'File size {file_size} larger than 64 bit field')
             raise False
-        elif not self.pdu_header.large_file and file_size > pow(2, 32):
+        elif not self.pdu_header.pdu_conf.file_size == FileSize.NORMAL and file_size > pow(2, 32):
             logger = get_console_logger()
             logger.warning(f'File size {file_size} larger than 32 bit field')
             raise False
@@ -134,7 +143,7 @@ class FileDirectivePduBase:
         set or not. Returns the current index incremented and the parsed file size
         :raise ValueError: Packet not large enough
         """
-        if self.pdu_header.large_file:
+        if self.pdu_header.pdu_conf.file_size == FileSize.LARGE:
             if not check_packet_length(len(raw_packet), current_idx + 8 + 1):
                 raise ValueError
             file_size = struct.unpack('!I', raw_packet[current_idx: current_idx + 8])
@@ -145,3 +154,10 @@ class FileDirectivePduBase:
             file_size = struct.unpack('!I', raw_packet[current_idx: current_idx + 4])
             current_idx += 4
         return current_idx, file_size
+
+
+class IsFileDirective(HasPduHeader):
+    """Encapsulate common functions for classes which are FileDirectives"""
+    def __init__(self, pdu_file_directive: FileDirectivePduBase):
+        self.pdu_file_directive = pdu_file_directive
+        HasPduHeader.__init__(self, pdu_header=pdu_file_directive.pdu_header)

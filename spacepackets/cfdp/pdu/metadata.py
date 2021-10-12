@@ -3,7 +3,7 @@ import struct
 from typing import List
 
 from spacepackets.cfdp.pdu.file_directive import FileDirectivePduBase, DirectiveCodes
-from spacepackets.cfdp.pdu.header import Direction, TransmissionModes, CrcFlag
+from spacepackets.cfdp.conf import PduConfig
 from spacepackets.cfdp.tlv import CfdpTlv
 from spacepackets.cfdp.lv import CfdpLv
 from spacepackets.cfdp.definitions import ChecksumTypes
@@ -21,22 +21,13 @@ class MetadataPdu:
         file_size: int,
         source_file_name: str,
         dest_file_name: str,
-        trans_mode: TransmissionModes,
-        transaction_seq_num: bytes,
+        pdu_conf: PduConfig,
         options: List[CfdpTlv] = None,
-        direction: Direction = Direction.TOWARDS_RECEIVER,
-        crc_flag: CrcFlag = CrcFlag.GLOBAL_CONFIG,
-        source_entity_id: bytes = bytes(),
-        dest_entity_id: bytes = bytes(),
     ):
         self.pdu_file_directive = FileDirectivePduBase(
             directive_code=DirectiveCodes.METADATA_PDU,
-            direction=direction,
-            trans_mode=trans_mode,
-            crc_flag=crc_flag,
-            transaction_seq_num=transaction_seq_num,
-            source_entity_id=source_entity_id,
-            dest_entity_id=dest_entity_id
+            pdu_conf=pdu_conf,
+            directive_param_field_len=0
         )
         self.closure_requested = closure_requested
         self.checksum_type = checksum_type
@@ -56,21 +47,21 @@ class MetadataPdu:
 
     @classmethod
     def __empty(cls) -> MetadataPdu:
+        empty_conf = PduConfig.empty()
         return cls(
             closure_requested=False,
             checksum_type=ChecksumTypes.MODULAR_LEGACY,
             file_size=0,
             source_file_name="",
             dest_file_name="",
-            trans_mode=TransmissionModes.UNACKNOWLEDGED,
-            transaction_seq_num=bytes([0]),
+            pdu_conf=empty_conf
         )
 
     def pack(self):
         if not self.pdu_file_directive.verify_file_len(self.file_size):
             raise ValueError
         packet = self.pdu_file_directive.pack()
-        current_idx = self.pdu_file_directive.get_packet_len()
+        current_idx = self.pdu_file_directive.packet_len
         packet.append((self.closure_requested << 6) | self.checksum_type)
         if self.pdu_file_directive.pdu_header.large_file:
             packet.extend(struct.pack('!Q', self.file_size))
@@ -85,7 +76,7 @@ class MetadataPdu:
     def unpack(cls, raw_packet: bytearray) -> MetadataPdu:
         metadata_pdu = cls.__empty()
         metadata_pdu.pdu_file_directive = FileDirectivePduBase.unpack(raw_packet=raw_packet)
-        current_idx = metadata_pdu.pdu_file_directive.get_packet_len()
+        current_idx = metadata_pdu.pdu_file_directive.packet_len
         # Minimal length: 1 byte + FSS (4 byte) + 2 empty LV (1 byte)
         if not check_packet_length(len(raw_packet), current_idx + 7):
             raise ValueError

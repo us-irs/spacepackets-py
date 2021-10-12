@@ -1,8 +1,9 @@
 from __future__ import annotations
 import enum
 
-from spacepackets.cfdp.pdu.file_directive import FileDirectivePduBase, DirectiveCodes, Direction, \
-    TransmissionModes, CrcFlag
+from spacepackets.cfdp.pdu.file_directive import FileDirectivePduBase, DirectiveCodes
+from spacepackets.cfdp.conf import PduConfig
+from spacepackets.cfdp.pdu import IsFileDirective
 
 
 class ResponseRequired(enum.IntEnum):
@@ -10,37 +11,28 @@ class ResponseRequired(enum.IntEnum):
     KEEP_ALIVE = 1
 
 
-class PromptPdu:
+class PromptPdu(IsFileDirective):
     """Encapsulates the Prompt file directive PDU, see CCSDS 727.0-B-5 p.84"""
 
     def __init__(
         self,
         reponse_required: ResponseRequired,
-        # PDU file directive arguments
-        trans_mode: TransmissionModes,
-        transaction_seq_num: bytes,
-        direction: Direction = Direction.TOWARDS_RECEIVER,
-        source_entity_id: bytes = bytes(),
-        dest_entity_id: bytes = bytes(),
-        crc_flag: CrcFlag = CrcFlag.GLOBAL_CONFIG,
+        pdu_conf: PduConfig
     ):
         self.pdu_file_directive = FileDirectivePduBase(
             directive_code=DirectiveCodes.PROMPT_PDU,
-            direction=direction,
-            trans_mode=trans_mode,
-            crc_flag=crc_flag,
-            transaction_seq_num=transaction_seq_num,
-            source_entity_id=source_entity_id,
-            dest_entity_id=dest_entity_id,
+            pdu_conf=pdu_conf,
+            directive_param_field_len=0
         )
+        IsFileDirective.__init__(self, pdu_file_directive=self.pdu_file_directive)
         self.response_required = reponse_required
 
     @classmethod
     def __empty(cls) -> PromptPdu:
+        empty_conf = PduConfig.empty()
         return cls(
             reponse_required=ResponseRequired.NAK,
-            trans_mode=TransmissionModes.UNACKNOWLEDGED,
-            transaction_seq_num=bytes([0]),
+            pdu_conf=empty_conf
         )
 
     def pack(self) -> bytearray:
@@ -52,6 +44,6 @@ class PromptPdu:
     def unpack(cls, raw_packet: bytearray) -> PromptPdu:
         prompt_pdu = cls.__empty()
         prompt_pdu.pdu_file_directive = FileDirectivePduBase.unpack(raw_packet=raw_packet)
-        current_idx = prompt_pdu.pdu_file_directive.get_packet_len()
+        current_idx = prompt_pdu.pdu_file_directive.packet_len
         prompt_pdu.response_required = raw_packet[current_idx] & 0x80
         return prompt_pdu

@@ -2,8 +2,8 @@ from __future__ import annotations
 import enum
 import struct
 
-from spacepackets.cfdp.pdu.file_directive import Direction, TransmissionModes, CrcFlag, \
-    SegmentMetadataFlag, PduType
+from spacepackets.cfdp.pdu.file_directive import SegmentMetadataFlag, PduType
+from spacepackets.cfdp.conf import PduConfig
 from spacepackets.cfdp.pdu.header import PduHeader
 from spacepackets.log import get_console_logger
 
@@ -31,23 +31,13 @@ class FileDataPdu:
         record_continuation_state: RecordContinuationState,
         segment_metadata: bytes,
         offset: int,
-        # PDU header arguments
-        trans_mode: TransmissionModes,
-        transaction_seq_num: bytes,
-        direction: Direction = Direction.TOWARDS_RECEIVER,
-        crc_flag: CrcFlag = CrcFlag.GLOBAL_CONFIG,
-        source_entity_id: bytes = bytes(),
-        dest_entity_id: bytes = bytes(),
+        pdu_conf: PduConfig
     ):
         self.pdu_header = PduHeader(
             segment_metadata_flag=segment_metadata_flag,
-            crc_flag=crc_flag,
-            direction=direction,
-            trans_mode=trans_mode,
-            transaction_seq_num=transaction_seq_num,
-            source_entity_id=source_entity_id,
-            dest_entity_id=dest_entity_id,
-            pdu_type=PduType.FILE_DATA
+            pdu_type=PduType.FILE_DATA,
+            pdu_conf=pdu_conf,
+            pdu_data_field_len=0
         )
         self.record_continuation_state = record_continuation_state
         self.segment_metadata_length = len(segment_metadata)
@@ -57,15 +47,14 @@ class FileDataPdu:
 
     @classmethod
     def __empty(cls) -> FileDataPdu:
+        empty_conf = PduConfig.empty()
         return cls(
             file_data=bytes(),
             segment_metadata_flag=SegmentMetadataFlag.NOT_PRESENT,
             segment_metadata=bytes(),
             record_continuation_state=RecordContinuationState.START_AND_END,
             offset=0,
-            direction=Direction.TOWARDS_RECEIVER,
-            trans_mode=TransmissionModes.UNACKNOWLEDGED,
-            transaction_seq_num=bytes([0]),
+            pdu_conf=empty_conf
         )
 
     def pack(self) -> bytearray:
@@ -80,7 +69,7 @@ class FileDataPdu:
                 raise ValueError
             file_data_pdu.append(self.record_continuation_state << 6 | self.segment_metadata_length)
             file_data_pdu.extend(self.segment_metadata)
-        if not self.pdu_header.large_file:
+        if not self.pdu_header.is_large_file():
             file_data_pdu.extend(struct.pack('!I', self.offset))
         else:
             file_data_pdu.extend(struct.pack('!Q', self.offset))
@@ -91,7 +80,7 @@ class FileDataPdu:
     def unpack(cls, raw_packet: bytearray) -> FileDataPdu:
         file_data_packet = cls.__empty()
         file_data_packet.pdu_header.unpack(raw_packet=raw_packet)
-        current_idx = file_data_packet.pdu_header.get_packet_len()
+        current_idx = file_data_packet.pdu_header.get_header_len()
         if file_data_packet.pdu_header.segment_metadata_flag:
             file_data_packet.record_continuation_state = raw_packet[current_idx] & 0x80
             file_data_packet.segment_metadata_length = raw_packet[current_idx] & 0x3f
@@ -102,7 +91,7 @@ class FileDataPdu:
                 raise ValueError
             file_data_packet.segment_metadata = \
                 raw_packet[current_idx: current_idx + file_data_packet.segment_metadata_length]
-        if not file_data_packet.pdu_header.large_file:
+        if not file_data_packet.pdu_header.is_large_file():
             struct_arg_tuple = ('!I', 4)
         else:
             struct_arg_tuple = ('!Q', 8)

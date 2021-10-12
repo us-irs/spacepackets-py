@@ -11,7 +11,7 @@ __LOGGER_NAME: Union[str, None] = package_name
 __LOGGER_CHANGED = False
 
 
-def specify_custom_console_logger_name(logger_name: str):
+def set_custom_console_logger_name(logger_name: str):
     """If the user uses a special console logger, the name can be specified here. The spacepackets
     package will then use this logger as well. Otherwise, the package will use a package specific
     logger"""

@@ -4,7 +4,7 @@ import struct
 
 from spacepackets.cfdp.pdu.file_directive import FileDirectivePduBase, DirectiveCodes, \
     ConditionCode
-from spacepackets.cfdp.pdu.header import Direction, TransmissionModes, CrcFlag
+from spacepackets.cfdp.conf import PduConfig
 from spacepackets.cfdp.tlv import CfdpTlv
 from spacepackets.cfdp.conf import check_packet_length
 
@@ -17,37 +17,31 @@ class EofPdu:
         self,
         file_checksum: int,
         file_size: int,
-        direction: Direction,
-        trans_mode: TransmissionModes,
-        transaction_seq_num: bytes,
-        crc_flag: CrcFlag = CrcFlag.GLOBAL_CONFIG,
-        source_entity_id: bytes = bytes(),
-        dest_entity_id: bytes = bytes(),
+        pdu_conf: PduConfig,
         fault_location: CfdpTlv = None,
         condition_code: ConditionCode = ConditionCode.NO_ERROR,
     ):
         self.pdu_file_directive = FileDirectivePduBase(
             directive_code=DirectiveCodes.EOF_PDU,
-            direction=direction,
-            trans_mode=trans_mode,
-            crc_flag=crc_flag,
-            transaction_seq_num=transaction_seq_num,
-            source_entity_id=source_entity_id,
-            dest_entity_id=dest_entity_id
+            pdu_conf=pdu_conf,
+            directive_param_field_len=9
         )
         self.condition_code = condition_code
         self.file_checksum = file_checksum
         self.file_size = file_size
         self.fault_location = fault_location
 
+    @property
+    def packet_len(self) -> int:
+        return self.pdu_file_directive.packet_len
+
     @classmethod
     def __empty(cls) -> EofPdu:
+        empty_conf = PduConfig.empty()
         return cls(
             file_checksum=0,
             file_size=0,
-            direction=Direction.TOWARDS_SENDER,
-            trans_mode=TransmissionModes.UNACKNOWLEDGED,
-            transaction_seq_num=bytes([0]),
+            pdu_conf=empty_conf
         )
 
     def pack(self) -> bytearray:
@@ -75,7 +69,7 @@ class EofPdu:
         expected_min_len = cls.MINIMAL_LENGTH
         if not check_packet_length(raw_packet_len=len(raw_packet), min_len=expected_min_len):
             raise ValueError
-        current_idx = eof_pdu.pdu_file_directive.get_packet_len()
+        current_idx = eof_pdu.pdu_file_directive.packet_len
         eof_pdu.condition_code = raw_packet[current_idx] & 0xf0
         expected_min_len = current_idx + 5
         current_idx += 1

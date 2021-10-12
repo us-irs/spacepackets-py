@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import struct
 
-from spacepackets.cfdp.pdu.file_directive import FileDirectivePduBase, DirectiveCodes, Direction, \
-    TransmissionModes, CrcFlag
+from spacepackets.cfdp.pdu.file_directive import FileDirectivePduBase, DirectiveCodes
+from spacepackets.cfdp.conf import PduConfig
 from spacepackets.log import get_console_logger
 
 
@@ -13,37 +13,26 @@ class KeepAlivePdu:
     def __init__(
         self,
         progress: int,
-        # PDU file directive arguments
-
-        trans_mode: TransmissionModes,
-        transaction_seq_num: bytes,
-        direction: Direction = Direction.TOWARDS_RECEIVER,
-        crc_flag: CrcFlag = CrcFlag.GLOBAL_CONFIG,
-        source_entity_id: bytes = bytes(),
-        dest_entity_id: bytes = bytes(),
+        pdu_conf: PduConfig
     ):
         self.pdu_file_directive = FileDirectivePduBase(
             directive_code=DirectiveCodes.KEEP_ALIVE_PDU,
-            direction=direction,
-            trans_mode=trans_mode,
-            crc_flag=crc_flag,
-            transaction_seq_num=transaction_seq_num,
-            source_entity_id=source_entity_id,
-            dest_entity_id=dest_entity_id
+            pdu_conf=pdu_conf,
+            directive_param_field_len=0
         )
         self.progress = progress
 
     @classmethod
     def __empty(cls) -> KeepAlivePdu:
+        empty_conf = PduConfig.empty()
         return cls(
             progress=0,
-            trans_mode=TransmissionModes.UNACKNOWLEDGED,
-            transaction_seq_num=bytes([0]),
+            pdu_conf=empty_conf
         )
 
     def pack(self) -> bytearray:
         keep_alive_packet = self.pdu_file_directive.pack()
-        if not self.pdu_file_directive.pdu_header.large_file:
+        if not self.pdu_file_directive.pdu_header.is_large_file():
             if self.progress > pow(2, 32) - 1:
                 raise ValueError
             keep_alive_packet.extend(struct.pack('I', self.progress))
@@ -56,7 +45,7 @@ class KeepAlivePdu:
         keep_alive_pdu = cls.__empty()
         keep_alive_pdu.pdu_file_directive = FileDirectivePduBase.unpack(raw_packet=raw_packet)
         current_idx = keep_alive_pdu.pdu_file_directive.get_packet_len()
-        if not keep_alive_pdu.pdu_file_directive.pdu_header.large_file:
+        if not keep_alive_pdu.pdu_file_directive.pdu_header.is_large_file():
             struct_arg_tuple = ('!I', 4)
         else:
             struct_arg_tuple = ('!Q', 8)
