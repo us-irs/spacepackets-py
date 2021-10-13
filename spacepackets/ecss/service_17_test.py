@@ -5,14 +5,14 @@ from spacepackets.ecss.tm import CdsShortTimestamp, PusVersion, PusTelemetry
 
 class Service17TM:
     def __init__(
-            self, subservice_id: int, time: CdsShortTimestamp = None, ssc: int = 0,
+            self, subservice: int, time: CdsShortTimestamp = None, ssc: int = 0,
             source_data: bytearray = bytearray([]), apid: int = -1, packet_version: int = 0b000,
             pus_version: PusVersion = PusVersion.GLOBAL_CONFIG, secondary_header_flag: bool = True,
             space_time_ref: int = 0b0000, destination_id: int = 0
     ):
         self.pus_tm = PusTelemetry(
             service=PusServices.SERVICE_17_TEST,
-            subservice=subservice_id,
+            subservice=subservice,
             time=time,
             ssc=ssc,
             source_data=source_data,

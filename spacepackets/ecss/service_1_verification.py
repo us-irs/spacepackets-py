@@ -15,7 +15,7 @@ class Service1TM:
     """Service 1 TM class representation. Can be used to deserialize raw service 1 packets.
     """
     def __init__(
-            self, subservice_id: int, time: CdsShortTimestamp = None,
+            self, subservice: int, time: CdsShortTimestamp = None,
             tc_packet_id: int = 0, tc_psc: int = 0, ssc: int = 0,
             source_data: bytearray = bytearray([]), apid: int = -1, packet_version: int = 0b000,
             pus_version: PusVersion = PusVersion.GLOBAL_CONFIG, secondary_header_flag: bool = True,
@@ -23,7 +23,7 @@ class Service1TM:
     ):
         self.pus_tm = PusTelemetry(
             service=1,
-            subservice=subservice_id,
+            subservice=subservice,
             time=time,
             ssc=ssc,
             source_data=source_data,
@@ -34,11 +34,11 @@ class Service1TM:
             space_time_ref=space_time_ref,
             destination_id=destination_id
         )
-        self.has_tc_error_code = False
-        self.is_step_reply = False
+        self._has_tc_error_code = False
+        self._is_step_reply = False
         # Failure Reports with error code
-        self.err_code = 0
-        self.step_number = 0
+        self._err_code = 0
+        self._step_number = 0
         self.error_param1 = 0
         self.error_param2 = 0
         self.tc_packet_id = tc_packet_id
@@ -83,12 +83,12 @@ class Service1TM:
     def _handle_failure_verification(self):
         """Handle parsing a verification failure packet, subservice ID 2, 4, 6 or 8
         """
-        self.has_tc_error_code = True
+        self._has_tc_error_code = True
         tm_data = self.pus_tm.tm_data
         subservice = self.pus_tm.subservice
         expected_len = 14
         if subservice == 6:
-            self.is_step_reply = True
+            self._is_step_reply = True
             expected_len = 15
         elif subservice not in [2, 4, 8]:
             logger = get_console_logger()
@@ -115,20 +115,35 @@ class Service1TM:
             logger = get_console_logger()
             logger.warning("Service1TM: Invalid subservice")
 
-    def get_tc_ssc(self):
-        return self.tc_ssc
+    @property
+    def is_step_reply(self):
+        return self._is_step_reply
 
-    def get_error_code(self):
-        if self.has_tc_error_code:
-            return self.err_code
+    @property
+    def has_tc_error_code(self):
+        return self._has_tc_error_code
+
+    @property
+    def tc_ssc(self):
+        return self._tc_ssc
+
+    @tc_ssc.setter
+    def tc_ssc(self, tc_ssc: int):
+        self._tc_ssc = tc_ssc
+
+    @property
+    def error_code(self):
+        if self._has_tc_error_code:
+            return self._err_code
         else:
             logger = get_console_logger()
             logger.warning("Service1TM: get_error_code: This is not a failure packet, returning 0")
             return 0
 
-    def get_step_number(self):
-        if self.is_step_reply:
-            return self.step_number
+    @property
+    def step_number(self):
+        if self._is_step_reply:
+            return self._step_number
         else:
             logger = get_console_logger()
             logger.warning("Service1TM: get_step_number: This is not a step reply, returning 0")
