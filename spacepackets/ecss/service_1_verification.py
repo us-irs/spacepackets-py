@@ -39,8 +39,8 @@ class Service1TM:
         # Failure Reports with error code
         self._err_code = 0
         self._step_number = 0
-        self.error_param1 = 0
-        self.error_param2 = 0
+        self._error_param1 = -1
+        self._error_param2 = -1
         self.tc_packet_id = tc_packet_id
         self.tc_psc = tc_psc
         self.tc_ssc = tc_psc & 0x3fff
@@ -99,21 +99,36 @@ class Service1TM:
             raise ValueError
         current_idx = 4
         if self.is_step_reply:
-            self.step_number = struct.unpack('>B', tm_data[current_idx: current_idx + 1])[0]
+            self._step_number = struct.unpack('>B', tm_data[current_idx: current_idx + 1])[0]
             current_idx += 1
-        self.err_code = struct.unpack('>H', tm_data[current_idx: current_idx + 2])[0]
+        self._err_code = struct.unpack('>H', tm_data[current_idx: current_idx + 2])[0]
         current_idx += 2
-        self.error_param1 = struct.unpack('>I', tm_data[current_idx: current_idx + 4])[0]
+        self._error_param1 = struct.unpack('>I', tm_data[current_idx: current_idx + 4])[0]
         current_idx += 2
-        self.error_param2 = struct.unpack('>I', tm_data[current_idx: current_idx + 4])[0]
+        self._error_param2 = struct.unpack('>I', tm_data[current_idx: current_idx + 4])[0]
 
     def _handle_success_verification(self):
         if self.pus_tm.subservice == 5:
-            self.is_step_reply = True
-            self.step_number = struct.unpack('>B', self.pus_tm.tm_data[4:5])[0]
+            self._is_step_reply = True
+            self._step_number = struct.unpack('>B', self.pus_tm.tm_data[4:5])[0]
         elif self.pus_tm.subservice not in [1, 3, 7]:
             logger = get_console_logger()
             logger.warning("Service1TM: Invalid subservice")
+
+    @property
+    def error_param_1(self) -> int:
+        """Returns -1 if the packet does not have a failure code"""
+        if not self._has_tc_error_code:
+            return -1
+        else:
+            return self._error_param1
+
+    @property
+    def error_param_2(self) -> int:
+        if not self._has_tc_error_code:
+            return -1
+        else:
+            return self._error_param2
 
     @property
     def is_step_reply(self):
