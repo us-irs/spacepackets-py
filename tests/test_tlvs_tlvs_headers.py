@@ -21,7 +21,7 @@ class TestTlvsLvsHeader(TestCase):
         self.assertEqual(test_tlv.tlv_type, TlvTypes.FILESTORE_REQUEST)
         self.assertEqual(test_tlv.length, 5)
         self.assertEqual(test_tlv.value, bytes([0, 1, 2, 3, 4]))
-        self.assertEqual(test_tlv.packet_length, 7)
+        self.assertEqual(test_tlv.packet_len, 7)
 
         test_tlv_package = test_tlv.pack()
         test_tlv_unpacked = CfdpTlv.unpack(raw_bytes=test_tlv_package)

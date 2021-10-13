@@ -23,9 +23,9 @@ class TestTelecommand(TestCase):
             service=17, subservice=1, ssc=25, pus_version=PusVersion.PUS_C
         )
         pus_17_telecommand.print(PrintFormats.HEX)
-        self.assertTrue(pus_17_telecommand.packet_length == len(pus_17_telecommand.pack()))
+        self.assertTrue(pus_17_telecommand.packet_len == len(pus_17_telecommand.pack()))
         command_tuple = pus_17_telecommand.pack_command_tuple()
-        self.assertTrue(len(command_tuple[0]) == pus_17_telecommand.packet_length)
+        self.assertTrue(len(command_tuple[0]) == pus_17_telecommand.packet_len)
         print(repr(pus_17_telecommand))
         print(pus_17_telecommand)
         self.assertTrue(pus_17_telecommand.valid)
@@ -161,7 +161,7 @@ class TestTelemetry(TestCase):
         self.assertEqual(pus_17_tm.subservice, 2)
         self.assertEqual(pus_17_tm.service, 17)
         self.assertEqual(pus_17_tm.ssc, 22)
-        self.assertEqual(pus_17_tm.packet_length, 22)
+        self.assertEqual(pus_17_tm.packet_len, 22)
         pus_17_raw = pus_17_tm.pack()
         self.assertEqual(get_service_from_raw_pus_packet(raw_bytearray=pus_17_raw), 17)
         self.assertRaises(ValueError, get_service_from_raw_pus_packet, bytearray())
@@ -186,7 +186,7 @@ class TestTelemetry(TestCase):
         self.assertEqual(pus_17_tm.tm_data, source_data)
         self.assertEqual(pus_17_tm.packet_id, 0x0822)
         pus_17_tm.print_full_packet_string(PrintFormats.HEX)
-        self.assertEqual(pus_17_tm.packet_length, 24)
+        self.assertEqual(pus_17_tm.packet_len, 24)
         crc16 = pus_17_tm.crc16
         crc_string = f'{(crc16 & 0xff00) >> 8:02x},{crc16 & 0xff:02x}'
         raw_time = pus_17_tm.secondary_packet_header.time.pack()
@@ -253,7 +253,7 @@ class TestTelemetry(TestCase):
             source_data=bytearray([0x42]),
             pus_version=PusVersion.PUS_A
         )
-        expected_len = pus_17_a_type.packet_length
+        expected_len = pus_17_a_type.packet_len
         self.assertEqual(expected_len, 20)
         self.assertEqual(pus_17_a_type.get_source_data_string(PrintFormats.HEX), 'hex [42]')
         self.assertEqual(pus_17_a_type.get_source_data_string(PrintFormats.DEC), 'dec [66]')
@@ -273,7 +273,7 @@ class TestTelemetry(TestCase):
             ssc=34,
             source_data=bytearray([0x42, 0x38]),
         )
-        self.assertEqual(pus_17_a_type.packet_length, 21)
+        self.assertEqual(pus_17_a_type.packet_len, 21)
         self.assertEqual(pus_17_a_type.get_source_data_string(PrintFormats.HEX), 'hex [42,38]')
         self.assertEqual(pus_17_a_type.get_source_data_string(PrintFormats.DEC), 'dec [66,56]')
         self.assertEqual(

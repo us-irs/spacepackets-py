@@ -4,7 +4,8 @@ from spacepackets.cfdp.pdu.ack import AckPdu, ConditionCode, DirectiveCodes, Tra
 from spacepackets.cfdp.conf import PduConfig, TransmissionModes, Direction, FileSize
 from spacepackets.cfdp.pdu.nak import NakPdu
 from spacepackets.cfdp.pdu.finished import FinishedPdu, DeliveryCode, FileDeliveryStatus
-from spacepackets.cfdp.tlv import CfdpTlv, TlvTypes
+from spacepackets.cfdp.tlv import CfdpTlv, TlvTypes, FileStoreResponseTlv, FilestoreActionCode, \
+    FilestoreResponseStatusCode
 from spacepackets.util import get_printable_data_string, PrintFormats
 
 
@@ -254,18 +255,38 @@ class TestPdus(TestCase):
         self.assertEqual(finish_pdu_with_fault_loc.packet_len, 13)
         self.assertEqual(len(finish_pdu_with_fault_loc.pack()), 13)
         self.assertEqual(finish_pdu_with_fault_loc.fault_location_len, 4)
-        with self.assertRaises(ValueError):
-            # Invalid type
-            fault_location_tlv.tlv_type = TlvTypes.FILESTORE_REQUEST
-            FinishedPdu(
-                delivery_code=DeliveryCode.DATA_INCOMPLETE,
-                file_delivery_status=FileDeliveryStatus.DISCARDED_DELIBERATELY,
-                condition_code=ConditionCode.POSITIVE_ACK_LIMIT_REACHED,
-                fault_location=fault_location_tlv,
-                pdu_conf=pdu_conf
-            )
 
         # Now create a packet with filestore responses
+        filestore_reponse_1 = FileStoreResponseTlv(
+            action_code=FilestoreActionCode.REMOVE_DIR_SNN,
+            first_file_name="test.txt",
+            status_code=FilestoreResponseStatusCode.REMOVE_DIR_SUCCESS
+        )
+        filestore_response_1_packed = filestore_reponse_1.pack()
+        self.assertEqual(
+            filestore_response_1_packed,
+            bytes([
+                TlvTypes.FILESTORE_RESPONSE, 11, 0x60, 0x08, 0x74, 0x65, 0x73, 0x74, 0x2e,
+                0x74, 0x78, 0x74, 0x00
+            ])
+        )
+        self.assertEqual(filestore_reponse_1.packet_len, 13)
+        pdu_with_response = FinishedPdu(
+            delivery_code=DeliveryCode.DATA_INCOMPLETE,
+            file_delivery_status=FileDeliveryStatus.DISCARDED_DELIBERATELY,
+            condition_code=ConditionCode.FILESTORE_REJECTION,
+            pdu_conf=pdu_conf,
+            file_store_responses=[filestore_reponse_1]
+        )
+        self.assertEqual(pdu_with_response.packet_len, 22)
+        pdu_with_response_raw = pdu_with_response.pack()
+        expected_array = bytearray([
+            0x20, 0x00, 0x0f, 0x11, 0x00, 0x00, 0x00, 0x05, 0x44
+        ])
+        expected_array.extend(filestore_response_1_packed)
+        self.assertEqual(expected_array, pdu_with_response_raw)
+        pdu_with_response_unpacked = FinishedPdu.unpack(raw_packet=pdu_with_response_raw)
+        self.assertEqual(len(pdu_with_response_unpacked.file_store_responses), 1)
 
     def test_keep_alive_pdu(self):
         pass

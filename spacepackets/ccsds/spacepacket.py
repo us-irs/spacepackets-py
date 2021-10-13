@@ -86,11 +86,11 @@ class SpacePacketHeader:
         return header
 
     @property
-    def header_length(self) -> int:
+    def header_len(self) -> int:
         return SPACE_PACKET_HEADER_SIZE
 
     @property
-    def packet_length(self) -> int:
+    def packet_len(self) -> int:
         """Retrieve the full space packet size when packed
         :return: Size of the TM packet based on the space packet header data length field.
         The space packet data field is the full length of data field minus one without
