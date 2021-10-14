@@ -172,7 +172,7 @@ class FinishedPdu:
             next_tlv_code = rest_of_packet[current_idx]
             if next_tlv_code == TlvTypes.FILESTORE_RESPONSE:
                 next_fs_response = FileStoreResponseTlv.unpack(
-                    raw_tlv=rest_of_packet[current_idx:]
+                    raw_bytes=rest_of_packet[current_idx:]
                 )
                 current_idx += next_fs_response.packet_len
                 self._file_store_responses.append(next_fs_response)
