@@ -5,7 +5,7 @@ from spacepackets.cfdp.conf import PduConfig, TransmissionModes, Direction, File
 from spacepackets.cfdp.pdu.nak import NakPdu
 from spacepackets.cfdp.pdu.finished import FinishedPdu, DeliveryCode, FileDeliveryStatus
 from spacepackets.cfdp.tlv import CfdpTlv, TlvTypes, FileStoreResponseTlv, FilestoreActionCode, \
-    FilestoreResponseStatusCode
+    FilestoreResponseStatusCode, EntityIdTlv
 from spacepackets.util import get_printable_data_string, PrintFormats
 
 
@@ -231,10 +231,10 @@ class TestPdus(TestCase):
         self.assertRaises(ValueError, FinishedPdu.unpack, raw_packet=finish_pdu_repacked)
 
         # Now generate a packet with a fault location
-        fault_location_tlv = CfdpTlv(
-            tlv_type=TlvTypes.ENTITY_ID,
-            value=bytes([0x00, 0x02])
+        fault_location_tlv = EntityIdTlv(
+            entity_id=bytes([0x00, 0x02])
         )
+        self.assertEqual(fault_location_tlv.packet_len, 4)
         finish_pdu_with_fault_loc = FinishedPdu(
             delivery_code=DeliveryCode.DATA_INCOMPLETE,
             file_delivery_status=FileDeliveryStatus.DISCARDED_DELIBERATELY,
@@ -287,6 +287,49 @@ class TestPdus(TestCase):
         self.assertEqual(expected_array, pdu_with_response_raw)
         pdu_with_response_unpacked = FinishedPdu.unpack(raw_packet=pdu_with_response_raw)
         self.assertEqual(len(pdu_with_response_unpacked.file_store_responses), 1)
+
+        # Pack with 2 responses and 1 fault location
+        first_file = 'test.txt'
+        second_file = 'test2.txt'
+        filestore_reponse_2 = FileStoreResponseTlv(
+            action_code=FilestoreActionCode.APPEND_FILE_SNP,
+            first_file_name=first_file,
+            second_file_name=second_file,
+            status_code=FilestoreResponseStatusCode.APPEND_NOT_PERFORMED
+        )
+        fs_response_2_raw = filestore_reponse_2.pack()
+        expected_reply = bytearray()
+        expected_reply.extend(bytes([0x01, 0x15, 0x3f]))
+        expected_reply.append(len(first_file))
+        expected_reply.extend(first_file.encode())
+        expected_reply.append(len(second_file))
+        expected_reply.extend(second_file.encode())
+        # 0 length filestore message
+        expected_reply.append(0)
+        self.assertEqual(filestore_reponse_2.packet_len, 23)
+        self.assertEqual(fs_response_2_raw, expected_reply)
+        finish_pdu_two_responses_one_fault_loc = FinishedPdu(
+            delivery_code=DeliveryCode.DATA_COMPLETE,
+            file_delivery_status=FileDeliveryStatus.FILE_RETAINED,
+            condition_code=ConditionCode.CHECK_LIMIT_REACHED,
+            pdu_conf=pdu_conf,
+            file_store_responses=[filestore_reponse_1, filestore_reponse_2],
+            fault_location=fault_location_tlv
+        )
+        # length should be 13 (response 1) + 23 (response 2)  + 4 (fault loc) + 9 (base)
+        self.assertEqual(finish_pdu_two_responses_one_fault_loc.packet_len, 49)
+        fs_responses = finish_pdu_two_responses_one_fault_loc.file_store_responses
+        self.assertEqual(len(fs_responses), 2)
+        complex_pdu_raw = finish_pdu_two_responses_one_fault_loc.pack()
+        complex_pdu_unpacked = FinishedPdu.unpack(raw_packet=complex_pdu_raw)
+        self.assertEqual(complex_pdu_unpacked.fault_location.pack(), fault_location_tlv.pack())
+        self.assertEqual(filestore_reponse_1.pack(), fs_responses[0].pack())
+        self.assertEqual(filestore_reponse_2.pack(), fs_responses[1].pack())
+
+        # Change TLV type to make it invalid
+        complex_pdu_raw[-5] = TlvTypes.FILESTORE_RESPONSE
+        with self.assertRaises(ValueError):
+            FinishedPdu.unpack(raw_packet=complex_pdu_raw)
 
     def test_keep_alive_pdu(self):
         pass

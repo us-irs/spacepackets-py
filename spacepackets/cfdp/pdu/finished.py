@@ -30,7 +30,7 @@ class FinishedPdu:
             condition_code: ConditionCode,
             pdu_conf: PduConfig,
             file_store_responses: Optional[List[FileStoreResponseTlv]] = None,
-            fault_location: Optional[CfdpTlv] = None,
+            fault_location: Optional[EntityIdTlv] = None,
 
     ):
         self.pdu_file_directive = FileDirectivePduBase(
@@ -95,7 +95,7 @@ class FinishedPdu:
             return file_store_responses_len
 
     @property
-    def fault_location(self):
+    def fault_location(self) -> Optional[EntityIdTlv]:
         return self._fault_location
 
     @fault_location.setter
@@ -180,8 +180,8 @@ class FinishedPdu:
                     logger = get_console_logger()
                     logger.warning('Entity ID found in Finished PDU but wrong condition code')
                     raise ValueError
-                fault_location = EntityIdTlv.unpack(raw_bytes=rest_of_packet[current_idx:])
-                current_idx += fault_location.packet_len
+                self._fault_location = EntityIdTlv.unpack(raw_bytes=rest_of_packet[current_idx:])
+                current_idx += self._fault_location.packet_len
                 return current_idx
             else:
                 logger = get_console_logger()
