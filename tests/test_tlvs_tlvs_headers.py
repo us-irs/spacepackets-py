@@ -120,6 +120,8 @@ class TestTlvsLvsHeader(TestCase):
         self.assertEqual(pdu_header.transaction_seq_num, bytes([0]))
         self.assertEqual(pdu_header.len_transaction_seq_num, 1)
         self.assertEqual(pdu_header.crc_flag, CrcFlag.NO_CRC)
+        pdu_header.crc_flag = CrcFlag.GLOBAL_CONFIG
+        self.assertEqual(pdu_header.crc_flag, CrcFlag.NO_CRC)
         self.assertEqual(
             pdu_header.seg_ctrl, SegmentationControl.NO_RECORD_BOUNDARIES_PRESERVATION
         )

@@ -6,6 +6,7 @@ from spacepackets.cfdp.pdu.nak import NakPdu
 from spacepackets.cfdp.pdu.finished import FinishedPdu, DeliveryCode, FileDeliveryStatus
 from spacepackets.cfdp.tlv import CfdpTlv, TlvTypes, FileStoreResponseTlv, FilestoreActionCode, \
     FilestoreResponseStatusCode, EntityIdTlv
+from spacepackets.cfdp.pdu.keep_alive import KeepAlivePdu
 from spacepackets.util import get_printable_data_string, PrintFormats
 
 
@@ -17,7 +18,8 @@ class TestPdus(TestCase):
             source_entity_id=bytes([0x00, 0x00]),
             dest_entity_id=bytes([0x00, 0x01]),
             crc_flag=CrcFlag.NO_CRC,
-            trans_mode=TransmissionModes.ACKNOWLEDGED
+            trans_mode=TransmissionModes.ACKNOWLEDGED,
+            file_size=FileSize.GLOBAL_CONFIG
         )
         ack_pdu = AckPdu(
             directive_code_of_acked_pdu=DirectiveCodes.FINISHED_PDU,
@@ -44,7 +46,8 @@ class TestPdus(TestCase):
             source_entity_id=bytes([0x10, 0x00, 0x01, 0x02]),
             dest_entity_id=bytes([0x30, 0x00, 0x01, 0x03]),
             crc_flag=CrcFlag.WITH_CRC,
-            trans_mode=TransmissionModes.UNACKNOWLEDGED
+            trans_mode=TransmissionModes.UNACKNOWLEDGED,
+            file_size=FileSize.NORMAL
         )
         ack_pdu_2 = AckPdu(
             directive_code_of_acked_pdu=DirectiveCodes.EOF_PDU,
@@ -230,6 +233,17 @@ class TestPdus(TestCase):
         finish_pdu_repacked = finish_pdu_repacked[:-1]
         self.assertRaises(ValueError, FinishedPdu.unpack, raw_packet=finish_pdu_repacked)
 
+        invalid_fault_source = EntityIdTlv(
+            entity_id=bytes([0x0])
+        )
+        finish_pdu_raw.extend(invalid_fault_source.pack())
+        current_size = finish_pdu_raw[1] << 8 | finish_pdu_raw[2]
+        current_size += invalid_fault_source.packet_len
+        finish_pdu_raw[1] = (current_size & 0xff00) >> 8
+        finish_pdu_raw[2] = current_size & 0x00ff
+        with self.assertRaises(ValueError):
+            FinishedPdu.unpack(raw_packet=finish_pdu_raw)
+
         # Now generate a packet with a fault location
         fault_location_tlv = EntityIdTlv(
             entity_id=bytes([0x00, 0x02])
@@ -332,7 +346,45 @@ class TestPdus(TestCase):
             FinishedPdu.unpack(raw_packet=complex_pdu_raw)
 
     def test_keep_alive_pdu(self):
-        pass
+        pdu_conf = PduConfig.empty()
+        keep_alive_pdu = KeepAlivePdu(
+            pdu_conf=pdu_conf,
+            progress=0
+        )
+        self.assertEqual(keep_alive_pdu.progress, 0)
+        self.assertEqual(keep_alive_pdu.file_size, FileSize.NORMAL)
+        keep_alive_pdu_raw = keep_alive_pdu.pack()
+        self.assertEqual(
+            keep_alive_pdu_raw,
+            bytes([
+                0x20, 0x00, 0x05, 0x11, 0x00, 0x00, 0x00, DirectiveCodes.KEEP_ALIVE_PDU, 0x00,
+                0x00, 0x00, 0x00
+            ])
+        )
+        self.assertEqual(keep_alive_pdu.packet_len, 12)
+        keep_alive_unpacked = KeepAlivePdu.unpack(raw_packet=keep_alive_pdu_raw)
+        self.assertEqual(keep_alive_unpacked.packet_len, 12)
+        self.assertEqual(keep_alive_unpacked.progress, 0)
+        keep_alive_pdu.file_size = FileSize.LARGE
+        self.assertEqual(keep_alive_pdu.packet_len, 16)
+        keep_alive_pdu_large = keep_alive_pdu.pack()
+        self.assertEqual(len(keep_alive_pdu_large), 16)
+
+        keep_alive_pdu.file_size = FileSize.GLOBAL_CONFIG
+        self.assertEqual(keep_alive_pdu.file_size, FileSize.NORMAL)
+
+        keep_alive_pdu.progress = pow(2, 32) + 1
+        with self.assertRaises(ValueError):
+            keep_alive_pdu.pack()
+
+        pdu_conf.file_size = FileSize.LARGE
+        keep_alive_pdu_large = KeepAlivePdu(
+            pdu_conf=pdu_conf,
+            progress=0
+        )
+        keep_alive_pdu_invalid = keep_alive_pdu_large.pack()[:-1]
+        with self.assertRaises(ValueError):
+            KeepAlivePdu.unpack(raw_packet=keep_alive_pdu_invalid)
 
     def test_metadata_pdu(self):
         pass

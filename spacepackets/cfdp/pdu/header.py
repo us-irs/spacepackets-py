@@ -39,8 +39,6 @@ class PduHeader:
 
         self.len_transaction_seq_num = 0
         self.transaction_seq_num = pdu_conf.transaction_seq_num
-        self.file_size = pdu_conf.file_size
-        self.crc_flag = pdu_conf.crc_flag
         self.segment_metadata_flag = segment_metadata_flag
 
     @property
@@ -101,10 +99,7 @@ class PduHeader:
 
     @file_size.setter
     def file_size(self, file_size: FileSize):
-        if file_size == FileSize.GLOBAL_CONFIG:
-            self.pdu_conf.file_size = get_default_file_size()
-        else:
-            self.pdu_conf.file_size = file_size
+        self.pdu_conf.file_size = file_size
 
     @property
     def crc_flag(self):

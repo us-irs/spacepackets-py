@@ -1,5 +1,5 @@
 from __future__ import annotations
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import TypedDict, Tuple
 
 from spacepackets.cfdp.definitions import FileSize, TransmissionModes, CrcFlag, \
@@ -11,9 +11,9 @@ from spacepackets.log import get_console_logger
 class PduConfig:
     """Common configuration fields for a PDU.
 
-    The default values for source entity ID and destination entity ID are the the GLOBAL_CONFIG
-    equivalent which should cause the header implementation to assume a globally configured
-    default value.
+    Setting the GLOBAL_CONFIG property or creating an empty configuration will automatically
+    determine the flag values of the respective fields from the global confiuration to avoid
+    specifying parameter which rarely change repeatedly
     """
     transaction_seq_num: bytes
     trans_mode: TransmissionModes
@@ -30,29 +30,38 @@ class PduConfig:
             transaction_seq_num=bytes([0]),
             trans_mode=TransmissionModes.ACKNOWLEDGED,
             source_entity_id=bytes([0]),
-            dest_entity_id=bytes([0])
+            dest_entity_id=bytes([0]),
+            file_size=FileSize.GLOBAL_CONFIG,
+            crc_flag=CrcFlag.GLOBAL_CONFIG
         )
+
+    def __post_init__(self):
+        """Ensure that the global configuration is converted to the actual value immediately"""
+        if self.crc_flag == CrcFlag.GLOBAL_CONFIG:
+            self.crc_flag = get_default_pdu_crc_mode()
+        if self.file_size == FileSize.GLOBAL_CONFIG:
+            self.file_size = get_default_file_size()
 
 
 class CfdpDict(TypedDict):
     source_dest_entity_ids: Tuple[bytes, bytes]
-    with_crc: bool
+    with_crc: CrcFlag
     file_size: FileSize
 
 
 # TODO: Protect dict access with a dedicated lock for thread-safety
 __CFDP_DICT: CfdpDict = {
     'source_dest_entity_ids': (bytes(), bytes()),
-    'with_crc': False,
+    'with_crc': CrcFlag.NO_CRC,
     'file_size': FileSize.NORMAL,
 }
 
 
-def set_default_pdu_crc_mode(with_crc: bool):
+def set_default_pdu_crc_mode(with_crc: CrcFlag):
     __CFDP_DICT['with_crc'] = with_crc
 
 
-def get_default_pdu_crc_mode() -> bool:
+def get_default_pdu_crc_mode() -> CrcFlag:
     return __CFDP_DICT['with_crc']
 
 

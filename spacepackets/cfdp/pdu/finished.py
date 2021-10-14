@@ -4,7 +4,7 @@ from typing import List, Optional
 
 from spacepackets.cfdp.pdu.file_directive import FileDirectivePduBase, DirectiveCodes, ConditionCode
 from spacepackets.cfdp.conf import check_packet_length, PduConfig
-from spacepackets.cfdp.tlv import CfdpTlv, TlvTypes, FileStoreResponseTlv, EntityIdTlv
+from spacepackets.cfdp.tlv import TlvTypes, FileStoreResponseTlv, EntityIdTlv
 from spacepackets.log import get_console_logger
 
 
