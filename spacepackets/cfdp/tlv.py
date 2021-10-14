@@ -3,6 +3,7 @@ from typing import Tuple, Optional
 import enum
 from spacepackets.log import get_console_logger
 from spacepackets.cfdp.lv import CfdpLv
+from spacepackets.cfdp.definitions import ConditionCode
 
 
 class TlvTypes(enum.IntEnum):
@@ -85,17 +86,17 @@ def map_enum_status_code_to_int(status_code: FilestoreResponseStatusCode) -> int
 
 
 def map_enum_status_code_to_action_status_code(
-        status_code: FilestoreResponseStatusCode
+        status_code_enum: FilestoreResponseStatusCode
 ) -> Tuple[FilestoreActionCode, int]:
     """Map a given file store response status code to the action code and the corresponding
     4 bit status code. the status code will be 0x00 for a SUCCESS operation and 0b1111 if the
     operation was not performed"""
     try:
-        status_code = FilestoreActionCode(status_code & 0xf0)
+        status_code = FilestoreActionCode((status_code_enum & 0xf0) >> 4)
     except ValueError:
         # Invalid status code
         status_code = -1
-    return status_code, status_code & 0x0f
+    return status_code, status_code_enum & 0x0f
 
 
 def map_int_status_code_to_enum(
@@ -204,6 +205,48 @@ class EntityIdTlv:
         entity_id_tlv = cls.__empty()
         entity_id_tlv.tlv = CfdpTlv.unpack(raw_bytes=raw_bytes)
         return entity_id_tlv
+
+    @property
+    def packet_len(self):
+        return self.tlv.packet_len
+
+
+class FaultHandlerOverrideHandlerCodes(enum.IntEnum):
+    NOTICE_OF_CANCELLATION = 0b0001
+    NOTICE_OF_SUSPENSION = 0b0010
+    IGNORE_ERROR = 0b0011
+    ABANDON_TRANSACTION = 0b0100
+
+
+class FaultHandlerOverrideTlv:
+    def __init__(
+            self, condition_code: ConditionCode, handler_code: FaultHandlerOverrideHandlerCodes
+    ):
+        self.condition_code = condition_code
+        self.handler_code = handler_code
+        tlv_value = bytes([(self.condition_code << 4) | self.handler_code])
+        self.tlv = CfdpTlv(
+            tlv_type=TlvTypes.FAULT_HANDLER,
+            value=tlv_value
+        )
+
+    @classmethod
+    def __empty(cls) -> FaultHandlerOverrideTlv:
+        return cls(
+            condition_code=ConditionCode.NO_CONDITION_FIELD,
+            handler_code=FaultHandlerOverrideHandlerCodes.IGNORE_ERROR
+        )
+
+    def pack(self) -> bytearray:
+        return self.tlv.pack()
+
+    @classmethod
+    def unpack(cls, raw_bytes: bytes) -> FaultHandlerOverrideTlv:
+        fault_handler_ovr_tlv = cls.__empty()
+        fault_handler_ovr_tlv.tlv = CfdpTlv.unpack(raw_bytes=raw_bytes)
+        fault_handler_ovr_tlv.condition_code = (fault_handler_ovr_tlv.tlv.value[0] & 0xf0) >> 4
+        fault_handler_ovr_tlv.handler_code = fault_handler_ovr_tlv.tlv.value[0] & 0x0f
+        return fault_handler_ovr_tlv
 
     @property
     def packet_len(self):

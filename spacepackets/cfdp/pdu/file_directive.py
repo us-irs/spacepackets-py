@@ -19,23 +19,6 @@ class DirectiveCodes(enum.IntEnum):
     NONE = 0x0A
 
 
-class ConditionCode(enum.IntEnum):
-    NO_CONDITION_FIELD = -1
-    NO_ERROR = 0b0000
-    POSITIVE_ACK_LIMIT_REACHED = 0b0001
-    KEEP_ALIVE_LIMIT_REACHED = 0b0010
-    INVALID_TRANSMISSION_MODE = 0b0011
-    FILESTORE_REJECTION = 0b0100
-    FILE_CHECKSUM_FAILURE = 0b0101
-    FILE_SIZE_ERROR = 0b0110
-    NAK_LIMIT_REACHED = 0b0111
-    INACTIVITY_DETECTED = 0b1000
-    CHECK_LIMIT_REACHED = 0b1010
-    UNSUPPORTED_CHECKSUM_TYPE = 0b1011
-    SUSPEND_REQUEST_RECEIVED = 0b1110
-    CANCEL_REQUEST_RECEIVED = 0b1111
-
-
 class FileDirectivePduBase:
     FILE_DIRECTIVE_PDU_LEN = 5
     """Base class for file directive PDUs encapsulating all its common components.
@@ -146,12 +129,12 @@ class FileDirectivePduBase:
         if self.pdu_header.pdu_conf.file_size == FileSize.LARGE:
             if not check_packet_length(len(raw_packet), current_idx + 8 + 1):
                 raise ValueError
-            file_size = struct.unpack('!I', raw_packet[current_idx: current_idx + 8])
+            file_size = struct.unpack('!I', raw_packet[current_idx: current_idx + 8])[0]
             current_idx += 8
         else:
             if not check_packet_length(len(raw_packet), current_idx + 4 + 1):
                 raise ValueError
-            file_size = struct.unpack('!I', raw_packet[current_idx: current_idx + 4])
+            file_size = struct.unpack('!I', raw_packet[current_idx: current_idx + 4])[0]
             current_idx += 4
         return current_idx, file_size
 

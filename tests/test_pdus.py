@@ -1,11 +1,12 @@
 from unittest import TestCase
-from spacepackets.cfdp.pdu.ack import AckPdu, ConditionCode, DirectiveCodes, TransactionStatus, \
-    CrcFlag
+from spacepackets.cfdp.definitions import CrcFlag
+from spacepackets.cfdp.pdu.ack import AckPdu, ConditionCode, DirectiveCodes, TransactionStatus
 from spacepackets.cfdp.conf import PduConfig, TransmissionModes, Direction, FileSize
 from spacepackets.cfdp.pdu.nak import NakPdu
 from spacepackets.cfdp.pdu.finished import FinishedPdu, DeliveryCode, FileDeliveryStatus
 from spacepackets.cfdp.tlv import CfdpTlv, TlvTypes, FileStoreResponseTlv, FilestoreActionCode, \
     FilestoreResponseStatusCode, EntityIdTlv
+from spacepackets.cfdp.pdu.metadata import MetadataPdu, ChecksumTypes
 from spacepackets.cfdp.pdu.keep_alive import KeepAlivePdu
 from spacepackets.util import get_printable_data_string, PrintFormats
 
@@ -387,7 +388,32 @@ class TestPdus(TestCase):
             KeepAlivePdu.unpack(raw_packet=keep_alive_pdu_invalid)
 
     def test_metadata_pdu(self):
-        pass
+        pdu_conf = PduConfig.empty()
+        metadata_pdu = MetadataPdu(
+            pdu_conf=pdu_conf,
+            closure_requested=False,
+            file_size=2,
+            source_file_name='test.txt',
+            dest_file_name='test2.txt',
+            checksum_type=ChecksumTypes.MODULAR
+        )
+        self.check_metadata_fields_0(metadata_pdu=metadata_pdu)
+        # 5 bytes from FSS with normal size and first eight bits
+        self.assertEqual(metadata_pdu.packet_len, 10 + 9 + 8 + 5)
+        metadata_pdu_raw = metadata_pdu.pack()
+        metadata_pdu_unpacked = MetadataPdu.unpack(raw_packet=metadata_pdu_raw)
+        self.check_metadata_fields_0(metadata_pdu=metadata_pdu_unpacked)
+        metadata_pdu_raw = metadata_pdu_raw[:8+6]
+        self.assertRaises(ValueError, MetadataPdu.unpack, raw_packet=metadata_pdu_raw)
+
+    def check_metadata_fields_0(self, metadata_pdu: MetadataPdu):
+        self.assertEqual(metadata_pdu.closure_requested, False)
+        self.assertEqual(metadata_pdu.file_size, 2)
+        self.assertEqual(metadata_pdu.source_file_name, 'test.txt')
+        self.assertEqual(metadata_pdu.dest_file_name, 'test2.txt')
+        self.assertEqual(metadata_pdu.pdu_file_directive.header_len, 8)
+        self.assertEqual(metadata_pdu.source_file_name_lv.packet_len, 9)
+        self.assertEqual(metadata_pdu.dest_file_name_lv.packet_len, 10)
 
     def test_prompt_pdu(self):
         pass

@@ -2,8 +2,8 @@ from __future__ import annotations
 import struct
 
 
-from spacepackets.cfdp.pdu.file_directive import FileDirectivePduBase, DirectiveCodes, \
-    ConditionCode
+from spacepackets.cfdp.pdu.file_directive import FileDirectivePduBase, DirectiveCodes
+from spacepackets.cfdp.definitions import ConditionCode
 from spacepackets.cfdp.conf import PduConfig
 from spacepackets.cfdp.tlv import CfdpTlv
 from spacepackets.cfdp.conf import check_packet_length

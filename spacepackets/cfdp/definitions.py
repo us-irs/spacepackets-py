@@ -44,6 +44,23 @@ class LenInBytes(enum.IntEnum):
     NONE = 99
 
 
+class ConditionCode(enum.IntEnum):
+    NO_CONDITION_FIELD = -1
+    NO_ERROR = 0b0000
+    POSITIVE_ACK_LIMIT_REACHED = 0b0001
+    KEEP_ALIVE_LIMIT_REACHED = 0b0010
+    INVALID_TRANSMISSION_MODE = 0b0011
+    FILESTORE_REJECTION = 0b0100
+    FILE_CHECKSUM_FAILURE = 0b0101
+    FILE_SIZE_ERROR = 0b0110
+    NAK_LIMIT_REACHED = 0b0111
+    INACTIVITY_DETECTED = 0b1000
+    CHECK_LIMIT_REACHED = 0b1010
+    UNSUPPORTED_CHECKSUM_TYPE = 0b1011
+    SUSPEND_REQUEST_RECEIVED = 0b1110
+    CANCEL_REQUEST_RECEIVED = 0b1111
+
+
 def get_transaction_seq_num_as_bytes(
         transaction_seq_num: int, byte_length: LenInBytes
 ) -> bytearray:

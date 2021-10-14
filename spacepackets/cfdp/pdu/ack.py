@@ -1,9 +1,8 @@
 from __future__ import annotations
 import enum
 
-from spacepackets.cfdp.pdu.file_directive import FileDirectivePduBase, DirectiveCodes, \
-    ConditionCode
-from spacepackets.cfdp.pdu.header import CrcFlag
+from spacepackets.cfdp.pdu.file_directive import FileDirectivePduBase, DirectiveCodes
+from spacepackets.cfdp.definitions import ConditionCode
 from spacepackets.cfdp.conf import PduConfig
 
 

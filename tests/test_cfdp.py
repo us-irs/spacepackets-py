@@ -2,13 +2,17 @@ import struct
 from unittest import TestCase
 
 from spacepackets.cfdp.definitions import FileSize
-from spacepackets.cfdp.tlv import CfdpTlv, TlvTypes
+from spacepackets.cfdp.tlv import CfdpTlv, TlvTypes, map_enum_status_code_to_action_status_code,  \
+    map_int_status_code_to_enum, map_enum_status_code_to_int, FilestoreResponseStatusCode, \
+    FilestoreActionCode
 from spacepackets.cfdp.lv import CfdpLv
+from spacepackets.util import get_printable_data_string, PrintFormats
 from spacepackets.cfdp.pdu.prompt import PromptPdu, ResponseRequired
 from spacepackets.cfdp.definitions import LenInBytes, get_transaction_seq_num_as_bytes
 from spacepackets.cfdp.pdu import PduHeader, PduType, SegmentMetadataFlag
 from spacepackets.cfdp.conf import PduConfig, TransmissionModes, Direction, CrcFlag, \
-    SegmentationControl
+    SegmentationControl, set_default_pdu_crc_mode, set_default_file_size, get_default_file_size, \
+    get_default_pdu_crc_mode, set_entity_ids, get_entity_ids
 
 
 class TestTlvsLvsHeader(TestCase):
@@ -46,6 +50,24 @@ class TestTlvsLvsHeader(TestCase):
         # Invalid type when unpacking
         faulty_tlv = bytes([TlvTypes.ENTITY_ID + 3, 2, 1, 2])
         self.assertRaises(ValueError, CfdpTlv.unpack, faulty_tlv)
+
+        action_code, status_code = map_enum_status_code_to_action_status_code(
+            FilestoreResponseStatusCode.APPEND_NOT_PERFORMED
+        )
+        self.assertEqual(action_code, FilestoreActionCode.APPEND_FILE_SNP)
+        self.assertEqual(status_code, 0b1111)
+        action_code, status_code = map_enum_status_code_to_action_status_code(
+            FilestoreResponseStatusCode.INVALID
+        )
+        self.assertEqual(action_code, -1)
+        status_code = map_int_status_code_to_enum(
+            action_code=FilestoreActionCode.APPEND_FILE_SNP, status_code=0b1111
+        )
+        self.assertEqual(status_code, FilestoreResponseStatusCode.APPEND_NOT_PERFORMED)
+        invalid_code = map_int_status_code_to_enum(
+            action_code=FilestoreActionCode.APPEND_FILE_SNP, status_code=0b1100
+        )
+        self.assertEqual(invalid_code, FilestoreResponseStatusCode.INVALID)
 
     def test_lvs(self):
         test_values = bytes([0, 1, 2])
@@ -127,6 +149,8 @@ class TestTlvsLvsHeader(TestCase):
         )
         self.assertEqual(pdu_header.header_len, 7)
         pdu_header_packed = pdu_header.pack()
+        string = get_printable_data_string(print_format=PrintFormats.HEX, data=pdu_header_packed)
+        self.assertEqual(string, 'hex [20,00,00,11,00,00,00]')
         self.check_fields_case_one(pdu_header_packed=pdu_header_packed)
         pdu_header_unpacked = PduHeader.unpack(raw_packet=pdu_header_packed)
         pdu_header_repacked = pdu_header_unpacked.pack()
@@ -148,7 +172,7 @@ class TestTlvsLvsHeader(TestCase):
         self.assertTrue(pdu_header.is_large_file())
         pdu_header_packed = pdu_header.pack()
         self.check_fields_case_two(pdu_header_packed=pdu_header_packed)
-
+        set_entity_ids(source_entity_id=bytes(), dest_entity_id=bytes())
         self.assertRaises(ValueError, pdu_header.set_entity_ids, bytes(), bytes())
         self.assertRaises(ValueError, pdu_header.set_entity_ids, bytes([0, 1, 2]), bytes())
         self.assertRaises(
@@ -251,3 +275,15 @@ class TestTlvsLvsHeader(TestCase):
         self.assertEqual(pdu_header_packed[6] << 8 | pdu_header_packed[7], 300)
         # Destination ID
         self.assertEqual(pdu_header_packed[8:10], bytes([0, 1]))
+
+    def test_config(self):
+        set_default_pdu_crc_mode(CrcFlag.WITH_CRC)
+        self.assertEqual(get_default_pdu_crc_mode(), CrcFlag.WITH_CRC)
+        set_default_pdu_crc_mode(CrcFlag.NO_CRC)
+        self.assertEqual(get_default_pdu_crc_mode(), CrcFlag.NO_CRC)
+        set_default_file_size(FileSize.LARGE)
+        self.assertEqual(get_default_file_size(), FileSize.LARGE)
+        set_default_file_size(FileSize.NORMAL)
+        self.assertEqual(get_default_file_size(), FileSize.NORMAL)
+        set_entity_ids(bytes([0x00, 0x01]), bytes([0x02, 0x03]))
+        self.assertEqual(get_entity_ids(), (bytes([0x00, 0x01]), bytes([0x02, 0x03])))

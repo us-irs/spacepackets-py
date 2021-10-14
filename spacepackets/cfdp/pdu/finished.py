@@ -2,7 +2,8 @@ from __future__ import annotations
 import enum
 from typing import List, Optional
 
-from spacepackets.cfdp.pdu.file_directive import FileDirectivePduBase, DirectiveCodes, ConditionCode
+from spacepackets.cfdp.pdu.file_directive import FileDirectivePduBase, DirectiveCodes
+from spacepackets.cfdp.definitions import ConditionCode
 from spacepackets.cfdp.conf import check_packet_length, PduConfig
 from spacepackets.cfdp.tlv import TlvTypes, FileStoreResponseTlv, EntityIdTlv
 from spacepackets.log import get_console_logger
