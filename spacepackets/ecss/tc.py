@@ -244,7 +244,7 @@ class PusTelecommand:
         header_len = \
             SPACE_PACKET_HEADER_SIZE + \
             tc_unpacked.data_field_header.get_header_size(pus_version=pus_version)
-        expected_packet_len = tc_unpacked.packet_length
+        expected_packet_len = tc_unpacked.packet_len
         if len(raw_packet) < expected_packet_len:
             logger = get_console_logger()
             logger.warning(
@@ -266,13 +266,13 @@ class PusTelecommand:
         return tc_unpacked
 
     @property
-    def packet_length(self) -> int:
+    def packet_len(self) -> int:
         """Retrieve the full packet size when packed
         :return: Size of the TM packet based on the space packet header data length field.
         The space packet data field is the full length of data field minus one without
         the space packet header.
         """
-        return self.space_packet_header.packet_length
+        return self.space_packet_header.packet_len
 
     @staticmethod
     def get_data_length(app_data_len: int, secondary_header_len: int) -> int:

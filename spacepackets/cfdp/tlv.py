@@ -1,8 +1,9 @@
 from __future__ import annotations
-from typing import Tuple, Optional
+from typing import Tuple, Optional, TypeVar, Type, Union, List
 import enum
 from spacepackets.log import get_console_logger
 from spacepackets.cfdp.lv import CfdpLv
+from spacepackets.cfdp.definitions import ConditionCode
 
 
 class TlvTypes(enum.IntEnum):
@@ -32,38 +33,70 @@ class FilestoreActionCode(enum.IntEnum):
 class FilestoreResponseStatusCode(enum.IntEnum):
     """File store response status codes. First four bits are the action code, last four bits
     the status code"""
-    SUCCESS = 0x00
-    NOT_PERFORMED = 0xff
+    _SUCCESS = 0b0000
+    _NOT_PERFORMED = 0b1111
 
+    CREATE_SUCCESS = FilestoreActionCode.CREATE_FILE_SNM << 4 | _SUCCESS
     CREATE_NOT_ALLOWED = FilestoreActionCode.CREATE_FILE_SNM << 4 | 0b0001
+    CREATE_NOT_PERFORMED = FilestoreActionCode.CREATE_FILE_SNM << 4 | _NOT_PERFORMED
 
+    DELETE_SUCCESS = FilestoreActionCode.DELETE_FILE_SNN << 4 | _SUCCESS
     DELETE_FILE_DOES_NOT_EXIST = FilestoreActionCode.DELETE_FILE_SNN << 4 | 0b0001
-    DELETE_NOT_ALLOWED = FilestoreActionCode.DELETE_FILE_SNN << 4 | 0b0010
+    DELETE_NOT_ALLOWED = FilestoreActionCode.DELETE_FILE_SNN << 4 | _NOT_PERFORMED
 
+    RENAME_SUCCESS = FilestoreActionCode.RENAME_FILE_SNP << 4 | _SUCCESS
     RENAME_OLD_FILE_DOES_NOT_EXIST = FilestoreActionCode.RENAME_FILE_SNP << 4 | 0b0001
     RENAME_NEW_FILE_DOES_EXIST = FilestoreActionCode.RENAME_FILE_SNP << 4 | 0b0010
     RENAME_NOT_ALLOWED = FilestoreActionCode.RENAME_FILE_SNP << 4 | 0b0011
+    RENAME_NOT_PERFORMED = FilestoreActionCode.RENAME_FILE_SNP << 4 | _NOT_PERFORMED
 
+    APPEND_SUCCESS = FilestoreActionCode.APPEND_FILE_SNP << 4 | _SUCCESS
     APPEND_FILE_NAME_ONE_NOT_EXISTS = FilestoreActionCode.APPEND_FILE_SNP << 4 | 0b0001
     APPEND_FILE_NAME_TWO_NOT_EXISTS = FilestoreActionCode.APPEND_FILE_SNP << 4 | 0b0010
     APPEND_NOT_ALLOWED = FilestoreActionCode.APPEND_FILE_SNP << 4 | 0b0011
+    APPEND_NOT_PERFORMED = FilestoreActionCode.APPEND_FILE_SNP << 4 | _NOT_PERFORMED
 
+    REPLACE_SUCCESS = FilestoreActionCode.REPLACE_FILE_SNP << 4 | _SUCCESS
     REPLACE_FILE_NAME_ONE_DOES_NOT_EXIST = FilestoreActionCode.REPLACE_FILE_SNP << 4 | 0b0001
     REPLACE_FILE_NAME_TWO_DOES_NOT_EXIST = FilestoreActionCode.REPLACE_FILE_SNP << 4 | 0b0010
     REPLACE_NOT_ALLOWED = FilestoreActionCode.REPLACE_FILE_SNP << 4 | 0b0011
+    REPLACE_NOT_PERFORMED = FilestoreActionCode.REPLACE_FILE_SNP << 4 | _NOT_PERFORMED
 
+    CREATE_DIR_SUCCESS = FilestoreActionCode.CREATE_DIR_SNN << 4 | _SUCCESS
     CREATE_DIR_CAN_NOT_BE_CREATED = FilestoreActionCode.CREATE_DIR_SNN << 4 | 0b0001
+    CREATE_DIR_NOT_PERFORMED = FilestoreActionCode.CREATE_DIR_SNN << 4 | _NOT_PERFORMED
 
+    REMOVE_DIR_SUCCESS = FilestoreActionCode.REMOVE_DIR_SNN << 4 | _SUCCESS
     REMOVE_DIR_DOES_NOT_EXIST = FilestoreActionCode.REMOVE_DIR_SNN << 4 | 0b0001
     REMOVE_DIR_NOT_ALLOWED = FilestoreActionCode.REMOVE_DIR_SNN << 4 | 0b0010
+    REMOVE_DIR_NOT_PERFORMED = FilestoreActionCode.REMOVE_DIR_SNN << 4 | _NOT_PERFORMED
 
+    DENY_FILE_DEL_SUCCESS = FilestoreActionCode.DENY_FILE_SMM << 4 | _SUCCESS
     DENY_FILE_DEL_NOT_ALLOWED = FilestoreActionCode.DENY_FILE_SMM << 4 | 0b0010
+    DENY_FILE_DEL_NOT_PERFORMED = FilestoreActionCode.DENY_FILE_SMM << 4 | _NOT_PERFORMED
+
+    DENY_DIR_DEL_SUCCESS = FilestoreActionCode.DENY_DIR_SNN << 4 | _SUCCESS
     DENY_DIR_DEL_NOT_ALLOWED = FilestoreActionCode.DENY_DIR_SNN << 4 | 0b0010
+    DENY_DIR_DEL_NOT_PERFORMED = FilestoreActionCode.DENY_DIR_SNN << 4 | _NOT_PERFORMED
     INVALID = -1
 
 
 def map_enum_status_code_to_int(status_code: FilestoreResponseStatusCode) -> int:
     return status_code & 0x0f
+
+
+def map_enum_status_code_to_action_status_code(
+        status_code_enum: FilestoreResponseStatusCode
+) -> Tuple[FilestoreActionCode, int]:
+    """Map a given file store response status code to the action code and the corresponding
+    4 bit status code. the status code will be 0x00 for a SUCCESS operation and 0b1111 if the
+    operation was not performed"""
+    try:
+        status_code = FilestoreActionCode((status_code_enum & 0xf0) >> 4)
+    except ValueError:
+        # Invalid status code
+        status_code = -1
+    return status_code, status_code_enum & 0x0f
 
 
 def map_int_status_code_to_enum(
@@ -76,14 +109,10 @@ def map_int_status_code_to_enum(
     :return: The status code. Will be FilestoreResponseStatusCode.INVALID in case no valid status
         code was detected
     """
-    if status_code == 0b0000:
-        return FilestoreResponseStatusCode.SUCCESS
-    elif status_code == 0b1111:
-        return FilestoreResponseStatusCode.NOT_PERFORMED
     try:
         status_code = FilestoreResponseStatusCode(action_code << 4 | status_code)
         return status_code
-    except IndexError:
+    except (IndexError, ValueError):
         return FilestoreResponseStatusCode.INVALID
 
 
@@ -154,8 +183,162 @@ class CfdpTlv:
         )
 
     @property
-    def packet_length(self) -> int:
+    def packet_len(self) -> int:
         return self.MINIMAL_LEN + len(self.value)
+
+
+class ConcreteTlvBase:
+    def __init__(self, tlv: CfdpTlv):
+        self.tlv = tlv
+
+    def pack(self) -> bytearray:
+        return self.tlv.pack()
+
+    @property
+    def packet_len(self):
+        return self.tlv.packet_len
+
+    def _check_type(self, tlv_type: TlvTypes):
+        if self.tlv.tlv_type != tlv_type:
+            raise ValueError
+
+
+class EntityIdTlv(ConcreteTlvBase):
+    def __init__(self, entity_id: bytes):
+        tlv = CfdpTlv(tlv_type=TlvTypes.ENTITY_ID, value=entity_id)
+        ConcreteTlvBase.__init__(self, tlv=tlv)
+
+    @classmethod
+    def __empty(cls) -> EntityIdTlv:
+        return cls(
+            entity_id=bytes()
+        )
+
+    @classmethod
+    def unpack(cls, raw_bytes: bytes) -> EntityIdTlv:
+        entity_id_tlv = cls.__empty()
+        entity_id_tlv.tlv = CfdpTlv.unpack(raw_bytes=raw_bytes)
+        entity_id_tlv._check_type(tlv_type=TlvTypes.ENTITY_ID)
+        return entity_id_tlv
+
+    @classmethod
+    def from_tlv(cls, cfdp_tlv: CfdpTlv) -> EntityIdTlv:
+        if cfdp_tlv.tlv_type != TlvTypes.ENTITY_ID:
+            raise ValueError
+        entity_id_tlv = cls.__empty()
+        entity_id_tlv.tlv = cfdp_tlv
+        return entity_id_tlv
+
+
+class FaultHandlerOverrideHandlerCodes(enum.IntEnum):
+    NOTICE_OF_CANCELLATION = 0b0001
+    NOTICE_OF_SUSPENSION = 0b0010
+    IGNORE_ERROR = 0b0011
+    ABANDON_TRANSACTION = 0b0100
+
+
+class FaultHandlerOverrideTlv(ConcreteTlvBase):
+    def __init__(
+            self, condition_code: ConditionCode, handler_code: FaultHandlerOverrideHandlerCodes
+    ):
+        self.condition_code = condition_code
+        self.handler_code = handler_code
+        tlv_value = bytes([(self.condition_code << 4) | self.handler_code])
+        tlv = CfdpTlv(
+            tlv_type=TlvTypes.FAULT_HANDLER,
+            value=tlv_value
+        )
+        ConcreteTlvBase.__init__(self, tlv=tlv)
+
+    @classmethod
+    def __empty(cls) -> FaultHandlerOverrideTlv:
+        return cls(
+            condition_code=ConditionCode.NO_ERROR,
+            handler_code=FaultHandlerOverrideHandlerCodes.IGNORE_ERROR
+        )
+
+    @classmethod
+    def unpack(cls, raw_bytes: bytes) -> FaultHandlerOverrideTlv:
+        fault_handler_ovr_tlv = cls.__empty()
+        fault_handler_ovr_tlv.tlv = CfdpTlv.unpack(raw_bytes=raw_bytes)
+        fault_handler_ovr_tlv._check_type(tlv_type=TlvTypes.FAULT_HANDLER)
+        fault_handler_ovr_tlv.condition_code = (fault_handler_ovr_tlv.tlv.value[0] & 0xf0) >> 4
+        fault_handler_ovr_tlv.handler_code = fault_handler_ovr_tlv.tlv.value[0] & 0x0f
+        return fault_handler_ovr_tlv
+
+    @classmethod
+    def from_tlv(cls, cfdp_tlv: CfdpTlv) -> FaultHandlerOverrideTlv:
+        if cfdp_tlv.tlv_type != TlvTypes.FAULT_HANDLER:
+            raise ValueError
+        # This ensures that all fields are set properly
+        fault_handler_tlv = FaultHandlerOverrideTlv.unpack(raw_bytes=cfdp_tlv.pack())
+        return fault_handler_tlv
+
+
+def create_cfdp_proxy_and_dir_op_message_marker() -> bytes:
+    """CCSDS 727.0-B-5 p.88: The message identifier for standard CFDP proxy and dir op messages
+    is the presence of the ASCII characters 'cfdp' in the first four octests of each message"""
+    return 'cfdp'.encode()
+
+
+class MessageToUserTlv(ConcreteTlvBase):
+    def __init__(self, value: bytes):
+        tlv = CfdpTlv(
+            tlv_type=TlvTypes.MESSAGE_TO_USER,
+            value=value
+        )
+        ConcreteTlvBase.__init__(self, tlv=tlv)
+
+    def is_standard_proxy_dir_ops_msg(self) -> bool:
+        if len(self.tlv.value) >= 4 and self.tlv.value[0:4].decode() == 'cfdp':
+            return True
+        return False
+
+    @classmethod
+    def __empty(cls):
+        return cls(value=bytes())
+
+    @classmethod
+    def unpack(cls, raw_bytes: bytes):
+        msg_to_user_tlv = cls.__empty()
+        msg_to_user_tlv.tlv = CfdpTlv.unpack(raw_bytes=raw_bytes)
+        msg_to_user_tlv._check_type(tlv_type=TlvTypes.MESSAGE_TO_USER)
+        return msg_to_user_tlv
+
+    @classmethod
+    def from_tlv(cls, cfdp_tlv: CfdpTlv) -> MessageToUserTlv:
+        if cfdp_tlv.tlv_type != TlvTypes.MESSAGE_TO_USER:
+            raise ValueError
+        msg_to_user_tlv = cls.__empty()
+        msg_to_user_tlv.tlv = cfdp_tlv
+        return msg_to_user_tlv
+
+
+class FlowLabelTlv(ConcreteTlvBase):
+    def __init__(self, value: bytes):
+        tlv = CfdpTlv(
+            tlv_type=TlvTypes.FLOW_LABEL,
+            value=value
+        )
+        ConcreteTlvBase.__init__(self, tlv=tlv)
+
+    @classmethod
+    def __empty(cls):
+        return cls(value=bytes())
+
+    @classmethod
+    def unpack(cls, raw_bytes: bytes) -> FlowLabelTlv:
+        flow_label_tlv = cls.__empty()
+        flow_label_tlv.tlv = CfdpTlv.unpack(raw_bytes=raw_bytes)
+        flow_label_tlv._check_type(tlv_type=TlvTypes.FLOW_LABEL)
+        return flow_label_tlv
+
+    @classmethod
+    def from_tlv(cls, cfdp_tlv: CfdpTlv) -> FlowLabelTlv:
+        flow_label_tlv = cls.__empty()
+        flow_label_tlv.tlv = cfdp_tlv
+        flow_label_tlv._check_type(tlv_type=TlvTypes.FLOW_LABEL)
+        return flow_label_tlv
 
 
 class FileStoreRequestBase:
@@ -169,7 +352,7 @@ class FileStoreRequestBase:
         self.first_file_name = first_file_name
         self.second_file_name = second_file_name
 
-    def common_packer(self, status_code: int) -> bytearray:
+    def _common_packer(self, status_code: int) -> bytearray:
         tlv_value = bytearray()
         tlv_value.append(self.action_code << 4 | status_code)
         first_name_lv = CfdpLv(
@@ -187,40 +370,49 @@ class FileStoreRequestBase:
         return tlv_value
 
     @staticmethod
-    def common_unpacker(
-            raw_bytes: bytes
+    def _common_unpacker(
+            raw_bytes: bytes, expected_tlv_type: TlvTypes
     ) -> Tuple[FilestoreActionCode, str, int, int, Optional[str]]:
+        """Does only unpack common fields, does not unpack the filestore message of a Filestore
+        Response package
+
+        :return Tuple where the first value is the enumerate Action code, the second value
+            is the first file name, the second value is the status code as an integer,
+            the third value is the length of the full TLV packet
+        """
         tlv = CfdpTlv.unpack(raw_bytes=raw_bytes)
-        if tlv.tlv_type != TlvTypes.FILESTORE_REQUEST:
+        if tlv.tlv_type != expected_tlv_type:
+            logger = get_console_logger()
+            logger.warning('Invalid TLV type detected')
             raise ValueError
-        current_idx = 0
-        action_code_as_int = (tlv.value[current_idx] & 0xf0) >> 4
+        value_idx = 0
+        action_code_as_int = (tlv.value[value_idx] & 0xf0) >> 4
         try:
             action_code = FilestoreActionCode(action_code_as_int)
-        except IndexError:
+        except ValueError:
             logger = get_console_logger()
             logger.warning(
                 f'Invalid action code in file store response with value {action_code_as_int}'
             )
             raise ValueError
-        current_idx += 1
-        status_code_as_int = tlv.value[current_idx] & 0x0f
-        first_lv = CfdpLv.unpack(raw_bytes=tlv[current_idx:])
-        current_idx += first_lv.packet_len
+        status_code_as_int = tlv.value[value_idx] & 0x0f
+        value_idx += 1
+        first_lv = CfdpLv.unpack(raw_bytes=tlv.value[value_idx:])
+        value_idx += first_lv.packet_len
         first_file_name = first_lv.value.decode()
         if action_code in [
             FilestoreActionCode.REPLACE_FILE_SNP, FilestoreActionCode.RENAME_FILE_SNP,
             FilestoreActionCode.APPEND_FILE_SNP
         ]:
-            second_lv = CfdpLv.unpack(raw_bytes=tlv[current_idx:])
-            current_idx += second_lv.packet_len
+            second_lv = CfdpLv.unpack(raw_bytes=tlv.value[value_idx:])
+            value_idx += second_lv.packet_len
             second_file_name = second_lv.value.decode()
         else:
             second_file_name = None
-        return action_code, first_file_name, status_code_as_int, current_idx, second_file_name
+        return action_code, first_file_name, status_code_as_int, tlv.packet_len, second_file_name
 
 
-class FileStoreRequestTlv(FileStoreRequestBase):
+class FileStoreRequestTlv(FileStoreRequestBase, ConcreteTlvBase):
     def __init__(
             self,
             action_code: FilestoreActionCode,
@@ -232,6 +424,8 @@ class FileStoreRequestTlv(FileStoreRequestBase):
             first_file_name=first_file_name,
             second_file_name=second_file_name
         )
+        tlv = self._build_tlv()
+        ConcreteTlvBase.__init__(self, tlv=tlv)
 
     @classmethod
     def __empty(cls) -> FileStoreRequestTlv:
@@ -241,34 +435,42 @@ class FileStoreRequestTlv(FileStoreRequestBase):
             second_file_name=""
         )
 
-    def pack(self) -> bytearray:
-        tlv_value = self.common_packer(status_code=0b0000)
-        tlv = CfdpTlv(
+    def _build_tlv(self) -> CfdpTlv:
+        tlv_value = self._common_packer(status_code=0b0000)
+        return CfdpTlv(
             tlv_type=TlvTypes.FILESTORE_REQUEST,
             value=tlv_value
         )
-        return tlv.pack()
 
     @classmethod
-    def unpack(cls, raw_tlv: bytearray) -> FileStoreRequestTlv:
+    def unpack(cls, raw_bytes: bytearray) -> FileStoreRequestTlv:
         filestore_req = cls.__empty()
-        action_code, first_name, status_code, _, second_name = cls.common_unpacker(
-            raw_bytes=raw_tlv
+        action_code, first_name, status_code, _, second_name = cls._common_unpacker(
+            raw_bytes=raw_bytes, expected_tlv_type=TlvTypes.FILESTORE_REQUEST
         )
         filestore_req.action_code = action_code
         filestore_req.first_file_name = first_name
         if second_name is not None:
             filestore_req.second_file_name = second_name
+        filestore_req.tlv = filestore_req._build_tlv()
         return filestore_req
 
+    @classmethod
+    def from_tlv(cls, cfdp_tlv: CfdpTlv) -> FileStoreRequestTlv:
+        if cfdp_tlv.tlv_type != TlvTypes.FILESTORE_REQUEST:
+            raise ValueError
+        # This ensures that all fields are set properly, although its not the most efficient way
+        fault_handler_tlv = FileStoreRequestTlv.unpack(raw_bytes=cfdp_tlv.pack())
+        return fault_handler_tlv
 
-class FileStoreResponseTlv(FileStoreRequestBase):
+
+class FileStoreResponseTlv(FileStoreRequestBase, ConcreteTlvBase):
     def __init__(
             self,
             action_code: FilestoreActionCode,
             status_code: FilestoreResponseStatusCode,
             first_file_name: str,
-            second_file_name: str,
+            second_file_name: str = "",
             filestore_msg: CfdpLv = CfdpLv(value=bytes())
     ):
         super().__init__(
@@ -278,37 +480,38 @@ class FileStoreResponseTlv(FileStoreRequestBase):
         )
         self.status_code = status_code
         self.filestore_msg = filestore_msg
+        tlv = self._build_tlv()
+        ConcreteTlvBase.__init__(self, tlv=tlv)
 
     @classmethod
     def __empty(cls) -> FileStoreResponseTlv:
         return cls(
             action_code=FilestoreActionCode.CREATE_FILE_SNM,
-            status_code=FilestoreResponseStatusCode.SUCCESS,
+            status_code=FilestoreResponseStatusCode.CREATE_SUCCESS,
             first_file_name="",
             second_file_name=""
         )
 
-    def pack(self) -> bytearray:
+    def _build_tlv(self) -> CfdpTlv:
         status_code_as_int = map_enum_status_code_to_int(status_code=self.status_code)
-        tlv_value = self.common_packer(status_code=status_code_as_int)
+        tlv_value = self._common_packer(status_code=status_code_as_int)
         tlv_value.extend(self.filestore_msg.pack())
-        tlv = CfdpTlv(
-            tlv_type=TlvTypes.FILESTORE_REQUEST,
+        return CfdpTlv(
+            tlv_type=TlvTypes.FILESTORE_RESPONSE,
             value=tlv_value
         )
-        return tlv.pack()
 
     @classmethod
-    def unpack(cls, raw_tlv: bytearray) -> FileStoreResponseTlv:
+    def unpack(cls, raw_bytes: bytearray) -> FileStoreResponseTlv:
         filestore_reply = cls.__empty()
-        action_code, first_name, status_code, idx, second_name = cls.common_unpacker(
-            raw_bytes=raw_tlv
+        action_code, first_name, status_code, idx, second_name = cls._common_unpacker(
+            raw_bytes=raw_bytes, expected_tlv_type=TlvTypes.FILESTORE_RESPONSE
         )
         filestore_reply.action_code = action_code
         filestore_reply.first_file_name = first_name
         try:
-            status_code_named = FilestoreResponseStatusCode(status_code)
-        except IndexError:
+            status_code_named = FilestoreResponseStatusCode(action_code << 4 | status_code)
+        except ValueError:
             logger = get_console_logger()
             logger.warning(
                 f'Invalid status code in file store response with value {status_code} for '
@@ -318,5 +521,42 @@ class FileStoreResponseTlv(FileStoreRequestBase):
         filestore_reply.status_code = status_code_named
         if second_name is not None:
             filestore_reply.second_file_name = second_name
-        filestore_reply.filestore_msg = CfdpLv(value=raw_tlv[idx:])
+        filestore_reply.filestore_msg = CfdpLv.unpack(raw_bytes=raw_bytes[idx - 1:])
+        filestore_reply.tlv = filestore_reply._build_tlv()
         return filestore_reply
+
+    @classmethod
+    def from_tlv(cls, cfdp_tlv: CfdpTlv) -> FileStoreResponseTlv:
+        if cfdp_tlv.tlv_type != TlvTypes.FILESTORE_RESPONSE:
+            raise ValueError
+        # This ensures that all fields are set properly, although its not the most efficient way
+        file_store_response_tlv = FileStoreResponseTlv.unpack(raw_bytes=cfdp_tlv.pack())
+        return file_store_response_tlv
+
+
+TlvBase = TypeVar('TlvBase', bound=ConcreteTlvBase)
+TlvList = List[Union[CfdpTlv, TlvBase]]
+
+
+def concrete_tlv_factory(cfdp_tlv: CfdpTlv, _tlv_type: Type[TlvBase] = TlvBase) -> TlvBase:
+    """This factory returns the concrete CFDP TLV class from a generic CFDP TLV.
+
+    Please note that this might not be the most efficient way to create the concrete classes and
+    it might be more efficient to deserialize a raw buffer into the concrete class directly after
+    checking the TLV type
+    :param cfdp_tlv: Generic TLV packet
+    :param _tlv_type: Optional type specification of the concrete class. This is useful for IDEs
+        and type checkers
+    """
+    if cfdp_tlv.tlv_type == TlvTypes.FILESTORE_REQUEST:
+        return FileStoreRequestTlv.from_tlv(cfdp_tlv=cfdp_tlv)
+    elif cfdp_tlv.tlv_type == TlvTypes.FILESTORE_RESPONSE:
+        return FileStoreResponseTlv.from_tlv(cfdp_tlv=cfdp_tlv)
+    elif cfdp_tlv.tlv_type == TlvTypes.MESSAGE_TO_USER:
+        return MessageToUserTlv.from_tlv(cfdp_tlv=cfdp_tlv)
+    elif cfdp_tlv.tlv_type == TlvTypes.FAULT_HANDLER:
+        return FaultHandlerOverrideTlv.from_tlv(cfdp_tlv=cfdp_tlv)
+    elif cfdp_tlv.tlv_type == TlvTypes.FLOW_LABEL:
+        return FlowLabelTlv.from_tlv(cfdp_tlv=cfdp_tlv)
+    elif cfdp_tlv.tlv_type == TlvTypes.ENTITY_ID:
+        return EntityIdTlv.from_tlv(cfdp_tlv=cfdp_tlv)

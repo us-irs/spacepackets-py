@@ -3,11 +3,9 @@
 """
 from __future__ import annotations
 import struct
-from typing import Deque
 
 from spacepackets.ccsds.time import CdsShortTimestamp
 from spacepackets.ecss.tm import PusVersion, PusTelemetry
-
 from spacepackets.log import get_console_logger
 
 
@@ -37,18 +35,22 @@ class Service1TM:
         self._has_tc_error_code = False
         self._is_step_reply = False
         # Failure Reports with error code
-        self._err_code = 0
+        self._error_code = 0
         self._step_number = 0
-        self.error_param1 = 0
-        self.error_param2 = 0
+        self._error_param1 = -1
+        self._error_param2 = -1
         self.tc_packet_id = tc_packet_id
         self.tc_psc = tc_psc
         self.tc_ssc = tc_psc & 0x3fff
 
+    def pack(self) -> bytearray:
+        # TODO: Pack TM data according to standard and set it in PUS TM
+        return self.pus_tm.pack()
+
     @classmethod
     def __empty(cls) -> Service1TM:
         return cls(
-            subservice_id=0
+            subservice=0
         )
 
     @classmethod
@@ -99,21 +101,36 @@ class Service1TM:
             raise ValueError
         current_idx = 4
         if self.is_step_reply:
-            self.step_number = struct.unpack('>B', tm_data[current_idx: current_idx + 1])[0]
+            self._step_number = struct.unpack('>B', tm_data[current_idx: current_idx + 1])[0]
             current_idx += 1
-        self.err_code = struct.unpack('>H', tm_data[current_idx: current_idx + 2])[0]
+        self._error_code = struct.unpack('>H', tm_data[current_idx: current_idx + 2])[0]
         current_idx += 2
-        self.error_param1 = struct.unpack('>I', tm_data[current_idx: current_idx + 4])[0]
+        self._error_param1 = struct.unpack('>I', tm_data[current_idx: current_idx + 4])[0]
         current_idx += 2
-        self.error_param2 = struct.unpack('>I', tm_data[current_idx: current_idx + 4])[0]
+        self._error_param2 = struct.unpack('>I', tm_data[current_idx: current_idx + 4])[0]
 
     def _handle_success_verification(self):
         if self.pus_tm.subservice == 5:
-            self.is_step_reply = True
-            self.step_number = struct.unpack('>B', self.pus_tm.tm_data[4:5])[0]
+            self._is_step_reply = True
+            self._step_number = struct.unpack('>B', self.pus_tm.tm_data[4:5])[0]
         elif self.pus_tm.subservice not in [1, 3, 7]:
             logger = get_console_logger()
             logger.warning("Service1TM: Invalid subservice")
+
+    @property
+    def error_param_1(self) -> int:
+        """Returns -1 if the packet does not have a failure code"""
+        if not self._has_tc_error_code:
+            return -1
+        else:
+            return self._error_param1
+
+    @property
+    def error_param_2(self) -> int:
+        if not self._has_tc_error_code:
+            return -1
+        else:
+            return self._error_param2
 
     @property
     def is_step_reply(self):
@@ -134,7 +151,7 @@ class Service1TM:
     @property
     def error_code(self):
         if self._has_tc_error_code:
-            return self._err_code
+            return self._error_code
         else:
             logger = get_console_logger()
             logger.warning("Service1TM: get_error_code: This is not a failure packet, returning 0")

@@ -25,7 +25,8 @@ class CfdpLv:
     def pack(self) -> bytearray:
         packet = bytearray()
         packet.append(self.len)
-        packet.extend(self.value)
+        if self.len > 0:
+            packet.extend(self.value)
         return packet
 
     @classmethod
@@ -39,6 +40,6 @@ class CfdpLv:
             logger = get_console_logger()
             logger.warning('Detected length exceeds size of passed bytearray')
             raise ValueError
-        return cls(
-            value=raw_bytes[1:1 + detected_len]
-        )
+        if detected_len == 0:
+            return cls(value=bytes())
+        return cls(value=raw_bytes[1:1 + detected_len])
