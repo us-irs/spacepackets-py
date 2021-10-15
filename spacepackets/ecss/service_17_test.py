@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 from spacepackets.ecss.definitions import PusServices
 from spacepackets.ecss.tm import CdsShortTimestamp, PusVersion, PusTelemetry
 
@@ -24,10 +25,13 @@ class Service17TM:
             destination_id=destination_id
         )
 
+    def pack(self) -> bytearray:
+        return self.pus_tm.pack()
+
     @classmethod
     def __empty(cls) -> Service17TM:
         return cls(
-            subservice_id=0
+            subservice=0
         )
 
     @classmethod

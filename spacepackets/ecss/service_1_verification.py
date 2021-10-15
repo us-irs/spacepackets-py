@@ -3,11 +3,9 @@
 """
 from __future__ import annotations
 import struct
-from typing import Deque
 
 from spacepackets.ccsds.time import CdsShortTimestamp
 from spacepackets.ecss.tm import PusVersion, PusTelemetry
-
 from spacepackets.log import get_console_logger
 
 
@@ -37,7 +35,7 @@ class Service1TM:
         self._has_tc_error_code = False
         self._is_step_reply = False
         # Failure Reports with error code
-        self._err_code = 0
+        self._error_code = 0
         self._step_number = 0
         self._error_param1 = -1
         self._error_param2 = -1
@@ -45,10 +43,14 @@ class Service1TM:
         self.tc_psc = tc_psc
         self.tc_ssc = tc_psc & 0x3fff
 
+    def pack(self) -> bytearray:
+        # TODO: Pack TM data according to standard and set it in PUS TM
+        return self.pus_tm.pack()
+
     @classmethod
     def __empty(cls) -> Service1TM:
         return cls(
-            subservice_id=0
+            subservice=0
         )
 
     @classmethod
@@ -101,7 +103,7 @@ class Service1TM:
         if self.is_step_reply:
             self._step_number = struct.unpack('>B', tm_data[current_idx: current_idx + 1])[0]
             current_idx += 1
-        self._err_code = struct.unpack('>H', tm_data[current_idx: current_idx + 2])[0]
+        self._error_code = struct.unpack('>H', tm_data[current_idx: current_idx + 2])[0]
         current_idx += 2
         self._error_param1 = struct.unpack('>I', tm_data[current_idx: current_idx + 4])[0]
         current_idx += 2
@@ -149,7 +151,7 @@ class Service1TM:
     @property
     def error_code(self):
         if self._has_tc_error_code:
-            return self._err_code
+            return self._error_code
         else:
             logger = get_console_logger()
             logger.warning("Service1TM: get_error_code: This is not a failure packet, returning 0")

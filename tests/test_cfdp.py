@@ -2,78 +2,17 @@ import struct
 from unittest import TestCase
 
 from spacepackets.cfdp.definitions import FileSize
-from spacepackets.cfdp.tlv import CfdpTlv, TlvTypes
-from spacepackets.cfdp.lv import CfdpLv
+from spacepackets.cfdp.pdu.file_directive import FileDirectivePduBase, DirectiveCodes
+from spacepackets.util import get_printable_data_string, PrintFormats
 from spacepackets.cfdp.pdu.prompt import PromptPdu, ResponseRequired
 from spacepackets.cfdp.definitions import LenInBytes, get_transaction_seq_num_as_bytes
 from spacepackets.cfdp.pdu import PduHeader, PduType, SegmentMetadataFlag
 from spacepackets.cfdp.conf import PduConfig, TransmissionModes, Direction, CrcFlag, \
-    SegmentationControl
+    SegmentationControl, set_default_pdu_crc_mode, set_default_file_size, get_default_file_size, \
+    get_default_pdu_crc_mode, set_entity_ids, get_entity_ids
 
 
 class TestTlvsLvsHeader(TestCase):
-
-    def test_tlvs(self):
-        test_tlv = CfdpTlv(
-            tlv_type=TlvTypes.FILESTORE_REQUEST,
-            value=bytes([0, 1, 2, 3, 4])
-        )
-        self.assertEqual(test_tlv.tlv_type, TlvTypes.FILESTORE_REQUEST)
-        self.assertEqual(test_tlv.length, 5)
-        self.assertEqual(test_tlv.value, bytes([0, 1, 2, 3, 4]))
-        self.assertEqual(test_tlv.packet_length, 7)
-
-        test_tlv_package = test_tlv.pack()
-        test_tlv_unpacked = CfdpTlv.unpack(raw_bytes=test_tlv_package)
-        self.assertEqual(test_tlv_unpacked.tlv_type, TlvTypes.FILESTORE_REQUEST)
-        self.assertEqual(test_tlv_unpacked.length, 5)
-        self.assertEqual(test_tlv_unpacked.value, bytes([0, 1, 2, 3, 4]))
-
-        # Length field missmatch
-        another_tlv = bytes([TlvTypes.ENTITY_ID, 1, 3, 4])
-        another_tlv_unpacked = CfdpTlv.unpack(raw_bytes=another_tlv)
-        self.assertEqual(another_tlv_unpacked.value, bytes([3]))
-        self.assertEqual(another_tlv_unpacked.length, 1)
-
-        faulty_tlv = bytes([TlvTypes.FILESTORE_REQUEST, 200, 2, 3])
-        self.assertRaises(ValueError, CfdpTlv.unpack, faulty_tlv)
-        # Too much too pack
-        faulty_values = bytes(300)
-        self.assertRaises(ValueError, CfdpTlv, TlvTypes.FILESTORE_REQUEST, faulty_values)
-        # Too short to unpack
-        faulty_tlv = bytes([0])
-        self.assertRaises(ValueError, CfdpTlv.unpack, faulty_tlv)
-        # Invalid type when unpacking
-        faulty_tlv = bytes([TlvTypes.ENTITY_ID + 3, 2, 1, 2])
-        self.assertRaises(ValueError, CfdpTlv.unpack, faulty_tlv)
-
-    def test_lvs(self):
-        test_values = bytes([0, 1, 2])
-        test_lv = CfdpLv(
-            value=test_values
-        )
-        self.assertEqual(test_lv.value, test_values)
-        self.assertEqual(test_lv.len, 3)
-        self.assertEqual(test_lv.packet_len, 4)
-        test_lv_packed = test_lv.pack()
-        self.assertEqual(len(test_lv_packed), 4)
-        self.assertEqual(test_lv_packed[0], 3)
-        self.assertEqual(test_lv_packed[1: 1 + 3], test_values)
-
-        CfdpLv.unpack(raw_bytes=test_lv_packed)
-        self.assertEqual(test_lv.value, test_values)
-        self.assertEqual(test_lv.len, 3)
-        self.assertEqual(test_lv.packet_len, 4)
-
-        # Too much too pack
-        faulty_values = bytearray(300)
-        self.assertRaises(ValueError, CfdpLv, faulty_values)
-        # Too large to unpack
-        faulty_values[0] = 20
-        self.assertRaises(ValueError, CfdpLv.unpack, faulty_values[0:15])
-        # Too short to unpack
-        faulty_lv = bytes([0])
-        self.assertRaises(ValueError, CfdpTlv.unpack, faulty_lv)
 
     def test_pdu_header(self):
         len_in_bytes = get_transaction_seq_num_as_bytes(
@@ -120,11 +59,15 @@ class TestTlvsLvsHeader(TestCase):
         self.assertEqual(pdu_header.transaction_seq_num, bytes([0]))
         self.assertEqual(pdu_header.len_transaction_seq_num, 1)
         self.assertEqual(pdu_header.crc_flag, CrcFlag.NO_CRC)
+        pdu_header.crc_flag = CrcFlag.GLOBAL_CONFIG
+        self.assertEqual(pdu_header.crc_flag, CrcFlag.NO_CRC)
         self.assertEqual(
             pdu_header.seg_ctrl, SegmentationControl.NO_RECORD_BOUNDARIES_PRESERVATION
         )
         self.assertEqual(pdu_header.header_len, 7)
         pdu_header_packed = pdu_header.pack()
+        string = get_printable_data_string(print_format=PrintFormats.HEX, data=pdu_header_packed)
+        self.assertEqual(string, 'hex [20,00,00,11,00,00,00]')
         self.check_fields_case_one(pdu_header_packed=pdu_header_packed)
         pdu_header_unpacked = PduHeader.unpack(raw_packet=pdu_header_packed)
         pdu_header_repacked = pdu_header_unpacked.pack()
@@ -146,7 +89,7 @@ class TestTlvsLvsHeader(TestCase):
         self.assertTrue(pdu_header.is_large_file())
         pdu_header_packed = pdu_header.pack()
         self.check_fields_case_two(pdu_header_packed=pdu_header_packed)
-
+        set_entity_ids(source_entity_id=bytes(), dest_entity_id=bytes())
         self.assertRaises(ValueError, pdu_header.set_entity_ids, bytes(), bytes())
         self.assertRaises(ValueError, pdu_header.set_entity_ids, bytes([0, 1, 2]), bytes())
         self.assertRaises(
@@ -172,11 +115,13 @@ class TestTlvsLvsHeader(TestCase):
 
         pdu_conf.source_entity_id = bytes([0])
         pdu_conf.dest_entity_id = bytes([0])
+        pdu_conf.transaction_seq_num = bytes([0x00, 0x2c])
         prompt_pdu = PromptPdu(
             reponse_required=ResponseRequired.KEEP_ALIVE,
             pdu_conf=pdu_conf
         )
-        self.assertEqual(prompt_pdu.packet_len, 9)
+        self.assertEqual(prompt_pdu.pdu_file_directive.header_len, 9)
+        self.assertEqual(prompt_pdu.packet_len, 10)
         self.assertEqual(prompt_pdu.crc_flag, CrcFlag.WITH_CRC)
         self.assertEqual(prompt_pdu.source_entity_id, bytes([0]))
         self.assertEqual(prompt_pdu.dest_entity_id, bytes([0]))
@@ -249,3 +194,41 @@ class TestTlvsLvsHeader(TestCase):
         self.assertEqual(pdu_header_packed[6] << 8 | pdu_header_packed[7], 300)
         # Destination ID
         self.assertEqual(pdu_header_packed[8:10], bytes([0, 1]))
+
+    def test_file_directive(self):
+        pdu_conf = PduConfig.empty()
+        file_directive_header = FileDirectivePduBase(
+            directive_code=DirectiveCodes.METADATA_PDU,
+            pdu_conf=pdu_conf,
+            directive_param_field_len=0
+        )
+        self.assertEqual(file_directive_header.packet_len, 8)
+        self.assertEqual(file_directive_header.pdu_data_field_len, 1)
+        file_directive_header.pdu_data_field_len = 2
+        self.assertEqual(file_directive_header.packet_len, 9)
+        file_directive_header_raw = file_directive_header.pack()
+        file_directive_header.pdu_data_field_len = 1
+        self.assertEqual(len(file_directive_header_raw), 8)
+        file_directive_header_raw_invalid = file_directive_header_raw[:-1]
+        with self.assertRaises(ValueError):
+            FileDirectivePduBase.unpack(raw_packet=file_directive_header_raw_invalid)
+        self.assertFalse(file_directive_header._verify_file_len(file_size=pow(2, 33)))
+        invalid_fss = bytes([0x00, 0x01])
+        with self.assertRaises(ValueError):
+            file_directive_header._parse_fss_field(raw_packet=invalid_fss, current_idx=0)
+        file_directive_header.pdu_header.file_size = FileSize.LARGE
+        self.assertFalse(file_directive_header._verify_file_len(file_size=pow(2, 65)))
+        with self.assertRaises(ValueError):
+            file_directive_header._parse_fss_field(raw_packet=invalid_fss, current_idx=0)
+
+    def test_config(self):
+        set_default_pdu_crc_mode(CrcFlag.WITH_CRC)
+        self.assertEqual(get_default_pdu_crc_mode(), CrcFlag.WITH_CRC)
+        set_default_pdu_crc_mode(CrcFlag.NO_CRC)
+        self.assertEqual(get_default_pdu_crc_mode(), CrcFlag.NO_CRC)
+        set_default_file_size(FileSize.LARGE)
+        self.assertEqual(get_default_file_size(), FileSize.LARGE)
+        set_default_file_size(FileSize.NORMAL)
+        self.assertEqual(get_default_file_size(), FileSize.NORMAL)
+        set_entity_ids(bytes([0x00, 0x01]), bytes([0x02, 0x03]))
+        self.assertEqual(get_entity_ids(), (bytes([0x00, 0x01]), bytes([0x02, 0x03])))

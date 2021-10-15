@@ -39,8 +39,6 @@ class PduHeader:
 
         self.len_transaction_seq_num = 0
         self.transaction_seq_num = pdu_conf.transaction_seq_num
-        self.file_size = pdu_conf.file_size
-        self.crc_flag = pdu_conf.crc_flag
         self.segment_metadata_flag = segment_metadata_flag
 
     @property
@@ -101,10 +99,7 @@ class PduHeader:
 
     @file_size.setter
     def file_size(self, file_size: FileSize):
-        if file_size == FileSize.GLOBAL_CONFIG:
-            self.pdu_conf.file_size = get_default_file_size()
-        else:
-            self.pdu_conf.file_size = file_size
+        self.pdu_conf.file_size = file_size
 
     @property
     def crc_flag(self):
@@ -220,9 +215,9 @@ class PduHeader:
         pdu_header.crc_flag = (raw_packet[0] & 0x02) >> 1
         pdu_header.file_size = raw_packet[0] & 0x01
         pdu_header.pdu_data_field_len = raw_packet[1] << 8 | raw_packet[2]
-        pdu_header.segmentation_control = (raw_packet[3] & 0x80) >> 7
+        pdu_header.segmentation_control = SegmentationControl((raw_packet[3] & 0x80) >> 7)
         pdu_header.len_entity_id = cls.check_len_in_bytes((raw_packet[3] & 0x70) >> 4)
-        pdu_header.segment_metadata_flag = (raw_packet[3] & 0x08) >> 3
+        pdu_header.segment_metadata_flag = SegmentMetadataFlag((raw_packet[3] & 0x08) >> 3)
         pdu_header.len_transaction_seq_num = cls.check_len_in_bytes(raw_packet[3] & 0x07)
         expected_remaining_len = 2 * pdu_header.len_entity_id + pdu_header.len_transaction_seq_num
         if len(raw_packet) - cls.FIXED_LENGTH < expected_remaining_len:

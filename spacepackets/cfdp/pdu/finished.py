@@ -2,9 +2,10 @@ from __future__ import annotations
 import enum
 from typing import List, Optional
 
-from spacepackets.cfdp.pdu.file_directive import FileDirectivePduBase, DirectiveCodes, ConditionCode
+from spacepackets.cfdp.pdu.file_directive import FileDirectivePduBase, DirectiveCodes
+from spacepackets.cfdp.definitions import ConditionCode
 from spacepackets.cfdp.conf import check_packet_length, PduConfig
-from spacepackets.cfdp.tlv import CfdpTlv, TlvTypes
+from spacepackets.cfdp.tlv import TlvTypes, FileStoreResponseTlv, EntityIdTlv
 from spacepackets.log import get_console_logger
 
 
@@ -29,8 +30,8 @@ class FinishedPdu:
             file_delivery_status: FileDeliveryStatus,
             condition_code: ConditionCode,
             pdu_conf: PduConfig,
-            file_store_responses: Optional[List[CfdpTlv]] = None,
-            fault_location: Optional[CfdpTlv] = None,
+            file_store_responses: Optional[List[FileStoreResponseTlv]] = None,
+            fault_location: Optional[EntityIdTlv] = None,
 
     ):
         self.pdu_file_directive = FileDirectivePduBase(
@@ -64,11 +65,13 @@ class FinishedPdu:
         return self.pdu_file_directive.packet_len
 
     @property
-    def file_store_responses(self) -> List[CfdpTlv]:
+    def file_store_responses(self) -> List[FileStoreResponseTlv]:
         return self._file_store_responses
 
     @file_store_responses.setter
-    def file_store_responses(self, file_store_responses: Optional[List[CfdpTlv]]):
+    def file_store_responses(
+            self, file_store_responses: Optional[List[FileStoreResponseTlv]]
+    ):
         """Setter function for the file store responses
         :param file_store_responses:
         :raises ValueError: TLV type is not a filestore response
@@ -78,10 +81,6 @@ class FinishedPdu:
             self._file_store_responses = []
             self.pdu_file_directive.directive_param_field_len = 1 + self.fault_location_len
             return
-        else:
-            for file_store_response in file_store_responses:
-                if file_store_response.tlv_type != TlvTypes.FILESTORE_RESPONSE:
-                    raise ValueError
         self._file_store_responses = file_store_responses
         self.pdu_file_directive.directive_param_field_len = \
             1 + self.fault_location_len + self.file_store_responses_len
@@ -93,23 +92,21 @@ class FinishedPdu:
         else:
             file_store_responses_len = 0
             for file_store_response in self._file_store_responses:
-                file_store_responses_len += file_store_response.packet_length
+                file_store_responses_len += file_store_response.packet_len
             return file_store_responses_len
 
     @property
-    def fault_location(self):
+    def fault_location(self) -> Optional[EntityIdTlv]:
         return self._fault_location
 
     @fault_location.setter
-    def fault_location(self, fault_location: Optional[CfdpTlv]):
+    def fault_location(self, fault_location: Optional[EntityIdTlv]):
         """Setter function for the fault location.
         :raises ValueError: Type ID is not entity ID (0x06)
         """
         if fault_location is None:
             fault_loc_len = 0
         else:
-            if fault_location.tlv_type != TlvTypes.ENTITY_ID:
-                raise ValueError
             fault_loc_len = self.fault_location_len
         self.pdu_file_directive.directive_param_field_len = \
             1 + fault_loc_len + self.file_store_responses_len
@@ -120,7 +117,7 @@ class FinishedPdu:
         if self._fault_location is None:
             return 0
         else:
-            return self._fault_location.packet_length
+            return self._fault_location.packet_len
 
     @classmethod
     def __empty(cls) -> FinishedPdu:
@@ -153,7 +150,8 @@ class FinishedPdu:
         finished_pdu = cls.__empty()
         finished_pdu.pdu_file_directive = FileDirectivePduBase.unpack(raw_packet=raw_packet)
         if not check_packet_length(
-                raw_packet_len=len(raw_packet), min_len=finished_pdu.pdu_file_directive.packet_len
+            raw_packet_len=len(raw_packet),
+            min_len=finished_pdu.pdu_file_directive.packet_len
         ):
             raise ValueError
         current_idx = finished_pdu.pdu_file_directive.header_len
@@ -163,27 +161,32 @@ class FinishedPdu:
         finished_pdu.file_delivery_status = first_param_byte & 0b11
         current_idx += 1
         if len(raw_packet) > current_idx:
-            finished_pdu.unpack_tlvs(raw_packet=raw_packet, start_idx=current_idx)
+            finished_pdu._unpack_tlvs(
+                rest_of_packet=raw_packet[current_idx:finished_pdu.packet_len]
+            )
         return finished_pdu
 
-    def unpack_tlvs(self, raw_packet: bytearray, start_idx: int) -> int:
-        current_idx = start_idx
+    def _unpack_tlvs(self, rest_of_packet: bytearray) -> int:
+        current_idx = 0
         while True:
-            current_tlv = CfdpTlv.unpack(raw_bytes=raw_packet[current_idx:])
-            # This will always increment at least two, so we can't get stuck in the loop
-            current_idx += current_tlv.packet_length
-            if current_idx >= len(raw_packet):
-                if current_idx > len(raw_packet):
+            next_tlv_code = rest_of_packet[current_idx]
+            if next_tlv_code == TlvTypes.FILESTORE_RESPONSE:
+                next_fs_response = FileStoreResponseTlv.unpack(
+                    raw_bytes=rest_of_packet[current_idx:]
+                )
+                current_idx += next_fs_response.packet_len
+                self._file_store_responses.append(next_fs_response)
+            elif next_tlv_code == TlvTypes.ENTITY_ID:
+                if not self._might_have_fault_location:
                     logger = get_console_logger()
-                    logger.warning(
-                        'Parser Error when parsing TLVs in Finished PDU. Possibly invalid packet'
-                    )
-                if self._might_have_fault_location:
-                    self.fault_location = current_tlv
-                else:
-                    self.file_store_responses.append(current_tlv)
-                break
+                    logger.warning('Entity ID found in Finished PDU but wrong condition code')
+                    raise ValueError
+                self._fault_location = EntityIdTlv.unpack(raw_bytes=rest_of_packet[current_idx:])
+                current_idx += self._fault_location.packet_len
+                return current_idx
             else:
-                # Another TLV might follow, so this is a file store response
-                self.file_store_responses.append(current_tlv)
-        return current_idx
+                logger = get_console_logger()
+                logger.warning('Invalid TLV ID in Finished PDU detected')
+                raise ValueError
+            if current_idx >= len(rest_of_packet):
+                break
