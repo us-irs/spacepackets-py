@@ -114,11 +114,11 @@ class FileDirectivePduBase:
         if self.pdu_header.pdu_conf.file_size == FileSize.LARGE and file_size > pow(2, 64):
             logger = get_console_logger()
             logger.warning(f'File size {file_size} larger than 64 bit field')
-            raise False
-        elif not self.pdu_header.pdu_conf.file_size == FileSize.NORMAL and file_size > pow(2, 32):
+            return False
+        elif self.pdu_header.pdu_conf.file_size == FileSize.NORMAL and file_size > pow(2, 32):
             logger = get_console_logger()
             logger.warning(f'File size {file_size} larger than 32 bit field')
-            raise False
+            return False
         return True
 
     def parse_fss_field(self, raw_packet: bytearray, current_idx: int) -> (int, int):
@@ -129,7 +129,7 @@ class FileDirectivePduBase:
         if self.pdu_header.pdu_conf.file_size == FileSize.LARGE:
             if not check_packet_length(len(raw_packet), current_idx + 8 + 1):
                 raise ValueError
-            file_size = struct.unpack('!I', raw_packet[current_idx: current_idx + 8])[0]
+            file_size = struct.unpack('!Q', raw_packet[current_idx: current_idx + 8])[0]
             current_idx += 8
         else:
             if not check_packet_length(len(raw_packet), current_idx + 4 + 1):

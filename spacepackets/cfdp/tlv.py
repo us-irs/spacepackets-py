@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Tuple, Optional, TypeVar, Type
+from typing import Tuple, Optional, TypeVar, Type, Union, List
 import enum
 from spacepackets.log import get_console_logger
 from spacepackets.cfdp.lv import CfdpLv
@@ -527,10 +527,11 @@ class FileStoreResponseTlv(FileStoreRequestBase, ConcreteTlvBase):
         return file_store_response_tlv
 
 
-TlvType = TypeVar('TlvType', bound=ConcreteTlvBase)
+TlvBase = TypeVar('TlvBase', bound=ConcreteTlvBase)
+TlvList = List[Union[CfdpTlv, TlvBase]]
 
 
-def concrete_tlv_factory(cfdp_tlv: CfdpTlv, _tlv_type: Type[TlvType] = TlvType) -> TlvType:
+def concrete_tlv_factory(cfdp_tlv: CfdpTlv, _tlv_type: Type[TlvBase] = TlvBase) -> TlvBase:
     """This factory returns the concrete CFDP TLV class from a generic CFDP TLV.
 
     Please note that this might not be the most efficient way to create the concrete classes and
