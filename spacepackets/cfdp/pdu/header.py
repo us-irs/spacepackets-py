@@ -215,9 +215,9 @@ class PduHeader:
         pdu_header.crc_flag = (raw_packet[0] & 0x02) >> 1
         pdu_header.file_size = raw_packet[0] & 0x01
         pdu_header.pdu_data_field_len = raw_packet[1] << 8 | raw_packet[2]
-        pdu_header.segmentation_control = (raw_packet[3] & 0x80) >> 7
+        pdu_header.segmentation_control = SegmentationControl((raw_packet[3] & 0x80) >> 7)
         pdu_header.len_entity_id = cls.check_len_in_bytes((raw_packet[3] & 0x70) >> 4)
-        pdu_header.segment_metadata_flag = (raw_packet[3] & 0x08) >> 3
+        pdu_header.segment_metadata_flag = SegmentMetadataFlag((raw_packet[3] & 0x08) >> 3)
         pdu_header.len_transaction_seq_num = cls.check_len_in_bytes(raw_packet[3] & 0x07)
         expected_remaining_len = 2 * pdu_header.len_entity_id + pdu_header.len_transaction_seq_num
         if len(raw_packet) - cls.FIXED_LENGTH < expected_remaining_len:

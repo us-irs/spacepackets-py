@@ -124,7 +124,7 @@ class MetadataPdu:
         return self.pdu_file_directive.packet_len
 
     def pack(self) -> bytearray:
-        if not self.pdu_file_directive.verify_file_len(self.file_size):
+        if not self.pdu_file_directive._verify_file_len(self.file_size):
             raise ValueError
         packet = self.pdu_file_directive.pack()
         packet.append((self.closure_requested << 6) | self.checksum_type)
@@ -149,7 +149,7 @@ class MetadataPdu:
         metadata_pdu.closure_requested = raw_packet[current_idx] & 0x40
         metadata_pdu.checksum_type = raw_packet[current_idx] & 0x0f
         current_idx += 1
-        current_idx, metadata_pdu.file_size = metadata_pdu.pdu_file_directive.parse_fss_field(
+        current_idx, metadata_pdu.file_size = metadata_pdu.pdu_file_directive._parse_fss_field(
             raw_packet=raw_packet, current_idx=current_idx
         )
         metadata_pdu._source_file_name_lv = CfdpLv.unpack(raw_bytes=raw_packet[current_idx:])

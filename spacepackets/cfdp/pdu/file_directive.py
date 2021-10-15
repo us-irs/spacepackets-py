@@ -102,15 +102,15 @@ class FileDirectivePduBase:
         """
         file_directive = cls.__empty()
         file_directive.pdu_header = PduHeader.unpack(raw_packet=raw_packet)
-        header_len = file_directive.pdu_header.header_len
-        if not check_packet_length(
-                raw_packet_len=len(raw_packet), min_len=header_len
-        ):
+        # + 1 because a file directive has the directive code in addition to the PDU header
+        header_len = file_directive.pdu_header.header_len + 1
+        if not check_packet_length(raw_packet_len=len(raw_packet), min_len=header_len):
             raise ValueError
-        file_directive.directive_code = raw_packet[header_len]
+        file_directive.directive_code = raw_packet[header_len - 1]
         return file_directive
 
-    def verify_file_len(self, file_size: int) -> bool:
+    def _verify_file_len(self, file_size: int) -> bool:
+        """Can be used by subclasses to verify a given file size"""
         if self.pdu_header.pdu_conf.file_size == FileSize.LARGE and file_size > pow(2, 64):
             logger = get_console_logger()
             logger.warning(f'File size {file_size} larger than 64 bit field')
@@ -121,18 +121,18 @@ class FileDirectivePduBase:
             return False
         return True
 
-    def parse_fss_field(self, raw_packet: bytearray, current_idx: int) -> (int, int):
+    def _parse_fss_field(self, raw_packet: bytes, current_idx: int) -> (int, int):
         """Parse the FSS field, which has different size depending on the large file flag being
         set or not. Returns the current index incremented and the parsed file size
         :raise ValueError: Packet not large enough
         """
         if self.pdu_header.pdu_conf.file_size == FileSize.LARGE:
-            if not check_packet_length(len(raw_packet), current_idx + 8 + 1):
+            if not check_packet_length(len(raw_packet), current_idx + 8):
                 raise ValueError
             file_size = struct.unpack('!Q', raw_packet[current_idx: current_idx + 8])[0]
             current_idx += 8
         else:
-            if not check_packet_length(len(raw_packet), current_idx + 4 + 1):
+            if not check_packet_length(len(raw_packet), current_idx + 4):
                 raise ValueError
             file_size = struct.unpack('!I', raw_packet[current_idx: current_idx + 4])[0]
             current_idx += 4

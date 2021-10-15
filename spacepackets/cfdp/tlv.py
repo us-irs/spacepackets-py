@@ -198,6 +198,10 @@ class ConcreteTlvBase:
     def packet_len(self):
         return self.tlv.packet_len
 
+    def _check_type(self, tlv_type: TlvTypes):
+        if self.tlv.tlv_type != tlv_type:
+            raise ValueError
+
 
 class EntityIdTlv(ConcreteTlvBase):
     def __init__(self, entity_id: bytes):
@@ -214,6 +218,7 @@ class EntityIdTlv(ConcreteTlvBase):
     def unpack(cls, raw_bytes: bytes) -> EntityIdTlv:
         entity_id_tlv = cls.__empty()
         entity_id_tlv.tlv = CfdpTlv.unpack(raw_bytes=raw_bytes)
+        entity_id_tlv._check_type(tlv_type=TlvTypes.ENTITY_ID)
         return entity_id_tlv
 
     @classmethod
@@ -248,7 +253,7 @@ class FaultHandlerOverrideTlv(ConcreteTlvBase):
     @classmethod
     def __empty(cls) -> FaultHandlerOverrideTlv:
         return cls(
-            condition_code=ConditionCode.NO_CONDITION_FIELD,
+            condition_code=ConditionCode.NO_ERROR,
             handler_code=FaultHandlerOverrideHandlerCodes.IGNORE_ERROR
         )
 
@@ -256,13 +261,14 @@ class FaultHandlerOverrideTlv(ConcreteTlvBase):
     def unpack(cls, raw_bytes: bytes) -> FaultHandlerOverrideTlv:
         fault_handler_ovr_tlv = cls.__empty()
         fault_handler_ovr_tlv.tlv = CfdpTlv.unpack(raw_bytes=raw_bytes)
+        fault_handler_ovr_tlv._check_type(tlv_type=TlvTypes.FAULT_HANDLER)
         fault_handler_ovr_tlv.condition_code = (fault_handler_ovr_tlv.tlv.value[0] & 0xf0) >> 4
         fault_handler_ovr_tlv.handler_code = fault_handler_ovr_tlv.tlv.value[0] & 0x0f
         return fault_handler_ovr_tlv
 
     @classmethod
     def from_tlv(cls, cfdp_tlv: CfdpTlv) -> FaultHandlerOverrideTlv:
-        if cfdp_tlv.tlv_type != TlvTypes.ENTITY_ID:
+        if cfdp_tlv.tlv_type != TlvTypes.FAULT_HANDLER:
             raise ValueError
         # This ensures that all fields are set properly
         fault_handler_tlv = FaultHandlerOverrideTlv.unpack(raw_bytes=cfdp_tlv.pack())
@@ -284,7 +290,7 @@ class MessageToUserTlv(ConcreteTlvBase):
         ConcreteTlvBase.__init__(self, tlv=tlv)
 
     def is_standard_proxy_dir_ops_msg(self) -> bool:
-        if len(self.tlv.value) > 4 and self.tlv.value[0:4].decode() == 'cfdp':
+        if len(self.tlv.value) >= 4 and self.tlv.value[0:4].decode() == 'cfdp':
             return True
         return False
 
@@ -296,6 +302,7 @@ class MessageToUserTlv(ConcreteTlvBase):
     def unpack(cls, raw_bytes: bytes):
         msg_to_user_tlv = cls.__empty()
         msg_to_user_tlv.tlv = CfdpTlv.unpack(raw_bytes=raw_bytes)
+        msg_to_user_tlv._check_type(tlv_type=TlvTypes.MESSAGE_TO_USER)
         return msg_to_user_tlv
 
     @classmethod
@@ -323,14 +330,14 @@ class FlowLabelTlv(ConcreteTlvBase):
     def unpack(cls, raw_bytes: bytes) -> FlowLabelTlv:
         flow_label_tlv = cls.__empty()
         flow_label_tlv.tlv = CfdpTlv.unpack(raw_bytes=raw_bytes)
+        flow_label_tlv._check_type(tlv_type=TlvTypes.FLOW_LABEL)
         return flow_label_tlv
 
     @classmethod
     def from_tlv(cls, cfdp_tlv: CfdpTlv) -> FlowLabelTlv:
-        if cfdp_tlv.tlv_type != TlvTypes.MESSAGE_TO_USER:
-            raise ValueError
         flow_label_tlv = cls.__empty()
         flow_label_tlv.tlv = cfdp_tlv
+        flow_label_tlv._check_type(tlv_type=TlvTypes.FLOW_LABEL)
         return flow_label_tlv
 
 
@@ -382,7 +389,7 @@ class FileStoreRequestBase:
         action_code_as_int = (tlv.value[value_idx] & 0xf0) >> 4
         try:
             action_code = FilestoreActionCode(action_code_as_int)
-        except IndexError:
+        except ValueError:
             logger = get_console_logger()
             logger.warning(
                 f'Invalid action code in file store response with value {action_code_as_int}'
@@ -520,7 +527,7 @@ class FileStoreResponseTlv(FileStoreRequestBase, ConcreteTlvBase):
 
     @classmethod
     def from_tlv(cls, cfdp_tlv: CfdpTlv) -> FileStoreResponseTlv:
-        if cfdp_tlv.tlv_type != TlvTypes.FILESTORE_REQUEST:
+        if cfdp_tlv.tlv_type != TlvTypes.FILESTORE_RESPONSE:
             raise ValueError
         # This ensures that all fields are set properly, although its not the most efficient way
         file_store_response_tlv = FileStoreResponseTlv.unpack(raw_bytes=cfdp_tlv.pack())

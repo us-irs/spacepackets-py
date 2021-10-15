@@ -4,6 +4,7 @@ import enum
 from spacepackets.cfdp.pdu.file_directive import FileDirectivePduBase, DirectiveCodes
 from spacepackets.cfdp.conf import PduConfig
 from spacepackets.cfdp.pdu import IsFileDirective
+from spacepackets.log import get_console_logger
 
 
 class ResponseRequired(enum.IntEnum):
@@ -22,7 +23,7 @@ class PromptPdu(IsFileDirective):
         self.pdu_file_directive = FileDirectivePduBase(
             directive_code=DirectiveCodes.PROMPT_PDU,
             pdu_conf=pdu_conf,
-            directive_param_field_len=0
+            directive_param_field_len=1
         )
         IsFileDirective.__init__(self, pdu_file_directive=self.pdu_file_directive)
         self.response_required = reponse_required
@@ -44,6 +45,10 @@ class PromptPdu(IsFileDirective):
     def unpack(cls, raw_packet: bytearray) -> PromptPdu:
         prompt_pdu = cls.__empty()
         prompt_pdu.pdu_file_directive = FileDirectivePduBase.unpack(raw_packet=raw_packet)
-        current_idx = prompt_pdu.pdu_file_directive.packet_len
-        prompt_pdu.response_required = raw_packet[current_idx] & 0x80
+        current_idx = prompt_pdu.pdu_file_directive.header_len
+        if current_idx >= len(raw_packet):
+            logger = get_console_logger()
+            logger.warning('Packet length too short')
+            raise ValueError
+        prompt_pdu.response_required = ResponseRequired((raw_packet[current_idx] & 0x80) >> 7)
         return prompt_pdu

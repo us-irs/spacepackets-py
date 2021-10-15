@@ -4,14 +4,15 @@ import unittest
 from unittest import TestCase
 from crcmod import crcmod
 
-from spacepackets.ecss.tc import PusTelecommand, PusTcDataFieldHeader
-from spacepackets.ecss.tc import generate_crc, generate_packet_crc
+from spacepackets.ecss.tc import PusTelecommand, PusTcDataFieldHeader, generate_crc, \
+    generate_packet_crc
 from spacepackets.ecss.conf import set_default_tm_apid, set_default_tc_apid, get_default_tc_apid, \
     set_pus_tm_version, set_pus_tc_version, get_pus_tc_version
 from spacepackets.util import PrintFormats
-
 from spacepackets.ecss.tm import PusTelemetry, CdsShortTimestamp, PusVersion, \
     get_service_from_raw_pus_packet, PusTmSecondaryHeader
+from spacepackets.ecss.service_17_test import Service17TM
+from spacepackets.ecss.service_1_verification import Service1TM
 
 
 class TestTelecommand(TestCase):
@@ -310,6 +311,23 @@ class TestTelemetry(TestCase):
             message_counter=22
         )
 
+    def test_service_17_tm(self):
+        srv_17_tm = Service17TM(subservice=2)
+        self.assertEqual(srv_17_tm.pus_tm.subservice, 2)
+        srv_17_tm_raw = srv_17_tm.pack()
+        srv_17_tm_unpacked = Service17TM.unpack(
+            raw_telemetry=srv_17_tm_raw, pus_version=PusVersion.PUS_C
+        )
+        self.assertEqual(srv_17_tm_unpacked.pus_tm.subservice, 2)
 
-if __name__ == '__main__':
-    unittest.main()
+    def test_service_1_tm(self):
+        srv_1_tm = Service1TM(subservice=2)
+        self.assertEqual(srv_1_tm.pus_tm.subservice, 2)
+        # TODO: Not implemented yet
+        """
+        srv_1_tm_raw = srv_1_tm.pack()
+        srv_1_tm_unpacked = Service1TM.unpack(
+            raw_telemetry=srv_1_tm_raw, pus_version=PusVersion.PUS_C
+        )
+        self.assertEqual(srv_1_tm_unpacked.pus_tm.subservice, 2)
+        """
