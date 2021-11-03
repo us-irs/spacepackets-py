@@ -14,11 +14,11 @@ class EofPdu:
 
     def __init__(
         self,
+        condition_code: ConditionCode,
         checksum_u32: int,
         file_size: int,
         pdu_conf: PduConfig,
-        fault_location: Optional[EntityIdTlv] = None,
-        condition_code: ConditionCode = ConditionCode.NO_ERROR,
+        fault_location: Optional[EntityIdTlv] = None
     ):
         """Constructor for an EOF PDU
 
@@ -67,6 +67,7 @@ class EofPdu:
     def __empty(cls) -> EofPdu:
         empty_conf = PduConfig.empty()
         return cls(
+            condition_code=ConditionCode.NO_ERROR,
             checksum_u32=0,
             file_size=0,
             pdu_conf=empty_conf
@@ -80,7 +81,7 @@ class EofPdu:
             eof_pdu.extend(struct.pack('!Q', self.file_size))
         else:
             eof_pdu.extend(struct.pack('!I', self.file_size))
-        if self.fault_location is not None:
+        if self.fault_location is not None and self.condition_code is not ConditionCode.NO_ERROR:
             eof_pdu.extend(self.fault_location.pack())
         return eof_pdu
 
@@ -105,6 +106,6 @@ class EofPdu:
         current_idx, eof_pdu.file_size = eof_pdu.pdu_file_directive._parse_fss_field(
             raw_packet=raw_packet, current_idx=current_idx
         )
-        if len(raw_packet) > current_idx:
+        if len(raw_packet) > current_idx and eof_pdu.condition_code != ConditionCode.NO_ERROR:
             eof_pdu.fault_location = EntityIdTlv.unpack(raw_bytes=raw_packet[current_idx:])
         return eof_pdu

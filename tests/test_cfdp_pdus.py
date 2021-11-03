@@ -518,6 +518,7 @@ class TestPdus(TestCase):
         pdu_conf = PduConfig.empty()
         zero_checksum = 0
         eof_pdu = EofPdu(
+            condition_code=ConditionCode.NO_ERROR,
             checksum_u32=zero_checksum,
             file_size=0,
             pdu_conf=pdu_conf
@@ -546,6 +547,7 @@ class TestPdus(TestCase):
         )
         self.assertEqual(fault_loc_tlv.packet_len, 4)
         eof_pdu.fault_location = fault_loc_tlv
+        eof_pdu.condition_code = ConditionCode.POSITIVE_ACK_LIMIT_REACHED
         self.assertEqual(eof_pdu.packet_len, expected_packet_len + 4)
         eof_pdu_with_fault_loc = eof_pdu
         eof_pdu_with_fault_loc_raw = eof_pdu_with_fault_loc.pack()
@@ -557,6 +559,7 @@ class TestPdus(TestCase):
 
         with self.assertRaises(ValueError):
             EofPdu(
+                condition_code=ConditionCode.NO_ERROR,
                 checksum_u32=pow(2, 64),
                 file_size=0,
                 pdu_conf=pdu_conf
@@ -564,6 +567,7 @@ class TestPdus(TestCase):
 
         pdu_conf.file_size = FileSize.LARGE
         eof_pdu_large_file = EofPdu(
+            condition_code=ConditionCode.NO_ERROR,
             checksum_u32=zero_checksum,
             file_size=0,
             pdu_conf=pdu_conf
