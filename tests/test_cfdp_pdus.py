@@ -1,3 +1,5 @@
+import struct
+
 from unittest import TestCase
 from spacepackets.cfdp.definitions import CrcFlag
 from spacepackets.cfdp.pdu.ack import AckPdu, ConditionCode, DirectiveCodes, TransactionStatus
@@ -514,9 +516,9 @@ class TestPdus(TestCase):
 
     def test_eof_pdu(self):
         pdu_conf = PduConfig.empty()
-        zero_checksum = bytes([0x00, 0x00, 0x00, 0x00])
+        zero_checksum = 0
         eof_pdu = EofPdu(
-            file_checksum=zero_checksum,
+            checksum_u32=zero_checksum,
             file_size=0,
             pdu_conf=pdu_conf
         )
@@ -526,7 +528,7 @@ class TestPdus(TestCase):
         eof_pdu_raw = eof_pdu.pack()
         expected_header = bytearray([0x20, 0x00, 0x0a, 0x11, 0x00, 0x00, 0x00, 0x04])
         expected_header.append(0)
-        expected_header.extend(zero_checksum)
+        expected_header.extend(struct.pack('!I', zero_checksum))
         # File size is 0 as 4 bytes
         expected_header.extend(bytes([0x00, 0x00, 0x00, 0x00]))
         self.assertEqual(
@@ -555,14 +557,14 @@ class TestPdus(TestCase):
 
         with self.assertRaises(ValueError):
             EofPdu(
-                file_checksum=bytes([0x00]),
+                checksum_u32=pow(2, 64),
                 file_size=0,
                 pdu_conf=pdu_conf
             )
 
         pdu_conf.file_size = FileSize.LARGE
         eof_pdu_large_file = EofPdu(
-            file_checksum=zero_checksum,
+            checksum_u32=zero_checksum,
             file_size=0,
             pdu_conf=pdu_conf
         )

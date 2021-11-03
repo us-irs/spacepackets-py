@@ -14,7 +14,7 @@ class EofPdu:
 
     def __init__(
         self,
-        file_checksum: bytes,
+        checksum_u32: int,
         file_size: int,
         pdu_conf: PduConfig,
         fault_location: Optional[EntityIdTlv] = None,
@@ -22,17 +22,17 @@ class EofPdu:
     ):
         """Constructor for an EOF PDU
 
-        :param file_checksum: 4 byte checksum
+        :param checksum_u32: 4 byte checksum
         :param file_size:
         :param pdu_conf:
         :param fault_location:
         :param condition_code:
         :raise ValueError: Invalid input, file checksum not 4 bytes long
         """
-        if len(file_checksum) != 4:
+        if checksum_u32 > pow(2, 64) - 1 or checksum_u32 < 0:
             raise ValueError
         self.condition_code = condition_code
-        self.file_checksum = file_checksum
+        self.checksum_u32 = checksum_u32
         self.file_size = file_size
         self._fault_location = fault_location
         self.pdu_file_directive = FileDirectivePduBase(
@@ -67,7 +67,7 @@ class EofPdu:
     def __empty(cls) -> EofPdu:
         empty_conf = PduConfig.empty()
         return cls(
-            file_checksum=bytes([0x00, 0x00, 0x00, 0x00]),
+            checksum_u32=0,
             file_size=0,
             pdu_conf=empty_conf
         )
@@ -75,7 +75,7 @@ class EofPdu:
     def pack(self) -> bytearray:
         eof_pdu = self.pdu_file_directive.pack()
         eof_pdu.append(self.condition_code << 4)
-        eof_pdu.extend(self.file_checksum)
+        eof_pdu.extend(struct.pack('!I', self.checksum_u32))
         if self.pdu_file_directive.pdu_header.is_large_file():
             eof_pdu.extend(struct.pack('!Q', self.file_size))
         else:
@@ -100,7 +100,7 @@ class EofPdu:
         eof_pdu.condition_code = raw_packet[current_idx] & 0xf0
         expected_min_len = current_idx + 5
         current_idx += 1
-        eof_pdu.file_checksum = raw_packet[current_idx: current_idx + 4]
+        eof_pdu.checksum_u32 = struct.unpack('!I', raw_packet[current_idx: current_idx + 4])[0]
         current_idx += 4
         current_idx, eof_pdu.file_size = eof_pdu.pdu_file_directive._parse_fss_field(
             raw_packet=raw_packet, current_idx=current_idx
