@@ -25,19 +25,18 @@ class FinishedPdu:
     """Encapsulates the Finished file directive PDU, see CCSDS 727.0-B-5 p.80"""
 
     def __init__(
-            self,
-            delivery_code: DeliveryCode,
-            file_delivery_status: FileDeliveryStatus,
-            condition_code: ConditionCode,
-            pdu_conf: PduConfig,
-            file_store_responses: Optional[List[FileStoreResponseTlv]] = None,
-            fault_location: Optional[EntityIdTlv] = None,
-
+        self,
+        delivery_code: DeliveryCode,
+        file_delivery_status: FileDeliveryStatus,
+        condition_code: ConditionCode,
+        pdu_conf: PduConfig,
+        file_store_responses: Optional[List[FileStoreResponseTlv]] = None,
+        fault_location: Optional[EntityIdTlv] = None,
     ):
         self.pdu_file_directive = FileDirectivePduBase(
             directive_code=DirectiveCodes.FINISHED_PDU,
             pdu_conf=pdu_conf,
-            directive_param_field_len=1
+            directive_param_field_len=1,
         )
         self._fault_location = None
         self._file_store_responses = []
@@ -54,7 +53,10 @@ class FinishedPdu:
 
     @condition_code.setter
     def condition_code(self, condition_code: ConditionCode):
-        if condition_code in [ConditionCode.NO_ERROR, ConditionCode.UNSUPPORTED_CHECKSUM_TYPE]:
+        if condition_code in [
+            ConditionCode.NO_ERROR,
+            ConditionCode.UNSUPPORTED_CHECKSUM_TYPE,
+        ]:
             self._might_have_fault_location = False
         else:
             self._might_have_fault_location = True
@@ -70,7 +72,7 @@ class FinishedPdu:
 
     @file_store_responses.setter
     def file_store_responses(
-            self, file_store_responses: Optional[List[FileStoreResponseTlv]]
+        self, file_store_responses: Optional[List[FileStoreResponseTlv]]
     ):
         """Setter function for the file store responses
         :param file_store_responses:
@@ -79,11 +81,14 @@ class FinishedPdu:
         """
         if file_store_responses is None:
             self._file_store_responses = []
-            self.pdu_file_directive.directive_param_field_len = 1 + self.fault_location_len
+            self.pdu_file_directive.directive_param_field_len = (
+                1 + self.fault_location_len
+            )
             return
         self._file_store_responses = file_store_responses
-        self.pdu_file_directive.directive_param_field_len = \
+        self.pdu_file_directive.directive_param_field_len = (
             1 + self.fault_location_len + self.file_store_responses_len
+        )
 
     @property
     def file_store_responses_len(self):
@@ -108,8 +113,9 @@ class FinishedPdu:
             fault_loc_len = 0
         else:
             fault_loc_len = self.fault_location_len
-        self.pdu_file_directive.directive_param_field_len = \
+        self.pdu_file_directive.directive_param_field_len = (
             1 + fault_loc_len + self.file_store_responses_len
+        )
         self._fault_location = fault_location
 
     @property
@@ -126,13 +132,15 @@ class FinishedPdu:
             delivery_code=DeliveryCode.DATA_INCOMPLETE,
             file_delivery_status=FileDeliveryStatus.FILE_STATUS_UNREPORTED,
             condition_code=ConditionCode.NO_ERROR,
-            pdu_conf=empty_conf
+            pdu_conf=empty_conf,
         )
 
     def pack(self) -> bytearray:
         packet = self.pdu_file_directive.pack()
         packet.append(
-            (self.condition_code << 4) | (self.delivery_code << 2) | self.file_delivery_status
+            (self.condition_code << 4)
+            | (self.delivery_code << 2)
+            | self.file_delivery_status
         )
         for file_store_reponse in self.file_store_responses:
             packet.extend(file_store_reponse.pack())
@@ -148,21 +156,23 @@ class FinishedPdu:
         :return:
         """
         finished_pdu = cls.__empty()
-        finished_pdu.pdu_file_directive = FileDirectivePduBase.unpack(raw_packet=raw_packet)
+        finished_pdu.pdu_file_directive = FileDirectivePduBase.unpack(
+            raw_packet=raw_packet
+        )
         if not check_packet_length(
             raw_packet_len=len(raw_packet),
-            min_len=finished_pdu.pdu_file_directive.packet_len
+            min_len=finished_pdu.pdu_file_directive.packet_len,
         ):
             raise ValueError
         current_idx = finished_pdu.pdu_file_directive.header_len
         first_param_byte = raw_packet[current_idx]
-        finished_pdu.condition_code = (first_param_byte & 0xf0) >> 4
+        finished_pdu.condition_code = (first_param_byte & 0xF0) >> 4
         finished_pdu.delivery_code = (first_param_byte & 0x04) >> 2
         finished_pdu.file_delivery_status = first_param_byte & 0b11
         current_idx += 1
         if len(raw_packet) > current_idx:
             finished_pdu._unpack_tlvs(
-                rest_of_packet=raw_packet[current_idx:finished_pdu.packet_len]
+                rest_of_packet=raw_packet[current_idx : finished_pdu.packet_len]
             )
         return finished_pdu
 
@@ -179,14 +189,18 @@ class FinishedPdu:
             elif next_tlv_code == TlvTypes.ENTITY_ID:
                 if not self._might_have_fault_location:
                     logger = get_console_logger()
-                    logger.warning('Entity ID found in Finished PDU but wrong condition code')
+                    logger.warning(
+                        "Entity ID found in Finished PDU but wrong condition code"
+                    )
                     raise ValueError
-                self._fault_location = EntityIdTlv.unpack(raw_bytes=rest_of_packet[current_idx:])
+                self._fault_location = EntityIdTlv.unpack(
+                    raw_bytes=rest_of_packet[current_idx:]
+                )
                 current_idx += self._fault_location.packet_len
                 return current_idx
             else:
                 logger = get_console_logger()
-                logger.warning('Invalid TLV ID in Finished PDU detected')
+                logger.warning("Invalid TLV ID in Finished PDU detected")
                 raise ValueError
             if current_idx >= len(rest_of_packet):
                 break

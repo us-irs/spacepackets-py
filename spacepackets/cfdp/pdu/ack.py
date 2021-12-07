@@ -8,6 +8,7 @@ from spacepackets.cfdp.conf import PduConfig
 
 class TransactionStatus(enum.IntEnum):
     """For more detailed information: CCSDS 727.0-B-5 p.81"""
+
     UNDEFINED = 0b00
     ACTIVE = 0b01
     TERMINATED = 0b10
@@ -22,7 +23,7 @@ class AckPdu:
         directive_code_of_acked_pdu: DirectiveCodes,
         condition_code_of_acked_pdu: ConditionCode,
         transaction_status: TransactionStatus,
-        pdu_conf: PduConfig
+        pdu_conf: PduConfig,
     ):
         """Construct a ACK PDU object
 
@@ -35,9 +36,12 @@ class AckPdu:
         self.pdu_file_directive = FileDirectivePduBase(
             directive_code=DirectiveCodes.ACK_PDU,
             directive_param_field_len=2,
-            pdu_conf=pdu_conf
+            pdu_conf=pdu_conf,
         )
-        if directive_code_of_acked_pdu not in [DirectiveCodes.FINISHED_PDU, DirectiveCodes.EOF_PDU]:
+        if directive_code_of_acked_pdu not in [
+            DirectiveCodes.FINISHED_PDU,
+            DirectiveCodes.EOF_PDU,
+        ]:
             raise ValueError
         self.directive_code_of_acked_pdu = directive_code_of_acked_pdu
         self.directive_subtype_code = 0
@@ -60,23 +64,27 @@ class AckPdu:
             directive_code_of_acked_pdu=DirectiveCodes.FINISHED_PDU,
             condition_code_of_acked_pdu=ConditionCode.NO_ERROR,
             transaction_status=TransactionStatus.UNDEFINED,
-            pdu_conf=empty_conf
+            pdu_conf=empty_conf,
         )
 
     def pack(self) -> bytearray:
         packet = self.pdu_file_directive.pack()
-        packet.append((self.directive_code_of_acked_pdu << 4) | self.directive_subtype_code)
+        packet.append(
+            (self.directive_code_of_acked_pdu << 4) | self.directive_subtype_code
+        )
         packet.append((self.condition_code_of_acked_pdu << 4) | self.transaction_status)
         return packet
 
     @classmethod
     def unpack(cls, raw_packet: bytearray) -> AckPdu:
         ack_packet = cls.__empty()
-        ack_packet.pdu_file_directive = FileDirectivePduBase.unpack(raw_packet=raw_packet)
+        ack_packet.pdu_file_directive = FileDirectivePduBase.unpack(
+            raw_packet=raw_packet
+        )
         current_idx = ack_packet.pdu_file_directive.header_len
-        ack_packet.directive_code_of_acked_pdu = (raw_packet[current_idx] & 0xf0) >> 4
-        ack_packet.directive_subtype_code = raw_packet[current_idx] & 0x0f
+        ack_packet.directive_code_of_acked_pdu = (raw_packet[current_idx] & 0xF0) >> 4
+        ack_packet.directive_subtype_code = raw_packet[current_idx] & 0x0F
         current_idx += 1
-        ack_packet.condition_code_of_acked_pdu = (raw_packet[current_idx] & 0xf0) >> 4
+        ack_packet.condition_code_of_acked_pdu = (raw_packet[current_idx] & 0xF0) >> 4
         ack_packet.transaction_status = raw_packet[current_idx] & 0x03
         return ack_packet

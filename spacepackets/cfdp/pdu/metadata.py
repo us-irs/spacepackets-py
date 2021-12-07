@@ -30,17 +30,13 @@ class MetadataPdu:
         if source_file_name is None:
             self._source_file_name_lv = CfdpLv(value=bytes())
         else:
-            source_file_name_as_bytes = source_file_name.encode('utf-8')
-            self._source_file_name_lv = CfdpLv(
-                value=source_file_name_as_bytes
-            )
+            source_file_name_as_bytes = source_file_name.encode("utf-8")
+            self._source_file_name_lv = CfdpLv(value=source_file_name_as_bytes)
         if dest_file_name is None:
             self._dest_file_name_lv = CfdpLv(value=bytes())
         else:
-            dest_file_name_as_bytes = dest_file_name.encode('utf-8')
-            self._dest_file_name_lv = CfdpLv(
-                value=dest_file_name_as_bytes
-            )
+            dest_file_name_as_bytes = dest_file_name.encode("utf-8")
+            self._dest_file_name_lv = CfdpLv(value=dest_file_name_as_bytes)
         if options is None:
             self._options = []
         else:
@@ -48,7 +44,7 @@ class MetadataPdu:
         self.pdu_file_directive = FileDirectivePduBase(
             directive_code=DirectiveCodes.METADATA_PDU,
             pdu_conf=pdu_conf,
-            directive_param_field_len=5
+            directive_param_field_len=5,
         )
         self._calculate_directive_field_len()
 
@@ -61,7 +57,7 @@ class MetadataPdu:
             file_size=0,
             source_file_name="",
             dest_file_name="",
-            pdu_conf=empty_conf
+            pdu_conf=empty_conf,
         )
 
     @property
@@ -98,10 +94,8 @@ class MetadataPdu:
         if source_file_name is None:
             self._source_file_name_lv = CfdpLv(value=bytes())
         else:
-            source_file_name_as_bytes = source_file_name.encode('utf-8')
-            self._source_file_name_lv = CfdpLv(
-                value=source_file_name_as_bytes
-            )
+            source_file_name_as_bytes = source_file_name.encode("utf-8")
+            self._source_file_name_lv = CfdpLv(value=source_file_name_as_bytes)
         self._calculate_directive_field_len()
 
     @property
@@ -113,10 +107,8 @@ class MetadataPdu:
         if dest_file_name is None:
             self._dest_file_name_lv = CfdpLv(value=bytes())
         else:
-            dest_file_name_as_bytes = dest_file_name.encode('utf-8')
-            self._dest_file_name_lv = CfdpLv(
-                value=dest_file_name_as_bytes
-            )
+            dest_file_name_as_bytes = dest_file_name.encode("utf-8")
+            self._dest_file_name_lv = CfdpLv(value=dest_file_name_as_bytes)
         self._calculate_directive_field_len()
 
     @property
@@ -129,9 +121,9 @@ class MetadataPdu:
         packet = self.pdu_file_directive.pack()
         packet.append((self.closure_requested << 6) | self.checksum_type)
         if self.pdu_file_directive.pdu_header.is_large_file():
-            packet.extend(struct.pack('!Q', self.file_size))
+            packet.extend(struct.pack("!Q", self.file_size))
         else:
-            packet.extend(struct.pack('!I', self.file_size))
+            packet.extend(struct.pack("!I", self.file_size))
         packet.extend(self._source_file_name_lv.pack())
         packet.extend(self._dest_file_name_lv.pack())
         for option in self.options:
@@ -141,20 +133,29 @@ class MetadataPdu:
     @classmethod
     def unpack(cls, raw_packet: bytearray) -> MetadataPdu:
         metadata_pdu = cls.__empty()
-        metadata_pdu.pdu_file_directive = FileDirectivePduBase.unpack(raw_packet=raw_packet)
+        metadata_pdu.pdu_file_directive = FileDirectivePduBase.unpack(
+            raw_packet=raw_packet
+        )
         current_idx = metadata_pdu.pdu_file_directive.header_len
         # Minimal length: 1 byte + FSS (4 byte) + 2 empty LV (1 byte)
         if not check_packet_length(len(raw_packet), current_idx + 7):
             raise ValueError
         metadata_pdu.closure_requested = raw_packet[current_idx] & 0x40
-        metadata_pdu.checksum_type = raw_packet[current_idx] & 0x0f
+        metadata_pdu.checksum_type = raw_packet[current_idx] & 0x0F
         current_idx += 1
-        current_idx, metadata_pdu.file_size = metadata_pdu.pdu_file_directive._parse_fss_field(
+        (
+            current_idx,
+            metadata_pdu.file_size,
+        ) = metadata_pdu.pdu_file_directive._parse_fss_field(
             raw_packet=raw_packet, current_idx=current_idx
         )
-        metadata_pdu._source_file_name_lv = CfdpLv.unpack(raw_bytes=raw_packet[current_idx:])
+        metadata_pdu._source_file_name_lv = CfdpLv.unpack(
+            raw_bytes=raw_packet[current_idx:]
+        )
         current_idx += metadata_pdu._source_file_name_lv.packet_len
-        metadata_pdu._dest_file_name_lv = CfdpLv.unpack(raw_bytes=raw_packet[current_idx:])
+        metadata_pdu._dest_file_name_lv = CfdpLv.unpack(
+            raw_bytes=raw_packet[current_idx:]
+        )
         current_idx += metadata_pdu._dest_file_name_lv.packet_len
         if current_idx < len(raw_packet):
             metadata_pdu._parse_options(raw_packet=raw_packet, start_idx=current_idx)
