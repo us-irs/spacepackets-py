@@ -4,8 +4,12 @@ from crcmod.predefined import mkPredefinedCrcFun
 
 from spacepackets.util import PrintFormats, get_printable_data_string
 from spacepackets.log import get_console_logger
-from spacepackets.ccsds.spacepacket import SpacePacketHeader, SPACE_PACKET_HEADER_SIZE, \
-    get_total_space_packet_len_from_len_field, PacketTypes
+from spacepackets.ccsds.spacepacket import (
+    SpacePacketHeader,
+    SPACE_PACKET_HEADER_SIZE,
+    get_total_space_packet_len_from_len_field,
+    PacketTypes,
+)
 from spacepackets.ccsds.time import CdsShortTimestamp, read_p_field
 from spacepackets.ecss.conf import get_pus_tm_version, PusVersion, get_default_tm_apid
 
@@ -28,15 +32,24 @@ class PusTelemetry:
     It automatically deserializes the packet, exposing various packet fields via getter functions.
     PUS Telemetry structure according to ECSS-E-70-41A p.46. Also see structure below (bottom).
     """
+
     CDS_SHORT_SIZE = 7
     PUS_TIMESTAMP_SIZE = CDS_SHORT_SIZE
 
     def __init__(
-            self, service: int, subservice: int, time: CdsShortTimestamp = None, ssc: int = 0,
-            source_data: bytearray = bytearray([]), apid: int = -1, message_counter: int = 0,
-            space_time_ref: int = 0b0000, destination_id: int = 0,
-            packet_version: int = 0b000, pus_version: PusVersion = PusVersion.GLOBAL_CONFIG,
-            secondary_header_flag: bool = True,
+        self,
+        service: int,
+        subservice: int,
+        time: CdsShortTimestamp = None,
+        ssc: int = 0,
+        source_data: bytearray = bytearray([]),
+        apid: int = -1,
+        message_counter: int = 0,
+        space_time_ref: int = 0b0000,
+        destination_id: int = 0,
+        packet_version: int = 0b000,
+        pus_version: PusVersion = PusVersion.GLOBAL_CONFIG,
+        secondary_header_flag: bool = True,
     ):
         if apid == -1:
             apid = get_default_tm_apid()
@@ -52,26 +65,35 @@ class PusTelemetry:
             timestamp_len=PusTelemetry.PUS_TIMESTAMP_SIZE, pus_version=pus_version
         )
         self.space_packet_header = SpacePacketHeader(
-            apid=apid, packet_type=packet_type, secondary_header_flag=secondary_header_flag,
-            packet_version=packet_version, data_length=data_length, source_sequence_count=ssc
+            apid=apid,
+            packet_type=packet_type,
+            secondary_header_flag=secondary_header_flag,
+            packet_version=packet_version,
+            data_length=data_length,
+            source_sequence_count=ssc,
         )
         self.secondary_packet_header = PusTmSecondaryHeader(
-            pus_version=pus_version, service_id=service, subservice_id=subservice,
-            message_counter=message_counter, destination_id=destination_id,
-            spacecraft_time_ref=space_time_ref, time=time
+            pus_version=pus_version,
+            service_id=service,
+            subservice_id=subservice,
+            message_counter=message_counter,
+            destination_id=destination_id,
+            spacecraft_time_ref=space_time_ref,
+            time=time,
         )
         self._valid = True
         self._crc16 = 0
 
     @classmethod
-    def __empty(cls, pus_version: PusVersion = PusVersion.GLOBAL_CONFIG) -> PusTelemetry:
+    def __empty(
+        cls, pus_version: PusVersion = PusVersion.GLOBAL_CONFIG
+    ) -> PusTelemetry:
         return PusTelemetry(
             service=0, subservice=0, time=CdsShortTimestamp.init_from_current_time()
         )
 
     def pack(self) -> bytearray:
-        """Serializes the PUS telemetry into a raw packet.
-        """
+        """Serializes the PUS telemetry into a raw packet."""
         tm_packet_raw = bytearray()
         # PUS Header
         tm_packet_raw.extend(self.space_packet_header.pack())
@@ -80,15 +102,17 @@ class PusTelemetry:
         # Source Data
         tm_packet_raw.extend(self._source_data)
         # CRC16-CCITT checksum
-        crc_func = mkPredefinedCrcFun(crc_name='crc-ccitt-false')
+        crc_func = mkPredefinedCrcFun(crc_name="crc-ccitt-false")
         self._crc16 = crc_func(tm_packet_raw)
-        tm_packet_raw.append((self._crc16 & 0xff00) >> 8)
-        tm_packet_raw.append(self._crc16 & 0xff)
+        tm_packet_raw.append((self._crc16 & 0xFF00) >> 8)
+        tm_packet_raw.append(self._crc16 & 0xFF)
         return tm_packet_raw
 
     @classmethod
     def unpack(
-            cls, raw_telemetry: bytearray, pus_version: PusVersion = PusVersion.GLOBAL_CONFIG
+        cls,
+        raw_telemetry: bytearray,
+        pus_version: PusVersion = PusVersion.GLOBAL_CONFIG,
     ) -> PusTelemetry:
         """Attempts to construct a generic PusTelemetry class given a raw bytearray.
         :param pus_version:
@@ -105,51 +129,61 @@ class PusTelemetry:
             raise ValueError
         pus_tm = cls.__empty(pus_version=pus_version)
         pus_tm._valid = False
-        pus_tm.space_packet_header = SpacePacketHeader.unpack(space_packet_raw=raw_telemetry)
+        pus_tm.space_packet_header = SpacePacketHeader.unpack(
+            space_packet_raw=raw_telemetry
+        )
         expected_packet_len = get_total_space_packet_len_from_len_field(
             pus_tm.space_packet_header.data_length
         )
         if expected_packet_len > len(raw_telemetry):
             logger = get_console_logger()
             logger.warning(
-                f'PusTelemetry: Passed packet with length {len(raw_telemetry)} '
-                f'shorter than specified packet length in PUS header {expected_packet_len}'
+                f"PusTelemetry: Passed packet with length {len(raw_telemetry)} "
+                f"shorter than specified packet length in PUS header {expected_packet_len}"
             )
             raise ValueError
         pus_tm.secondary_packet_header = PusTmSecondaryHeader.unpack(
             header_start=raw_telemetry[SPACE_PACKET_HEADER_SIZE:],
-            pus_version=pus_version
+            pus_version=pus_version,
         )
-        if expected_packet_len < \
-                pus_tm.secondary_packet_header.header_size + SPACE_PACKET_HEADER_SIZE:
+        if (
+            expected_packet_len
+            < pus_tm.secondary_packet_header.header_size + SPACE_PACKET_HEADER_SIZE
+        ):
             logger = get_console_logger()
             logger.warning("Passed packet too short!")
             raise ValueError
         if pus_tm.packet_len != len(raw_telemetry):
             logger = get_console_logger()
             logger.warning(
-                f'PusTelemetry: Packet length field '
-                f'{pus_tm.space_packet_header.data_length} might be invalid!'
+                f"PusTelemetry: Packet length field "
+                f"{pus_tm.space_packet_header.data_length} might be invalid!"
             )
-            logger.warning(f'Packet size from size field: {pus_tm.packet_len}')
-            logger.warning(f'Length of raw telemetry: {len(raw_telemetry)}')
+            logger.warning(f"Packet size from size field: {pus_tm.packet_len}")
+            logger.warning(f"Length of raw telemetry: {len(raw_telemetry)}")
         pus_tm._source_data = raw_telemetry[
-            pus_tm.secondary_packet_header.header_size + SPACE_PACKET_HEADER_SIZE:-2
+            pus_tm.secondary_packet_header.header_size + SPACE_PACKET_HEADER_SIZE : -2
         ]
-        pus_tm._crc = \
-            raw_telemetry[expected_packet_len - 2] << 8 | raw_telemetry[expected_packet_len - 1]
+        pus_tm._crc = (
+            raw_telemetry[expected_packet_len - 2] << 8
+            | raw_telemetry[expected_packet_len - 1]
+        )
         pus_tm.__perform_crc_check(raw_telemetry=raw_telemetry[:expected_packet_len])
         return pus_tm
 
     def __str__(self):
-        return f"PUS TM[{self.secondary_packet_header.service_id}," \
-               f"{self.secondary_packet_header.subservice_id}] with message counter " \
-               f"{self.secondary_packet_header.message_counter}"
+        return (
+            f"PUS TM[{self.secondary_packet_header.service_id},"
+            f"{self.secondary_packet_header.subservice_id}] with message counter "
+            f"{self.secondary_packet_header.message_counter}"
+        )
 
     def __repr__(self):
-        return f"{self.__class__.__name__}(service={self.secondary_packet_header.service_id!r}, " \
-               f"subservice={self.secondary_packet_header.subservice_id!r}, " \
-               f"apid={self.apid!r}, ssc={self.ssc!r})"
+        return (
+            f"{self.__class__.__name__}(service={self.secondary_packet_header.service_id!r}, "
+            f"subservice={self.secondary_packet_header.subservice_id!r}, "
+            f"apid={self.apid!r}, ssc={self.ssc!r})"
+        )
 
     @property
     def service(self) -> int:
@@ -182,7 +216,7 @@ class PusTelemetry:
 
     def __perform_crc_check(self, raw_telemetry: bytes):
         # CRC16-CCITT checksum
-        crc_func = mkPredefinedCrcFun(crc_name='crc-ccitt-false')
+        crc_func = mkPredefinedCrcFun(crc_name="crc-ccitt-false")
         full_packet_size = self.packet_len
         data_to_check = raw_telemetry[:full_packet_size]
         crc = crc_func(data_to_check)
@@ -190,10 +224,12 @@ class PusTelemetry:
             self._valid = True
         else:
             logger = get_console_logger()
-            logger.warning('Invalid CRC detected !')
+            logger.warning("Invalid CRC detected !")
             self._valid = False
 
-    def get_source_data_length(self, timestamp_len: int, pus_version: PusVersion) -> int:
+    def get_source_data_length(
+        self, timestamp_len: int, pus_version: PusVersion
+    ) -> int:
         """Retrieve size of TM packet data header in bytes.
         Formula according to PUS Standard: C = (Number of octets in packet source data field) - 1.
         The size of the TM packet is the size of the packet secondary header with
@@ -205,16 +241,22 @@ class PusTelemetry:
         :raises ValueError: Invalid PUS version
         """
         if pus_version == PusVersion.PUS_A:
-            data_length = \
-                PusTmSecondaryHeader.HEADER_SIZE_WITHOUT_TIME_PUS_A + \
-                timestamp_len + len(self._source_data) + 1
+            data_length = (
+                PusTmSecondaryHeader.HEADER_SIZE_WITHOUT_TIME_PUS_A
+                + timestamp_len
+                + len(self._source_data)
+                + 1
+            )
         elif pus_version == PusVersion.PUS_C:
-            data_length = \
-                PusTmSecondaryHeader.HEADER_SIZE_WITHOUT_TIME_PUS_C + \
-                timestamp_len + len(self._source_data) + 1
+            data_length = (
+                PusTmSecondaryHeader.HEADER_SIZE_WITHOUT_TIME_PUS_C
+                + timestamp_len
+                + len(self._source_data)
+                + 1
+            )
         else:
             logger = get_console_logger()
-            logger.warning(f'PUS version {pus_version} not supported')
+            logger.warning(f"PUS version {pus_version} not supported")
             raise ValueError
         return data_length
 
@@ -259,20 +301,28 @@ class PusTelemetry:
     def get_source_data_string(self, print_format: PrintFormats) -> str:
         """Returns the source data string"""
         return get_printable_data_string(
-            print_format=print_format, data=self._source_data, length=len(self._source_data)
+            print_format=print_format,
+            data=self._source_data,
+            length=len(self._source_data),
         )
 
 
 class PusTmSecondaryHeader:
     """Unpacks the PUS telemetry packet secondary header.
     Currently only supports CDS short timestamps"""
+
     HEADER_SIZE_WITHOUT_TIME_PUS_A = 4
     HEADER_SIZE_WITHOUT_TIME_PUS_C = 7
 
     def __init__(
-            self, service_id: int, subservice_id: int,
-            time: CdsShortTimestamp, message_counter: int, destination_id: int = 0,
-            spacecraft_time_ref: int = 0, pus_version: PusVersion = PusVersion.GLOBAL_CONFIG,
+        self,
+        service_id: int,
+        subservice_id: int,
+        time: CdsShortTimestamp,
+        message_counter: int,
+        destination_id: int = 0,
+        spacecraft_time_ref: int = 0,
+        pus_version: PusVersion = PusVersion.GLOBAL_CONFIG,
     ):
         """Create a PUS telemetry secondary header object.
 
@@ -287,13 +337,19 @@ class PusTmSecondaryHeader:
         self.pus_version = pus_version
         if self.pus_version == PusVersion.GLOBAL_CONFIG:
             self.pus_version = get_pus_tm_version()
-        if self.pus_version != PusVersion.PUS_A and self.pus_version != PusVersion.PUS_C:
+        if (
+            self.pus_version != PusVersion.PUS_A
+            and self.pus_version != PusVersion.PUS_C
+        ):
             raise ValueError
         self.spacecraft_time_ref = spacecraft_time_ref
         self.service_id = service_id
         self.subservice_id = subservice_id
-        if (self.pus_version == PusVersion.PUS_A and message_counter > pow(2, 8) - 1) or \
-                (self.pus_version == PusVersion.PUS_C and message_counter > pow(2, 16) - 1):
+        if (
+            self.pus_version == PusVersion.PUS_A and message_counter > pow(2, 8) - 1
+        ) or (
+            self.pus_version == PusVersion.PUS_C and message_counter > pow(2, 16) - 1
+        ):
             raise ValueError
         self.message_counter = message_counter
         self.destination_id = destination_id
@@ -306,7 +362,7 @@ class PusTmSecondaryHeader:
             service_id=-1,
             subservice_id=-1,
             time=CdsShortTimestamp.init_from_current_time(),
-            message_counter=0
+            message_counter=0,
         )
 
     def pack(self) -> bytearray:
@@ -320,15 +376,17 @@ class PusTmSecondaryHeader:
         if self.pus_version == PusVersion.PUS_A:
             secondary_header.append(self.message_counter)
         elif self.pus_version == PusVersion.PUS_C:
-            secondary_header.append((self.message_counter & 0xff00) >> 8)
-            secondary_header.append(self.message_counter & 0xff)
-            secondary_header.append((self.destination_id & 0xff00) >> 8)
-            secondary_header.append(self.destination_id & 0xff)
+            secondary_header.append((self.message_counter & 0xFF00) >> 8)
+            secondary_header.append(self.message_counter & 0xFF)
+            secondary_header.append((self.destination_id & 0xFF00) >> 8)
+            secondary_header.append(self.destination_id & 0xFF)
         secondary_header.extend(self.time.pack())
         return secondary_header
 
     @classmethod
-    def unpack(cls, header_start: bytearray, pus_version: PusVersion) -> PusTmSecondaryHeader:
+    def unpack(
+        cls, header_start: bytearray, pus_version: PusVersion
+    ) -> PusTmSecondaryHeader:
         """Unpack the PUS TM secondary header from the raw packet starting at the header index.
         The user still needs to specify the PUS version because the version field is parsed
         differently depending on the PUS version.
@@ -340,7 +398,7 @@ class PusTmSecondaryHeader:
         """
         if len(header_start) < cls.HEADER_SIZE_WITHOUT_TIME_PUS_A:
             logger = get_console_logger()
-            logger.warning('Passed bytearray too short')
+            logger.warning("Passed bytearray too short")
             raise ValueError
         if pus_version == PusVersion.GLOBAL_CONFIG:
             pus_version = get_pus_tm_version()
@@ -351,8 +409,8 @@ class PusTmSecondaryHeader:
             if secondary_header.pus_version != PusVersion.PUS_A:
                 logger = get_console_logger()
                 logger.warning(
-                    f'PUS version field value {secondary_header.pus_version} '
-                    f'found where PUS A {pus_version} was expected!'
+                    f"PUS version field value {secondary_header.pus_version} "
+                    f"found where PUS A {pus_version} was expected!"
                 )
                 raise ValueError
         elif pus_version == PusVersion.PUS_C:
@@ -360,16 +418,16 @@ class PusTmSecondaryHeader:
             if secondary_header.pus_version != PusVersion.PUS_C:
                 logger = get_console_logger()
                 logger.warning(
-                    f'PUS version field value {secondary_header.pus_version} '
-                    f'found where PUS C {pus_version} was expected!'
+                    f"PUS version field value {secondary_header.pus_version} "
+                    f"found where PUS C {pus_version} was expected!"
                 )
                 raise ValueError
             secondary_header.spacecraft_time_ref = header_start[current_idx] & 0x0F
         if len(header_start) < secondary_header.header_size:
             logger = get_console_logger()
             logger.warning(
-                f'Invalid PUS data field header size, '
-                f'less than expected {secondary_header.header_size} bytes'
+                f"Invalid PUS data field header size, "
+                f"less than expected {secondary_header.header_size} bytes"
             )
             raise ValueError
         current_idx += 1
@@ -381,12 +439,14 @@ class PusTmSecondaryHeader:
             secondary_header.message_counter = header_start[current_idx]
             current_idx += 1
         else:
-            secondary_header.message_counter = \
+            secondary_header.message_counter = (
                 header_start[current_idx] << 8 | header_start[current_idx + 1]
+            )
             current_idx += 2
         if pus_version == PusVersion.PUS_C:
-            secondary_header.destination_id = \
+            secondary_header.destination_id = (
                 header_start[current_idx] << 8 | header_start[current_idx + 1]
+            )
             current_idx += 2
         # If other time formats are supported in the future, this information can be used
         #  to unpack the correct time code
@@ -394,7 +454,9 @@ class PusTmSecondaryHeader:
         if time_code_id:
             pass
         secondary_header.time = CdsShortTimestamp.unpack(
-            time_field=header_start[current_idx: current_idx + PusTelemetry.PUS_TIMESTAMP_SIZE]
+            time_field=header_start[
+                current_idx : current_idx + PusTelemetry.PUS_TIMESTAMP_SIZE
+            ]
         )
         return secondary_header
 

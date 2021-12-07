@@ -46,7 +46,7 @@ class FileDataPdu:
             segment_metadata_flag=self.segment_metadata_flag,
             pdu_type=PduType.FILE_DATA,
             pdu_conf=pdu_conf,
-            pdu_data_field_len=0
+            pdu_data_field_len=0,
         )
         self._calculate_pdu_data_field_len()
 
@@ -59,7 +59,7 @@ class FileDataPdu:
             segment_metadata=bytes(),
             record_continuation_state=RecordContinuationState.START_AND_END,
             offset=0,
-            pdu_conf=empty_conf
+            pdu_conf=empty_conf,
         )
 
     @property
@@ -98,16 +98,16 @@ class FileDataPdu:
             if len_metadata > 63:
                 logger = get_console_logger()
                 logger.warning(
-                    f'Segment metadata length {len_metadata} invalid, larger than 63 bytes'
+                    f"Segment metadata length {len_metadata} invalid, larger than 63 bytes"
                 )
                 raise ValueError
             file_data_pdu.append(self.record_continuation_state << 6 | len_metadata)
             if len_metadata > 0:
                 file_data_pdu.extend(self._segment_metadata)
         if not self.pdu_header.is_large_file():
-            file_data_pdu.extend(struct.pack('!I', self.offset))
+            file_data_pdu.extend(struct.pack("!I", self.offset))
         else:
-            file_data_pdu.extend(struct.pack('!Q', self.offset))
+            file_data_pdu.extend(struct.pack("!Q", self.offset))
         file_data_pdu.extend(self._file_data)
         return file_data_pdu
 
@@ -118,27 +118,31 @@ class FileDataPdu:
         current_idx = file_data_packet.pdu_header.header_len
         if file_data_packet.pdu_header.segment_metadata_flag:
             file_data_packet.record_continuation_state = RecordContinuationState(
-                (raw_packet[current_idx] & 0xc0) >> 6
+                (raw_packet[current_idx] & 0xC0) >> 6
             )
-            file_data_packet.segment_metadata_length = raw_packet[current_idx] & 0x3f
+            file_data_packet.segment_metadata_length = raw_packet[current_idx] & 0x3F
             current_idx += 1
-            if current_idx + file_data_packet.segment_metadata_length >= len(raw_packet):
+            if current_idx + file_data_packet.segment_metadata_length >= len(
+                raw_packet
+            ):
                 logger = get_console_logger()
-                logger.warning('Packet too short for detected segment data length size')
+                logger.warning("Packet too short for detected segment data length size")
                 raise ValueError
-            file_data_packet.segment_metadata = \
-                raw_packet[current_idx: current_idx + file_data_packet.segment_metadata_length]
+            file_data_packet.segment_metadata = raw_packet[
+                current_idx : current_idx + file_data_packet.segment_metadata_length
+            ]
             current_idx += file_data_packet.segment_metadata_length
         if not file_data_packet.pdu_header.is_large_file():
-            struct_arg_tuple = ('!I', 4)
+            struct_arg_tuple = ("!I", 4)
         else:
-            struct_arg_tuple = ('!Q', 8)
+            struct_arg_tuple = ("!Q", 8)
         if current_idx + struct_arg_tuple[1] >= len(raw_packet):
             logger = get_console_logger()
-            logger.warning('Packet too small to accommodate offset')
+            logger.warning("Packet too small to accommodate offset")
             raise ValueError
         file_data_packet.offset = struct.unpack(
-            struct_arg_tuple[0], raw_packet[current_idx: current_idx + struct_arg_tuple[1]]
+            struct_arg_tuple[0],
+            raw_packet[current_idx : current_idx + struct_arg_tuple[1]],
         )[0]
         current_idx += struct_arg_tuple[1]
         if current_idx < len(raw_packet):

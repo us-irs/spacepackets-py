@@ -57,13 +57,14 @@ class CcsdsTimeCode:
 
     @abstractmethod
     def return_time_string(self) -> str:
-        return ''
+        return ""
 
 
 class CdsShortTimestamp(CcsdsTimeCode):
     """Unpacks the time datafield of the TM packet. Right now, CDS Short timeformat is used,
     and the size of the time stamp is expected to be seven bytes.
     """
+
     CDS_SHORT_ID = 0b100
     TIMESTAMP_SIZE = 7
 
@@ -78,7 +79,9 @@ class CdsShortTimestamp(CcsdsTimeCode):
         self.seconds_of_day = self.ms_of_day / 1000.0
         self.unix_seconds += self.seconds_of_day
         if self.unix_seconds < 0:
-            date = datetime.datetime(1970, 1, 1) + datetime.timedelta(seconds=self.unix_seconds)
+            date = datetime.datetime(1970, 1, 1) + datetime.timedelta(
+                seconds=self.unix_seconds
+            )
         else:
             date = datetime.datetime.utcfromtimestamp(self.unix_seconds)
         self.time_string = date.strftime("%Y-%m-%d %H:%M:%S.%f")
@@ -87,25 +90,22 @@ class CdsShortTimestamp(CcsdsTimeCode):
     def init_from_unix_days(cls, unix_days: int, ms_of_day: int) -> CdsShortTimestamp:
         return cls(
             ccsds_days=convert_unix_days_to_ccsds_days(unix_days=unix_days),
-            ms_of_day=ms_of_day
+            ms_of_day=ms_of_day,
         )
 
     @classmethod
     def __empty(cls):
-        return cls(
-            ccsds_days=0,
-            ms_of_day=0
-        )
+        return cls(ccsds_days=0, ms_of_day=0)
 
     def pack(self) -> bytearray:
         cds_packet = bytearray()
         cds_packet.append(self.p_field)
-        cds_packet.append((self.ccsds_days & 0xff00) >> 8)
-        cds_packet.append(self.ccsds_days & 0xff)
-        cds_packet.append((self.ms_of_day & 0xff000000) >> 24)
-        cds_packet.append((self.ms_of_day & 0x00ff0000) >> 16)
-        cds_packet.append((self.ms_of_day & 0x0000ff00) >> 8)
-        cds_packet.append(self.ms_of_day & 0x000000ff)
+        cds_packet.append((self.ccsds_days & 0xFF00) >> 8)
+        cds_packet.append(self.ccsds_days & 0xFF)
+        cds_packet.append((self.ms_of_day & 0xFF000000) >> 24)
+        cds_packet.append((self.ms_of_day & 0x00FF0000) >> 16)
+        cds_packet.append((self.ms_of_day & 0x0000FF00) >> 8)
+        cds_packet.append(self.ms_of_day & 0x000000FF)
         return cds_packet
 
     @classmethod
@@ -114,13 +114,14 @@ class CdsShortTimestamp(CcsdsTimeCode):
             raise ValueError
         # TODO: check ID?
         p_field = time_field[0]
-        ccsds_days = ((time_field[1] << 8) | (time_field[2]))
-        ms_of_day = \
-            ((time_field[3] << 24) | (time_field[4] << 16) | (time_field[5]) << 8 | time_field[6])
-        return cls(
-            ccsds_days=ccsds_days,
-            ms_of_day=ms_of_day
+        ccsds_days = (time_field[1] << 8) | (time_field[2])
+        ms_of_day = (
+            (time_field[3] << 24)
+            | (time_field[4] << 16)
+            | (time_field[5]) << 8
+            | time_field[6]
         )
+        return cls(ccsds_days=ccsds_days, ms_of_day=ms_of_day)
 
     @staticmethod
     def init_from_current_time() -> CdsShortTimestamp:

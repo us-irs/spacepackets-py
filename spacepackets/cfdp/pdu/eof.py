@@ -38,7 +38,7 @@ class EofPdu:
         self.pdu_file_directive = FileDirectivePduBase(
             directive_code=DirectiveCodes.EOF_PDU,
             pdu_conf=pdu_conf,
-            directive_param_field_len=0
+            directive_param_field_len=0,
         )
         self._calculate_directive_param_field_len()
 
@@ -69,7 +69,7 @@ class EofPdu:
         return cls(
             file_checksum=bytes([0x00, 0x00, 0x00, 0x00]),
             file_size=0,
-            pdu_conf=empty_conf
+            pdu_conf=empty_conf,
         )
 
     def pack(self) -> bytearray:
@@ -77,9 +77,9 @@ class EofPdu:
         eof_pdu.append(self.condition_code << 4)
         eof_pdu.extend(self.file_checksum)
         if self.pdu_file_directive.pdu_header.is_large_file():
-            eof_pdu.extend(struct.pack('!Q', self.file_size))
+            eof_pdu.extend(struct.pack("!Q", self.file_size))
         else:
-            eof_pdu.extend(struct.pack('!I', self.file_size))
+            eof_pdu.extend(struct.pack("!I", self.file_size))
         if self.fault_location is not None:
             eof_pdu.extend(self.fault_location.pack())
         return eof_pdu
@@ -94,17 +94,21 @@ class EofPdu:
         eof_pdu = cls.__empty()
         eof_pdu.pdu_file_directive = FileDirectivePduBase.unpack(raw_packet=raw_packet)
         expected_min_len = eof_pdu.pdu_file_directive.header_len + 9
-        if not check_packet_length(raw_packet_len=len(raw_packet), min_len=expected_min_len):
+        if not check_packet_length(
+            raw_packet_len=len(raw_packet), min_len=expected_min_len
+        ):
             raise ValueError
         current_idx = eof_pdu.pdu_file_directive.header_len
-        eof_pdu.condition_code = raw_packet[current_idx] & 0xf0
+        eof_pdu.condition_code = raw_packet[current_idx] & 0xF0
         expected_min_len = current_idx + 5
         current_idx += 1
-        eof_pdu.file_checksum = raw_packet[current_idx: current_idx + 4]
+        eof_pdu.file_checksum = raw_packet[current_idx : current_idx + 4]
         current_idx += 4
         current_idx, eof_pdu.file_size = eof_pdu.pdu_file_directive._parse_fss_field(
             raw_packet=raw_packet, current_idx=current_idx
         )
         if len(raw_packet) > current_idx:
-            eof_pdu.fault_location = EntityIdTlv.unpack(raw_bytes=raw_packet[current_idx:])
+            eof_pdu.fault_location = EntityIdTlv.unpack(
+                raw_bytes=raw_packet[current_idx:]
+            )
         return eof_pdu

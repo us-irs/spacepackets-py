@@ -2,8 +2,12 @@ from __future__ import annotations
 import struct
 from typing import List, Tuple, Optional
 
-from spacepackets.cfdp.pdu.file_directive import IsFileDirective, FileDirectivePduBase, \
-    DirectiveCodes, FileSize
+from spacepackets.cfdp.pdu.file_directive import (
+    IsFileDirective,
+    FileDirectivePduBase,
+    DirectiveCodes,
+    FileSize,
+)
 from spacepackets.cfdp.conf import PduConfig
 from spacepackets.log import get_console_logger
 
@@ -16,7 +20,7 @@ class NakPdu(IsFileDirective):
         start_of_scope: int,
         end_of_scope: int,
         pdu_conf: PduConfig,
-        segment_requests: Optional[List[Tuple[int, int]]] = None
+        segment_requests: Optional[List[Tuple[int, int]]] = None,
     ):
         """Create a NAK PDU object instance
 
@@ -29,7 +33,7 @@ class NakPdu(IsFileDirective):
         self.pdu_file_directive = FileDirectivePduBase(
             directive_code=DirectiveCodes.ACK_PDU,
             directive_param_field_len=8,
-            pdu_conf=pdu_conf
+            pdu_conf=pdu_conf,
         )
         # Calling this will also update the directive parameter field length
         self.segment_requests = segment_requests
@@ -41,10 +45,7 @@ class NakPdu(IsFileDirective):
     def __empty(cls) -> NakPdu:
         empty_conf = PduConfig.empty()
         return cls(
-            start_of_scope=0,
-            end_of_scope=0,
-            segment_requests=[],
-            pdu_conf=empty_conf
+            start_of_scope=0, end_of_scope=0, segment_requests=[], pdu_conf=empty_conf
         )
 
     @property
@@ -90,22 +91,28 @@ class NakPdu(IsFileDirective):
         """
         nak_pdu = self.pdu_file_directive.pack()
         if not self.pdu_file_directive.pdu_header.is_large_file():
-            if self.start_of_scope > pow(2, 32) - 1 or self.end_of_scope > pow(2, 32) - 1:
+            if (
+                self.start_of_scope > pow(2, 32) - 1
+                or self.end_of_scope > pow(2, 32) - 1
+            ):
                 raise ValueError
-            nak_pdu.extend(struct.pack('!I', self.start_of_scope))
-            nak_pdu.extend(struct.pack('!I', self.end_of_scope))
+            nak_pdu.extend(struct.pack("!I", self.start_of_scope))
+            nak_pdu.extend(struct.pack("!I", self.end_of_scope))
         else:
-            nak_pdu.extend(struct.pack('!Q', self.start_of_scope))
-            nak_pdu.extend(struct.pack('!Q', self.end_of_scope))
+            nak_pdu.extend(struct.pack("!Q", self.start_of_scope))
+            nak_pdu.extend(struct.pack("!Q", self.end_of_scope))
         for segment_request in self._segment_requests:
             if not self.pdu_file_directive.pdu_header.is_large_file():
-                if segment_request[0] > pow(2, 32) - 1 or segment_request[1] > pow(2, 32) - 1:
+                if (
+                    segment_request[0] > pow(2, 32) - 1
+                    or segment_request[1] > pow(2, 32) - 1
+                ):
                     raise ValueError
-                nak_pdu.extend(struct.pack('!I', segment_request[0]))
-                nak_pdu.extend(struct.pack('!I', segment_request[1]))
+                nak_pdu.extend(struct.pack("!I", segment_request[0]))
+                nak_pdu.extend(struct.pack("!I", segment_request[1]))
             else:
-                nak_pdu.extend(struct.pack('!Q', segment_request[0]))
-                nak_pdu.extend(struct.pack('!Q', segment_request[1]))
+                nak_pdu.extend(struct.pack("!Q", segment_request[0]))
+                nak_pdu.extend(struct.pack("!Q", segment_request[1]))
         return nak_pdu
 
     @classmethod
@@ -114,36 +121,40 @@ class NakPdu(IsFileDirective):
         nak_pdu.pdu_file_directive = FileDirectivePduBase.unpack(raw_packet=raw_packet)
         current_idx = nak_pdu.pdu_file_directive.header_len
         if not nak_pdu.pdu_file_directive.pdu_header.file_size:
-            struct_arg_tuple = ('!I', 4)
+            struct_arg_tuple = ("!I", 4)
         else:
-            struct_arg_tuple = ('!Q', 8)
+            struct_arg_tuple = ("!Q", 8)
         nak_pdu.start_of_scope = struct.unpack(
-            struct_arg_tuple[0], raw_packet[current_idx: current_idx + struct_arg_tuple[1]]
+            struct_arg_tuple[0],
+            raw_packet[current_idx : current_idx + struct_arg_tuple[1]],
         )[0]
         current_idx += struct_arg_tuple[1]
         nak_pdu.end_of_scope = struct.unpack(
-            struct_arg_tuple[0], raw_packet[current_idx: current_idx + struct_arg_tuple[1]]
+            struct_arg_tuple[0],
+            raw_packet[current_idx : current_idx + struct_arg_tuple[1]],
         )[0]
         current_idx += struct_arg_tuple[1]
         if current_idx < len(raw_packet):
-            packet_size_check = ((len(raw_packet) - current_idx) % (struct_arg_tuple[1] * 2))
+            packet_size_check = (len(raw_packet) - current_idx) % (
+                struct_arg_tuple[1] * 2
+            )
             if packet_size_check != 0:
                 logger = get_console_logger()
                 logger.warning(
-                    f'Invalid size for remaining data, '
-                    f'which should be a multiple of {struct_arg_tuple[1] * 2}'
+                    f"Invalid size for remaining data, "
+                    f"which should be a multiple of {struct_arg_tuple[1] * 2}"
                 )
                 raise ValueError
             segment_requests = []
             while current_idx < len(raw_packet):
                 start_of_segment = struct.unpack(
                     struct_arg_tuple[0],
-                    raw_packet[current_idx: current_idx + struct_arg_tuple[1]]
+                    raw_packet[current_idx : current_idx + struct_arg_tuple[1]],
                 )[0]
                 current_idx += struct_arg_tuple[1]
                 end_of_segment = struct.unpack(
                     struct_arg_tuple[0],
-                    raw_packet[current_idx: current_idx + struct_arg_tuple[1]]
+                    raw_packet[current_idx : current_idx + struct_arg_tuple[1]],
                 )[0]
 
                 tuple_entry = start_of_segment, end_of_segment

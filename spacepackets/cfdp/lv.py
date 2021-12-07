@@ -12,7 +12,7 @@ class CfdpLv:
         """
         if len(value) > 255:
             logger = get_console_logger()
-            logger.warning('Length too large for LV field')
+            logger.warning("Length too large for LV field")
             raise ValueError
         self.len = len(value)
         self.value = value
@@ -38,8 +38,8 @@ class CfdpLv:
         detected_len = raw_bytes[0]
         if 1 + detected_len > len(raw_bytes):
             logger = get_console_logger()
-            logger.warning('Detected length exceeds size of passed bytearray')
+            logger.warning("Detected length exceeds size of passed bytearray")
             raise ValueError
         if detected_len == 0:
             return cls(value=bytes())
-        return cls(value=raw_bytes[1:1 + detected_len])
+        return cls(value=raw_bytes[1 : 1 + detected_len])
