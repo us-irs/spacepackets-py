@@ -39,11 +39,8 @@ class FilestoreResponseStatusCode(enum.IntEnum):
     SUCCESS = 0b0000
     NOT_PERFORMED = 0b1111
     # Offsets past the size of the file are not supported for the copy procedure for now
-    COPY_PROC_INVALID_OFFSET = 0b0001
-    # To prevent accidentally overwriting an existing file, the offset above should be sufficient
-    # for most files. This dedicated returnvalue marks the case where the first PDU attempts
-    # to overwrite an existing file
-    COPY_PROC_OFFSET_ZERO_FILE_EXISTS = 0b010
+    APPEND_FROM_DATA_INVALID_OFFSET = 0b0001
+    APPEND_FROM_DATA_FILE_NOT_EXISTS = 0b0010
 
     CREATE_SUCCESS = FilestoreActionCode.CREATE_FILE_SNM << 4 | SUCCESS
     CREATE_NOT_ALLOWED = FilestoreActionCode.CREATE_FILE_SNM << 4 | 0b0001
