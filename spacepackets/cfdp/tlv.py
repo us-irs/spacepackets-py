@@ -36,57 +36,66 @@ class FilestoreResponseStatusCode(enum.IntEnum):
     """File store response status codes. First four bits are the action code, last four bits
     the status code"""
 
-    _SUCCESS = 0b0000
-    _NOT_PERFORMED = 0b1111
+    SUCCESS = 0b0000
+    NOT_PERFORMED = 0b1111
+    # Offsets past the size of the file are not supported for the copy procedure for now
+    COPY_PROC_INVALID_OFFSET = 0b0001
+    # To prevent accidentally overwriting an existing file, the offset above should be sufficient
+    # for most files. This dedicated returnvalue marks the case where the first PDU attempts
+    # to overwrite an existing file
+    COPY_PROC_OFFSET_ZERO_FILE_EXISTS = 0b010
 
-    CREATE_SUCCESS = FilestoreActionCode.CREATE_FILE_SNM << 4 | _SUCCESS
+    CREATE_SUCCESS = FilestoreActionCode.CREATE_FILE_SNM << 4 | SUCCESS
     CREATE_NOT_ALLOWED = FilestoreActionCode.CREATE_FILE_SNM << 4 | 0b0001
-    CREATE_NOT_PERFORMED = FilestoreActionCode.CREATE_FILE_SNM << 4 | _NOT_PERFORMED
+    CREATE_NOT_PERFORMED = FilestoreActionCode.CREATE_FILE_SNM << 4 | NOT_PERFORMED
 
-    DELETE_SUCCESS = FilestoreActionCode.DELETE_FILE_SNN << 4 | _SUCCESS
+    DELETE_SUCCESS = FilestoreActionCode.DELETE_FILE_SNN << 4 | SUCCESS
     DELETE_FILE_DOES_NOT_EXIST = FilestoreActionCode.DELETE_FILE_SNN << 4 | 0b0001
-    DELETE_NOT_ALLOWED = FilestoreActionCode.DELETE_FILE_SNN << 4 | _NOT_PERFORMED
+    DELETE_NOT_ALLOWED = FilestoreActionCode.DELETE_FILE_SNN << 4 | NOT_PERFORMED
 
-    RENAME_SUCCESS = FilestoreActionCode.RENAME_FILE_SNP << 4 | _SUCCESS
+    RENAME_SUCCESS = FilestoreActionCode.RENAME_FILE_SNP << 4 | SUCCESS
     RENAME_OLD_FILE_DOES_NOT_EXIST = FilestoreActionCode.RENAME_FILE_SNP << 4 | 0b0001
     RENAME_NEW_FILE_DOES_EXIST = FilestoreActionCode.RENAME_FILE_SNP << 4 | 0b0010
     RENAME_NOT_ALLOWED = FilestoreActionCode.RENAME_FILE_SNP << 4 | 0b0011
-    RENAME_NOT_PERFORMED = FilestoreActionCode.RENAME_FILE_SNP << 4 | _NOT_PERFORMED
+    RENAME_NOT_PERFORMED = FilestoreActionCode.RENAME_FILE_SNP << 4 | NOT_PERFORMED
 
-    APPEND_SUCCESS = FilestoreActionCode.APPEND_FILE_SNP << 4 | _SUCCESS
+    APPEND_SUCCESS = FilestoreActionCode.APPEND_FILE_SNP << 4 | SUCCESS
+    # Name of file whose contents form the first part of the new file and name of the new file
     APPEND_FILE_NAME_ONE_NOT_EXISTS = FilestoreActionCode.APPEND_FILE_SNP << 4 | 0b0001
+    # Name of the file whose contents will form the second part of the new file
     APPEND_FILE_NAME_TWO_NOT_EXISTS = FilestoreActionCode.APPEND_FILE_SNP << 4 | 0b0010
     APPEND_NOT_ALLOWED = FilestoreActionCode.APPEND_FILE_SNP << 4 | 0b0011
-    APPEND_NOT_PERFORMED = FilestoreActionCode.APPEND_FILE_SNP << 4 | _NOT_PERFORMED
+    APPEND_NOT_PERFORMED = FilestoreActionCode.APPEND_FILE_SNP << 4 | NOT_PERFORMED
 
-    REPLACE_SUCCESS = FilestoreActionCode.REPLACE_FILE_SNP << 4 | _SUCCESS
-    REPLACE_FILE_NAME_ONE_DOES_NOT_EXIST = (
+    REPLACE_SUCCESS = FilestoreActionCode.REPLACE_FILE_SNP << 4 | SUCCESS
+    # File name
+    REPLACE_FILE_NAME_ONE_TO_BE_REPLACED_DOES_NOT_EXIST = (
         FilestoreActionCode.REPLACE_FILE_SNP << 4 | 0b0001
     )
-    REPLACE_FILE_NAME_TWO_DOES_NOT_EXIST = (
+    REPLACE_FILE_NAME_TWO_REPLACE_SOURCE_NOT_EXIST = (
         FilestoreActionCode.REPLACE_FILE_SNP << 4 | 0b0010
     )
     REPLACE_NOT_ALLOWED = FilestoreActionCode.REPLACE_FILE_SNP << 4 | 0b0011
-    REPLACE_NOT_PERFORMED = FilestoreActionCode.REPLACE_FILE_SNP << 4 | _NOT_PERFORMED
+    REPLACE_NOT_PERFORMED = FilestoreActionCode.REPLACE_FILE_SNP << 4 | NOT_PERFORMED
 
-    CREATE_DIR_SUCCESS = FilestoreActionCode.CREATE_DIR_SNN << 4 | _SUCCESS
+    CREATE_DIR_SUCCESS = FilestoreActionCode.CREATE_DIR_SNN << 4 | SUCCESS
     CREATE_DIR_CAN_NOT_BE_CREATED = FilestoreActionCode.CREATE_DIR_SNN << 4 | 0b0001
-    CREATE_DIR_NOT_PERFORMED = FilestoreActionCode.CREATE_DIR_SNN << 4 | _NOT_PERFORMED
+    CREATE_DIR_NOT_PERFORMED = FilestoreActionCode.CREATE_DIR_SNN << 4 | NOT_PERFORMED
 
-    REMOVE_DIR_SUCCESS = FilestoreActionCode.REMOVE_DIR_SNN << 4 | _SUCCESS
+    REMOVE_DIR_SUCCESS = FilestoreActionCode.REMOVE_DIR_SNN << 4 | SUCCESS
     REMOVE_DIR_DOES_NOT_EXIST = FilestoreActionCode.REMOVE_DIR_SNN << 4 | 0b0001
     REMOVE_DIR_NOT_ALLOWED = FilestoreActionCode.REMOVE_DIR_SNN << 4 | 0b0010
-    REMOVE_DIR_NOT_PERFORMED = FilestoreActionCode.REMOVE_DIR_SNN << 4 | _NOT_PERFORMED
+    REMOVE_DIR_NOT_PERFORMED = FilestoreActionCode.REMOVE_DIR_SNN << 4 | NOT_PERFORMED
 
-    DENY_FILE_DEL_SUCCESS = FilestoreActionCode.DENY_FILE_SMM << 4 | _SUCCESS
+    DENY_FILE_DEL_SUCCESS = FilestoreActionCode.DENY_FILE_SMM << 4 | SUCCESS
     DENY_FILE_DEL_NOT_ALLOWED = FilestoreActionCode.DENY_FILE_SMM << 4 | 0b0010
     DENY_FILE_DEL_NOT_PERFORMED = (
-        FilestoreActionCode.DENY_FILE_SMM << 4 | _NOT_PERFORMED
+        FilestoreActionCode.DENY_FILE_SMM << 4 | NOT_PERFORMED
     )
 
-    DENY_DIR_DEL_SUCCESS = FilestoreActionCode.DENY_DIR_SNN << 4 | _SUCCESS
+    DENY_DIR_DEL_SUCCESS = FilestoreActionCode.DENY_DIR_SNN << 4 | SUCCESS
     DENY_DIR_DEL_NOT_ALLOWED = FilestoreActionCode.DENY_DIR_SNN << 4 | 0b0010
-    DENY_DIR_DEL_NOT_PERFORMED = FilestoreActionCode.DENY_DIR_SNN << 4 | _NOT_PERFORMED
+    DENY_DIR_DEL_NOT_PERFORMED = FilestoreActionCode.DENY_DIR_SNN << 4 | NOT_PERFORMED
     INVALID = -1
 
 
