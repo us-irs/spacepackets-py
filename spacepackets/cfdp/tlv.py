@@ -86,9 +86,7 @@ class FilestoreResponseStatusCode(enum.IntEnum):
 
     DENY_FILE_DEL_SUCCESS = FilestoreActionCode.DENY_FILE_SMM << 4 | SUCCESS
     DENY_FILE_DEL_NOT_ALLOWED = FilestoreActionCode.DENY_FILE_SMM << 4 | 0b0010
-    DENY_FILE_DEL_NOT_PERFORMED = (
-        FilestoreActionCode.DENY_FILE_SMM << 4 | NOT_PERFORMED
-    )
+    DENY_FILE_DEL_NOT_PERFORMED = FilestoreActionCode.DENY_FILE_SMM << 4 | NOT_PERFORMED
 
     DENY_DIR_DEL_SUCCESS = FilestoreActionCode.DENY_DIR_SNN << 4 | SUCCESS
     DENY_DIR_DEL_NOT_ALLOWED = FilestoreActionCode.DENY_DIR_SNN << 4 | 0b0010
