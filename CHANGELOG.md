@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [unreleased]
 
+## [v0.5.2]
+
+- Smaller tweaks for CFDP
+
 ## [v0.5.1]
 
 - Applied formatting with the `black` Python formatter
