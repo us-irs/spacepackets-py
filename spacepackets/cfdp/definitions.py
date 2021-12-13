@@ -37,6 +37,13 @@ class SegmentationControl(enum.IntEnum):
     RECORD_BOUNDARIES_PRESERVATION = 1
 
 
+class FaultHandlerCodes(enum.IntEnum):
+    NOTICE_OF_CANCELLATION = 0b0001
+    NOTICE_OF_SUSPENSION = 0b0010
+    IGNORE_ERROR = 0b0011
+    ABANDON_TRANSACTION = 0b0100
+
+
 class LenInBytes(enum.IntEnum):
     ONE_BYTE = 1
     TWO_BYTES = 2

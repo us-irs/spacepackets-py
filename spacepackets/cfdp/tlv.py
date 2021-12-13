@@ -3,7 +3,7 @@ from typing import Tuple, Optional, TypeVar, Type, Union, List
 import enum
 from spacepackets.log import get_console_logger
 from spacepackets.cfdp.lv import CfdpLv
-from spacepackets.cfdp.definitions import ConditionCode
+from spacepackets.cfdp.definitions import ConditionCode, FaultHandlerCodes
 
 
 class TlvTypes(enum.IntEnum):
@@ -235,18 +235,11 @@ class EntityIdTlv(ConcreteTlvBase):
         return entity_id_tlv
 
 
-class FaultHandlerOverrideHandlerCodes(enum.IntEnum):
-    NOTICE_OF_CANCELLATION = 0b0001
-    NOTICE_OF_SUSPENSION = 0b0010
-    IGNORE_ERROR = 0b0011
-    ABANDON_TRANSACTION = 0b0100
-
-
 class FaultHandlerOverrideTlv(ConcreteTlvBase):
     def __init__(
         self,
         condition_code: ConditionCode,
-        handler_code: FaultHandlerOverrideHandlerCodes,
+        handler_code: FaultHandlerCodes,
     ):
         self.condition_code = condition_code
         self.handler_code = handler_code
@@ -258,7 +251,7 @@ class FaultHandlerOverrideTlv(ConcreteTlvBase):
     def __empty(cls) -> FaultHandlerOverrideTlv:
         return cls(
             condition_code=ConditionCode.NO_ERROR,
-            handler_code=FaultHandlerOverrideHandlerCodes.IGNORE_ERROR,
+            handler_code=FaultHandlerCodes.IGNORE_ERROR,
         )
 
     @classmethod
