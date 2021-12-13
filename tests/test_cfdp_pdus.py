@@ -19,7 +19,7 @@ from spacepackets.cfdp.tlv import (
     FaultHandlerOverrideTlv,
     FileStoreRequestTlv,
     concrete_tlv_factory,
-    FaultHandlerOverrideHandlerCodes,
+    FaultHandlerCodes
 )
 from spacepackets.cfdp.pdu.metadata import MetadataPdu, ChecksumTypes
 from spacepackets.cfdp.pdu.keep_alive import KeepAlivePdu
@@ -524,7 +524,7 @@ class TestPdus(TestCase):
 
         option_1 = FaultHandlerOverrideTlv(
             condition_code=ConditionCode.POSITIVE_ACK_LIMIT_REACHED,
-            handler_code=FaultHandlerOverrideHandlerCodes.ABANDON_TRANSACTION,
+            handler_code=FaultHandlerCodes.ABANDON_TRANSACTION,
         )
         self.assertEqual(option_1.packet_len, 3)
         pdu_with_two_options = MetadataPdu(

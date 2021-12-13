@@ -16,7 +16,7 @@ from spacepackets.cfdp.tlv import (
     FaultHandlerOverrideTlv,
     concrete_tlv_factory,
     ConditionCode,
-    FaultHandlerOverrideHandlerCodes,
+    FaultHandlerCodes,
     create_cfdp_proxy_and_dir_op_message_marker,
 )
 
@@ -167,7 +167,7 @@ class TestTlvsLvs(TestCase):
     def test_fault_handler_override_tlv(self):
         fault_handler_ovvrd_tlv = FaultHandlerOverrideTlv(
             condition_code=ConditionCode.POSITIVE_ACK_LIMIT_REACHED,
-            handler_code=FaultHandlerOverrideHandlerCodes.IGNORE_ERROR,
+            handler_code=FaultHandlerCodes.IGNORE_ERROR,
         )
         fault_handler_ovvrd_tlv_tlv = fault_handler_ovvrd_tlv.tlv
         fault_handler_ovvrd_tlv_from_fac = concrete_tlv_factory(
