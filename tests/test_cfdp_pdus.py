@@ -19,7 +19,7 @@ from spacepackets.cfdp.tlv import (
     FaultHandlerOverrideTlv,
     FileStoreRequestTlv,
     concrete_tlv_factory,
-    FaultHandlerCodes
+    FaultHandlerCodes,
 )
 from spacepackets.cfdp.pdu.metadata import MetadataPdu, ChecksumTypes
 from spacepackets.cfdp.pdu.keep_alive import KeepAlivePdu
