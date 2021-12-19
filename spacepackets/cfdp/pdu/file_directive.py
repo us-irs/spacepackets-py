@@ -2,7 +2,12 @@ from __future__ import annotations
 import enum
 import struct
 
-from spacepackets.cfdp.pdu.header import PduHeader, PduType, SegmentMetadataFlag, HasPduHeader
+from spacepackets.cfdp.pdu.header import (
+    PduHeader,
+    PduType,
+    SegmentMetadataFlag,
+    HasPduHeader,
+)
 from spacepackets.cfdp.definitions import FileSize
 from spacepackets.cfdp.conf import check_packet_length, PduConfig
 from spacepackets.log import get_console_logger
@@ -24,11 +29,12 @@ class FileDirectivePduBase:
     """Base class for file directive PDUs encapsulating all its common components.
     All other file directive PDU classes implement this class
     """
+
     def __init__(
-            self,
-            directive_code: DirectiveCodes,
-            directive_param_field_len: int,
-            pdu_conf: PduConfig
+        self,
+        directive_code: DirectiveCodes,
+        directive_param_field_len: int,
+        pdu_conf: PduConfig,
     ):
         """Generic constructor for a file directive PDU. Most arguments are passed on the
         to build the generic PDU header.
@@ -43,7 +49,7 @@ class FileDirectivePduBase:
             pdu_data_field_len=directive_param_field_len + 1,
             pdu_conf=pdu_conf,
             # This flag is not relevant for file directive PDUs
-            segment_metadata_flag=SegmentMetadataFlag.NOT_PRESENT
+            segment_metadata_flag=SegmentMetadataFlag.NOT_PRESENT,
         )
         self.directive_code = directive_code
 
@@ -72,7 +78,7 @@ class FileDirectivePduBase:
         return cls(
             directive_code=DirectiveCodes.NONE,
             directive_param_field_len=0,
-            pdu_conf=empty_conf
+            pdu_conf=empty_conf,
         )
 
     @property
@@ -111,13 +117,17 @@ class FileDirectivePduBase:
 
     def _verify_file_len(self, file_size: int) -> bool:
         """Can be used by subclasses to verify a given file size"""
-        if self.pdu_header.pdu_conf.file_size == FileSize.LARGE and file_size > pow(2, 64):
+        if self.pdu_header.pdu_conf.file_size == FileSize.LARGE and file_size > pow(
+            2, 64
+        ):
             logger = get_console_logger()
-            logger.warning(f'File size {file_size} larger than 64 bit field')
+            logger.warning(f"File size {file_size} larger than 64 bit field")
             return False
-        elif self.pdu_header.pdu_conf.file_size == FileSize.NORMAL and file_size > pow(2, 32):
+        elif self.pdu_header.pdu_conf.file_size == FileSize.NORMAL and file_size > pow(
+            2, 32
+        ):
             logger = get_console_logger()
-            logger.warning(f'File size {file_size} larger than 32 bit field')
+            logger.warning(f"File size {file_size} larger than 32 bit field")
             return False
         return True
 
@@ -129,18 +139,23 @@ class FileDirectivePduBase:
         if self.pdu_header.pdu_conf.file_size == FileSize.LARGE:
             if not check_packet_length(len(raw_packet), current_idx + 8):
                 raise ValueError
-            file_size = struct.unpack('!Q', raw_packet[current_idx: current_idx + 8])[0]
+            file_size = struct.unpack("!Q", raw_packet[current_idx : current_idx + 8])[
+                0
+            ]
             current_idx += 8
         else:
             if not check_packet_length(len(raw_packet), current_idx + 4):
                 raise ValueError
-            file_size = struct.unpack('!I', raw_packet[current_idx: current_idx + 4])[0]
+            file_size = struct.unpack("!I", raw_packet[current_idx : current_idx + 4])[
+                0
+            ]
             current_idx += 4
         return current_idx, file_size
 
 
 class IsFileDirective(HasPduHeader):
     """Encapsulate common functions for classes which are FileDirectives"""
+
     def __init__(self, pdu_file_directive: FileDirectivePduBase):
         self.pdu_file_directive = pdu_file_directive
         HasPduHeader.__init__(self, pdu_header=pdu_file_directive.pdu_header)

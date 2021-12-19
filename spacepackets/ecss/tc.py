@@ -5,11 +5,11 @@ import sys
 from typing import Tuple
 
 from spacepackets.log import get_console_logger
-from spacepackets.ccsds.spacepacket import \
-    SpacePacketHeader, \
-    PacketTypes, \
-    SPACE_PACKET_HEADER_SIZE, \
-    MAX_PUS_DATA_SIZE
+from spacepackets.ccsds.spacepacket import (
+    SpacePacketHeader,
+    PacketTypes,
+    SPACE_PACKET_HEADER_SIZE,
+)
 from spacepackets.util import get_printable_data_string, PrintFormats
 from spacepackets.ecss.conf import get_default_tc_apid, PusVersion, get_pus_tc_version
 
@@ -23,9 +23,14 @@ except ImportError:
 
 class PusTcDataFieldHeader:
     def __init__(
-            self, service_type: int, service_subtype: int, source_id: int = 0,
-            pus_version: PusVersion = PusVersion.PUS_C, ack_flags: int = 0b1111,
-            secondary_header_flag: int = 0, add_source_id: bool = True
+        self,
+        service_type: int,
+        service_subtype: int,
+        source_id: int = 0,
+        pus_version: PusVersion = PusVersion.PUS_C,
+        ack_flags: int = 0b1111,
+        secondary_header_flag: int = 0,
+        add_source_id: bool = True,
     ):
         """Create a PUS TC data field header instance
 
@@ -45,8 +50,9 @@ class PusTcDataFieldHeader:
         self.ack_flags = ack_flags
         self.add_source_id = add_source_id
         if self.pus_tc_version == PusVersion.PUS_A:
-            self.pus_version_and_ack_byte = \
+            self.pus_version_and_ack_byte = (
                 secondary_header_flag << 7 | self.pus_tc_version << 4 | ack_flags
+            )
         elif self.pus_tc_version == PusVersion.PUS_C:
             self.pus_version_and_ack_byte = self.pus_tc_version << 4 | ack_flags
 
@@ -59,8 +65,8 @@ class PusTcDataFieldHeader:
         header_raw.append(self.service_type)
         header_raw.append(self.service_subtype)
         if self.pus_tc_version == PusVersion.PUS_C:
-            header_raw.append(self.source_id << 8 & 0xff)
-            header_raw.append(self.source_id & 0xff)
+            header_raw.append(self.source_id << 8 & 0xFF)
+            header_raw.append(self.source_id & 0xFF)
         elif self.pus_tc_version == PusVersion.PUS_A and self.add_source_id:
             # PUS A includes optional source ID field as well
             header_raw.append(self.source_id)
@@ -68,8 +74,10 @@ class PusTcDataFieldHeader:
 
     @classmethod
     def unpack(
-            cls, raw_packet: bytes, pus_version: PusVersion = PusVersion.PUS_C,
-            has_source_id: bool = True
+        cls,
+        raw_packet: bytes,
+        pus_version: PusVersion = PusVersion.PUS_C,
+        has_source_id: bool = True,
     ) -> PusTcDataFieldHeader:
         """Unpack a TC data field header.
 
@@ -78,22 +86,24 @@ class PusTcDataFieldHeader:
         :param has_source_id:
         :return:
         """
-        min_expected_len = cls.get_header_size(pus_version=pus_version, add_source_id=has_source_id)
+        min_expected_len = cls.get_header_size(
+            pus_version=pus_version, add_source_id=has_source_id
+        )
         if len(raw_packet) < min_expected_len:
             logger = get_console_logger()
             logger.warning(
-                f'Passed bytearray too short, expected minimum length {min_expected_len}'
+                f"Passed bytearray too short, expected minimum length {min_expected_len}"
             )
             raise ValueError
         version_and_ack_byte = raw_packet[0]
         secondary_header_flag = 0
         if pus_version == PusVersion.PUS_C:
-            pus_tc_version = (version_and_ack_byte & 0xf0) >> 4
+            pus_tc_version = (version_and_ack_byte & 0xF0) >> 4
             if pus_tc_version != PusVersion.PUS_C:
                 logger = get_console_logger()
                 logger.warning(
-                    f'PUS C expected but TC version field missmatch detected. '
-                    f'Expected {PusVersion.PUS_C}, got {pus_tc_version}'
+                    f"PUS C expected but TC version field missmatch detected. "
+                    f"Expected {PusVersion.PUS_C}, got {pus_tc_version}"
                 )
                 raise ValueError
         elif pus_version == PusVersion.PUS_A:
@@ -101,12 +111,12 @@ class PusTcDataFieldHeader:
             if pus_tc_version != PusVersion.PUS_A:
                 logger = get_console_logger()
                 logger.warning(
-                    f'PUS A expected but TC version field missmatch detected. '
-                    f'Expected {PusVersion.PUS_A}, got {pus_tc_version}'
+                    f"PUS A expected but TC version field missmatch detected. "
+                    f"Expected {PusVersion.PUS_A}, got {pus_tc_version}"
                 )
                 raise ValueError
             secondary_header_flag = (version_and_ack_byte & 0x80) >> 7
-        ack_flags = version_and_ack_byte & 0x0f
+        ack_flags = version_and_ack_byte & 0x0F
         service = raw_packet[1]
         subservice = raw_packet[2]
         source_id = 0
@@ -122,7 +132,7 @@ class PusTcDataFieldHeader:
             ack_flags=ack_flags,
             source_id=source_id,
             pus_version=pus_version,
-            add_source_id=has_source_id
+            add_source_id=has_source_id,
         )
 
     @staticmethod
@@ -145,10 +155,15 @@ class PusTelecommand:
     """
 
     def __init__(
-            self, service: int, subservice: int, ssc=0,
-            app_data: bytearray = bytearray([]), source_id: int = 0,
-            pus_version: PusVersion = PusVersion.GLOBAL_CONFIG, ack_flags: int = 0b1111,
-            apid: int = -1
+        self,
+        service: int,
+        subservice: int,
+        ssc=0,
+        app_data: bytearray = bytearray([]),
+        source_id: int = 0,
+        pus_version: PusVersion = PusVersion.GLOBAL_CONFIG,
+        ack_flags: int = 0b1111,
+        apid: int = -1,
     ):
         """Initiate a PUS telecommand from the given parameters. The raw byte representation
         can then be retrieved with the :py:meth:`pack` function.
@@ -180,20 +195,25 @@ class PusTelecommand:
         if ssc > pow(2, 14):
             logger.warning("SSC invalid, setting to 0")
             ssc = 0
-        if len(app_data) > MAX_PUS_DATA_SIZE:
-            logger.warning("Application data of PUS packet exceeds maximum allowed size")
         self.data_field_header = PusTcDataFieldHeader(
-            service_type=service, service_subtype=subservice, ack_flags=ack_flags,
-            source_id=source_id, pus_version=pus_version
+            service_type=service,
+            service_subtype=subservice,
+            ack_flags=ack_flags,
+            source_id=source_id,
+            pus_version=pus_version,
         )
         data_length = self.get_data_length(
-            secondary_header_len=self.data_field_header.get_header_size(pus_version=pus_version),
+            secondary_header_len=self.data_field_header.get_header_size(
+                pus_version=pus_version
+            ),
             app_data_len=len(app_data),
         )
         self.space_packet_header = SpacePacketHeader(
-            apid=apid, secondary_header_flag=bool(secondary_header_flag),
-            packet_type=PacketTypes.TC, data_length=data_length,
-            source_sequence_count=ssc
+            apid=apid,
+            secondary_header_flag=bool(secondary_header_flag),
+            packet_type=PacketTypes.TC,
+            data_length=data_length,
+            source_sequence_count=ssc,
         )
         self._app_data = app_data
         self._valid = True
@@ -201,14 +221,18 @@ class PusTelecommand:
 
     def __repr__(self):
         """Returns the representation of a class instance."""
-        return f"{self.__class__.__name__}(service={self.data_field_header.service_type!r}, " \
-               f"subservice={self.data_field_header.service_subtype!r}, " \
-               f"ssc={self.space_packet_header.ssc!r}, apid={self.apid})"
+        return (
+            f"{self.__class__.__name__}(service={self.data_field_header.service_type!r}, "
+            f"subservice={self.data_field_header.service_subtype!r}, "
+            f"ssc={self.space_packet_header.ssc!r}, apid={self.apid})"
+        )
 
     def __str__(self):
         """Returns string representation of a class instance."""
-        return f"TC[{self.data_field_header.service_type}, " \
-               f"{self.data_field_header.service_subtype}] with SSC {self.space_packet_header.ssc}"
+        return (
+            f"TC[{self.data_field_header.service_type}, "
+            f"{self.data_field_header.service_subtype}] with SSC {self.space_packet_header.ssc}"
+        )
 
     @property
     def valid(self):
@@ -216,13 +240,7 @@ class PusTelecommand:
 
     @classmethod
     def __empty(cls):
-        return cls(
-            service=0,
-            subservice=0,
-            apid=0,
-            ssc=0,
-            app_data=bytearray()
-        )
+        return cls(service=0, subservice=0, apid=0, ssc=0, app_data=bytearray())
 
     def pack(self) -> bytearray:
         """Serializes the TC data fields into a bytearray."""
@@ -230,41 +248,44 @@ class PusTelecommand:
         packed_data.extend(self.space_packet_header.pack())
         packed_data.extend(self.data_field_header.pack())
         packed_data += self.app_data
-        crc_func = mkPredefinedCrcFun(crc_name='crc-ccitt-false')
+        crc_func = mkPredefinedCrcFun(crc_name="crc-ccitt-false")
         self._crc = crc_func(packed_data)
         self._valid = True
-        packed_data.append((self._crc & 0xff00) >> 8)
-        packed_data.append(self._crc & 0xff)
+        packed_data.append((self._crc & 0xFF00) >> 8)
+        packed_data.append(self._crc & 0xFF)
         return packed_data
 
     @classmethod
     def unpack(cls, raw_packet: bytes, pus_version: PusVersion) -> PusTelecommand:
         tc_unpacked = cls.__empty()
-        tc_unpacked.space_packet_header = SpacePacketHeader.unpack(space_packet_raw=raw_packet)
+        tc_unpacked.space_packet_header = SpacePacketHeader.unpack(
+            space_packet_raw=raw_packet
+        )
         tc_unpacked.data_field_header = PusTcDataFieldHeader.unpack(
             raw_packet=raw_packet[SPACE_PACKET_HEADER_SIZE:], pus_version=pus_version
         )
-        header_len = \
-            SPACE_PACKET_HEADER_SIZE + \
-            tc_unpacked.data_field_header.get_header_size(pus_version=pus_version)
+        header_len = (
+            SPACE_PACKET_HEADER_SIZE
+            + tc_unpacked.data_field_header.get_header_size(pus_version=pus_version)
+        )
         expected_packet_len = tc_unpacked.packet_len
         if len(raw_packet) < expected_packet_len:
             logger = get_console_logger()
             logger.warning(
-                f'Invalid length of raw telecommand packet, expected minimum length '
-                f'{expected_packet_len}'
+                f"Invalid length of raw telecommand packet, expected minimum length "
+                f"{expected_packet_len}"
             )
             raise ValueError
-        tc_unpacked._app_data = raw_packet[header_len:expected_packet_len - 2]
-        tc_unpacked._crc = raw_packet[expected_packet_len - 2: expected_packet_len]
-        crc_func = mkPredefinedCrcFun(crc_name='crc-ccitt-false')
+        tc_unpacked._app_data = raw_packet[header_len : expected_packet_len - 2]
+        tc_unpacked._crc = raw_packet[expected_packet_len - 2 : expected_packet_len]
+        crc_func = mkPredefinedCrcFun(crc_name="crc-ccitt-false")
         whole_packet = raw_packet[:expected_packet_len]
         should_be_zero = crc_func(whole_packet)
         if should_be_zero == 0:
             tc_unpacked._valid = True
         else:
             logger = get_console_logger()
-            logger.warning('Invalid CRC16 in raw telecommand detected')
+            logger.warning("Invalid CRC16 in raw telecommand detected")
             tc_unpacked._valid = False
         return tc_unpacked
 
@@ -324,10 +345,13 @@ class PusTelecommand:
         return self._app_data
 
     def print(self, print_format: PrintFormats):
-        """Print the raw command in a clean format.
-        """
+        """Print the raw command in a clean format."""
         packet = self.pack()
-        print(get_printable_data_string(print_format=print_format, data=packet, length=len(packet)))
+        print(
+            get_printable_data_string(
+                print_format=print_format, data=packet, length=len(packet)
+            )
+        )
 
 
 def generate_packet_crc(tc_packet: bytearray) -> bytearray:
@@ -335,19 +359,18 @@ def generate_packet_crc(tc_packet: bytearray) -> bytearray:
     CRC16 checksum and adds it as correct Packet Error Control Code.
     Reference: ECSS-E70-41A p. 207-212
     """
-    crc_func = mkPredefinedCrcFun(crc_name='crc-ccitt-false')
-    crc = crc_func(bytearray(tc_packet[0:len(tc_packet) - 2]))
+    crc_func = mkPredefinedCrcFun(crc_name="crc-ccitt-false")
+    crc = crc_func(bytearray(tc_packet[0 : len(tc_packet) - 2]))
     tc_packet[len(tc_packet) - 2] = (crc & 0xFF00) >> 8
     tc_packet[len(tc_packet) - 1] = crc & 0xFF
     return tc_packet
 
 
 def generate_crc(data: bytearray) -> bytearray:
-    """Takes the application data, appends the CRC16 checksum and returns resulting bytearray
-    """
+    """Takes the application data, appends the CRC16 checksum and returns resulting bytearray"""
     data_with_crc = bytearray()
     data_with_crc += data
-    crc_func = mkPredefinedCrcFun(crc_name='crc-ccitt-false')
+    crc_func = mkPredefinedCrcFun(crc_name="crc-ccitt-false")
     crc = crc_func(data)
     data_with_crc.append((crc & 0xFF00) >> 8)
     data_with_crc.append(crc & 0xFF)

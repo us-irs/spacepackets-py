@@ -25,14 +25,23 @@ class CrcFlag(enum.IntEnum):
 
 class SegmentMetadataFlag(enum.IntEnum):
     """Aways 0 and ignored for File Directive PDUs (CCSDS 727.0-B-5 p.75)"""
+
     NOT_PRESENT = 0
     PRESENT = 1
 
 
 class SegmentationControl(enum.IntEnum):
     """Always 0 and ignored for File Directive PDUs (CCSDS 727.0-B-5 p.75)"""
+
     NO_RECORD_BOUNDARIES_PRESERVATION = 0
     RECORD_BOUNDARIES_PRESERVATION = 1
+
+
+class FaultHandlerCodes(enum.IntEnum):
+    NOTICE_OF_CANCELLATION = 0b0001
+    NOTICE_OF_SUSPENSION = 0b0010
+    IGNORE_ERROR = 0b0011
+    ABANDON_TRANSACTION = 0b0100
 
 
 class LenInBytes(enum.IntEnum):
@@ -62,7 +71,7 @@ class ConditionCode(enum.IntEnum):
 
 
 def get_transaction_seq_num_as_bytes(
-        transaction_seq_num: int, byte_length: LenInBytes
+    transaction_seq_num: int, byte_length: LenInBytes
 ) -> bytearray:
     """Return the byte representation of the transaction sequece number
     :param transaction_seq_num:
@@ -73,11 +82,11 @@ def get_transaction_seq_num_as_bytes(
     if byte_length == LenInBytes.ONE_BYTE and transaction_seq_num < 255:
         return bytearray([transaction_seq_num])
     if byte_length == LenInBytes.TWO_BYTES and transaction_seq_num < pow(2, 16) - 1:
-        return bytearray(struct.pack('!H', transaction_seq_num))
+        return bytearray(struct.pack("!H", transaction_seq_num))
     if byte_length == LenInBytes.FOUR_BYTES and transaction_seq_num < pow(2, 32) - 1:
-        return bytearray(struct.pack('!I', transaction_seq_num))
+        return bytearray(struct.pack("!I", transaction_seq_num))
     if byte_length == LenInBytes.EIGHT_BYTES and transaction_seq_num < pow(2, 64) - 1:
-        return bytearray(struct.pack('!Q', transaction_seq_num))
+        return bytearray(struct.pack("!Q", transaction_seq_num))
     raise ValueError
 
 

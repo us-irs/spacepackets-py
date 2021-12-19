@@ -23,7 +23,7 @@ __ECSS_DICT = {
     EcssConfKeys.PUS_TM_TYPE: PusVersion.PUS_C,
     EcssConfKeys.PUS_TC_TYPE: PusVersion.PUS_C,
     EcssConfKeys.ECSS_TM_APID: 0x00,
-    EcssConfKeys.ECSS_TC_APID: 0x00
+    EcssConfKeys.ECSS_TC_APID: 0x00,
 }
 
 
