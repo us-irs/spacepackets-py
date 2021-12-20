@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [unreleased]
 
+## [v0.5.3]
+
+- Maximum TC packet size configurable now, will be checked when packaging TC packets.
+  Default maximum size is 1004 bytes for now
+
 ## [v0.5.2]
 
 - Smaller tweaks for CFDP
