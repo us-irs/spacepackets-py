@@ -5,7 +5,6 @@ from typing import Tuple, Deque, List, Final
 from spacepackets.log import get_console_logger
 
 SPACE_PACKET_HEADER_SIZE: Final = 6
-MAX_PUS_DATA_SIZE: Final = 1004
 
 
 class PacketTypes(enum.IntEnum):
@@ -14,14 +13,15 @@ class PacketTypes(enum.IntEnum):
 
 
 class SequenceFlags(enum.IntEnum):
-    CONTINUATION_SEGMENT = (0b00,)
-    FIRST_SEGMENT = (0b01,)
-    LAST_SEGMENT = (0b10,)
+    CONTINUATION_SEGMENT = 0b00
+    FIRST_SEGMENT = 0b01
+    LAST_SEGMENT = 0b10
     UNSEGMENTED = 0b11
 
 
 class SpacePacketHeader:
-    """This class encapsulates the space packet header. Packet reference: Blue Book CCSDS 133.0-B-2"""
+    """This class encapsulates the space packet header.
+    Packet reference: Blue Book CCSDS 133.0-B-2"""
 
     def __init__(
         self,

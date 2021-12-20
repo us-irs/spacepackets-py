@@ -9,10 +9,14 @@ from spacepackets.ccsds.spacepacket import (
     SpacePacketHeader,
     PacketTypes,
     SPACE_PACKET_HEADER_SIZE,
-    MAX_PUS_DATA_SIZE,
 )
 from spacepackets.util import get_printable_data_string, PrintFormats
-from spacepackets.ecss.conf import get_default_tc_apid, PusVersion, get_pus_tc_version
+from spacepackets.ecss.conf import (
+    get_default_tc_apid,
+    PusVersion,
+    get_pus_tc_version,
+    get_max_tc_packet_size,
+)
 
 
 try:
@@ -196,8 +200,10 @@ class PusTelecommand:
         if ssc > pow(2, 14):
             logger.warning("SSC invalid, setting to 0")
             ssc = 0
-        if len(app_data) > MAX_PUS_DATA_SIZE:
-            logger.warning("Application data of PUS packet exceeds maximum allowed size")
+        if len(app_data) > get_max_tc_packet_size():
+            logger.warning(
+                "Application data of PUS packet exceeds maximum allowed size"
+            )
         self.data_field_header = PusTcDataFieldHeader(
             service_type=service,
             service_subtype=subservice,
