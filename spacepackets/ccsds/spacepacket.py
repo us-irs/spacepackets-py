@@ -5,6 +5,7 @@ from typing import Tuple, Deque, List, Final
 from spacepackets.log import get_console_logger
 
 SPACE_PACKET_HEADER_SIZE: Final = 6
+MAX_PUS_DATA_SIZE: Final = 1004
 
 
 class PacketTypes(enum.IntEnum):
