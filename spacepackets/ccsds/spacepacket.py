@@ -278,7 +278,8 @@ def __handle_packet_id_match(
     tm_list: List[bytearray],
 ) -> (int, int):
     next_packet_len_field = (
-        concatenated_packets[current_idx + 4] << 8 | concatenated_packets[current_idx + 5]
+        concatenated_packets[current_idx + 4] << 8
+        | concatenated_packets[current_idx + 5]
     )
     total_packet_len = get_total_space_packet_len_from_len_field(next_packet_len_field)
     # Might be part of packet. Put back into analysis queue as whole
