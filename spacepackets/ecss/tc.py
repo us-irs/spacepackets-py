@@ -353,7 +353,7 @@ class PusTelecommand:
     def app_data(self) -> bytearray:
         return self._app_data
 
-    def print(self, print_format: PrintFormats):
+    def print(self, print_format: PrintFormats = PrintFormats.HEX):
         """Print the raw command in a clean format."""
         packet = self.pack()
         print(

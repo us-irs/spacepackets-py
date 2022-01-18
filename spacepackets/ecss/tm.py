@@ -284,21 +284,21 @@ class PusTelemetry:
     def crc16(self) -> int:
         return self._crc16
 
-    def get_full_packet_string(self, print_format: PrintFormats) -> str:
+    def get_full_packet_string(self, print_format: PrintFormats = PrintFormats.HEX) -> str:
         packet_raw = self.pack()
         return get_printable_data_string(
             print_format=print_format, data=packet_raw, length=len(packet_raw)
         )
 
-    def print_full_packet_string(self, print_format: PrintFormats):
+    def print_full_packet_string(self, print_format: PrintFormats = PrintFormats.HEX):
         """Print the full TM packet in a clean format."""
         print(self.get_full_packet_string(print_format=print_format))
 
-    def print_source_data(self, print_format: PrintFormats):
+    def print_source_data(self, print_format: PrintFormats = PrintFormats.HEX):
         """Prints the TM source data in a clean format"""
         print(self.get_source_data_string(print_format=print_format))
 
-    def get_source_data_string(self, print_format: PrintFormats) -> str:
+    def get_source_data_string(self, print_format: PrintFormats = PrintFormats.HEX) -> str:
         """Returns the source data string"""
         return get_printable_data_string(
             print_format=print_format,
