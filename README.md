@@ -99,3 +99,19 @@ def main():
 if __name__ == "__main__":
     main()
 ```
+
+# Tests
+
+All tests are provided in the `tests` folder and can be run with coverage information
+by running
+
+```sh
+coverage run -m pytest
+```
+
+provided that `pytest` and `coverage` were installed with
+
+```sh
+python3 -m pip install coverage pytest
+```
+
