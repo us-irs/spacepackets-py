@@ -16,11 +16,11 @@ class BypassSequenceControlFlag(enum.IntEnum):
 
 
 class ProtocolCommandFlag(enum.IntEnum):
-    USER_DATA = (0,)
+    USER_DATA = 0
     PROTOCOL_INFORMATION = 1
 
 
-class UslpPrimaryHeaderBase:
+class PrimaryHeaderBase:
     """Trucated USLP transfer frame primary header with a length of 4 bytes. For more information,
     refer to the USLP Blue Book CCSDS 732.1-B-2.
     p.163
@@ -62,7 +62,7 @@ class UslpPrimaryHeaderBase:
         return packet
 
 
-class UslpPrimaryHeader(UslpPrimaryHeaderBase):
+class PrimaryHeader(PrimaryHeaderBase):
     """USLP transfer frame primary header with a length of 4 to 14 bytes. It consists of 13
     fields positioned contiguously. For more information, refer to the USLP Blue Book
     CCSDS 732.1-B-2 p.77
@@ -125,4 +125,4 @@ class UslpPrimaryHeader(UslpPrimaryHeaderBase):
         return packet
 
 
-TruncatedUslpPrimaryHeader = UslpPrimaryHeaderBase
+TruncatedUslpPrimaryHeader = PrimaryHeaderBase

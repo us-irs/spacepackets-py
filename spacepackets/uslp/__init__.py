@@ -1,8 +1,14 @@
 from .frame import (
     FrameHeaderT,
-    UslpTransferFrameDataField,
-    UslpTransferFrame,
+    TransferFrameDataField,
+    TransferFrame,
     TFDZConstructionRules,
     UslpProtocolIdentifier,
 )
-from .header import TruncatedUslpPrimaryHeader, UslpPrimaryHeader
+from .header import (
+    TruncatedUslpPrimaryHeader,
+    PrimaryHeader,
+    SourceOrDestField,
+    ProtocolCommandFlag,
+    BypassSequenceControlFlag,
+)

@@ -1,11 +1,11 @@
 import enum
 import struct
 
-from .header import TruncatedUslpPrimaryHeader, UslpPrimaryHeader
+from .header import TruncatedUslpPrimaryHeader, PrimaryHeader
 from typing import Union, Optional
 
 
-FrameHeaderT = Union[TruncatedUslpPrimaryHeader, UslpPrimaryHeader]
+FrameHeaderT = Union[TruncatedUslpPrimaryHeader, PrimaryHeader]
 
 USLP_TFDF_MAX_SIZE = 65529
 
@@ -42,7 +42,7 @@ class UslpProtocolIdentifier(enum.IntEnum):
     PRIXMITY_1_PSEUDO_PACKET_ID_2 = 0b01000
 
 
-class UslpTransferFrameDataField:
+class TransferFrameDataField:
     """USLP transfer frame data field (TFDF). For datailed information, refer to the USLP Blue Book
     CCSDS 732.1-B-2. p.86. The TFDP follows the Primary Header or the Transfer Frame Insert Zone,
     if present.
@@ -114,14 +114,14 @@ class UslpTransferFrameDataField:
         return packet
 
 
-class UslpTransferFrame:
+class TransferFrame:
     """Refer to CCSDS 732.1-B-2. p.77 for detailed information on the frame format. This is the
     format without the SDLS option"""
 
     def __init__(
         self,
         header: FrameHeaderT,
-        tfdf: UslpTransferFrameDataField,
+        tfdf: TransferFrameDataField,
         insert_zone: Optional[bytes],
         op_ctrl_field: Optional[bytes],
         fecf: Optional[int],
