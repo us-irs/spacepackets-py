@@ -1,4 +1,4 @@
-from .header import PduHeader, PduType, SegmentMetadataFlag
+from .header import PduHeader
 from .file_directive import FileDirectivePduBase, DirectiveCodes, IsFileDirective
 from .ack import TransactionStatus, AckPdu
 from .eof import EofPdu
