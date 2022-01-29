@@ -37,7 +37,7 @@ class UslpProtocolIdentifier(enum.IntEnum):
     MISSION_SPECIFIC_INFO_1_MAPA_SDU = 0b00101
     PROXIMITY_1_SPDUS = 0b00111
     IDLE_DATA = 0b11111
-    PRIXMITY_1_PSEUDO_PACKET_ID_1 = 0b01000
+    PRIXMITY_1_PSEUDO_PACKET_ID_1 = 0b00110
     PRIXMITY_1_PSEUDO_PACKET_ID_2 = 0b01000
 
 
@@ -142,5 +142,25 @@ class TransferFrame:
         if self.op_ctrl_field is not None:
             frame.extend(self.op_ctrl_field)
         if self.fecf is not None:
-            frame.extend(struct.pack("!I", self.fecf))
+            frame.extend(self.fecf)
         return frame
+
+    # Unpacking this is actually a little bit more complicated because there are various managed
+    # parameters like whether the expected frame has an insert zone or whether it has a fixed
+    # length of a variable length. Some of these parameters are also applied to levels like
+    # the physical, master channel or virtual channel level, so a clean implementation would also
+    # require mapping these parameters to master channels (space craft ID) or virtual channels.
+
+    # Doing all of this with maps would be a little bit out of the scope of this library. Instead,
+    # a possible way would be to pass these parameters to the unpack function.
+    # 1. Fixed Frame or Variable Length Frame?
+    # 2. Insert Zone or not? Only applicable to fixed frame
+    # 3. Present of frame error control field
+
+    # @classmethod
+    # def unpack_truncated_frame(cls):
+    #     pass
+
+    # @classmethod
+    # def unpack(cls):
+    #    pass
