@@ -1,5 +1,6 @@
 # noinspection PyUnresolvedReferences
 from ..definitions import SegmentMetadataFlag, PduType
+
 # noinspection PyUnresolvedReferences
 from .header import PduHeader, PduConfig
 from .ack import TransactionStatus, AckPdu

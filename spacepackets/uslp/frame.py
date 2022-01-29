@@ -4,7 +4,6 @@ import struct
 from .header import TruncatedUslpPrimaryHeader, PrimaryHeader
 from typing import Union, Optional
 
-
 FrameHeaderT = Union[TruncatedUslpPrimaryHeader, PrimaryHeader]
 
 USLP_TFDF_MAX_SIZE = 65529
@@ -124,7 +123,7 @@ class TransferFrame:
         tfdf: TransferFrameDataField,
         insert_zone: Optional[bytes],
         op_ctrl_field: Optional[bytes],
-        fecf: Optional[int],
+        fecf: Optional[bytes],
     ):
         self.header = header
         self.tfdf = tfdf
