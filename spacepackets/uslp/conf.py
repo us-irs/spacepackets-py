@@ -1,3 +1,4 @@
+import enum
 
 
 class ManagedParamsPhysicalChannelKeys(enum.IntEnum):
