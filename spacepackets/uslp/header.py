@@ -194,8 +194,8 @@ class PrimaryHeader(PrimaryHeaderBase):
         bypass_seq_ctrl_flag: BypassSequenceControlFlag,
         prot_ctrl_cmd_flag: ProtocolCommandFlag,
         op_ctrl_flag: bool,
-        vcf_count_len: int,
-        vcf_count: Optional[int],
+        vcf_count_len: int = 0,
+        vcf_count: Optional[int] = None,
     ):
         super().__init__(scid, src_dest, vcid, map_id)
         self.frame_len = frame_len
@@ -225,7 +225,7 @@ class PrimaryHeader(PrimaryHeaderBase):
             packet.extend(struct.pack("!I", self.vcf_count))
         else:
             for idx in range(self.vcf_count_len, 0, -1):
-                packet.append(self.vcf_count_len >> (idx * 8 - 1) & 0xFF)
+                packet.append((self.vcf_count >> ((idx - 1) * 8)) & 0xFF)
         return packet
 
     def truncated(self) -> bool:
@@ -279,12 +279,13 @@ class PrimaryHeader(PrimaryHeaderBase):
         if packet.vcf_count_len == 1:
             packet.vcf_count = raw_packet[7]
         elif packet.vcf_count_len == 2:
-            packet.vcf_count = struct.unpack("!H", raw_packet[7:8])[0]
+            packet.vcf_count = struct.unpack("!H", raw_packet[7:9])[0]
         elif packet.vcf_count_len == 4:
             packet.vcf_count = struct.unpack("!I", raw_packet[7:11])[0]
         else:
+            packet.vcf_count = 0
             end = packet.vcf_count_len
-            for idx in range(0, packet.vcf_count):
+            for idx in range(0, packet.vcf_count_len):
                 packet.vcf_count |= raw_packet[7 + idx] << ((end - 1) * 8)
                 end -= 1
         return packet

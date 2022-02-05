@@ -25,7 +25,6 @@ class TestUslp(TestCase):
             vcf_count_len=0,
             prot_ctrl_cmd_flag=ProtocolCommandFlag.PROTOCOL_INFORMATION,
             bypass_seq_ctrl_flag=BypassSequenceControlFlag.EXPEDITED_QOS,
-            vcf_count=0,
         )
         self.assertEqual(primary_header.truncated(), False)
         self.assertEqual(primary_header.len(), 7)
@@ -62,6 +61,63 @@ class TestUslp(TestCase):
         self.assertEqual(packed_header[6] & 0b111, 0)
         self.assertEqual(determine_header_type(packed_header), HeaderType.NON_TRUNCATED)
 
+        primary_header.vcf_count_len = 1
+        self.assertRaises(ValueError, primary_header.pack)
+        primary_header.vcf_count = 0xaf
+        header_with_vcf_count = primary_header.pack()
+        self.assertEqual(header_with_vcf_count[6] & 0b111, 0x01)
+        self.assertEqual(header_with_vcf_count[7], 0xaf)
+        primary_header.vcf_count_len = 2
+        primary_header.vcf_count = 0xaffe
+        unpacked_vcf_1 = PrimaryHeader.unpack(raw_packet=header_with_vcf_count)
+        self.assertEqual(unpacked_vcf_1.vcf_count_len, 1)
+        self.assertEqual(unpacked_vcf_1.vcf_count, 0xaf)
+
+        header_with_vcf_count = primary_header.pack()
+        self.assertEqual(header_with_vcf_count[6] & 0b111, 2)
+        self.assertEqual(header_with_vcf_count[7], 0xaf)
+        self.assertEqual(header_with_vcf_count[8], 0xfe)
+        unpacked_vcf_2 = PrimaryHeader.unpack(raw_packet=header_with_vcf_count)
+        self.assertEqual(unpacked_vcf_2.vcf_count_len, 2)
+        self.assertEqual(unpacked_vcf_2.vcf_count, 0xaffe)
+
+        primary_header.vcf_count_len = 3
+        primary_header.vcf_count = 0xaffefe
+        header_with_vcf_count = primary_header.pack()
+        self.assertEqual(header_with_vcf_count[6] & 0b111, 3)
+        self.assertEqual(header_with_vcf_count[7], 0xaf)
+        self.assertEqual(header_with_vcf_count[8], 0xfe)
+        self.assertEqual(header_with_vcf_count[9], 0xfe)
+        unpacked_vcf_3 = PrimaryHeader.unpack(raw_packet=header_with_vcf_count)
+        self.assertEqual(unpacked_vcf_3.vcf_count_len, 3)
+        self.assertEqual(unpacked_vcf_3.vcf_count, 0xaffefe)
+
+        primary_header.vcf_count_len = 4
+        primary_header.vcf_count = 0xaffecafe
+        header_with_vcf_count = primary_header.pack()
+        self.assertEqual(header_with_vcf_count[6] & 0b111, 4)
+        self.assertEqual(header_with_vcf_count[7], 0xaf)
+        self.assertEqual(header_with_vcf_count[8], 0xfe)
+        self.assertEqual(header_with_vcf_count[9], 0xca)
+        self.assertEqual(header_with_vcf_count[10], 0xfe)
+        unpacked_vcf_4 = PrimaryHeader.unpack(raw_packet=header_with_vcf_count)
+        self.assertEqual(unpacked_vcf_4.vcf_count_len, 4)
+        self.assertEqual(unpacked_vcf_4.vcf_count, 0xaffecafe)
+
+        primary_header.vcf_count_len = 7
+        primary_header.vcf_count = 0xaffecafebabeaf
+        header_with_vcf_count = primary_header.pack()
+        self.assertEqual(header_with_vcf_count[6] & 0b111, 7)
+        self.assertEqual(header_with_vcf_count[7], 0xaf)
+        self.assertEqual(header_with_vcf_count[8], 0xfe)
+        self.assertEqual(header_with_vcf_count[9], 0xca)
+        self.assertEqual(header_with_vcf_count[10], 0xfe)
+        self.assertEqual(header_with_vcf_count[11], 0xba)
+        self.assertEqual(header_with_vcf_count[12], 0xbe)
+        self.assertEqual(header_with_vcf_count[13], 0xaf)
+        unpacked_with_vcf = PrimaryHeader.unpack(raw_packet=header_with_vcf_count)
+        self.assertEqual(unpacked_with_vcf.vcf_count_len, 7)
+        self.assertEqual(unpacked_with_vcf.vcf_count, 0xaffecafebabeaf)
         unpacked_primary_header = PrimaryHeader.unpack(raw_packet=packed_header)
         # Check field validity by serializing unpacked header again
         self.assertEqual(packed_header, unpacked_primary_header.pack())
@@ -70,6 +126,9 @@ class TestUslp(TestCase):
         )
         self.assertRaises(
             UslpInvalidRawPacketOrFrameLen, TruncatedPrimaryHeader.unpack, bytearray()
+        )
+        self.assertRaises(
+            UslpInvalidRawPacketOrFrameLen, PrimaryHeader.unpack, header_with_vcf_count[0:7]
         )
         crap_with_valid_parsing_fields = bytearray(5)
         crap_with_valid_parsing_fields[0] = 0b11000000
@@ -124,6 +183,8 @@ class TestUslp(TestCase):
         truncated_header.map_id = 0xFFFFF
         self.assertRaises(ValueError, truncated_header.pack)
         truncated_header.map_id = tmp
+        unpacked_truncated = TruncatedPrimaryHeader.unpack(raw_packet=packed_header)
+        self.assertEqual(unpacked_truncated.pack(), packed_header)
 
     def test_uslp(self):
         pass
