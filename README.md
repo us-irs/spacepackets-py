@@ -20,7 +20,7 @@ Currently, this includes the following components:
 - CCSDS File Delivery Protcol (CFDP) packet implementations according to
   [CCSDS Blue Book 727.0-B-5](https://public.ccsds.org/Pubs/727x0b5.pdf).
 - Unified Space Data Link Protocol (USLP) frame implementations according to
-  [CCSDS Blue Book 732.1-B-2](https://public.ccsds.org/Pubs/732x1b2.pdf)
+  [CCSDS Blue Book 732.1-B-2](https://public.ccsds.org/Pubs/732x1b2.pdf).
 
 # Install
 
