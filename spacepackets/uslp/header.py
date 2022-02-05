@@ -4,6 +4,11 @@ from typing import Optional
 import enum
 import struct
 
+from .definitions import (
+    UslpVersionMissmatch,
+    UslpTypeMissmatch,
+    UslpInvalidRawPacketOrFrameLen,
+)
 
 USLP_VERSION_NUMBER = 0b1100
 
@@ -28,14 +33,6 @@ class ProtocolCommandFlag(enum.IntEnum):
     PROTOCOL_INFORMATION = 1
 
 
-class UslpVersionMissmatch(Exception):
-    pass
-
-
-class UslpTypeMissmatch(Exception):
-    pass
-
-
 class PrimaryHeaderBase:
     def __init__(
         self,
@@ -44,12 +41,6 @@ class PrimaryHeaderBase:
         vcid: int,
         map_id: int,
     ):
-        if (
-            (scid > pow(2, 16) - 1)
-            or (vcid > pow(2, 6) - 1)
-            or (map_id > pow(2, 4) - 1)
-        ):
-            raise ValueError
         self.scid = scid
         self.src_dest = src_dest
         self.vcid = vcid
@@ -57,7 +48,13 @@ class PrimaryHeaderBase:
 
     def _pack_common_header(self, truncated: bool = False) -> bytearray:
         packet = bytearray()
-        packet.append(USLP_VERSION_NUMBER | (self.scid >> 12) & 0b1111)
+        if (
+            (self.scid > pow(2, 16) - 1)
+            or (self.vcid > pow(2, 6) - 1)
+            or (self.map_id > pow(2, 4) - 1)
+        ):
+            raise ValueError
+        packet.append((USLP_VERSION_NUMBER << 4) | (self.scid >> 12) & 0b1111)
         packet.append((self.scid >> 4) & 0xFF)
         packet.append(
             ((self.scid & 0b1111) << 4)
@@ -68,7 +65,7 @@ class PrimaryHeaderBase:
         return packet
 
     @abstractmethod
-    def len(self):
+    def len(self) -> int:
         return 0
 
     @abstractmethod
@@ -82,7 +79,7 @@ class PrimaryHeaderBase:
         uslp_version: int = USLP_VERSION_NUMBER,
     ) -> (int, SourceOrDestField, int, int):
         if len(raw_packet) < 4:
-            raise ValueError
+            raise UslpInvalidRawPacketOrFrameLen
         version_number = (raw_packet[0] & 0xF0) >> 4
         if version_number != uslp_version:
             raise UslpVersionMissmatch
@@ -262,7 +259,7 @@ class PrimaryHeader(PrimaryHeaderBase):
         """
         packet = cls.__empty()
         if len(raw_packet) < 7:
-            raise ValueError
+            raise UslpInvalidRawPacketOrFrameLen
         raw_unpacked_tuple = cls._unpack_raw_header_base_fields(
             raw_packet=raw_packet,
             truncated=False,
@@ -278,7 +275,7 @@ class PrimaryHeader(PrimaryHeaderBase):
         packet.op_ctrl_flag = (raw_packet[6] >> 3) & 0x01
         packet.vcf_count_len = raw_packet[6] & 0b111
         if packet.vcf_count_len > len(raw_packet) - 7:
-            raise ValueError
+            raise UslpInvalidRawPacketOrFrameLen
         if packet.vcf_count_len == 1:
             packet.vcf_count = raw_packet[7]
         elif packet.vcf_count_len == 2:
@@ -304,7 +301,7 @@ def determine_header_type(header_start: bytes) -> HeaderType:
     """
     if len(header_start) < 4:
         raise ValueError
-    if (header_start[3] >> 7) & 0x01:
+    if header_start[3] & 0x01:
         return HeaderType.TRUNCATED
     else:
         return HeaderType.NON_TRUNCATED

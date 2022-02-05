@@ -9,23 +9,17 @@ from .header import (
     determine_header_type,
     HeaderType,
 )
+from .definitions import (
+    UslpInvalidRawPacketOrFrameLen,
+    UslpTruncatedFrameNotAllowed,
+    UslpInvalidConstructionRules,
+)
+
 from typing import Union, Optional
 
 FrameHeaderT = Union[TruncatedPrimaryHeader, PrimaryHeader]
 
 USLP_TFDF_MAX_SIZE = 65529
-
-
-class UslpInvalidRawFrameLen(Exception):
-    pass
-
-
-class UslpInvalidConstructionRules(Exception):
-    pass
-
-
-class UslpTruncatedFrameNotAllowed(Exception):
-    pass
 
 
 class InsertZoneProperties:
@@ -240,7 +234,7 @@ class TransferFrameDataField:
         """
         tfdf = cls.__empty()
         if len(raw_tfdf) < 1:
-            raise UslpInvalidRawFrameLen
+            raise UslpInvalidRawPacketOrFrameLen
         tfdf.tfdz_contr_rules = (raw_tfdf[0] >> 5) & 0b111
         tfdf.uslp_ident = raw_tfdf[0] & 0b11111
         if frame_type is not None:
@@ -323,12 +317,12 @@ class TransferFrame:
         """
         frame = cls.__empty()
         if len(raw_frame) < 4:
-            raise UslpInvalidRawFrameLen
+            raise UslpInvalidRawPacketOrFrameLen
         if frame_type == FrameType.FIXED:
             if not isinstance(frame_properties, FixedFrameProperties):
                 raise ValueError
             if len(raw_frame) < frame_properties.fixed_len:
-                raise UslpInvalidRawFrameLen
+                raise UslpInvalidRawPacketOrFrameLen
         header_type = determine_header_type(header_start=raw_frame)
         if header_type == HeaderType.TRUNCATED:
             if frame_type == FrameType.VARIABLE:
@@ -345,13 +339,13 @@ class TransferFrame:
             properties=frame_properties,
         )
         if exact_tfdf_len <= 0:
-            raise UslpInvalidRawFrameLen
+            raise UslpInvalidRawPacketOrFrameLen
         current_idx = header_len
         # Skip insert zone if present
         if frame_properties.insert_zone_properties.present:
             current_idx += frame_properties.insert_zone_properties.size
             if len(raw_frame) < current_idx:
-                raise UslpInvalidRawFrameLen
+                raise UslpInvalidRawPacketOrFrameLen
         # Parse the Transfer Frame Data Field
         frame.tfdf = TransferFrameDataField.unpack(
             frame_type=frame_type,
@@ -397,7 +391,7 @@ class TransferFrame:
             if exact_tfdf_len != properties.fixed_len:
                 raise ValueError
             if raw_frame_len < exact_tfdf_len:
-                raise UslpInvalidRawFrameLen
+                raise UslpInvalidRawPacketOrFrameLen
             exact_tfdf_len = properties.fixed_len
         else:
             # Truncated frames are only allowed if the frame type is Variable. The truncated
