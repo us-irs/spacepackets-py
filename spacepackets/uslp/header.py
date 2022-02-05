@@ -1,5 +1,6 @@
 from __future__ import annotations
 from abc import abstractmethod
+from typing import Optional
 import enum
 import struct
 
@@ -43,6 +44,12 @@ class PrimaryHeaderBase:
         vcid: int,
         map_id: int,
     ):
+        if (
+            (scid > pow(2, 16) - 1)
+            or (vcid > pow(2, 6) - 1)
+            or (map_id > pow(2, 4) - 1)
+        ):
+            raise ValueError
         self.scid = scid
         self.src_dest = src_dest
         self.vcid = vcid
@@ -191,7 +198,7 @@ class PrimaryHeader(PrimaryHeaderBase):
         prot_ctrl_cmd_flag: ProtocolCommandFlag,
         op_ctrl_flag: bool,
         vcf_count_len: int,
-        vcf_count: int,
+        vcf_count: Optional[int],
     ):
         super().__init__(scid, src_dest, vcid, map_id)
         self.frame_len = frame_len
@@ -211,6 +218,8 @@ class PrimaryHeader(PrimaryHeaderBase):
             | (self.op_ctrl_flag << 3)
             | self.vcf_count_len
         )
+        if self.vcf_count_len > 0 and self.vcf_count is None:
+            raise ValueError
         if self.vcf_count_len == 1:
             packet.append(self.vcf_count)
         elif self.vcf_count_len == 2:
