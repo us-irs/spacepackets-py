@@ -8,6 +8,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [unreleased]
 
+## [v0.6.0]
+
+### Added
+
+- Unified Space Data Link Protocol Packet implementations
+
+### Changed
+
 - Assign default print format in TM and TC implementation
 
 ## [v0.5.4]
