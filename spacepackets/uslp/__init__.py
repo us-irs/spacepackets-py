@@ -6,7 +6,7 @@ from .frame import (
     UslpProtocolIdentifier,
 )
 from .header import (
-    TruncatedUslpPrimaryHeader,
+    TruncatedPrimaryHeader,
     PrimaryHeader,
     SourceOrDestField,
     ProtocolCommandFlag,

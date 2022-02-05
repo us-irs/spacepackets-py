@@ -8,8 +8,9 @@ class ManagedParamsPhysicalChannelKeys(enum.IntEnum):
 
 __PHYSICAL_CHANNEL_PARAMS = {
     ManagedParamsPhysicalChannelKeys.HasInsertZone: False,
-    ManagedParamsPhysicalChannelKeys.InsertZoneLen: 0
+    ManagedParamsPhysicalChannelKeys.InsertZoneLen: 0,
 }
+
 
 def set_insert_zone(enable: bool, len: int):
     """Specify whether USLP transfer frame for a given physical channel has an insert zone

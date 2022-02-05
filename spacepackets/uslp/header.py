@@ -1,9 +1,15 @@
 from __future__ import annotations
+from abc import abstractmethod
 import enum
 import struct
 
 
 USLP_VERSION_NUMBER = 0b1100
+
+
+class HeaderType(enum.Enum):
+    NON_TRUNCATED = 0
+    TRUNCATED = 1
 
 
 class SourceOrDestField(enum.IntEnum):
@@ -42,7 +48,7 @@ class PrimaryHeaderBase:
         self.vcid = vcid
         self.map_id = map_id
 
-    def _pack_common_header(self) -> bytearray:
+    def _pack_common_header(self, truncated: bool = False) -> bytearray:
         packet = bytearray()
         packet.append(USLP_VERSION_NUMBER | (self.scid >> 12) & 0b1111)
         packet.append((self.scid >> 4) & 0xFF)
@@ -51,13 +57,21 @@ class PrimaryHeaderBase:
             | (self.src_dest << 3)
             | (self.vcid >> 3) & 0b111
         )
-        packet.append((self.vcid & 0b111) << 5 | self.map_id << 1)
+        packet.append((self.vcid & 0b111) << 5 | (self.map_id << 1) | truncated)
         return packet
+
+    @abstractmethod
+    def len(self):
+        return 0
+
+    @abstractmethod
+    def truncated(self) -> bool:
+        return False
 
     @staticmethod
     def _unpack_raw_header_base_fields(
         raw_packet: bytes,
-        not_truncated: bool = True,
+        truncated: bool = False,
         uslp_version: int = USLP_VERSION_NUMBER,
     ) -> (int, SourceOrDestField, int, int):
         if len(raw_packet) < 4:
@@ -74,7 +88,7 @@ class PrimaryHeaderBase:
         vcid = ((raw_packet[2] & 0b111) << 3) | ((raw_packet[3] >> 5) & 0b111)
         map_id = (raw_packet[3] >> 1) & 0b1111
         end_of_frame_primary_header = raw_packet[3] & 0b1
-        if end_of_frame_primary_header != not_truncated:
+        if end_of_frame_primary_header != truncated:
             raise UslpTypeMissmatch
         return scid, src_dest, vcid, map_id
 
@@ -103,7 +117,7 @@ class TruncatedPrimaryHeader(PrimaryHeaderBase):
         super().__init__(scid=scid, src_dest=src_dest, vcid=vcid, map_id=map_id)
 
     def pack(self) -> bytearray:
-        return self._pack_common_header()
+        return self._pack_common_header(truncated=True)
 
     @classmethod
     def __empty(cls) -> TruncatedPrimaryHeader:
@@ -111,17 +125,21 @@ class TruncatedPrimaryHeader(PrimaryHeaderBase):
             scid=0x00, src_dest=SourceOrDestField.DEST, vcid=0x00, map_id=0x00
         )
 
+    def len(self):
+        return 4
+
+    def truncated(self) -> bool:
+        return True
+
     @classmethod
     def unpack(
         cls,
         raw_packet: bytes,
-        not_truncated: bool = True,
         uslp_version: int = USLP_VERSION_NUMBER,
     ) -> TruncatedPrimaryHeader:
         """Unpack USLP primary header from raw bytearray.
 
         :param raw_packet:
-        :param not_truncated: Specify whether a truncated or regular USLP frame is expected
         :param uslp_version: Expected USLP version, 0b1100 by default
         :raises ValueError: Wrong packet length
         :raises UslpVersionMissmatch: Detected USLP version is not 0b1100
@@ -132,7 +150,7 @@ class TruncatedPrimaryHeader(PrimaryHeaderBase):
         packet = cls.__empty()
         raw_unpacked_tuple = cls._unpack_raw_header_base_fields(
             raw_packet=raw_packet,
-            not_truncated=not_truncated,
+            truncated=True,
             uslp_version=uslp_version,
         )
         packet.scid = raw_unpacked_tuple[0]
@@ -204,6 +222,9 @@ class PrimaryHeader(PrimaryHeaderBase):
                 packet.append(self.vcf_count_len >> (idx * 8 - 1) & 0xFF)
         return packet
 
+    def truncated(self) -> bool:
+        return False
+
     @classmethod
     def __empty(cls) -> PrimaryHeader:
         return PrimaryHeader(
@@ -235,7 +256,7 @@ class PrimaryHeader(PrimaryHeaderBase):
             raise ValueError
         raw_unpacked_tuple = cls._unpack_raw_header_base_fields(
             raw_packet=raw_packet,
-            not_truncated=True,
+            truncated=False,
             uslp_version=uslp_version,
         )
         packet.scid = raw_unpacked_tuple[0]
@@ -261,3 +282,20 @@ class PrimaryHeader(PrimaryHeaderBase):
                 packet.vcf_count |= raw_packet[7 + idx] << ((end - 1) * 8)
                 end -= 1
         return packet
+
+    def len(self):
+        return 7 + self.vcf_count_len
+
+
+def determine_header_type(header_start: bytes) -> HeaderType:
+    """Determine header type from raw header.
+    :param header_start:
+    :raises ValueError: Passed bytearray shorter than minimum length 4
+    :return:
+    """
+    if len(header_start) < 4:
+        raise ValueError
+    if (header_start[3] >> 7) & 0x01:
+        return HeaderType.TRUNCATED
+    else:
+        return HeaderType.NON_TRUNCATED
