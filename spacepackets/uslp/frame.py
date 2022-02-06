@@ -13,6 +13,7 @@ from .definitions import (
     UslpInvalidRawPacketOrFrameLen,
     UslpTruncatedFrameNotAllowed,
     UslpInvalidConstructionRules,
+    UslpInvalidFrameHeader,
 )
 
 from typing import Union, Optional
@@ -24,20 +25,28 @@ USLP_TFDF_MAX_SIZE = 65529
 
 class InsertZoneProperties:
     def __init__(self, present: bool, size: int):
-        self.present = (present,)
+        self.present = present
         self.size = size
 
 
 class FecfProperties:
     def __init__(self, present: bool, size: int):
-        self.present = (present,)
+        self.present = present
         self.size = size
 
 
 class FramePropertiesBase:
     def __init__(
-        self, has_insert_zone: bool, insert_zone_len: int, has_fecf: bool, fecf_len: int
+        self,
+        has_insert_zone: bool,
+        has_fecf: bool,
+        insert_zone_len: Optional[int] = None,
+        fecf_len: Optional[int] = None,
     ):
+        if has_insert_zone and insert_zone_len is None:
+            raise ValueError
+        if has_fecf and fecf_len is None:
+            raise ValueError
         self.insert_zone_properties = InsertZoneProperties(
             present=has_insert_zone, size=insert_zone_len
         )
@@ -46,22 +55,54 @@ class FramePropertiesBase:
 
 class FixedFrameProperties(FramePropertiesBase):
     def __init__(
-        self, has_insert_zone: bool, insert_zone_len: int, has_fecf: bool, fecf_len: int
+        self,
+        fixed_len: int,
+        has_insert_zone: bool,
+        has_fecf: bool,
+        insert_zone_len: Optional[int] = None,
+        fecf_len: Optional[int] = None,
     ):
-        super().__init__(has_insert_zone, insert_zone_len, has_fecf, fecf_len)
-        self.fixed_len = 0
+        """Contains properties required when unpacking fixed USLP frames. These properties
+        can not be determined by parsing the frame. The standard refers to these properties
+        as managed parameters.
+        :param has_insert_zone:
+        :param has_fecf:
+        :param insert_zone_len:
+        :param fecf_len:
+        """
+        super().__init__(
+            has_insert_zone=has_insert_zone,
+            has_fecf=has_fecf,
+            insert_zone_len=insert_zone_len,
+            fecf_len=fecf_len,
+        )
+        self.fixed_len = fixed_len
 
 
 class VarFrameProperties(FramePropertiesBase):
     def __init__(
         self,
         has_insert_zone: bool,
-        insert_zone_len: int,
         has_fecf: bool,
-        fecf_len: int,
         truncated_frame_len: int,
+        insert_zone_len: Optional[int] = None,
+        fecf_len: Optional[int] = None,
     ):
-        super().__init__(has_insert_zone, insert_zone_len, has_fecf, fecf_len)
+        """Contains properties required when unpacking variable USLP frames. These properties
+        can not be determined by parsing the frame. The standard refers to these properties
+        as managed parameters.
+        :param has_insert_zone:
+        :param insert_zone_len:
+        :param has_fecf:
+        :param fecf_len:
+        :param truncated_frame_len:
+        """
+        super().__init__(
+            has_insert_zone=has_insert_zone,
+            has_fecf=has_fecf,
+            insert_zone_len=insert_zone_len,
+            fecf_len=fecf_len,
+        )
         self.truncated_frame_len = truncated_frame_len
 
 
@@ -69,7 +110,7 @@ FramePropertiesT = Union[FixedFrameProperties, VarFrameProperties]
 UslpHeaderT = Union[TruncatedPrimaryHeader, PrimaryHeader]
 
 
-class TFDZConstructionRules(enum.IntEnum):
+class TfdzConstructionRules(enum.IntEnum):
     """Values prefixed with FP are applicable to fixed packets, those with VP to variable length
     packets"""
 
@@ -116,7 +157,7 @@ class TransferFrameDataField:
 
     def __init__(
         self,
-        tfdz_cnstr_rules: TFDZConstructionRules,
+        tfdz_cnstr_rules: TfdzConstructionRules,
         uslp_ident: UslpProtocolIdentifier,
         tfdz: bytes,
         fhp_or_lvop: Optional[int],
@@ -179,26 +220,26 @@ class TransferFrameDataField:
 
     def has_fhp_or_lvp_field(self, truncated: bool) -> bool:
         if not truncated and self.tfdz_contr_rules in [
-            TFDZConstructionRules.FpPacketSpanningMultipleFrames,
-            TFDZConstructionRules.FpContinuingPortionOfMapaSDU,
-            TFDZConstructionRules.FpFixedStartOfMapaSDU,
+            TfdzConstructionRules.FpPacketSpanningMultipleFrames,
+            TfdzConstructionRules.FpContinuingPortionOfMapaSDU,
+            TfdzConstructionRules.FpFixedStartOfMapaSDU,
         ]:
             return True
         return False
 
     def verify_frame_type(self, frame_type: FrameType) -> bool:
         if frame_type == FrameType.FIXED and self.tfdz_contr_rules in [
-            TFDZConstructionRules.FpPacketSpanningMultipleFrames,
-            TFDZConstructionRules.FpContinuingPortionOfMapaSDU,
-            TFDZConstructionRules.FpFixedStartOfMapaSDU,
+            TfdzConstructionRules.FpPacketSpanningMultipleFrames,
+            TfdzConstructionRules.FpContinuingPortionOfMapaSDU,
+            TfdzConstructionRules.FpFixedStartOfMapaSDU,
         ]:
             return True
         if frame_type == FrameType.VARIABLE and self.tfdz_contr_rules in [
-            TFDZConstructionRules.VpContinuingSegment,
-            TFDZConstructionRules.VpLastSegment,
-            TFDZConstructionRules.VpOctetStream,
-            TFDZConstructionRules.VpNoSegmentation,
-            TFDZConstructionRules.VpStartingSegment,
+            TfdzConstructionRules.VpContinuingSegment,
+            TfdzConstructionRules.VpLastSegment,
+            TfdzConstructionRules.VpOctetStream,
+            TfdzConstructionRules.VpNoSegmentation,
+            TfdzConstructionRules.VpStartingSegment,
         ]:
             return True
         return False
@@ -206,7 +247,7 @@ class TransferFrameDataField:
     @classmethod
     def __empty(cls) -> TransferFrameDataField:
         empty = TransferFrameDataField(
-            tfdz_cnstr_rules=TFDZConstructionRules.FpPacketSpanningMultipleFrames,
+            tfdz_cnstr_rules=TfdzConstructionRules.FpPacketSpanningMultipleFrames,
             uslp_ident=UslpProtocolIdentifier.SPACE_PACKETS_ENCAPSULATION_PACKETS,
             fhp_or_lvop=None,
             tfdz=bytearray(),
@@ -264,9 +305,10 @@ class TransferFrame:
         self.header = header
         self.tfdf = tfdf
         self.insert_zone = insert_zone
-        if len(op_ctrl_field) != 4:
-            raise ValueError
         self.op_ctrl_field = op_ctrl_field
+        if self.op_ctrl_field is not None:
+            if len(self.op_ctrl_field) != 4:
+                raise ValueError
         self.fecf = fecf
 
     def pack(self) -> bytearray:
@@ -275,11 +317,33 @@ class TransferFrame:
         if self.insert_zone is not None:
             frame.extend(self.insert_zone)
         frame.extend(self.tfdf.pack())
-        if self.op_ctrl_field is not None:
+        if self.op_ctrl_field:
+            if not self.header.op_ctrl_flag:
+                raise UslpInvalidFrameHeader
             frame.extend(self.op_ctrl_field)
+        else:
+            if self.header.op_ctrl_flag:
+                raise UslpInvalidFrameHeader
         if self.fecf is not None:
             frame.extend(self.fecf)
         return frame
+
+    def set_frame_len_in_header(self):
+        # According to the standard, the frame length field will contain the length of of the
+        # frame minus 1. Also check whether this is a regular header and not a truncated one,
+        # as the truncated one does not have the frame length field
+        if isinstance(self.header, PrimaryHeader):
+            self.header.frame_len = self.len() - 1
+
+    def len(self):
+        size = self.header.len() + self.tfdf.len()
+        if self.insert_zone is not None:
+            size += len(self.insert_zone)
+        if self.op_ctrl_field is not None:
+            size += len(self.op_ctrl_field)
+        if self.fecf is not None:
+            size += len(self.fecf)
+        return size
 
     @classmethod
     def __empty(cls) -> TransferFrame:
@@ -287,7 +351,7 @@ class TransferFrame:
             scid=0, src_dest=SourceOrDestField.SOURCE, map_id=0, vcid=0
         )
         empty_data_field = TransferFrameDataField(
-            tfdz_cnstr_rules=TFDZConstructionRules.FpPacketSpanningMultipleFrames,
+            tfdz_cnstr_rules=TfdzConstructionRules.FpPacketSpanningMultipleFrames,
             uslp_ident=UslpProtocolIdentifier.SPACE_PACKETS_ENCAPSULATION_PACKETS,
             fhp_or_lvop=None,
             tfdz=bytearray(),
@@ -325,12 +389,18 @@ class TransferFrame:
                 raise UslpInvalidRawPacketOrFrameLen
         header_type = determine_header_type(header_start=raw_frame)
         if header_type == HeaderType.TRUNCATED:
-            if frame_type == FrameType.VARIABLE:
+            # Truncated frames are only allowed if the frame type is specified as variable
+            # as specified by the standard on page p.161
+            if frame_type != FrameType.VARIABLE:
                 raise UslpTruncatedFrameNotAllowed
             frame.header = TruncatedPrimaryHeader.unpack(raw_packet=raw_frame)
         else:
             frame.header = PrimaryHeader.unpack(raw_packet=raw_frame)
         header_len = frame.header.len()
+        if frame_type == FrameType.FIXED and (
+            frame.header.frame_len + 1 != frame_properties.fixed_len
+        ):
+            raise UslpInvalidRawPacketOrFrameLen
         exact_tfdf_len = cls.__get_tfdf_len(
             frame_type=frame_type,
             header_type=header_type,
@@ -343,6 +413,9 @@ class TransferFrame:
         current_idx = header_len
         # Skip insert zone if present
         if frame_properties.insert_zone_properties.present:
+            frame.insert_zone = raw_frame[
+                current_idx : current_idx + frame_properties.insert_zone_properties.size
+            ]
             current_idx += frame_properties.insert_zone_properties.size
             if len(raw_frame) < current_idx:
                 raise UslpInvalidRawPacketOrFrameLen
@@ -384,12 +457,12 @@ class TransferFrame:
         :return:
         """
         header_len = header.len()
+        # Truncated frames are not allowed if the frame type is specified as fixed.
+        # This check was already performed so it does not need to be done again.
         if frame_type == FrameType.FIXED:
             # According to standard, the length count C equals one fewer than the total octets in
-            # the transfer frame
+            # the transfer frame.
             exact_tfdf_len = header.frame_len + 1 - header_len
-            if exact_tfdf_len != properties.fixed_len:
-                raise ValueError
             if raw_frame_len < exact_tfdf_len:
                 raise UslpInvalidRawPacketOrFrameLen
             exact_tfdf_len = properties.fixed_len

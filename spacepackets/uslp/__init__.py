@@ -2,7 +2,7 @@ from .frame import (
     FrameHeaderT,
     TransferFrameDataField,
     TransferFrame,
-    TFDZConstructionRules,
+    TfdzConstructionRules,
     UslpProtocolIdentifier,
 )
 from .header import (

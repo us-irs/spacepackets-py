@@ -8,6 +8,7 @@ from .definitions import (
     UslpVersionMissmatch,
     UslpTypeMissmatch,
     UslpInvalidRawPacketOrFrameLen,
+    UslpInvalidFrameHeader,
 )
 
 USLP_VERSION_NUMBER = 0b1100

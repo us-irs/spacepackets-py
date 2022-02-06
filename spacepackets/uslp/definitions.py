@@ -1,3 +1,7 @@
+class UslpInvalidFrameHeader(Exception):
+    pass
+
+
 class UslpInvalidRawPacketOrFrameLen(Exception):
     pass
 
