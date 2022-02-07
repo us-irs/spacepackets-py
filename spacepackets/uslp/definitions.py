@@ -10,6 +10,10 @@ class UslpInvalidConstructionRules(Exception):
     pass
 
 
+class UslpFhpVhopFieldMissing(Exception):
+    pass
+
+
 class UslpTruncatedFrameNotAllowed(Exception):
     pass
 

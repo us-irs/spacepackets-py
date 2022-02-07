@@ -14,6 +14,7 @@ from .definitions import (
     UslpTruncatedFrameNotAllowed,
     UslpInvalidConstructionRules,
     UslpInvalidFrameHeader,
+    UslpFhpVhopFieldMissing,
 )
 
 from typing import Union, Optional
@@ -160,7 +161,7 @@ class TransferFrameDataField:
         tfdz_cnstr_rules: TfdzConstructionRules,
         uslp_ident: UslpProtocolIdentifier,
         tfdz: bytes,
-        fhp_or_lvop: Optional[int],
+        fhp_or_lvop: Optional[int] = None,
     ):
         """
         Notes on the FHP or LVOP field. For more details, refer to CCSDS 732.1-B-2. p.92:
@@ -177,13 +178,14 @@ class TransferFrameDataField:
            the remaining octets composed of a project specific idle data pattern. If the MAPA_SDU
            does not complete within this fixed-length TFDZ, then the value contained within the LVOP
            shall be set to binary all ones.
+        The FHP/LVOP field is only required when the frame type is set to a fixed length.
         :param tfdz_cnstr_rules: 3 bits, identifies how the protocol organizes data within the TFDZ
             in order to transport it.
         :param uslp_ident: 5 bits, Identifies the CCSDS recognized protocol,
             procedure, or type of data contained within the TFDZ.
         :param tfdz: Transfer Frame Data Zone
         :param fhp_or_lvop: Optional First Header Pointer or Last Valid Octet Pointer.
-        :raises ValueErrror: TFDZ too large
+        :raises ValueError: TFDZ too large
         """
         self.tfdz_contr_rules = tfdz_cnstr_rules
         self.uslp_ident = uslp_ident
@@ -210,15 +212,31 @@ class TransferFrameDataField:
     def len(self):
         return self._size
 
-    def pack(self) -> bytearray:
+    def pack(
+        self, truncated: bool = False, frame_type: Optional[FrameType] = None
+    ) -> bytearray:
         packet = bytearray()
         packet.append(self.tfdz_contr_rules << 5 | self.uslp_ident)
-        if self.fhp_or_lvop is not None:
+        if frame_type is None:
+            # Auto-determine frame type from construction rule
+            if self.__cnstr_rules_for_fp():
+                frame_type = FrameType.FIXED
+            elif self.__cnstr_rules_for_vp():
+                frame_type = FrameType.VARIABLE
+        if self.should_have_fhp_or_lvp_field(
+            truncated=truncated, frame_type=frame_type
+        ):
+            if self.fhp_or_lvop is None:
+                raise UslpFhpVhopFieldMissing
             packet.extend(struct.pack("!H", self.fhp_or_lvop))
         packet.extend(self.tfdz)
         return packet
 
-    def has_fhp_or_lvp_field(self, truncated: bool) -> bool:
+    def should_have_fhp_or_lvp_field(
+        self, truncated: bool, frame_type: Optional[FrameType]
+    ) -> bool:
+        if frame_type is not None and frame_type == FrameType.VARIABLE:
+            return False
         if not truncated and self.tfdz_contr_rules in [
             TfdzConstructionRules.FpPacketSpanningMultipleFrames,
             TfdzConstructionRules.FpContinuingPortionOfMapaSDU,
@@ -228,13 +246,23 @@ class TransferFrameDataField:
         return False
 
     def verify_frame_type(self, frame_type: FrameType) -> bool:
-        if frame_type == FrameType.FIXED and self.tfdz_contr_rules in [
+        if frame_type == FrameType.FIXED and self.__cnstr_rules_for_fp():
+            return True
+        elif frame_type == FrameType.VARIABLE and self.__cnstr_rules_for_vp():
+            return True
+        return False
+
+    def __cnstr_rules_for_fp(self) -> bool:
+        if self.tfdz_contr_rules in [
             TfdzConstructionRules.FpPacketSpanningMultipleFrames,
             TfdzConstructionRules.FpContinuingPortionOfMapaSDU,
             TfdzConstructionRules.FpFixedStartOfMapaSDU,
         ]:
             return True
-        if frame_type == FrameType.VARIABLE and self.tfdz_contr_rules in [
+        return False
+
+    def __cnstr_rules_for_vp(self) -> bool:
+        if self.tfdz_contr_rules in [
             TfdzConstructionRules.VpContinuingSegment,
             TfdzConstructionRules.VpLastSegment,
             TfdzConstructionRules.VpOctetStream,
@@ -262,10 +290,10 @@ class TransferFrameDataField:
         exact_len: int,
         frame_type: Optional[FrameType],
     ) -> TransferFrameDataField:
-        """Unpack a TFDF, given a raw bytearray
+        """Unpack a TFDF, given a raw bytearray.
 
         :param raw_tfdf:
-        :param truncated: Required to determine whether TFDF has a FHP or LVOP field
+        :param truncated: Required to determine whether a TFDF has a FHP or LVOP field
         :param exact_len: Exact length of the TFDP. Needs to be determined externally because
             the length information of a packet is usually fixed or part of the USLP primary header
             and can not be determined from the TFDP field alone
@@ -281,7 +309,9 @@ class TransferFrameDataField:
         if frame_type is not None:
             if not tfdf.verify_frame_type(frame_type=frame_type):
                 raise UslpInvalidConstructionRules
-        if tfdf.has_fhp_or_lvp_field(truncated=truncated):
+        if tfdf.should_have_fhp_or_lvp_field(
+            truncated=truncated, frame_type=frame_type
+        ):
             tfdf.fhp_or_lvop = (raw_tfdf[1] << 8) | raw_tfdf[2]
             tfdz_start = 3
         else:
@@ -311,12 +341,14 @@ class TransferFrame:
                 raise ValueError
         self.fecf = fecf
 
-    def pack(self) -> bytearray:
+    def pack(
+        self, truncated: bool = False, frame_type: Optional[FrameType] = None
+    ) -> bytearray:
         frame = bytearray()
         frame.extend(self.header.pack())
         if self.insert_zone is not None:
             frame.extend(self.insert_zone)
-        frame.extend(self.tfdf.pack())
+        frame.extend(self.tfdf.pack(truncated=truncated, frame_type=frame_type))
         if self.op_ctrl_field:
             if not self.header.op_ctrl_flag:
                 raise UslpInvalidFrameHeader

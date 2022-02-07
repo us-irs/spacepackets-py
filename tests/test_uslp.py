@@ -19,6 +19,7 @@ from spacepackets.uslp.frame import (
     UslpProtocolIdentifier,
     FrameType,
     FixedFrameProperties,
+    VarFrameProperties,
 )
 
 
@@ -210,7 +211,7 @@ class TestUslp(TestCase):
             prot_ctrl_cmd_flag=ProtocolCommandFlag.USER_DATA,
             bypass_seq_ctrl_flag=BypassSequenceControlFlag.SEQ_CTRLD_QOS,
         )
-        tfdf = TransferFrameDataField(
+        fp_tfdf = TransferFrameDataField(
             tfdz_cnstr_rules=TfdzConstructionRules.FpPacketSpanningMultipleFrames,
             uslp_ident=UslpProtocolIdentifier.SPACE_PACKETS_ENCAPSULATION_PACKETS,
             tfdz=bytearray(),
@@ -221,12 +222,12 @@ class TestUslp(TestCase):
             header=primary_header,
             op_ctrl_field=None,
             insert_zone=None,
-            tfdf=tfdf,
+            tfdf=fp_tfdf,
             fecf=None,
         )
         # This sets the correct frame length in the primary header
         transfer_frame.set_frame_len_in_header()
-        frame_packed = transfer_frame.pack()
+        frame_packed = transfer_frame.pack(truncated=False, frame_type=FrameType.FIXED)
         # 7 byte primary header + TFDF with 3 bytes, TFDZ is empty
         self.assertEqual(len(frame_packed), 10)
         self.assertEqual(
@@ -272,3 +273,57 @@ class TestUslp(TestCase):
         )
         self.assertEqual(frame_unpacked.tfdf.fhp_or_lvop, 0xAFFE)
         self.assertEqual(frame_unpacked.tfdf.tfdz, bytearray())
+        self.assertEqual(frame_unpacked.header.pack(), transfer_frame.header.pack())
+        with self.assertRaises(ValueError):
+            FixedFrameProperties(fixed_len=5, has_fecf=False, has_insert_zone=True)
+        with self.assertRaises(ValueError):
+            FixedFrameProperties(fixed_len=5, has_fecf=True, has_insert_zone=False)
+        var_frame_props = VarFrameProperties(
+            has_insert_zone=False, has_fecf=True, fecf_len=2, truncated_frame_len=12
+        )
+        with self.assertRaises(ValueError):
+            invalid_tfdz = bytearray(70000)
+            tfdf = TransferFrameDataField(
+                tfdz_cnstr_rules=TfdzConstructionRules.FpPacketSpanningMultipleFrames,
+                uslp_ident=UslpProtocolIdentifier.SPACE_PACKETS_ENCAPSULATION_PACKETS,
+                tfdz=invalid_tfdz,
+                fhp_or_lvop=0,
+            )
+        self.assertEqual(fp_tfdf.verify_frame_type(frame_type=FrameType.FIXED), True)
+        self.assertEqual(
+            fp_tfdf.verify_frame_type(frame_type=FrameType.VARIABLE), False
+        )
+        vp_tfdf = TransferFrameDataField(
+            tfdz_cnstr_rules=TfdzConstructionRules.VpNoSegmentation,
+            uslp_ident=UslpProtocolIdentifier.SPACE_PACKETS_ENCAPSULATION_PACKETS,
+            tfdz=bytearray(),
+        )
+        self.assertEqual(vp_tfdf.verify_frame_type(frame_type=FrameType.VARIABLE), True)
+        self.assertEqual(
+            vp_tfdf.should_have_fhp_or_lvp_field(
+                truncated=False, frame_type=FrameType.VARIABLE
+            ),
+            False,
+        )
+        self.assertEqual(
+            fp_tfdf.should_have_fhp_or_lvp_field(
+                truncated=False, frame_type=FrameType.FIXED
+            ),
+            True,
+        )
+        empty_short_tfdf = TransferFrameDataField(
+            tfdz_cnstr_rules=TfdzConstructionRules.FpPacketSpanningMultipleFrames,
+            uslp_ident=UslpProtocolIdentifier.SPACE_PACKETS_ENCAPSULATION_PACKETS,
+            fhp_or_lvop=0,
+            tfdz=bytearray(),
+        )
+        packed_short_tfdf = empty_short_tfdf.pack(
+            truncated=False, frame_type=FrameType.FIXED
+        )
+        self.assertEqual(len(packed_short_tfdf), 3)
+        TransferFrameDataField.unpack(
+            raw_tfdf=packed_short_tfdf,
+            frame_type=FrameType.FIXED,
+            truncated=False,
+            exact_len=3,
+        )
