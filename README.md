@@ -19,6 +19,8 @@ Currently, this includes the following components:
   It supports PUS A as well.
 - CCSDS File Delivery Protcol (CFDP) packet implementations according to
   [CCSDS Blue Book 727.0-B-5](https://public.ccsds.org/Pubs/727x0b5.pdf).
+- Unified Space Data Link Protocol (USLP) frame implementations according to
+  [CCSDS Blue Book 732.1-B-2](https://public.ccsds.org/Pubs/732x1b2.pdf).
 
 # Install
 
@@ -99,3 +101,19 @@ def main():
 if __name__ == "__main__":
     main()
 ```
+
+# Tests
+
+All tests are provided in the `tests` folder and can be run with coverage information
+by running
+
+```sh
+coverage run -m pytest
+```
+
+provided that `pytest` and `coverage` were installed with
+
+```sh
+python3 -m pip install coverage pytest
+```
+
