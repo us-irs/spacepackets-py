@@ -336,9 +336,6 @@ class TransferFrame:
         self.tfdf = tfdf
         self.insert_zone = insert_zone
         self.op_ctrl_field = op_ctrl_field
-        if self.op_ctrl_field is not None:
-            if len(self.op_ctrl_field) != 4:
-                raise ValueError
         self.fecf = fecf
 
     def pack(
@@ -352,9 +349,11 @@ class TransferFrame:
         if self.op_ctrl_field:
             if not self.header.op_ctrl_flag:
                 raise UslpInvalidFrameHeader
+            if len(self.op_ctrl_field) != 4:
+                raise ValueError
             frame.extend(self.op_ctrl_field)
         else:
-            if self.header.op_ctrl_flag:
+            if not truncated and self.header.op_ctrl_flag:
                 raise UslpInvalidFrameHeader
         if self.fecf is not None:
             frame.extend(self.fecf)
@@ -440,17 +439,22 @@ class TransferFrame:
             header=frame.header,
             properties=frame_properties,
         )
-        if exact_tfdf_len <= 0:
+        if exact_tfdf_len <= 0 or header_len + exact_tfdf_len > len(raw_frame):
             raise UslpInvalidRawPacketOrFrameLen
         current_idx = header_len
         # Skip insert zone if present
         if frame_properties.insert_zone_properties.present:
+            if (
+                header_len
+                + frame_properties.insert_zone_properties.size
+                + exact_tfdf_len
+                > len(raw_frame)
+            ):
+                raise UslpInvalidRawPacketOrFrameLen
             frame.insert_zone = raw_frame[
                 current_idx : current_idx + frame_properties.insert_zone_properties.size
             ]
             current_idx += frame_properties.insert_zone_properties.size
-            if len(raw_frame) < current_idx:
-                raise UslpInvalidRawPacketOrFrameLen
         # Parse the Transfer Frame Data Field
         frame.tfdf = TransferFrameDataField.unpack(
             frame_type=frame_type,
@@ -460,7 +464,7 @@ class TransferFrame:
         )
         current_idx += exact_tfdf_len
         # Parse OCF field if present
-        if frame.header.op_ctrl_flag:
+        if not header_type == HeaderType.TRUNCATED and frame.header.op_ctrl_flag:
             frame.op_ctrl_field = raw_frame[current_idx : current_idx + 4]
             current_idx += 4
         # Parse Frame Error Control field if present
@@ -497,7 +501,6 @@ class TransferFrame:
             exact_tfdf_len = header.frame_len + 1 - header_len
             if raw_frame_len < exact_tfdf_len:
                 raise UslpInvalidRawPacketOrFrameLen
-            exact_tfdf_len = properties.fixed_len
         else:
             # Truncated frames are only allowed if the frame type is Variable. The truncated
             # frame length is then a managed parameter for a specific virtual channel.
@@ -507,7 +510,7 @@ class TransferFrame:
                 exact_tfdf_len = header.frame_len + 1 - header_len
         if properties.fecf_properties.present:
             exact_tfdf_len -= properties.fecf_properties.size
-        if header.op_ctrl_flag:
+        if header_type != HeaderType.TRUNCATED and header.op_ctrl_flag:
             exact_tfdf_len -= 4
         if properties.insert_zone_properties.present:
             exact_tfdf_len -= properties.insert_zone_properties.size
