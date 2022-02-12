@@ -328,9 +328,9 @@ class TransferFrame:
         self,
         header: FrameHeaderT,
         tfdf: TransferFrameDataField,
-        insert_zone: Optional[bytes],
-        op_ctrl_field: Optional[bytes],
-        fecf: Optional[bytes],
+        insert_zone: Optional[bytes] = None,
+        op_ctrl_field: Optional[bytes] = None,
+        fecf: Optional[bytes] = None,
     ):
         self.header = header
         self.tfdf = tfdf

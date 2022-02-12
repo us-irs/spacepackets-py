@@ -3,6 +3,7 @@ from spacepackets.util import get_printable_data_string, PrintFormats
 
 
 def main():
+    print("-- Space Packet examples --")
     spacepacket_header = SpacePacketHeader(
         packet_type=PacketTypes.TC, apid=0x01, source_sequence_count=0, data_length=0
     )

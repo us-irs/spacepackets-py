@@ -40,7 +40,8 @@ class SpacePacketHeader:
             than 11 bits, deciaml 2074 or hex 0x7ff
         :param source_sequence_count: Sequence counter, should not be larger than 0x3fff or
             decimal 16383
-        :param data_length: Should not be largen than 65535 bytes
+        :param data_length: Contains a length count C that equals one fewer than the length of the
+            packet data field. Should not be larger than 65535 bytes
         :param packet_version:
         :param secondary_header_flag:
         :param sequence_flags:

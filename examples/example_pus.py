@@ -4,6 +4,7 @@ from spacepackets.util import get_printable_data_string, PrintFormats
 
 
 def main():
+    print("-- PUS packet examples --")
     ping_cmd = PusTelecommand(service=17, subservice=1, apid=0x01)
     cmd_as_bytes = ping_cmd.pack()
     print_string = get_printable_data_string(
