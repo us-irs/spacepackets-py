@@ -45,7 +45,7 @@ You can find all examples listed here in the `example` folder as well.
 ## ECSS PUS Packets
 
 This examples shows how to generate PUS packets using the PUS ping telecommand and a PUS
-ping telemetry reply.
+ping telemetry reply:
 
 ```py
 from spacepackets.ecss.tc import PusTelecommand
@@ -77,7 +77,7 @@ if __name__ == "__main__":
 
 ## CCSDS Space Packet
 
-This example shows how to generate a space packet header
+This example shows how to generate a space packet header:
 
 ```py
 from spacepackets.ccsds.spacepacket import SpacePacketHeader, PacketTypes
@@ -104,7 +104,7 @@ if __name__ == "__main__":
 ## USLP Frames
 
 This example shows how to generate a simple variable length USLP frame containing a simple
-space packet
+space packet:
 
 ```py
 from spacepackets.uslp.header import (
