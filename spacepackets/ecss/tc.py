@@ -164,7 +164,7 @@ class PusTelecommand:
         service: int,
         subservice: int,
         ssc=0,
-        app_data: bytearray = bytearray([]),
+        app_data: bytes = bytes([]),
         source_id: int = 0,
         pus_version: PusVersion = PusVersion.GLOBAL_CONFIG,
         ack_flags: int = 0b1111,
@@ -350,7 +350,7 @@ class PusTelecommand:
         return self.space_packet_header.packet_id
 
     @property
-    def app_data(self) -> bytearray:
+    def app_data(self) -> bytes:
         return self._app_data
 
     def print(self, print_format: PrintFormats = PrintFormats.HEX):
