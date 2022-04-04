@@ -111,7 +111,7 @@ class PusTelemetry:
     @classmethod
     def unpack(
         cls,
-        raw_telemetry: bytearray,
+        raw_telemetry: bytes,
         pus_version: PusVersion = PusVersion.GLOBAL_CONFIG,
     ) -> PusTelemetry:
         """Attempts to construct a generic PusTelemetry class given a raw bytearray.
@@ -389,7 +389,7 @@ class PusTmSecondaryHeader:
 
     @classmethod
     def unpack(
-        cls, header_start: bytearray, pus_version: PusVersion
+        cls, header_start: bytes, pus_version: PusVersion
     ) -> PusTmSecondaryHeader:
         """Unpack the PUS TM secondary header from the raw packet starting at the header index.
         The user still needs to specify the PUS version because the version field is parsed

@@ -109,7 +109,7 @@ class CdsShortTimestamp(CcsdsTimeCode):
         return cds_packet
 
     @classmethod
-    def unpack(cls, time_field: bytearray) -> CdsShortTimestamp:
+    def unpack(cls, time_field: bytes) -> CdsShortTimestamp:
         if len(time_field) < cls.TIMESTAMP_SIZE:
             raise ValueError
         # TODO: check ID?
