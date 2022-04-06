@@ -240,8 +240,8 @@ class PusTelecommand:
         """Returns string representation of a class instance."""
         return (
             f"PUS TC[{self.data_field_header.service_type}, "
-            f"{self.data_field_header.service_subtype}], APID {self.apid}, "
-            f"SSC {self.space_packet_header.ssc}, size {self.packet_len}"
+            f"{self.data_field_header.service_subtype}], APID {self.apid:#05x}, "
+            f"SSC {self.space_packet_header.ssc}, Size {self.packet_len}"
         )
 
     @property
