@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 
 - Unified Space Data Link Protocol Packet implementations
+- Add packet sizes in `__str__` method of PUS TM and TC
 
 ### Changed
 
