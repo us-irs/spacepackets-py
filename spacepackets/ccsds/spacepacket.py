@@ -252,7 +252,7 @@ def parse_space_packets(
         return tm_list
     # Packet ID detected
     while True:
-        if current_idx + 1 >= len(concatenated_packets):
+        if current_idx + 6 >= len(concatenated_packets):
             break
         current_packet_id = (
             concatenated_packets[current_idx] << 8
@@ -280,8 +280,7 @@ def __handle_packet_id_match(
 ) -> (int, int):
     next_packet_len_field = (
         concatenated_packets[current_idx + 4] << 8
-        | concatenated_packets[current_idx + 5]
-    )
+    ) | concatenated_packets[current_idx + 5]
     total_packet_len = get_total_space_packet_len_from_len_field(next_packet_len_field)
     # Might be part of packet. Put back into analysis queue as whole
     if total_packet_len > len(concatenated_packets):
