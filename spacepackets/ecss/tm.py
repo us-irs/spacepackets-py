@@ -175,7 +175,7 @@ class PusTelemetry:
         return (
             f"PUS TM[{self.secondary_packet_header.service_id},"
             f"{self.secondary_packet_header.subservice_id}] with message counter "
-            f"{self.secondary_packet_header.message_counter}"
+            f"{self.secondary_packet_header.message_counter} and size {self.packet_len}"
         )
 
     def __repr__(self):
