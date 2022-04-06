@@ -8,12 +8,17 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [unreleased]
 
+## [v0.6.1]
+
+- Add packet sizes in `__str__` method of PUS TM and TC
+- Some type corrections: Expect `bytes` instead of `bytearray` where applicable
+
 ## [v0.6.0]
 
 ### Added
 
 - Unified Space Data Link Protocol Packet implementations
-- Add packet sizes in `__str__` method of PUS TM and TC
+
 
 ### Changed
 
