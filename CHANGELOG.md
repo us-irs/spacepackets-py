@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 - Add packet sizes in `__str__` method of PUS TM and TC
 - Some type corrections: Expect `bytes` instead of `bytearray` where applicable
+- Fix in size pre-check of space packet parser `parse_space_packets`
 
 ## [v0.6.0]
 
