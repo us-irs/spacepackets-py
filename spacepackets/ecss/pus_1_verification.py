@@ -2,11 +2,23 @@
 """Deserialize PUS Service 1 Verification TM
 """
 from __future__ import annotations
+import enum
 import struct
 
 from spacepackets.ccsds.time import CdsShortTimestamp
 from spacepackets.ecss.tm import PusVersion, PusTelemetry
 from spacepackets.log import get_console_logger
+
+
+class Subservices(enum.IntEnum):
+    TM_ACCEPTANCE_SUCCESS = 1
+    TM_ACCEPTANCE_FAILURE = 2
+    TM_START_SUCCESS = 3
+    TM_START_FAILURE = 4
+    TM_STEP_SUCCESS = 5
+    TM_STEP_FAILURE = 6
+    TM_COMPLETION_SUCCESS = 7
+    TM_COMPLETION_FAILURE = 8
 
 
 class Service1TM:
