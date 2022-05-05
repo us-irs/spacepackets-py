@@ -26,8 +26,8 @@ from spacepackets.ecss.tm import (
     get_service_from_raw_pus_packet,
     PusTmSecondaryHeader,
 )
-from spacepackets.ecss.service_17_test import Service17TM
-from spacepackets.ecss.service_1_verification import Service1TM
+from spacepackets.ecss.pus_17_test import Service17TM
+from spacepackets.ecss.pus_1_verification import Service1TM
 
 
 class TestTelecommand(TestCase):
