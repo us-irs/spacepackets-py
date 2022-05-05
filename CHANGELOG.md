@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [unreleased]
 
+## [v0.7.1]
+
+- Added subservice enumerations for generic PUS Services 1, 3, 5 and 17
+
 ## [v0.7.0]
 
 - Improvement for API of PUS TM1 and PUS TM17 base classes
