@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [unreleased]
 
+## [v0.7.0]
+
+- Improvement for API of PUS TM1 and PUS TM17 base classes
+
 ## [v0.6.2]
 
 - Fix in size pre-check of space packet parser `parse_space_packets`
