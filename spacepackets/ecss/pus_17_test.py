@@ -24,7 +24,7 @@ class Service17TM:
         destination_id: int = 0,
     ):
         self.pus_tm = PusTelemetry(
-            service=PusServices.SERVICE_17_TEST,
+            service=PusServices.S17_TEST,
             subservice=subservice,
             time=time,
             ssc=ssc,

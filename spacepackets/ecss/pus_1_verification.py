@@ -6,6 +6,7 @@ import enum
 import struct
 
 from spacepackets.ccsds.time import CdsShortTimestamp
+from spacepackets.ecss.definitions import PusServices
 from spacepackets.ecss.tm import PusVersion, PusTelemetry
 from spacepackets.log import get_console_logger
 
@@ -40,7 +41,7 @@ class Service1TM:
         destination_id: int = 0,
     ):
         self.pus_tm = PusTelemetry(
-            service=1,
+            service=PusServices.S1_VERIFICATION,
             subservice=subservice,
             time=time,
             ssc=ssc,
