@@ -11,7 +11,12 @@ from spacepackets.ccsds.spacepacket import (
     PacketTypes,
 )
 from spacepackets.ccsds.time import CdsShortTimestamp, read_p_field
-from spacepackets.ecss.conf import get_pus_tm_version, PusVersion, get_default_tm_apid
+from spacepackets.ecss.conf import (
+    get_pus_tm_version,
+    PusVersion,
+    get_default_tm_apid,
+    FETCH_GLOBAL_APID,
+)
 
 
 def get_service_from_raw_pus_packet(raw_bytearray: bytearray) -> int:
@@ -43,7 +48,7 @@ class PusTelemetry:
         time: CdsShortTimestamp = None,
         ssc: int = 0,
         source_data: bytearray = bytearray([]),
-        apid: int = -1,
+        apid: int = FETCH_GLOBAL_APID,
         message_counter: int = 0,
         space_time_ref: int = 0b0000,
         destination_id: int = 0,

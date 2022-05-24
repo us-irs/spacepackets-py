@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [unreleased]
 
+## [v0.8.1]
+
+- Named value for fetching global APID
+
 ## [v0.8.0]
 
 - Update `PusServices` enumeration
