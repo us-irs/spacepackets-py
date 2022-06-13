@@ -111,7 +111,7 @@ class PusTelemetry:
     @classmethod
     def unpack(
         cls,
-        raw_telemetry: bytearray,
+        raw_telemetry: bytes,
         pus_version: PusVersion = PusVersion.GLOBAL_CONFIG,
     ) -> PusTelemetry:
         """Attempts to construct a generic PusTelemetry class given a raw bytearray.
