@@ -11,7 +11,12 @@ from spacepackets.ccsds.spacepacket import (
     PacketTypes,
 )
 from spacepackets.ccsds.time import CdsShortTimestamp, read_p_field
-from spacepackets.ecss.conf import get_pus_tm_version, PusVersion, get_default_tm_apid
+from spacepackets.ecss.conf import (
+    get_pus_tm_version,
+    PusVersion,
+    get_default_tm_apid,
+    FETCH_GLOBAL_APID,
+)
 
 
 def get_service_from_raw_pus_packet(raw_bytearray: bytearray) -> int:
@@ -43,7 +48,7 @@ class PusTelemetry:
         time: CdsShortTimestamp = None,
         ssc: int = 0,
         source_data: bytearray = bytearray([]),
-        apid: int = -1,
+        apid: int = FETCH_GLOBAL_APID,
         message_counter: int = 0,
         space_time_ref: int = 0b0000,
         destination_id: int = 0,
@@ -174,8 +179,8 @@ class PusTelemetry:
     def __str__(self):
         return (
             f"PUS TM[{self.secondary_packet_header.service_id},"
-            f"{self.secondary_packet_header.subservice_id}] with message counter "
-            f"{self.secondary_packet_header.message_counter}"
+            f"{self.secondary_packet_header.subservice_id}], APID {self.apid:#05x}, MSG Counter "
+            f"{self.secondary_packet_header.message_counter}, Size {self.packet_len}"
         )
 
     def __repr__(self):
@@ -389,7 +394,7 @@ class PusTmSecondaryHeader:
 
     @classmethod
     def unpack(
-        cls, header_start: bytearray, pus_version: PusVersion
+        cls, header_start: bytes, pus_version: PusVersion
     ) -> PusTmSecondaryHeader:
         """Unpack the PUS TM secondary header from the raw packet starting at the header index.
         The user still needs to specify the PUS version because the version field is parsed

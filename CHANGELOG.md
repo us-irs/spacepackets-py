@@ -8,11 +8,37 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [unreleased]
 
+## [v0.8.1]
+
+- Named value for fetching global APID
+
+## [v0.8.0]
+
+- Update `PusServices` enumeration
+
+## [v0.7.1]
+
+- Added subservice enumerations for generic PUS Services 1, 3, 5 and 17
+
+## [v0.7.0]
+
+- Improvement for API of PUS TM1 and PUS TM17 base classes
+
+## [v0.6.2]
+
+- Fix in size pre-check of space packet parser `parse_space_packets`
+
+## [v0.6.1]
+
+- Add packet sizes in `__str__` method of PUS TM and TC
+- Some type corrections: Expect `bytes` instead of `bytearray` where applicable
+
 ## [v0.6.0]
 
 ### Added
 
 - Unified Space Data Link Protocol Packet implementations
+
 
 ### Changed
 

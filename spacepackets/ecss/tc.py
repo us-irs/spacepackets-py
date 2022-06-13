@@ -16,6 +16,7 @@ from spacepackets.ecss.conf import (
     PusVersion,
     get_pus_tc_version,
     get_max_tc_packet_size,
+    FETCH_GLOBAL_APID,
 )
 
 
@@ -168,7 +169,7 @@ class PusTelecommand:
         source_id: int = 0,
         pus_version: PusVersion = PusVersion.GLOBAL_CONFIG,
         ack_flags: int = 0b1111,
-        apid: int = -1,
+        apid: int = FETCH_GLOBAL_APID,
     ):
         """Initiate a PUS telecommand from the given parameters. The raw byte representation
         can then be retrieved with the :py:meth:`pack` function.
@@ -239,8 +240,9 @@ class PusTelecommand:
     def __str__(self):
         """Returns string representation of a class instance."""
         return (
-            f"TC[{self.data_field_header.service_type}, "
-            f"{self.data_field_header.service_subtype}] with SSC {self.space_packet_header.ssc}"
+            f"PUS TC[{self.data_field_header.service_type}, "
+            f"{self.data_field_header.service_subtype}], APID {self.apid:#05x}, "
+            f"SSC {self.space_packet_header.ssc}, Size {self.packet_len}"
         )
 
     @property

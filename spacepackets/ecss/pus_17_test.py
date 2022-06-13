@@ -1,7 +1,12 @@
 from __future__ import annotations
-
+import enum
 from spacepackets.ecss.definitions import PusServices
 from spacepackets.ecss.tm import CdsShortTimestamp, PusVersion, PusTelemetry
+
+
+class Subservices(enum.IntEnum):
+    TC_PING = 1
+    TM_REPLY = 2
 
 
 class Service17TM:
@@ -19,7 +24,7 @@ class Service17TM:
         destination_id: int = 0,
     ):
         self.pus_tm = PusTelemetry(
-            service=PusServices.SERVICE_17_TEST,
+            service=PusServices.S17_TEST,
             subservice=subservice,
             time=time,
             ssc=ssc,

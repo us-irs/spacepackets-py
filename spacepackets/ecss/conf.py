@@ -2,6 +2,9 @@ import enum
 from .definitions import DEFAULT_MAX_TC_DATA_SIZE
 
 
+FETCH_GLOBAL_APID = -1
+
+
 class PusVersion(enum.IntEnum):
     # ESA PSS-07-101. Not supported by this package!
     ESA_PUS = 0
