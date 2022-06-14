@@ -20,8 +20,9 @@ class TestCcsds(TestCase):
         sp_header = SpacePacketHeader(
             apid=0x02,
             data_length=22,
-            source_sequence_count=52,
+            ssc=52,
             packet_type=PacketTypes.TC,
+            sequence_flags=SequenceFlags.FIRST_SEGMENT,
         )
         self.assertEqual(sp_header.apid, 0x02)
         self.assertEqual(sp_header.ssc, 52)
@@ -38,7 +39,7 @@ class TestCcsds(TestCase):
             SpacePacketHeader,
             apid=982292,
             data_length=22,
-            source_sequence_count=52,
+            ssc=52,
             packet_type=PacketTypes.TC,
         )
         self.assertRaises(
@@ -46,7 +47,7 @@ class TestCcsds(TestCase):
             SpacePacketHeader,
             apid=0x02,
             data_length=679393,
-            source_sequence_count=52,
+            ssc=52,
             packet_type=PacketTypes.TC,
         )
         self.assertRaises(
@@ -54,10 +55,15 @@ class TestCcsds(TestCase):
             SpacePacketHeader,
             apid=0x02,
             data_length=22,
-            source_sequence_count=96030,
+            ssc=96030,
             packet_type=PacketTypes.TC,
         )
         self.assertRaises(ValueError, SpacePacketHeader.unpack, bytearray())
+        self.assertEqual(sp_unpacked.packet_type, PacketTypes.TC)
+        self.assertEqual(sp_unpacked.apid, 0x02)
+        self.assertEqual(sp_unpacked.version, 0b000)
+        self.assertEqual(sp_unpacked.ssc, 52)
+        self.assertEqual(sp_unpacked.sequence_flags, SequenceFlags.FIRST_SEGMENT)
         print(sp_header)
         print(sp_header.__repr__())
 
@@ -95,15 +101,33 @@ class TestCcsds(TestCase):
         raw_header = get_space_packet_header(
             packet_id=packet_id, packet_sequence_control=psc, data_length=22
         )
-        self.assertEqual(raw_header[0], (packet_id & 0xFF00) >> 8)
+        self.assertEqual(raw_header[0], ((packet_id & 0xFF00) >> 8) & 0x1FFF)
         self.assertEqual(raw_header[1], packet_id & 0xFF)
         self.assertEqual(raw_header[2], (psc & 0xFF00) >> 8)
         self.assertEqual(raw_header[3], psc & 0xFF)
         self.assertEqual(raw_header[4], (22 & 0xFF00) >> 8)
         self.assertEqual(raw_header[5], 22 & 0xFF)
 
+        header_from_composite = SpacePacketHeader.from_composite_fields(
+            packet_id=packet_id, psc=psc, data_length=22
+        )
+        self.assertEqual(header_from_composite.pack(), raw_header)
+        header_tm = SpacePacketHeader(
+            packet_type=PacketTypes.TM,
+            sequence_flags=SequenceFlags.UNSEGMENTED,
+            apid=0x12,
+            data_length=7,
+            ssc=28,
+        )
+        raw = header_tm.pack()
+        header_tm_back = SpacePacketHeader.unpack(raw)
+        self.assertEqual(header_tm_back.packet_type, PacketTypes.TM)
+        self.assertEqual(header_tm_back.apid, 0x12)
+        self.assertEqual(header_tm_back.version, 0b000)
+        self.assertEqual(header_tm_back.ssc, 28)
+        self.assertEqual(header_tm_back.data_length, 7)
+
     def test_sp_parser(self):
-        raw_buffer = bytearray()
         tm_packet = PusTelemetry(service=17, subservice=2, pus_version=PusVersion.PUS_C)
         packet_ids = (tm_packet.packet_id,)
         tm_packet_raw = tm_packet.pack()

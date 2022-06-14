@@ -1,5 +1,6 @@
 from __future__ import annotations
 import enum
+import struct
 
 from typing import Tuple, Deque, List, Final
 from spacepackets.log import get_console_logger
@@ -23,14 +24,16 @@ class SpacePacketHeader:
     """This class encapsulates the space packet header.
     Packet reference: Blue Book CCSDS 133.0-B-2"""
 
+    SEQ_FLAG_MASK = 0xC000
+
     def __init__(
         self,
         packet_type: PacketTypes,
         apid: int,
-        source_sequence_count: int,
+        ssc: int,
         data_length: int,
         packet_version: int = 0b000,
-        secondary_header_flag: bool = True,
+        sec_header_flag: bool = True,
         sequence_flags: SequenceFlags = SequenceFlags.UNSEGMENTED,
     ):
         """Create a space packet header with the given field parameters
@@ -38,12 +41,12 @@ class SpacePacketHeader:
         :param packet_type: 0 for Telemetery, 1 for Telecommands
         :param apid: Application Process ID, should not be larger
             than 11 bits, deciaml 2074 or hex 0x7ff
-        :param source_sequence_count: Sequence counter, should not be larger than 0x3fff or
+        :param ssc: Source sequence counter, should not be larger than 0x3fff or
             decimal 16383
         :param data_length: Contains a length count C that equals one fewer than the length of the
             packet data field. Should not be larger than 65535 bytes
         :param packet_version:
-        :param secondary_header_flag:
+        :param sec_header_flag: Secondary header flag, 1 or True by default
         :param sequence_flags:
         :raises ValueError: On invalid parameters
         """
@@ -54,7 +57,7 @@ class SpacePacketHeader:
                 f"Invalid APID, exceeds maximum value {pow(2, 11) - 1} or negative"
             )
             raise ValueError
-        if source_sequence_count > pow(2, 14) - 1 or source_sequence_count < 0:
+        if ssc > pow(2, 14) - 1 or ssc < 0:
             logger = get_console_logger()
             logger.warning(
                 f"Invalid source sequence count, exceeds maximum value {pow(2, 14)- 1} or negative"
@@ -67,8 +70,8 @@ class SpacePacketHeader:
             )
             raise ValueError
         self.apid = apid
-        self.ssc = source_sequence_count
-        self.secondary_header_flag = secondary_header_flag
+        self.ssc = ssc
+        self.sec_header_flag = sec_header_flag
         self.sequence_flags = sequence_flags
         self.psc = get_space_packet_sequence_control(
             sequence_flags=self.sequence_flags, source_sequence_count=self.ssc
@@ -77,19 +80,36 @@ class SpacePacketHeader:
         self.data_length = data_length
         self.packet_id = get_space_packet_id_num(
             packet_type=self.packet_type,
-            secondary_header_flag=self.secondary_header_flag,
+            secondary_header_flag=self.sec_header_flag,
             apid=self.apid,
         )
 
+    @classmethod
+    def from_composite_fields(
+        cls,
+        packet_id: int,
+        psc: int,
+        data_length: int,
+        packet_version: int = 0b000,
+    ) -> SpacePacketHeader:
+        return SpacePacketHeader(
+            packet_type=PacketTypes(packet_id >> 12 & 0x01),
+            packet_version=packet_version,
+            sec_header_flag=bool((packet_id >> 11) & 0x01),
+            data_length=data_length,
+            sequence_flags=SequenceFlags((psc & cls.SEQ_FLAG_MASK) >> 14),
+            ssc=psc & (~cls.SEQ_FLAG_MASK),
+            apid=packet_id & 0x7FF,
+        )
+
     def pack(self) -> bytearray:
-        """Serialize raw space packet header into a bytearray"""
+        """Serialize raw space packet header into a bytearray, using big endian for each
+        2 octet field of the space packet header"""
         header = bytearray()
-        header.append((self.packet_id & 0xFF00) >> 8)
-        header.append(self.packet_id & 0xFF)
-        header.append((self.psc & 0xFF00) >> 8)
-        header.append(self.psc & 0xFF)
-        header.append((self.data_length & 0xFF00) >> 8)
-        header.append(self.data_length & 0xFF)
+        packet_id_with_version = self.version << 13 | self.packet_id
+        header.extend(struct.pack("!H", packet_id_with_version))
+        header.extend(struct.pack("!H", self.psc))
+        header.extend(struct.pack("!H", self.data_length))
         return header
 
     @property
@@ -114,25 +134,21 @@ class SpacePacketHeader:
             logger = get_console_logger()
             logger.warning("Packet size smaller than PUS header size!")
             raise ValueError
-        packet_type = space_packet_raw[0] & 0x10
-        if packet_type == 0:
-            packet_type = PacketTypes.TM
-        else:
-            packet_type = PacketTypes.TC
-        packet_version = space_packet_raw[0] >> 5
-        secondary_header_flag = (space_packet_raw[0] & 0x8) >> 3
-        apid = ((space_packet_raw[0] & 0x7) << 8) | space_packet_raw[1]
-        sequence_flags = (space_packet_raw[2] & 0xC0) >> 6
-        ssc = ((space_packet_raw[2] << 8) | space_packet_raw[3]) & 0x3FFF
-        data_length = space_packet_raw[4] << 8 | space_packet_raw[5]
+        packet_version = (space_packet_raw[0] >> 5) & 0b111
+        packet_type = PacketTypes((space_packet_raw[0] >> 4) & 0b1)
+        secondary_header_flag = (space_packet_raw[0] >> 3) & 0b1
+        apid = ((space_packet_raw[0] & 0b111) << 8) | space_packet_raw[1]
+        psc = struct.unpack("!H", space_packet_raw[2:4])[0]
+        sequence_flags = (psc & SpacePacketHeader.SEQ_FLAG_MASK) >> 14
+        ssc = psc & (~SpacePacketHeader.SEQ_FLAG_MASK)
         return SpacePacketHeader(
             packet_type=packet_type,
             apid=apid,
-            secondary_header_flag=bool(secondary_header_flag),
+            sec_header_flag=bool(secondary_header_flag),
             packet_version=packet_version,
-            data_length=data_length,
+            data_length=struct.unpack("!H", space_packet_raw[4:6])[0],
             sequence_flags=SequenceFlags(sequence_flags),
-            source_sequence_count=ssc,
+            ssc=ssc,
         )
 
     def __str__(self):
@@ -143,8 +159,10 @@ class SpacePacketHeader:
 
     def __repr__(self):
         return (
-            f"{self.__class__.__name__}(packet_type={self.packet_type!r}, "
-            f"packet_id={self.packet_id!r}, apid={self.apid!r}, ssc={self.ssc!r})"
+            f"{self.__class__.__name__}(packet_version={self.version!r}, "
+            f"packet_type={self.packet_type!r}, apid={self.apid!r}, ssc={self.ssc!r}),"
+            f"data_length={self.data_length!r}, sec_header_flag={self.sec_header_flag!r},"
+            f"sequence_flags={self.sequence_flags!r}"
         )
 
 

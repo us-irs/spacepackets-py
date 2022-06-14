@@ -220,10 +220,10 @@ class PusTelecommand:
         )
         self.space_packet_header = SpacePacketHeader(
             apid=apid,
-            secondary_header_flag=bool(secondary_header_flag),
+            sec_header_flag=bool(secondary_header_flag),
             packet_type=PacketTypes.TC,
             data_length=data_length,
-            source_sequence_count=ssc,
+            ssc=ssc,
         )
         self._app_data = app_data
         self._valid = True

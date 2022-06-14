@@ -35,7 +35,7 @@ def main():
         sequence_flags=SequenceFlags.UNSEGMENTED,
         apid=SPACECRAFT_ID,
         data_length=len(data) - 1,
-        source_sequence_count=0,
+        ssc=0,
     )
     tfdz = space_packet_wrapper.pack() + data
     tfdf = TransferFrameDataField(

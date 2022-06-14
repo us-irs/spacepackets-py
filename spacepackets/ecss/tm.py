@@ -72,10 +72,10 @@ class PusTelemetry:
         self.space_packet_header = SpacePacketHeader(
             apid=apid,
             packet_type=packet_type,
-            secondary_header_flag=secondary_header_flag,
+            sec_header_flag=secondary_header_flag,
             packet_version=packet_version,
             data_length=data_length,
-            source_sequence_count=ssc,
+            ssc=ssc,
         )
         self.secondary_packet_header = PusTmSecondaryHeader(
             pus_version=pus_version,
