@@ -1,6 +1,8 @@
 """This module contains the PUS telecommand class representation to pack telecommands.
 """
 from __future__ import annotations
+
+import struct
 import sys
 from typing import Tuple
 
@@ -274,8 +276,7 @@ class PusTelecommand:
         crc_func = mkPredefinedCrcFun(crc_name="crc-ccitt-false")
         self._crc = crc_func(packed_data)
         self._valid = True
-        packed_data.append((self._crc & 0xFF00) >> 8)
-        packed_data.append(self._crc & 0xFF)
+        packed_data.extend(struct.pack("!H", self._crc))
         return packed_data
 
     @classmethod
