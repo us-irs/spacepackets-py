@@ -164,8 +164,8 @@ class PusTelecommand:
         self,
         service: int,
         subservice: int,
-        ssc=0,
         app_data: bytes = bytes([]),
+        ssc: int = 0,
         source_id: int = 0,
         pus_version: PusVersion = PusVersion.GLOBAL_CONFIG,
         ack_flags: int = 0b1111,
@@ -198,7 +198,7 @@ class PusTelecommand:
             logger.warning("Service value invalid. Setting to 0")
             service = 0
         # SSC can have maximum of 14 bits
-        if ssc > pow(2, 14):
+        if ssc > pow(2, 14) - 1:
             logger.warning("SSC invalid, setting to 0")
             ssc = 0
         if len(app_data) > get_max_tc_packet_size():
@@ -229,12 +229,28 @@ class PusTelecommand:
         self._valid = True
         self._crc = 0
 
+    @classmethod
+    def from_composite_fields(
+            cls, sph: SpacePacketHeader, dfh: PusTcDataFieldHeader, app_data: bytes = bytes([])
+    ) -> PusTelecommand:
+        pus_tc = cls.__empty()
+        pus_tc.space_packet_header = sph
+        pus_tc.data_field_header = dfh
+        pus_tc._app_data = app_data
+        return pus_tc
+
+    @classmethod
+    def __empty(cls) -> PusTelecommand:
+        return PusTelecommand(
+            service=0,
+            subservice=0
+        )
+
     def __repr__(self):
         """Returns the representation of a class instance."""
         return (
-            f"{self.__class__.__name__}(service={self.data_field_header.service_type!r}, "
-            f"subservice={self.data_field_header.service_subtype!r}, "
-            f"ssc={self.space_packet_header.ssc!r}, apid={self.apid})"
+            f"PusTelecommand.from_composite_fields(sph={self.space_packet_header!r}, "
+            f"dfh={self.data_field_header!r}, app_data={self.app_data!r})"
         )
 
     def __str__(self):
@@ -248,10 +264,6 @@ class PusTelecommand:
     @property
     def valid(self):
         return self._valid
-
-    @classmethod
-    def __empty(cls):
-        return cls(service=0, subservice=0, apid=0, ssc=0, app_data=bytearray())
 
     def pack(self) -> bytearray:
         """Serializes the TC data fields into a bytearray."""

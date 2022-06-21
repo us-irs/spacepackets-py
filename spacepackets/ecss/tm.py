@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Optional
+
 from crcmod.predefined import mkPredefinedCrcFun
 
 from spacepackets.util import PrintFormats, get_printable_data_string
@@ -45,9 +47,9 @@ class PusTelemetry:
         self,
         service: int,
         subservice: int,
-        time: CdsShortTimestamp = None,
-        ssc: int = 0,
+        time: Optional[CdsShortTimestamp] = None,
         source_data: bytearray = bytearray([]),
+        ssc: int = 0,
         apid: int = FETCH_GLOBAL_APID,
         message_counter: int = 0,
         space_time_ref: int = 0b0000,
@@ -56,7 +58,7 @@ class PusTelemetry:
         pus_version: PusVersion = PusVersion.GLOBAL_CONFIG,
         secondary_header_flag: bool = True,
     ):
-        if apid == -1:
+        if apid == FETCH_GLOBAL_APID:
             apid = get_default_tm_apid()
         if pus_version == PusVersion.GLOBAL_CONFIG:
             pus_version = get_pus_tm_version()
@@ -176,6 +178,16 @@ class PusTelemetry:
         pus_tm.__perform_crc_check(raw_telemetry=raw_telemetry[:expected_packet_len])
         return pus_tm
 
+    @classmethod
+    def from_composite_fields(
+            cls, sph: SpacePacketHeader, sec_header: PusTmSecondaryHeader, tm_data: bytes
+    ) -> PusTelemetry:
+        pus_tm = cls.__empty()
+        pus_tm.space_packet_header = sph
+        pus_tm.secondary_packet_header = sec_header
+        pus_tm._tm_data = tm_data
+        return pus_tm
+
     def __str__(self):
         return (
             f"PUS TM[{self.secondary_packet_header.service_id},"
@@ -185,9 +197,9 @@ class PusTelemetry:
 
     def __repr__(self):
         return (
-            f"{self.__class__.__name__}(service={self.secondary_packet_header.service_id!r}, "
-            f"subservice={self.secondary_packet_header.subservice_id!r}, "
-            f"apid={self.apid!r}, ssc={self.ssc!r})"
+            f"PusTelemetry.from_composite_fields({self.__class__.__name__}"
+            f"(sph={self.space_packet_header!r}, sec_header={self.secondary_packet_header!r}, "
+            f"tm_data={self.tm_data!r}"
         )
 
     @property
