@@ -154,8 +154,6 @@ class PusTcDataFieldHeader:
             return 5
 
 
-# pylint: disable=too-many-instance-attributes
-# pylint: disable=too-many-arguments
 class PusTelecommand:
     """Class representation of a PUS telecommand. It can be used to pack a raw telecommand from
     input parameters. The structure of a PUS telecommand is specified in ECSS-E-70-41A on p.42
@@ -233,7 +231,10 @@ class PusTelecommand:
 
     @classmethod
     def from_composite_fields(
-            cls, sph: SpacePacketHeader, dfh: PusTcDataFieldHeader, app_data: bytes = bytes([])
+        cls,
+        sph: SpacePacketHeader,
+        dfh: PusTcDataFieldHeader,
+        app_data: bytes = bytes([]),
     ) -> PusTelecommand:
         pus_tc = cls.__empty()
         pus_tc.space_packet_header = sph
@@ -243,10 +244,7 @@ class PusTelecommand:
 
     @classmethod
     def __empty(cls) -> PusTelecommand:
-        return PusTelecommand(
-            service=0,
-            subservice=0
-        )
+        return PusTelecommand(service=0, subservice=0)
 
     def __repr__(self):
         """Returns the representation of a class instance."""
@@ -396,6 +394,5 @@ def generate_crc(data: bytearray) -> bytearray:
     data_with_crc += data
     crc_func = mkPredefinedCrcFun(crc_name="crc-ccitt-false")
     crc = crc_func(data)
-    data_with_crc.append((crc & 0xFF00) >> 8)
-    data_with_crc.append(crc & 0xFF)
+    data_with_crc.extend(struct.pack("!H", crc))
     return data_with_crc

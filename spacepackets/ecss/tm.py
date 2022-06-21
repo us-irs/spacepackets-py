@@ -180,7 +180,7 @@ class PusTelemetry:
 
     @classmethod
     def from_composite_fields(
-            cls, sph: SpacePacketHeader, sec_header: PusTmSecondaryHeader, tm_data: bytes
+        cls, sph: SpacePacketHeader, sec_header: PusTmSecondaryHeader, tm_data: bytes
     ) -> PusTelemetry:
         pus_tm = cls.__empty()
         pus_tm.space_packet_header = sph
