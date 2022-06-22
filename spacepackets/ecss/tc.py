@@ -12,6 +12,7 @@ from spacepackets.ccsds.spacepacket import (
     PacketTypes,
     SPACE_PACKET_HEADER_SIZE,
     SpacePacket,
+    PacketId,
 )
 from spacepackets.util import get_printable_data_string, PrintFormats
 from spacepackets.ecss.conf import (
@@ -219,12 +220,12 @@ class PusTelecommand:
             ),
             app_data_len=len(app_data),
         )
-        self.space_packet_header = SpacePacketHeader(
+        self.sp_header = SpacePacketHeader(
             apid=apid,
             sec_header_flag=bool(secondary_header_flag),
             packet_type=PacketTypes.TC,
-            data_length=data_length,
-            ssc=ssc,
+            data_len=data_length,
+            seq_count=ssc,
         )
         self._app_data = app_data
         self._valid = True
@@ -238,7 +239,7 @@ class PusTelecommand:
         app_data: bytes = bytes([]),
     ) -> PusTelecommand:
         pus_tc = cls.__empty()
-        pus_tc.space_packet_header = sph
+        pus_tc.sp_header = sph
         pus_tc.pus_tc_sec_header = dfh
         pus_tc._app_data = app_data
         return pus_tc
@@ -250,7 +251,7 @@ class PusTelecommand:
     def __repr__(self):
         """Returns the representation of a class instance."""
         return (
-            f"PusTelecommand.from_composite_fields(sph={self.space_packet_header!r}, "
+            f"PusTelecommand.from_composite_fields(sph={self.sp_header!r}, "
             f"dfh={self.pus_tc_sec_header!r}, app_data={self.app_data!r})"
         )
 
@@ -259,13 +260,13 @@ class PusTelecommand:
         return (
             f"PUS TC[{self.pus_tc_sec_header.service_type}, "
             f"{self.pus_tc_sec_header.service_subtype}], APID {self.apid:#05x}, "
-            f"SSC {self.space_packet_header.ssc}, Size {self.packet_len}"
+            f"SSC {self.sp_header.seq_count}, Size {self.packet_len}"
         )
 
     def to_ccsds_packet(self):
         """Retrieve generic CCSDS space packet"""
         return SpacePacket(
-            self.space_packet_header, self.pus_tc_sec_header.pack(), self._app_data
+            self.sp_header, self.pus_tc_sec_header.pack(), self._app_data
         )
 
     @property
@@ -275,7 +276,7 @@ class PusTelecommand:
     def pack(self) -> bytearray:
         """Serializes the TC data fields into a bytearray."""
         packed_data = bytearray()
-        packed_data.extend(self.space_packet_header.pack())
+        packed_data.extend(self.sp_header.pack())
         packed_data.extend(self.pus_tc_sec_header.pack())
         packed_data += self.app_data
         crc_func = mkPredefinedCrcFun(crc_name="crc-ccitt-false")
@@ -287,9 +288,7 @@ class PusTelecommand:
     @classmethod
     def unpack(cls, raw_packet: bytes, pus_version: PusVersion) -> PusTelecommand:
         tc_unpacked = cls.__empty()
-        tc_unpacked.space_packet_header = SpacePacketHeader.unpack(
-            space_packet_raw=raw_packet
-        )
+        tc_unpacked.sp_header = SpacePacketHeader.unpack(space_packet_raw=raw_packet)
         tc_unpacked.pus_tc_sec_header = PusTcDataFieldHeader.unpack(
             raw_packet=raw_packet[SPACE_PACKET_HEADER_SIZE:], pus_version=pus_version
         )
@@ -325,7 +324,7 @@ class PusTelecommand:
         The space packet data field is the full length of data field minus one without
         the space packet header.
         """
-        return self.space_packet_header.packet_len
+        return self.sp_header.packet_len
 
     @staticmethod
     def get_data_length(app_data_len: int, secondary_header_len: int) -> int:
@@ -358,16 +357,16 @@ class PusTelecommand:
         return self.pus_tc_sec_header.service_subtype
 
     @property
-    def ssc(self) -> int:
-        return self.space_packet_header.ssc
+    def seq_count(self) -> int:
+        return self.sp_header.seq_count
 
     @property
     def apid(self) -> int:
-        return self.space_packet_header.apid
+        return self.sp_header.apid
 
     @property
-    def packet_id(self) -> int:
-        return self.space_packet_header.packet_id
+    def packet_id(self) -> PacketId:
+        return self.sp_header.packet_id
 
     @property
     def app_data(self) -> bytes:

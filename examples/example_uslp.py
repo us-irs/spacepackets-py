@@ -32,10 +32,10 @@ def main():
     # Wrap the data into a space packet
     space_packet_wrapper = SpacePacketHeader(
         packet_type=PacketTypes.TC,
-        sequence_flags=SequenceFlags.UNSEGMENTED,
+        seq_flags=SequenceFlags.UNSEGMENTED,
         apid=SPACECRAFT_ID,
-        data_length=len(data) - 1,
-        ssc=0,
+        data_len=len(data) - 1,
+        seq_count=0,
     )
     tfdz = space_packet_wrapper.pack() + data
     tfdf = TransferFrameDataField(

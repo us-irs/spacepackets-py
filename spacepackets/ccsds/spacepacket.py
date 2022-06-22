@@ -20,6 +20,45 @@ class SequenceFlags(enum.IntEnum):
     UNSEGMENTED = 0b11
 
 
+class PacketSeqCtrl:
+    def __init__(self, seq_flags: SequenceFlags, seq_count: int):
+        if seq_count > pow(2, 14) - 1 or seq_count < 0:
+            raise ValueError(
+                f"Sequence count larger than allowed {pow(2, 14) - 1} or negative"
+            )
+        self.seq_flags = seq_flags
+        self.seq_count = seq_count
+
+    def __repr__(self):
+        return (
+            f"{self.__class__.__name__}(seq_flags={self.seq_flags!r}, "
+            f"seq_count={self.seq_count!r})"
+        )
+
+    def raw(self) -> int:
+        return self.seq_flags << 14 | self.seq_count
+
+
+class PacketId:
+    def __init__(self, ptype: PacketTypes, sec_header_flag: bool, apid: int):
+        if apid > pow(2, 11) - 1 or apid < 0:
+            raise ValueError(
+                f"Invalid APID, exceeds maximum value {pow(2, 11) - 1} or negative"
+            )
+        self.ptype = ptype
+        self.sec_header_flag = sec_header_flag
+        self.apid = apid
+
+    def __repr__(self):
+        return (
+            f"{self.__class__.__name__}(ptype={self.ptype!r}, "
+            f"sec_header_flag={self.sec_header_flag!r}, apid={self.apid!r})"
+        )
+
+    def raw(self) -> int:
+        return self.ptype << 12 | self.sec_header_flag << 11 | self.apid
+
+
 class SpacePacketHeader:
     """This class encapsulates the space packet header.
     Packet reference: Blue Book CCSDS 133.0-B-2"""
@@ -30,87 +69,84 @@ class SpacePacketHeader:
         self,
         packet_type: PacketTypes,
         apid: int,
-        ssc: int,
-        data_length: int,
-        packet_version: int = 0b000,
+        seq_count: int,
+        data_len: int,
         sec_header_flag: bool = True,
-        sequence_flags: SequenceFlags = SequenceFlags.UNSEGMENTED,
+        seq_flags: SequenceFlags = SequenceFlags.UNSEGMENTED,
+        ccsds_version: int = 0b000,
     ):
         """Create a space packet header with the given field parameters
 
         :param packet_type: 0 for Telemetery, 1 for Telecommands
         :param apid: Application Process ID, should not be larger
             than 11 bits, deciaml 2074 or hex 0x7ff
-        :param ssc: Source sequence counter, should not be larger than 0x3fff or
+        :param seq_count: Source sequence counter, should not be larger than 0x3fff or
             decimal 16383
-        :param data_length: Contains a length count C that equals one fewer than the length of the
+        :param data_len: Contains a length count C that equals one fewer than the length of the
             packet data field. Should not be larger than 65535 bytes
-        :param packet_version:
+        :param ccsds_version:
         :param sec_header_flag: Secondary header flag, 1 or True by default
-        :param sequence_flags:
+        :param seq_flags:
         :raises ValueError: On invalid parameters
         """
-        self.packet_type = packet_type
-        if apid > pow(2, 11) - 1 or apid < 0:
-            logger = get_console_logger()
-            logger.warning(
-                f"Invalid APID, exceeds maximum value {pow(2, 11) - 1} or negative"
-            )
-            raise ValueError
-        if ssc > pow(2, 14) - 1 or ssc < 0:
-            logger = get_console_logger()
-            logger.warning(
-                f"Invalid source sequence count, exceeds maximum value {pow(2, 14)- 1} or negative"
-            )
-            raise ValueError
-        if data_length > pow(2, 16) - 1 or data_length < 0:
-            logger = get_console_logger()
-            logger.warning(
+        if data_len > pow(2, 16) - 1 or data_len < 0:
+            raise ValueError(
                 f"Invalid data length value, exceeds maximum value of {pow(2, 16) - 1} or negative"
             )
-            raise ValueError
-        self.apid = apid
-        self.ssc = ssc
-        self.sec_header_flag = sec_header_flag
-        self.sequence_flags = sequence_flags
-        self.psc = get_space_packet_sequence_control(
-            sequence_flags=self.sequence_flags, source_sequence_count=self.ssc
+        self.ccsds_version = ccsds_version
+        self.packet_id = PacketId(
+            ptype=packet_type, sec_header_flag=sec_header_flag, apid=apid
         )
-        self.version = packet_version
-        self.data_length = data_length
-        self.packet_id = get_space_packet_id_num(
-            packet_type=self.packet_type,
-            secondary_header_flag=self.sec_header_flag,
-            apid=self.apid,
-        )
+        self.psc = PacketSeqCtrl(seq_flags=seq_flags, seq_count=seq_count)
+        self.data_len = data_len
 
     @classmethod
     def from_composite_fields(
         cls,
-        packet_id: int,
-        psc: int,
+        packet_id: PacketId,
+        psc: PacketSeqCtrl,
         data_length: int,
         packet_version: int = 0b000,
     ) -> SpacePacketHeader:
         return SpacePacketHeader(
-            packet_type=PacketTypes(packet_id >> 12 & 0x01),
-            packet_version=packet_version,
-            sec_header_flag=bool((packet_id >> 11) & 0x01),
-            data_length=data_length,
-            sequence_flags=SequenceFlags((psc & cls.SEQ_FLAG_MASK) >> 14),
-            ssc=psc & (~cls.SEQ_FLAG_MASK),
-            apid=packet_id & 0x7FF,
+            packet_type=packet_id.ptype,
+            ccsds_version=packet_version,
+            sec_header_flag=packet_id.sec_header_flag,
+            data_len=data_length,
+            seq_flags=psc.seq_flags,
+            seq_count=psc.seq_count,
+            apid=packet_id.apid,
         )
 
     def pack(self) -> bytearray:
         """Serialize raw space packet header into a bytearray, using big endian for each
         2 octet field of the space packet header"""
         header = bytearray()
-        packet_id_with_version = self.version << 13 | self.packet_id
+        packet_id_with_version = self.ccsds_version << 13 | self.packet_id.raw()
         header.extend(struct.pack("!H", packet_id_with_version))
-        header.extend(struct.pack("!H", self.psc))
-        header.extend(struct.pack("!H", self.data_length))
+        header.extend(struct.pack("!H", self.psc.raw()))
+        header.extend(struct.pack("!H", self.data_len))
         return header
+
+    @property
+    def packet_type(self):
+        return self.packet_id.ptype
+
+    @property
+    def apid(self):
+        return self.packet_id.apid
+
+    @property
+    def sec_header_flag(self):
+        return self.packet_id.sec_header_flag
+
+    @property
+    def seq_count(self):
+        return self.psc.seq_count
+
+    @property
+    def seq_flags(self):
+        return self.psc.seq_flags
 
     @property
     def header_len(self) -> int:
@@ -123,7 +159,7 @@ class SpacePacketHeader:
         The space packet data field is the full length of data field minus one without
         the space packet header.
         """
-        return SPACE_PACKET_HEADER_SIZE + self.data_length + 1
+        return SPACE_PACKET_HEADER_SIZE + self.data_len + 1
 
     @classmethod
     def unpack(cls, space_packet_raw: bytes) -> SpacePacketHeader:
@@ -145,24 +181,18 @@ class SpacePacketHeader:
             packet_type=packet_type,
             apid=apid,
             sec_header_flag=bool(secondary_header_flag),
-            packet_version=packet_version,
-            data_length=struct.unpack("!H", space_packet_raw[4:6])[0],
-            sequence_flags=SequenceFlags(sequence_flags),
-            ssc=ssc,
-        )
-
-    def __str__(self):
-        return (
-            f"Space Packet with Packet ID 0x{self.packet_id:04x}, APID {self.apid}, "
-            f"SSC {self.ssc}, Data Length {self.data_length}"
+            ccsds_version=packet_version,
+            data_len=struct.unpack("!H", space_packet_raw[4:6])[0],
+            seq_flags=SequenceFlags(sequence_flags),
+            seq_count=ssc,
         )
 
     def __repr__(self):
         return (
-            f"{self.__class__.__name__}(packet_version={self.version!r}, "
-            f"packet_type={self.packet_type!r}, apid={self.apid!r}, ssc={self.ssc!r}),"
-            f"data_length={self.data_length!r}, sec_header_flag={self.sec_header_flag!r},"
-            f"sequence_flags={self.sequence_flags!r}"
+            f"{self.__class__.__name__}(packet_version={self.ccsds_version!r}, "
+            f"packet_type={self.packet_type!r}, apid={self.apid!r}, seq_cnt={self.seq_count!r}),"
+            f"data_len={self.data_len!r}, sec_header_flag={self.sec_header_flag!r},"
+            f"seq_flags={self.seq_flags!r}"
         )
 
 
@@ -202,6 +232,18 @@ class SpacePacket:
             packet.extend(self.user_data_field)
         return packet
 
+    @property
+    def apid(self):
+        return self.sph.apid
+
+    @property
+    def seq_count(self):
+        return self.sph.seq_count
+
+    @property
+    def sec_header_flag(self):
+        return self.sph.sec_header_flag
+
 
 def get_space_packet_id_bytes(
     packet_type: PacketTypes,
@@ -228,38 +270,15 @@ def get_space_packet_id_bytes(
     return byte_one, byte_two
 
 
-def get_space_packet_id_num(
+def get_sp_packet_id_raw(
     packet_type: PacketTypes, secondary_header_flag: bool, apid: int
 ) -> int:
     """Get packet identification segment of packet primary header in integer format"""
-    return (packet_type << 12 | int(secondary_header_flag) << 11 | apid) & 0x1FFF
+    return PacketId(packet_type, secondary_header_flag, apid).raw()
 
 
-def get_space_packet_sequence_control(
-    sequence_flags: SequenceFlags, source_sequence_count: int
-) -> int:
-    """Get sequence control in integer format"""
-    if sequence_flags > SequenceFlags.UNSEGMENTED:
-        logger = get_console_logger()
-        logger.warning("Sequence flag value larger than 0b11")
-        raise ValueError
-    if source_sequence_count > 0x3FFF:
-        logger = get_console_logger()
-        logger.warning(
-            "get_sp_packet_sequence_control: Source sequence count largen than 0x3fff"
-        )
-        raise ValueError
-    return (source_sequence_count & 0x3FFF) | (sequence_flags << 14)
-
-
-def get_space_packet_header(
-    packet_id: int, packet_sequence_control: int, data_length: int
-) -> bytearray:
-    """Retrieve raw space packet header from the three required values"""
-    header = SpacePacketHeader.from_composite_fields(
-        packet_id, packet_sequence_control, data_length
-    )
-    return header.pack()
+def get_sp_psc_raw(seq_flags: SequenceFlags, seq_count: int) -> int:
+    return PacketSeqCtrl(seq_flags=seq_flags, seq_count=seq_count).raw()
 
 
 def get_apid_from_raw_space_packet(raw_packet: bytes) -> int:

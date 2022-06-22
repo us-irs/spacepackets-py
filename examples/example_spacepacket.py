@@ -5,7 +5,7 @@ from spacepackets.util import get_printable_data_string, PrintFormats
 def main():
     print("-- Space Packet examples --")
     spacepacket_header = SpacePacketHeader(
-        packet_type=PacketTypes.TC, apid=0x01, ssc=0, data_length=0
+        packet_type=PacketTypes.TC, apid=0x01, seq_count=0, data_len=0
     )
     header_as_bytes = spacepacket_header.pack()
     print_string = get_printable_data_string(

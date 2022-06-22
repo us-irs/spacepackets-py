@@ -44,7 +44,7 @@ class TestTelecommand(TestCase):
         print(repr(pus_17_telecommand))
         print(pus_17_telecommand)
         self.assertTrue(pus_17_telecommand.valid)
-        self.assertTrue(pus_17_telecommand.packet_id == (0x18 << 8 | 0x00))
+        self.assertTrue(pus_17_telecommand.packet_id.raw() == (0x18 << 8 | 0x00))
         self.assertTrue(pus_17_telecommand.app_data == bytearray())
         self.assertTrue(pus_17_telecommand.apid == get_default_tc_apid())
 
@@ -66,7 +66,7 @@ class TestTelecommand(TestCase):
         )
         self.assertTrue(pus_17_telecommand_invalid.service == 0)
         self.assertTrue(pus_17_telecommand_invalid.subservice == 0)
-        self.assertTrue(pus_17_telecommand_invalid.ssc == 0)
+        self.assertTrue(pus_17_telecommand_invalid.seq_count == 0)
 
         invalid_input = "hello"
         self.assertTrue(
@@ -89,7 +89,7 @@ class TestTelecommand(TestCase):
         self.assertEqual(pus_17_unpacked.service, 17)
         self.assertEqual(pus_17_unpacked.subservice, 1)
         self.assertEqual(pus_17_unpacked.valid, True)
-        self.assertEqual(pus_17_unpacked.ssc, 25)
+        self.assertEqual(pus_17_unpacked.seq_count, 25)
 
         self.assertRaises(
             ValueError,
@@ -179,7 +179,7 @@ class TestTelecommand(TestCase):
 
     def test_getter_functions(self):
         pus_17_telecommand = PusTelecommand(service=17, subservice=1, ssc=25)
-        self.assertTrue(pus_17_telecommand.ssc == 25)
+        self.assertTrue(pus_17_telecommand.seq_count == 25)
         self.assertTrue(pus_17_telecommand.service == 17)
         self.assertTrue(pus_17_telecommand.subservice == 1)
 
@@ -200,7 +200,7 @@ class TestTelemetry(TestCase):
         self.assertEqual(pus_17_tm.get_source_data_string(PrintFormats.BIN), "bin []")
         self.assertEqual(pus_17_tm.subservice, 2)
         self.assertEqual(pus_17_tm.service, 17)
-        self.assertEqual(pus_17_tm.ssc, 22)
+        self.assertEqual(pus_17_tm.seq_count, 22)
         self.assertEqual(pus_17_tm.packet_len, 22)
         pus_17_raw = pus_17_tm.pack()
         self.assertEqual(get_service_from_raw_pus_packet(raw_bytearray=pus_17_raw), 17)
@@ -228,7 +228,7 @@ class TestTelemetry(TestCase):
         self.assertEqual(pus_17_tm.pus_tm_sec_header.pus_version, PusVersion.PUS_C)
         self.assertTrue(pus_17_tm.valid)
         self.assertEqual(pus_17_tm.tm_data, source_data)
-        self.assertEqual(pus_17_tm.packet_id, 0x0822)
+        self.assertEqual(pus_17_tm.packet_id.raw(), 0x0822)
         pus_17_tm.print_full_packet_string(PrintFormats.HEX)
         self.assertEqual(pus_17_tm.packet_len, 24)
         crc16 = pus_17_tm.crc16
@@ -262,7 +262,7 @@ class TestTelemetry(TestCase):
         )
         self.assertTrue(pus_17_tm_unpacked.valid)
         self.assertEqual(pus_17_tm_unpacked.tm_data, source_data)
-        self.assertEqual(pus_17_tm_unpacked.packet_id, 0x0822)
+        self.assertEqual(pus_17_tm_unpacked.packet_id.raw(), 0x0822)
         self.assertRaises(ValueError, PusTelemetry.unpack, None, PusVersion.PUS_C)
         self.assertRaises(
             ValueError, PusTelemetry.unpack, bytearray(), PusVersion.PUS_C

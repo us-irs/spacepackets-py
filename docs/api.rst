@@ -31,3 +31,11 @@ spacepackets.log module
    :members:
    :undoc-members:
    :show-inheritance:
+
+spacepackets.util module
+-----------------------
+
+.. automodule:: spacepackets.util
+   :members:
+   :undoc-members:
+   :show-inheritance:

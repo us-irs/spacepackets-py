@@ -76,9 +76,9 @@ class PusTelemetry:
             apid=apid,
             packet_type=packet_type,
             sec_header_flag=secondary_header_flag,
-            packet_version=packet_version,
-            data_length=data_length,
-            ssc=ssc,
+            ccsds_version=packet_version,
+            data_len=data_length,
+            seq_count=ssc,
         )
         self.pus_tm_sec_header = PusTmSecondaryHeader(
             pus_version=pus_version,
@@ -144,7 +144,7 @@ class PusTelemetry:
             space_packet_raw=raw_telemetry
         )
         expected_packet_len = get_total_space_packet_len_from_len_field(
-            pus_tm.space_packet_header.data_length
+            pus_tm.space_packet_header.data_len
         )
         if expected_packet_len > len(raw_telemetry):
             logger = get_console_logger()
@@ -168,7 +168,7 @@ class PusTelemetry:
             logger = get_console_logger()
             logger.warning(
                 f"PusTelemetry: Packet length field "
-                f"{pus_tm.space_packet_header.data_length} might be invalid!"
+                f"{pus_tm.space_packet_header.data_len} might be invalid!"
             )
             logger.warning(f"Packet size from size field: {pus_tm.packet_len}")
             logger.warning(f"Length of raw telemetry: {len(raw_telemetry)}")
@@ -237,7 +237,7 @@ class PusTelemetry:
         return self._source_data
 
     @property
-    def packet_id(self) -> int:
+    def packet_id(self):
         return self.space_packet_header.packet_id
 
     def __perform_crc_check(self, raw_telemetry: bytes):
@@ -300,11 +300,11 @@ class PusTelemetry:
         return self.space_packet_header.apid
 
     @property
-    def ssc(self) -> int:
+    def seq_count(self) -> int:
         """Get the source sequence count
         :return: Source Sequence Count (see below, or PUS documentation)
         """
-        return self.space_packet_header.ssc
+        return self.space_packet_header.seq_count
 
     @property
     def crc16(self) -> int:
