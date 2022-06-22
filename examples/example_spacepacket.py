@@ -1,5 +1,4 @@
 from spacepackets.ccsds.spacepacket import SpacePacketHeader, PacketTypes
-from spacepackets.util import get_printable_data_string, PrintFormats
 
 
 def main():
@@ -8,10 +7,7 @@ def main():
         packet_type=PacketTypes.TC, apid=0x01, seq_count=0, data_len=0
     )
     header_as_bytes = spacepacket_header.pack()
-    print_string = get_printable_data_string(
-        print_format=PrintFormats.HEX, data=header_as_bytes
-    )
-    print(f"Space packet header: {print_string}")
+    print(f"Space packet header (hex): [{header_as_bytes.hex(sep=',')}]")
 
 
 if __name__ == "__main__":
