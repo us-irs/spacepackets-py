@@ -32,128 +32,72 @@ except ImportError:
 
 
 class PusTcDataFieldHeader:
+    PUS_C_SEC_HEADER_LEN = 5
+
     def __init__(
         self,
-        service_type: int,
-        service_subtype: int,
+        service: int,
+        subservice: int,
         source_id: int = 0,
-        pus_version: PusVersion = PusVersion.PUS_C,
         ack_flags: int = 0b1111,
-        secondary_header_flag: int = 0,
-        add_source_id: bool = True,
     ):
         """Create a PUS TC data field header instance
 
-        :param service_type:
-        :param service_subtype:
+        :param service:
+        :param subservice:
         :param source_id:
-        :param pus_version:
         :param ack_flags:
-        :param secondary_header_flag:
-        :param add_source_id: For PUS A, the source ID is optional. For PUS C, this field will
-            be ignored
         """
-        self.service_type = service_type
-        self.service_subtype = service_subtype
+        self.service = service
+        self.subservice = subservice
         self.source_id = source_id
-        self.pus_tc_version = pus_version
+        self.pus_version = PusVersion.PUS_C
         self.ack_flags = ack_flags
-        self.add_source_id = add_source_id
-        if self.pus_tc_version == PusVersion.PUS_A:
-            self.pus_version_and_ack_byte = (
-                secondary_header_flag << 7 | self.pus_tc_version << 4 | ack_flags
-            )
-        elif self.pus_tc_version == PusVersion.PUS_C:
-            self.pus_version_and_ack_byte = self.pus_tc_version << 4 | ack_flags
-
-    def set_add_source_id(self, add: bool):
-        self.add_source_id = add
 
     def pack(self) -> bytearray:
         header_raw = bytearray()
-        header_raw.append(self.pus_version_and_ack_byte)
-        header_raw.append(self.service_type)
-        header_raw.append(self.service_subtype)
-        if self.pus_tc_version == PusVersion.PUS_C:
-            header_raw.append(self.source_id << 8 & 0xFF)
-            header_raw.append(self.source_id & 0xFF)
-        elif self.pus_tc_version == PusVersion.PUS_A and self.add_source_id:
-            # PUS A includes optional source ID field as well
-            header_raw.append(self.source_id)
+        header_raw.append(self.pus_version << 4 | self.ack_flags)
+        header_raw.append(self.service)
+        header_raw.append(self.subservice)
+        header_raw.extend(struct.pack("!H", self.source_id))
         return header_raw
 
     @classmethod
-    def unpack(
-        cls,
-        raw_packet: bytes,
-        pus_version: PusVersion = PusVersion.PUS_C,
-        has_source_id: bool = True,
-    ) -> PusTcDataFieldHeader:
+    def unpack(cls, raw_packet: bytes) -> PusTcDataFieldHeader:
         """Unpack a TC data field header.
 
         :param raw_packet: Start of raw data belonging to the TC data field header
-        :param pus_version:
-        :param has_source_id:
         :return:
         """
-        min_expected_len = cls.get_header_size(
-            pus_version=pus_version, add_source_id=has_source_id
-        )
+        min_expected_len = cls.get_header_size()
         if len(raw_packet) < min_expected_len:
-            logger = get_console_logger()
-            logger.warning(
+            raise ValueError(
                 f"Passed bytearray too short, expected minimum length {min_expected_len}"
             )
-            raise ValueError
         version_and_ack_byte = raw_packet[0]
-        secondary_header_flag = 0
-        if pus_version == PusVersion.PUS_C:
-            pus_tc_version = (version_and_ack_byte & 0xF0) >> 4
-            if pus_tc_version != PusVersion.PUS_C:
-                logger = get_console_logger()
-                logger.warning(
-                    f"PUS C expected but TC version field missmatch detected. "
-                    f"Expected {PusVersion.PUS_C}, got {pus_tc_version}"
-                )
-                raise ValueError
-        elif pus_version == PusVersion.PUS_A:
-            pus_tc_version = (version_and_ack_byte & 0x70) >> 4
-            if pus_tc_version != PusVersion.PUS_A:
-                logger = get_console_logger()
-                logger.warning(
-                    f"PUS A expected but TC version field missmatch detected. "
-                    f"Expected {PusVersion.PUS_A}, got {pus_tc_version}"
-                )
-                raise ValueError
-            secondary_header_flag = (version_and_ack_byte & 0x80) >> 7
+        pus_version = (version_and_ack_byte & 0xF0) >> 4
+        if pus_version != PusVersion.PUS_C:
+            raise ValueError("This implementation only supports PUS C")
         ack_flags = version_and_ack_byte & 0x0F
         service = raw_packet[1]
         subservice = raw_packet[2]
-        source_id = 0
-        if pus_version == PusVersion.PUS_C:
-            source_id = raw_packet[3] << 8 | raw_packet[4]
-        else:
-            if has_source_id:
-                source_id = raw_packet[3]
+        source_id = struct.unpack("!H", raw_packet[3:5])[0]
         return cls(
-            service_type=service,
-            service_subtype=subservice,
-            secondary_header_flag=secondary_header_flag,
+            service=service,
+            subservice=subservice,
             ack_flags=ack_flags,
             source_id=source_id,
-            pus_version=pus_version,
-            add_source_id=has_source_id,
         )
 
-    @staticmethod
-    def get_header_size(pus_version: PusVersion, add_source_id: bool = True):
-        if pus_version == PusVersion.PUS_A:
-            if add_source_id:
-                return 4
-            else:
-                return 3
-        elif pus_version == PusVersion.PUS_C:
-            return 5
+    def __repr__(self):
+        return (
+            f"{self.__class__.__name__}(service={self.service!r}, subservice={self.subservice!r},"
+            f" ack_flags={self.ack_flags!r} "
+        )
+
+    @classmethod
+    def get_header_size(cls):
+        return cls.PUS_C_SEC_HEADER_LEN
 
 
 class PusTelecommand:
@@ -169,7 +113,6 @@ class PusTelecommand:
         app_data: bytes = bytes([]),
         ssc: int = 0,
         source_id: int = 0,
-        pus_version: PusVersion = PusVersion.GLOBAL_CONFIG,
         ack_flags: int = 0b1111,
         apid: int = FETCH_GLOBAL_APID,
     ):
@@ -184,40 +127,24 @@ class PusTelecommand:
         :param app_data: Application data in the Packet Data Field
         :param source_id: Source ID will be supplied as well. Can be used to distinguish
             different packet sources (e.g. different ground stations)
-        :param pus_version:  PUS TC version. 1 for ECSS-E-70-41A
         :raises ValueError: Invalid input parameters
         """
         if apid == -1:
             apid = get_default_tc_apid()
-        if pus_version == PusVersion.GLOBAL_CONFIG:
-            pus_version = get_pus_tc_version()
         secondary_header_flag = 1
         logger = get_console_logger()
-        if subservice > 255:
-            logger.warning("Subservice value invalid. Setting to 0")
-            subservice = 0
-        if service > 255:
-            logger.warning("Service value invalid. Setting to 0")
-            service = 0
-        # SSC can have maximum of 14 bits
-        if ssc > pow(2, 14) - 1:
-            logger.warning("SSC invalid, setting to 0")
-            ssc = 0
         if len(app_data) > get_max_tc_packet_size():
             logger.warning(
                 "Application data of PUS packet exceeds maximum allowed size"
             )
         self.pus_tc_sec_header = PusTcDataFieldHeader(
-            service_type=service,
-            service_subtype=subservice,
+            service=service,
+            subservice=subservice,
             ack_flags=ack_flags,
             source_id=source_id,
-            pus_version=pus_version,
         )
         data_length = self.get_data_length(
-            secondary_header_len=self.pus_tc_sec_header.get_header_size(
-                pus_version=pus_version
-            ),
+            secondary_header_len=self.pus_tc_sec_header.get_header_size(),
             app_data_len=len(app_data),
         )
         self.sp_header = SpacePacketHeader(
@@ -256,14 +183,14 @@ class PusTelecommand:
         """Returns the representation of a class instance."""
         return (
             f"{self.__class__.__name__}.from_composite_fields(sph={self.sp_header!r}, "
-            f"dfh={self.pus_tc_sec_header!r}, app_data={self.app_data!r})"
+            f"sec_header={self.pus_tc_sec_header!r}, app_data={self.app_data!r})"
         )
 
     def __str__(self):
         """Returns string representation of a class instance."""
         return (
-            f"PUS TC[{self.pus_tc_sec_header.service_type}, "
-            f"{self.pus_tc_sec_header.service_subtype}], APID {self.apid:#05x}, "
+            f"PUS TC[{self.pus_tc_sec_header.service}, "
+            f"{self.pus_tc_sec_header.service}], APID {self.apid:#05x}, "
             f"SSC {self.sp_header.seq_count}, Size {self.packet_len}"
         )
 
@@ -290,15 +217,14 @@ class PusTelecommand:
         return packed_data
 
     @classmethod
-    def unpack(cls, raw_packet: bytes, pus_version: PusVersion) -> PusTelecommand:
+    def unpack(cls, raw_packet: bytes) -> PusTelecommand:
         tc_unpacked = cls.__empty()
         tc_unpacked.sp_header = SpacePacketHeader.unpack(space_packet_raw=raw_packet)
         tc_unpacked.pus_tc_sec_header = PusTcDataFieldHeader.unpack(
-            raw_packet=raw_packet[SPACE_PACKET_HEADER_SIZE:], pus_version=pus_version
+            raw_packet=raw_packet[SPACE_PACKET_HEADER_SIZE:]
         )
         header_len = (
-            SPACE_PACKET_HEADER_SIZE
-            + tc_unpacked.pus_tc_sec_header.get_header_size(pus_version=pus_version)
+            SPACE_PACKET_HEADER_SIZE + tc_unpacked.pus_tc_sec_header.get_header_size()
         )
         expected_packet_len = tc_unpacked.packet_len
         if len(raw_packet) < expected_packet_len:
@@ -354,11 +280,11 @@ class PusTelecommand:
 
     @property
     def service(self) -> int:
-        return self.pus_tc_sec_header.service_type
+        return self.pus_tc_sec_header.service
 
     @property
     def subservice(self) -> int:
-        return self.pus_tc_sec_header.service_subtype
+        return self.pus_tc_sec_header.subservice
 
     @property
     def seq_count(self) -> int:

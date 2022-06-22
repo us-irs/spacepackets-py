@@ -123,6 +123,15 @@ class CdsShortTimestamp(CcsdsTimeCode):
         )
         return cls(ccsds_days=ccsds_days, ms_of_day=ms_of_day)
 
+    def __repr__(self):
+        return (
+            f"{self.__class__.__name__}(ccsds_days={self.ccsds_days!r}, "
+            f"ms_of_day={self.ms_of_day!r})"
+        )
+
+    def __str__(self):
+        return f"Date: {self.time_string} with representation {self!r}"
+
     @staticmethod
     def init_from_current_time() -> CdsShortTimestamp:
         """Returns a seven byte CDS short timestamp with the current time"""

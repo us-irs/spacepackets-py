@@ -44,22 +44,22 @@ class PusTmSecondaryHeader:
 
     def __init__(
         self,
-        service_id: int,
-        subservice_id: int,
+        service: int,
+        subservice: int,
         time: CdsShortTimestamp,
         message_counter: int,
-        destination_id: int = 0,
+        dest_id: int = 0,
         spacecraft_time_ref: int = 0,
         pus_version: PusVersion = PusVersion.GLOBAL_CONFIG,
     ):
         """Create a PUS telemetry secondary header object.
 
         :param pus_version: PUS version. ESA PUS is not supported
-        :param service_id:
-        :param subservice_id:
+        :param service:
+        :param subservice:
         :param time: Time field
         :param message_counter: 8 bit counter for PUS A, 16 bit counter for PUS C
-        :param destination_id: Destination ID if PUS C is used
+        :param dest_id: Destination ID if PUS C is used
         :param spacecraft_time_ref: Space time reference if PUS C is used
         """
         self.pus_version = pus_version
@@ -71,8 +71,12 @@ class PusTmSecondaryHeader:
         ):
             raise ValueError
         self.spacecraft_time_ref = spacecraft_time_ref
-        self.service_id = service_id
-        self.subservice_id = subservice_id
+        if service > pow(2, 8) - 1 or service < 0:
+            raise ValueError(f"Invalid Service {service}")
+        if subservice > pow(2, 8) - 1 or subservice < 0:
+            raise ValueError(f"Invalid Subservice {subservice}")
+        self.service = service
+        self.subservice = subservice
         if (
             self.pus_version == PusVersion.PUS_A and message_counter > pow(2, 8) - 1
         ) or (
@@ -80,15 +84,15 @@ class PusTmSecondaryHeader:
         ):
             raise ValueError
         self.message_counter = message_counter
-        self.destination_id = destination_id
+        self.dest_id = dest_id
         self.time = time
 
     @classmethod
     def __empty(cls) -> PusTmSecondaryHeader:
         return PusTmSecondaryHeader(
             pus_version=PusVersion.PUS_C,
-            service_id=-1,
-            subservice_id=-1,
+            service=0,
+            subservice=0,
             time=CdsShortTimestamp.init_from_current_time(),
             message_counter=0,
         )
@@ -99,15 +103,15 @@ class PusTmSecondaryHeader:
             secondary_header.append((self.pus_version & 0x07) << 4)
         elif self.pus_version == PusVersion.PUS_C:
             secondary_header.append(self.pus_version << 4 | self.spacecraft_time_ref)
-        secondary_header.append(self.service_id)
-        secondary_header.append(self.subservice_id)
+        secondary_header.append(self.service)
+        secondary_header.append(self.subservice)
         if self.pus_version == PusVersion.PUS_A:
             secondary_header.append(self.message_counter)
         elif self.pus_version == PusVersion.PUS_C:
             secondary_header.append((self.message_counter & 0xFF00) >> 8)
             secondary_header.append(self.message_counter & 0xFF)
-            secondary_header.append((self.destination_id & 0xFF00) >> 8)
-            secondary_header.append(self.destination_id & 0xFF)
+            secondary_header.append((self.dest_id & 0xFF00) >> 8)
+            secondary_header.append(self.dest_id & 0xFF)
         secondary_header.extend(self.time.pack())
         return secondary_header
 
@@ -159,9 +163,9 @@ class PusTmSecondaryHeader:
             )
             raise ValueError
         current_idx += 1
-        secondary_header.service_id = header_start[current_idx]
+        secondary_header.service = header_start[current_idx]
         current_idx += 1
-        secondary_header.subservice_id = header_start[current_idx]
+        secondary_header.subservice = header_start[current_idx]
         current_idx += 1
         if pus_version == PusVersion.PUS_A:
             secondary_header.message_counter = header_start[current_idx]
@@ -172,7 +176,7 @@ class PusTmSecondaryHeader:
             )
             current_idx += 2
         if pus_version == PusVersion.PUS_C:
-            secondary_header.destination_id = (
+            secondary_header.dest_id = (
                 header_start[current_idx] << 8 | header_start[current_idx + 1]
             )
             current_idx += 2
@@ -187,6 +191,14 @@ class PusTmSecondaryHeader:
             ]
         )
         return secondary_header
+
+    def __repr__(self):
+        return (
+            f"{self.__class__.__name__}(service={self.service!r}, subservice={self.subservice!r}, "
+            f"time={self.time!r}, message_counter={self.message_counter!r}, "
+            f"dest_id={self.dest_id!r}, spacecraft_time_ref={self.spacecraft_time_ref!r}, "
+            f"pus_version={self.pus_version!r})"
+        )
 
     @property
     def header_size(self) -> int:
@@ -244,10 +256,10 @@ class PusTelemetry:
         )
         self.pus_tm_sec_header = PusTmSecondaryHeader(
             pus_version=pus_version,
-            service_id=service,
-            subservice_id=subservice,
+            service=service,
+            subservice=subservice,
             message_counter=message_counter,
-            destination_id=destination_id,
+            dest_id=destination_id,
             spacecraft_time_ref=space_time_ref,
             time=time,
         )
@@ -361,8 +373,8 @@ class PusTelemetry:
 
     def __str__(self):
         return (
-            f"PUS TM[{self.pus_tm_sec_header.service_id},"
-            f"{self.pus_tm_sec_header.subservice_id}], APID {self.apid:#05x}, MSG Counter "
+            f"PUS TM[{self.pus_tm_sec_header.service},"
+            f"{self.pus_tm_sec_header.subservice}], APID {self.apid:#05x}, MSG Counter "
             f"{self.pus_tm_sec_header.message_counter}, Size {self.packet_len}"
         )
 
@@ -378,14 +390,14 @@ class PusTelemetry:
         """Get the service type ID
         :return: Service ID
         """
-        return self.pus_tm_sec_header.service_id
+        return self.pus_tm_sec_header.service
 
     @property
     def subservice(self) -> int:
         """Get the subservice type ID
         :return: Subservice ID
         """
-        return self.pus_tm_sec_header.subservice_id
+        return self.pus_tm_sec_header.subservice
 
     @property
     def valid(self) -> bool:
