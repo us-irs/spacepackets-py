@@ -18,7 +18,6 @@ from spacepackets.util import get_printable_data_string, PrintFormats
 from spacepackets.ecss.conf import (
     get_default_tc_apid,
     PusVersion,
-    get_pus_tc_version,
     get_max_tc_packet_size,
     FETCH_GLOBAL_APID,
 )
