@@ -11,6 +11,7 @@ from spacepackets.ccsds.spacepacket import (
     SPACE_PACKET_HEADER_SIZE,
     get_total_space_packet_len_from_len_field,
     PacketTypes,
+    SpacePacket,
 )
 from spacepackets.ccsds.time import CdsShortTimestamp, read_p_field
 from spacepackets.ecss.conf import (
@@ -79,7 +80,7 @@ class PusTelemetry:
             data_length=data_length,
             ssc=ssc,
         )
-        self.secondary_packet_header = PusTmSecondaryHeader(
+        self.pus_tm_sec_header = PusTmSecondaryHeader(
             pus_version=pus_version,
             service_id=service,
             subservice_id=subservice,
@@ -96,7 +97,10 @@ class PusTelemetry:
         cls, pus_version: PusVersion = PusVersion.GLOBAL_CONFIG
     ) -> PusTelemetry:
         return PusTelemetry(
-            service=0, subservice=0, time=CdsShortTimestamp.init_from_current_time()
+            service=0,
+            subservice=0,
+            time=CdsShortTimestamp.init_from_current_time(),
+            pus_version=pus_version,
         )
 
     def pack(self) -> bytearray:
@@ -105,7 +109,7 @@ class PusTelemetry:
         # PUS Header
         tm_packet_raw.extend(self.space_packet_header.pack())
         # PUS Source Data Field
-        tm_packet_raw.extend(self.secondary_packet_header.pack())
+        tm_packet_raw.extend(self.pus_tm_sec_header.pack())
         # Source Data
         tm_packet_raw.extend(self._source_data)
         # CRC16-CCITT checksum
@@ -149,13 +153,13 @@ class PusTelemetry:
                 f"shorter than specified packet length in PUS header {expected_packet_len}"
             )
             raise ValueError
-        pus_tm.secondary_packet_header = PusTmSecondaryHeader.unpack(
+        pus_tm.pus_tm_sec_header = PusTmSecondaryHeader.unpack(
             header_start=raw_telemetry[SPACE_PACKET_HEADER_SIZE:],
             pus_version=pus_version,
         )
         if (
             expected_packet_len
-            < pus_tm.secondary_packet_header.header_size + SPACE_PACKET_HEADER_SIZE
+            < pus_tm.pus_tm_sec_header.header_size + SPACE_PACKET_HEADER_SIZE
         ):
             logger = get_console_logger()
             logger.warning("Passed packet too short!")
@@ -169,7 +173,7 @@ class PusTelemetry:
             logger.warning(f"Packet size from size field: {pus_tm.packet_len}")
             logger.warning(f"Length of raw telemetry: {len(raw_telemetry)}")
         pus_tm._source_data = raw_telemetry[
-            pus_tm.secondary_packet_header.header_size + SPACE_PACKET_HEADER_SIZE : -2
+            pus_tm.pus_tm_sec_header.header_size + SPACE_PACKET_HEADER_SIZE : -2
         ]
         pus_tm._crc = (
             raw_telemetry[expected_packet_len - 2] << 8
@@ -184,21 +188,26 @@ class PusTelemetry:
     ) -> PusTelemetry:
         pus_tm = cls.__empty()
         pus_tm.space_packet_header = sph
-        pus_tm.secondary_packet_header = sec_header
+        pus_tm.pus_tm_sec_header = sec_header
         pus_tm._tm_data = tm_data
         return pus_tm
 
+    def to_space_packet(self):
+        return SpacePacket(
+            self.space_packet_header, self.pus_tm_sec_header.pack(), self._source_data
+        )
+
     def __str__(self):
         return (
-            f"PUS TM[{self.secondary_packet_header.service_id},"
-            f"{self.secondary_packet_header.subservice_id}], APID {self.apid:#05x}, MSG Counter "
-            f"{self.secondary_packet_header.message_counter}, Size {self.packet_len}"
+            f"PUS TM[{self.pus_tm_sec_header.service_id},"
+            f"{self.pus_tm_sec_header.subservice_id}], APID {self.apid:#05x}, MSG Counter "
+            f"{self.pus_tm_sec_header.message_counter}, Size {self.packet_len}"
         )
 
     def __repr__(self):
         return (
             f"PusTelemetry.from_composite_fields({self.__class__.__name__}"
-            f"(sph={self.space_packet_header!r}, sec_header={self.secondary_packet_header!r}, "
+            f"(sph={self.space_packet_header!r}, sec_header={self.pus_tm_sec_header!r}, "
             f"tm_data={self.tm_data!r}"
         )
 
@@ -207,14 +216,14 @@ class PusTelemetry:
         """Get the service type ID
         :return: Service ID
         """
-        return self.secondary_packet_header.service_id
+        return self.pus_tm_sec_header.service_id
 
     @property
     def subservice(self) -> int:
         """Get the subservice type ID
         :return: Subservice ID
         """
-        return self.secondary_packet_header.subservice_id
+        return self.pus_tm_sec_header.subservice_id
 
     @property
     def valid(self) -> bool:

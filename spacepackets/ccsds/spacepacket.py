@@ -2,7 +2,7 @@ from __future__ import annotations
 import enum
 import struct
 
-from typing import Tuple, Deque, List, Final
+from typing import Tuple, Deque, List, Final, Optional
 from spacepackets.log import get_console_logger
 
 SPACE_PACKET_HEADER_SIZE: Final = 6
@@ -166,6 +166,43 @@ class SpacePacketHeader:
         )
 
 
+class SpacePacket:
+    """Generic CCSDS space packet which consists of the primary header and can optionally include
+    a secondary header and a user data field.
+
+    If the secondary header flag in the primary header is set, the secondary header in mandatory.
+    If it is not set, the user data is mandatory."""
+
+    def __init__(
+        self,
+        sph: SpacePacketHeader,
+        secondary_header: Optional[bytes],
+        user_data_field: Optional[bytes],
+    ):
+        self.sph = sph
+        self.sec_header = secondary_header
+        self.user_data_field = user_data_field
+
+    def pack(self) -> bytearray:
+        """Pack the raw byte representation of the space packet
+        :raises ValueError: Mandatory fields were not supplied properly"""
+        packet = self.sph.pack()
+        if self.sph.sec_header_flag:
+            if self.sec_header is None:
+                raise ValueError(
+                    "Secondary header flag is set but no secondary header was supplied"
+                )
+            packet.extend(self.sec_header)
+        else:
+            if self.user_data_field is None:
+                raise ValueError(
+                    "Secondary header not present but no user data supplied"
+                )
+        if self.user_data_field is not None:
+            packet.extend(self.user_data_field)
+        return packet
+
+
 def get_space_packet_id_bytes(
     packet_type: PacketTypes,
     secondary_header_flag: True,
@@ -219,14 +256,10 @@ def get_space_packet_header(
     packet_id: int, packet_sequence_control: int, data_length: int
 ) -> bytearray:
     """Retrieve raw space packet header from the three required values"""
-    header = bytearray()
-    header.append((packet_id & 0xFF00) >> 8)
-    header.append(packet_id & 0xFF)
-    header.append((packet_sequence_control & 0xFF00) >> 8)
-    header.append(packet_sequence_control & 0xFF)
-    header.append((data_length & 0xFF00) >> 8)
-    header.append(data_length & 0xFF)
-    return header
+    header = SpacePacketHeader.from_composite_fields(
+        packet_id, packet_sequence_control, data_length
+    )
+    return header.pack()
 
 
 def get_apid_from_raw_space_packet(raw_packet: bytes) -> int:

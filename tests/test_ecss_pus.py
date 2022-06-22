@@ -225,9 +225,7 @@ class TestTelemetry(TestCase):
             "bin [\n0:01000010\n1:00111000\n]",
         )
         self.assertEqual(pus_17_tm.apid, 0x22)
-        self.assertEqual(
-            pus_17_tm.secondary_packet_header.pus_version, PusVersion.PUS_C
-        )
+        self.assertEqual(pus_17_tm.pus_tm_sec_header.pus_version, PusVersion.PUS_C)
         self.assertTrue(pus_17_tm.valid)
         self.assertEqual(pus_17_tm.tm_data, source_data)
         self.assertEqual(pus_17_tm.packet_id, 0x0822)
@@ -235,10 +233,10 @@ class TestTelemetry(TestCase):
         self.assertEqual(pus_17_tm.packet_len, 24)
         crc16 = pus_17_tm.crc16
         crc_string = f"{(crc16 & 0xff00) >> 8:02x},{crc16 & 0xff:02x}"
-        raw_time = pus_17_tm.secondary_packet_header.time.pack()
+        raw_time = pus_17_tm.pus_tm_sec_header.time.pack()
         raw_space_packet_header = pus_17_tm.space_packet_header.pack()
         sp_header_as_str = raw_space_packet_header.hex(sep=",", bytes_per_sep=1)
-        raw_secondary_packet_header = pus_17_tm.secondary_packet_header.pack()
+        raw_secondary_packet_header = pus_17_tm.pus_tm_sec_header.pack()
         self.assertEqual(raw_secondary_packet_header[0], 0x20)
         # Service
         self.assertEqual(raw_secondary_packet_header[1], 17)
@@ -260,7 +258,7 @@ class TestTelemetry(TestCase):
         print(pus_17_tm.__repr__())
         self.assertEqual(pus_17_tm_unpacked.apid, 0x22)
         self.assertEqual(
-            pus_17_tm_unpacked.secondary_packet_header.pus_version, PusVersion.PUS_C
+            pus_17_tm_unpacked.pus_tm_sec_header.pus_version, PusVersion.PUS_C
         )
         self.assertTrue(pus_17_tm_unpacked.valid)
         self.assertEqual(pus_17_tm_unpacked.tm_data, source_data)

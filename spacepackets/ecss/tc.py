@@ -11,6 +11,7 @@ from spacepackets.ccsds.spacepacket import (
     SpacePacketHeader,
     PacketTypes,
     SPACE_PACKET_HEADER_SIZE,
+    SpacePacket,
 )
 from spacepackets.util import get_printable_data_string, PrintFormats
 from spacepackets.ecss.conf import (
@@ -205,7 +206,7 @@ class PusTelecommand:
             logger.warning(
                 "Application data of PUS packet exceeds maximum allowed size"
             )
-        self.data_field_header = PusTcDataFieldHeader(
+        self.pus_tc_sec_header = PusTcDataFieldHeader(
             service_type=service,
             service_subtype=subservice,
             ack_flags=ack_flags,
@@ -213,7 +214,7 @@ class PusTelecommand:
             pus_version=pus_version,
         )
         data_length = self.get_data_length(
-            secondary_header_len=self.data_field_header.get_header_size(
+            secondary_header_len=self.pus_tc_sec_header.get_header_size(
                 pus_version=pus_version
             ),
             app_data_len=len(app_data),
@@ -238,7 +239,7 @@ class PusTelecommand:
     ) -> PusTelecommand:
         pus_tc = cls.__empty()
         pus_tc.space_packet_header = sph
-        pus_tc.data_field_header = dfh
+        pus_tc.pus_tc_sec_header = dfh
         pus_tc._app_data = app_data
         return pus_tc
 
@@ -250,15 +251,21 @@ class PusTelecommand:
         """Returns the representation of a class instance."""
         return (
             f"PusTelecommand.from_composite_fields(sph={self.space_packet_header!r}, "
-            f"dfh={self.data_field_header!r}, app_data={self.app_data!r})"
+            f"dfh={self.pus_tc_sec_header!r}, app_data={self.app_data!r})"
         )
 
     def __str__(self):
         """Returns string representation of a class instance."""
         return (
-            f"PUS TC[{self.data_field_header.service_type}, "
-            f"{self.data_field_header.service_subtype}], APID {self.apid:#05x}, "
+            f"PUS TC[{self.pus_tc_sec_header.service_type}, "
+            f"{self.pus_tc_sec_header.service_subtype}], APID {self.apid:#05x}, "
             f"SSC {self.space_packet_header.ssc}, Size {self.packet_len}"
+        )
+
+    def to_ccsds_packet(self):
+        """Retrieve generic CCSDS space packet"""
+        return SpacePacket(
+            self.space_packet_header, self.pus_tc_sec_header.pack(), self._app_data
         )
 
     @property
@@ -269,7 +276,7 @@ class PusTelecommand:
         """Serializes the TC data fields into a bytearray."""
         packed_data = bytearray()
         packed_data.extend(self.space_packet_header.pack())
-        packed_data.extend(self.data_field_header.pack())
+        packed_data.extend(self.pus_tc_sec_header.pack())
         packed_data += self.app_data
         crc_func = mkPredefinedCrcFun(crc_name="crc-ccitt-false")
         self._crc = crc_func(packed_data)
@@ -283,12 +290,12 @@ class PusTelecommand:
         tc_unpacked.space_packet_header = SpacePacketHeader.unpack(
             space_packet_raw=raw_packet
         )
-        tc_unpacked.data_field_header = PusTcDataFieldHeader.unpack(
+        tc_unpacked.pus_tc_sec_header = PusTcDataFieldHeader.unpack(
             raw_packet=raw_packet[SPACE_PACKET_HEADER_SIZE:], pus_version=pus_version
         )
         header_len = (
             SPACE_PACKET_HEADER_SIZE
-            + tc_unpacked.data_field_header.get_header_size(pus_version=pus_version)
+            + tc_unpacked.pus_tc_sec_header.get_header_size(pus_version=pus_version)
         )
         expected_packet_len = tc_unpacked.packet_len
         if len(raw_packet) < expected_packet_len:
@@ -344,11 +351,11 @@ class PusTelecommand:
 
     @property
     def service(self) -> int:
-        return self.data_field_header.service_type
+        return self.pus_tc_sec_header.service_type
 
     @property
     def subservice(self) -> int:
-        return self.data_field_header.service_subtype
+        return self.pus_tc_sec_header.service_subtype
 
     @property
     def ssc(self) -> int:
