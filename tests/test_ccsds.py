@@ -12,11 +12,26 @@ from spacepackets.ccsds.spacepacket import (
     parse_space_packets,
     PacketId,
     PacketSeqCtrl,
+    SpacePacket,
 )
 from spacepackets.ecss.tm import PusTelemetry, PusVersion
 
 
 class TestCcsds(TestCase):
+    def test_utility(self):
+        psc = PacketSeqCtrl(
+            seq_flags=SequenceFlags.UNSEGMENTED, seq_count=pow(2, 14) - 1
+        )
+        self.assertEqual(
+            f"{psc}",
+            f"PacketSeqCtrl(seq_flags={SequenceFlags.UNSEGMENTED!r}, seq_count={pow(2, 14) - 1})",
+        )
+        packet_id = PacketId(ptype=PacketTypes.TC, sec_header_flag=True, apid=0x7FF)
+        self.assertEqual(
+            f"{packet_id}",
+            f"PacketId(ptype={PacketTypes.TC!r}, sec_header_flag=True, apid={0x7FF})",
+        )
+
     def test_spacepacket(self):
         sp_header = SpacePacketHeader(
             apid=0x02,
@@ -122,6 +137,25 @@ class TestCcsds(TestCase):
         self.assertEqual(header_tm_back.ccsds_version, 0b000)
         self.assertEqual(header_tm_back.seq_count, 28)
         self.assertEqual(header_tm_back.data_len, 7)
+
+        sph = SpacePacketHeader(
+            PacketTypes.TC,
+            apid=0x22,
+            sec_header_flag=False,
+            seq_flags=SequenceFlags.UNSEGMENTED,
+            data_len=65,
+            seq_count=22,
+        )
+        self.assertEqual(sph.header_len, 6)
+        # User data mandatory
+        with self.assertRaises(ValueError):
+            SpacePacket(sph=sph, secondary_header=None, user_data_field=None).pack()
+        sph.sec_header_flag = True
+        # Secondary header mandatory
+        with self.assertRaises(ValueError):
+            SpacePacket(sph=sph, secondary_header=None, user_data_field=None).pack()
+        sph.packet_type = PacketTypes.TM
+        self.assertEqual(sph.packet_type, PacketTypes.TM)
 
     def test_sp_parser(self):
         tm_packet = PusTelemetry(service=17, subservice=2, pus_version=PusVersion.PUS_C)

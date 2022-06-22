@@ -132,6 +132,10 @@ class SpacePacketHeader:
     def packet_type(self):
         return self.packet_id.ptype
 
+    @packet_type.setter
+    def packet_type(self, packet_type):
+        self.packet_id.ptype = packet_type
+
     @property
     def apid(self):
         return self.packet_id.apid
@@ -139,6 +143,10 @@ class SpacePacketHeader:
     @property
     def sec_header_flag(self):
         return self.packet_id.sec_header_flag
+
+    @sec_header_flag.setter
+    def sec_header_flag(self, value):
+        self.packet_id.sec_header_flag = value
 
     @property
     def seq_count(self):

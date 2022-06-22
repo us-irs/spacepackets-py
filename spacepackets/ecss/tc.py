@@ -235,12 +235,16 @@ class PusTelecommand:
     def from_composite_fields(
         cls,
         sph: SpacePacketHeader,
-        dfh: PusTcDataFieldHeader,
+        sec_header: PusTcDataFieldHeader,
         app_data: bytes = bytes([]),
     ) -> PusTelecommand:
         pus_tc = cls.__empty()
+        if sph.packet_type == PacketTypes.TM:
+            raise ValueError(
+                f"Invalid Packet Type {sph.packet_type} in CCSDS primary header"
+            )
         pus_tc.sp_header = sph
-        pus_tc.pus_tc_sec_header = dfh
+        pus_tc.pus_tc_sec_header = sec_header
         pus_tc._app_data = app_data
         return pus_tc
 
@@ -251,7 +255,7 @@ class PusTelecommand:
     def __repr__(self):
         """Returns the representation of a class instance."""
         return (
-            f"PusTelecommand.from_composite_fields(sph={self.sp_header!r}, "
+            f"{self.__class__.__name__}.from_composite_fields(sph={self.sp_header!r}, "
             f"dfh={self.pus_tc_sec_header!r}, app_data={self.app_data!r})"
         )
 
@@ -263,11 +267,11 @@ class PusTelecommand:
             f"SSC {self.sp_header.seq_count}, Size {self.packet_len}"
         )
 
-    def to_ccsds_packet(self):
+    def to_space_packet(self):
         """Retrieve generic CCSDS space packet"""
-        return SpacePacket(
-            self.sp_header, self.pus_tc_sec_header.pack(), self._app_data
-        )
+        user_data = bytearray(self._app_data)
+        user_data.extend(struct.pack("!H", self._crc))
+        return SpacePacket(self.sp_header, self.pus_tc_sec_header.pack(), user_data)
 
     @property
     def valid(self):

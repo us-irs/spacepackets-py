@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import struct
 from typing import Optional
 
 from crcmod.predefined import mkPredefinedCrcFun
@@ -32,309 +33,6 @@ def get_service_from_raw_pus_packet(raw_bytearray: bytearray) -> int:
     if len(raw_bytearray) < 8:
         raise ValueError
     return raw_bytearray[7]
-
-
-class PusTelemetry:
-    """Generic PUS telemetry class representation.
-    It is instantiated by passing the raw pus telemetry packet (bytearray) to the constructor.
-    It automatically deserializes the packet, exposing various packet fields via getter functions.
-    PUS Telemetry structure according to ECSS-E-70-41A p.46. Also see structure below (bottom).
-    """
-
-    CDS_SHORT_SIZE = 7
-    PUS_TIMESTAMP_SIZE = CDS_SHORT_SIZE
-
-    def __init__(
-        self,
-        service: int,
-        subservice: int,
-        time: Optional[CdsShortTimestamp] = None,
-        source_data: bytearray = bytearray([]),
-        ssc: int = 0,
-        apid: int = FETCH_GLOBAL_APID,
-        message_counter: int = 0,
-        space_time_ref: int = 0b0000,
-        destination_id: int = 0,
-        packet_version: int = 0b000,
-        pus_version: PusVersion = PusVersion.GLOBAL_CONFIG,
-        secondary_header_flag: bool = True,
-    ):
-        if apid == FETCH_GLOBAL_APID:
-            apid = get_default_tm_apid()
-        if pus_version == PusVersion.GLOBAL_CONFIG:
-            pus_version = get_pus_tm_version()
-        if time is None:
-            time = CdsShortTimestamp.init_from_current_time()
-        # packet type for telemetry is 0 as specified in standard
-        # specified in standard
-        packet_type = PacketTypes.TM
-        self._source_data = source_data
-        data_length = self.get_source_data_length(
-            timestamp_len=PusTelemetry.PUS_TIMESTAMP_SIZE, pus_version=pus_version
-        )
-        self.space_packet_header = SpacePacketHeader(
-            apid=apid,
-            packet_type=packet_type,
-            sec_header_flag=secondary_header_flag,
-            ccsds_version=packet_version,
-            data_len=data_length,
-            seq_count=ssc,
-        )
-        self.pus_tm_sec_header = PusTmSecondaryHeader(
-            pus_version=pus_version,
-            service_id=service,
-            subservice_id=subservice,
-            message_counter=message_counter,
-            destination_id=destination_id,
-            spacecraft_time_ref=space_time_ref,
-            time=time,
-        )
-        self._valid = True
-        self._crc16 = 0
-
-    @classmethod
-    def __empty(
-        cls, pus_version: PusVersion = PusVersion.GLOBAL_CONFIG
-    ) -> PusTelemetry:
-        return PusTelemetry(
-            service=0,
-            subservice=0,
-            time=CdsShortTimestamp.init_from_current_time(),
-            pus_version=pus_version,
-        )
-
-    def pack(self) -> bytearray:
-        """Serializes the PUS telemetry into a raw packet."""
-        tm_packet_raw = bytearray()
-        # PUS Header
-        tm_packet_raw.extend(self.space_packet_header.pack())
-        # PUS Source Data Field
-        tm_packet_raw.extend(self.pus_tm_sec_header.pack())
-        # Source Data
-        tm_packet_raw.extend(self._source_data)
-        # CRC16-CCITT checksum
-        crc_func = mkPredefinedCrcFun(crc_name="crc-ccitt-false")
-        self._crc16 = crc_func(tm_packet_raw)
-        tm_packet_raw.append((self._crc16 & 0xFF00) >> 8)
-        tm_packet_raw.append(self._crc16 & 0xFF)
-        return tm_packet_raw
-
-    @classmethod
-    def unpack(
-        cls,
-        raw_telemetry: bytes,
-        pus_version: PusVersion = PusVersion.GLOBAL_CONFIG,
-    ) -> PusTelemetry:
-        """Attempts to construct a generic PusTelemetry class given a raw bytearray.
-        :param pus_version:
-        :raises ValueError: if the format of the raw bytearray is invalid, for example the length
-        :param raw_telemetry:
-        """
-        if raw_telemetry is None:
-            logger = get_console_logger()
-            logger.warning("Given byte stream invalid!")
-            raise ValueError
-        elif len(raw_telemetry) == 0:
-            logger = get_console_logger()
-            logger.warning("Given byte stream is empty")
-            raise ValueError
-        pus_tm = cls.__empty(pus_version=pus_version)
-        pus_tm._valid = False
-        pus_tm.space_packet_header = SpacePacketHeader.unpack(
-            space_packet_raw=raw_telemetry
-        )
-        expected_packet_len = get_total_space_packet_len_from_len_field(
-            pus_tm.space_packet_header.data_len
-        )
-        if expected_packet_len > len(raw_telemetry):
-            logger = get_console_logger()
-            logger.warning(
-                f"PusTelemetry: Passed packet with length {len(raw_telemetry)} "
-                f"shorter than specified packet length in PUS header {expected_packet_len}"
-            )
-            raise ValueError
-        pus_tm.pus_tm_sec_header = PusTmSecondaryHeader.unpack(
-            header_start=raw_telemetry[SPACE_PACKET_HEADER_SIZE:],
-            pus_version=pus_version,
-        )
-        if (
-            expected_packet_len
-            < pus_tm.pus_tm_sec_header.header_size + SPACE_PACKET_HEADER_SIZE
-        ):
-            logger = get_console_logger()
-            logger.warning("Passed packet too short!")
-            raise ValueError
-        if pus_tm.packet_len != len(raw_telemetry):
-            logger = get_console_logger()
-            logger.warning(
-                f"PusTelemetry: Packet length field "
-                f"{pus_tm.space_packet_header.data_len} might be invalid!"
-            )
-            logger.warning(f"Packet size from size field: {pus_tm.packet_len}")
-            logger.warning(f"Length of raw telemetry: {len(raw_telemetry)}")
-        pus_tm._source_data = raw_telemetry[
-            pus_tm.pus_tm_sec_header.header_size + SPACE_PACKET_HEADER_SIZE : -2
-        ]
-        pus_tm._crc = (
-            raw_telemetry[expected_packet_len - 2] << 8
-            | raw_telemetry[expected_packet_len - 1]
-        )
-        pus_tm.__perform_crc_check(raw_telemetry=raw_telemetry[:expected_packet_len])
-        return pus_tm
-
-    @classmethod
-    def from_composite_fields(
-        cls, sph: SpacePacketHeader, sec_header: PusTmSecondaryHeader, tm_data: bytes
-    ) -> PusTelemetry:
-        pus_tm = cls.__empty()
-        pus_tm.space_packet_header = sph
-        pus_tm.pus_tm_sec_header = sec_header
-        pus_tm._tm_data = tm_data
-        return pus_tm
-
-    def to_space_packet(self):
-        return SpacePacket(
-            self.space_packet_header, self.pus_tm_sec_header.pack(), self._source_data
-        )
-
-    def __str__(self):
-        return (
-            f"PUS TM[{self.pus_tm_sec_header.service_id},"
-            f"{self.pus_tm_sec_header.subservice_id}], APID {self.apid:#05x}, MSG Counter "
-            f"{self.pus_tm_sec_header.message_counter}, Size {self.packet_len}"
-        )
-
-    def __repr__(self):
-        return (
-            f"PusTelemetry.from_composite_fields({self.__class__.__name__}"
-            f"(sph={self.space_packet_header!r}, sec_header={self.pus_tm_sec_header!r}, "
-            f"tm_data={self.tm_data!r}"
-        )
-
-    @property
-    def service(self) -> int:
-        """Get the service type ID
-        :return: Service ID
-        """
-        return self.pus_tm_sec_header.service_id
-
-    @property
-    def subservice(self) -> int:
-        """Get the subservice type ID
-        :return: Subservice ID
-        """
-        return self.pus_tm_sec_header.subservice_id
-
-    @property
-    def valid(self) -> bool:
-        return self._valid
-
-    @property
-    def tm_data(self) -> bytearray:
-        """
-        :return: TM application data (raw)
-        """
-        return self._source_data
-
-    @property
-    def packet_id(self):
-        return self.space_packet_header.packet_id
-
-    def __perform_crc_check(self, raw_telemetry: bytes):
-        # CRC16-CCITT checksum
-        crc_func = mkPredefinedCrcFun(crc_name="crc-ccitt-false")
-        full_packet_size = self.packet_len
-        data_to_check = raw_telemetry[:full_packet_size]
-        crc = crc_func(data_to_check)
-        if crc == 0:
-            self._valid = True
-        else:
-            logger = get_console_logger()
-            logger.warning("Invalid CRC detected !")
-            self._valid = False
-
-    def get_source_data_length(
-        self, timestamp_len: int, pus_version: PusVersion
-    ) -> int:
-        """Retrieve size of TM packet data header in bytes.
-        Formula according to PUS Standard: C = (Number of octets in packet source data field) - 1.
-        The size of the TM packet is the size of the packet secondary header with
-        the timestamp + the length of the application data + PUS timestamp size +
-        length of the CRC16 checksum - 1
-
-        :param timestamp_len: Length of the used timestamp
-        :param pus_version: Used PUS version
-        :raises ValueError: Invalid PUS version
-        """
-        if pus_version == PusVersion.PUS_A:
-            data_length = (
-                PusTmSecondaryHeader.HEADER_SIZE_WITHOUT_TIME_PUS_A
-                + timestamp_len
-                + len(self._source_data)
-                + 1
-            )
-        elif pus_version == PusVersion.PUS_C:
-            data_length = (
-                PusTmSecondaryHeader.HEADER_SIZE_WITHOUT_TIME_PUS_C
-                + timestamp_len
-                + len(self._source_data)
-                + 1
-            )
-        else:
-            logger = get_console_logger()
-            logger.warning(f"PUS version {pus_version} not supported")
-            raise ValueError
-        return data_length
-
-    @property
-    def packet_len(self) -> int:
-        """Retrieve the full packet size when packed
-        :return: Size of the TM packet based on the space packet header data length field.
-        The space packet data field is the full length of data field minus one without
-        the space packet header.
-        """
-        return self.space_packet_header.packet_len
-
-    @property
-    def apid(self) -> int:
-        return self.space_packet_header.apid
-
-    @property
-    def seq_count(self) -> int:
-        """Get the source sequence count
-        :return: Source Sequence Count (see below, or PUS documentation)
-        """
-        return self.space_packet_header.seq_count
-
-    @property
-    def crc16(self) -> int:
-        return self._crc16
-
-    def get_full_packet_string(
-        self, print_format: PrintFormats = PrintFormats.HEX
-    ) -> str:
-        packet_raw = self.pack()
-        return get_printable_data_string(
-            print_format=print_format, data=packet_raw, length=len(packet_raw)
-        )
-
-    def print_full_packet_string(self, print_format: PrintFormats = PrintFormats.HEX):
-        """Print the full TM packet in a clean format."""
-        print(self.get_full_packet_string(print_format=print_format))
-
-    def print_source_data(self, print_format: PrintFormats = PrintFormats.HEX):
-        """Prints the TM source data in a clean format"""
-        print(self.get_source_data_string(print_format=print_format))
-
-    def get_source_data_string(
-        self, print_format: PrintFormats = PrintFormats.HEX
-    ) -> str:
-        """Returns the source data string"""
-        return get_printable_data_string(
-            print_format=print_format,
-            data=self._source_data,
-            length=len(self._source_data),
-        )
 
 
 class PusTmSecondaryHeader:
@@ -496,3 +194,306 @@ class PusTmSecondaryHeader:
             return PusTelemetry.PUS_TIMESTAMP_SIZE + 4
         else:
             return PusTelemetry.PUS_TIMESTAMP_SIZE + 7
+
+
+class PusTelemetry:
+    """Generic PUS telemetry class representation.
+    It is instantiated by passing the raw pus telemetry packet (bytearray) to the constructor.
+    It automatically deserializes the packet, exposing various packet fields via getter functions.
+    PUS Telemetry structure according to ECSS-E-70-41A p.46. Also see structure below (bottom).
+    """
+
+    CDS_SHORT_SIZE = 7
+    PUS_TIMESTAMP_SIZE = CDS_SHORT_SIZE
+
+    def __init__(
+        self,
+        service: int,
+        subservice: int,
+        time: Optional[CdsShortTimestamp] = None,
+        source_data: bytearray = bytearray([]),
+        ssc: int = 0,
+        apid: int = FETCH_GLOBAL_APID,
+        message_counter: int = 0,
+        space_time_ref: int = 0b0000,
+        destination_id: int = 0,
+        packet_version: int = 0b000,
+        pus_version: PusVersion = PusVersion.GLOBAL_CONFIG,
+        secondary_header_flag: bool = True,
+    ):
+        if apid == FETCH_GLOBAL_APID:
+            apid = get_default_tm_apid()
+        if pus_version == PusVersion.GLOBAL_CONFIG:
+            pus_version = get_pus_tm_version()
+        if time is None:
+            time = CdsShortTimestamp.init_from_current_time()
+        # packet type for telemetry is 0 as specified in standard
+        # specified in standard
+        packet_type = PacketTypes.TM
+        self._source_data = source_data
+        data_length = self.get_source_data_length(
+            timestamp_len=PusTelemetry.PUS_TIMESTAMP_SIZE, pus_version=pus_version
+        )
+        self.sp_header = SpacePacketHeader(
+            apid=apid,
+            packet_type=packet_type,
+            sec_header_flag=secondary_header_flag,
+            ccsds_version=packet_version,
+            data_len=data_length,
+            seq_count=ssc,
+        )
+        self.pus_tm_sec_header = PusTmSecondaryHeader(
+            pus_version=pus_version,
+            service_id=service,
+            subservice_id=subservice,
+            message_counter=message_counter,
+            destination_id=destination_id,
+            spacecraft_time_ref=space_time_ref,
+            time=time,
+        )
+        self._valid = True
+        self._crc16 = 0
+
+    @classmethod
+    def __empty(
+        cls, pus_version: PusVersion = PusVersion.GLOBAL_CONFIG
+    ) -> PusTelemetry:
+        return PusTelemetry(
+            service=0,
+            subservice=0,
+            time=CdsShortTimestamp.init_from_current_time(),
+            pus_version=pus_version,
+        )
+
+    def pack(self) -> bytearray:
+        """Serializes the PUS telemetry into a raw packet."""
+        tm_packet_raw = bytearray()
+        # PUS Header
+        tm_packet_raw.extend(self.sp_header.pack())
+        # PUS Source Data Field
+        tm_packet_raw.extend(self.pus_tm_sec_header.pack())
+        # Source Data
+        tm_packet_raw.extend(self._source_data)
+        # CRC16-CCITT checksum
+        crc_func = mkPredefinedCrcFun(crc_name="crc-ccitt-false")
+        self._crc16 = crc_func(tm_packet_raw)
+        tm_packet_raw.extend(struct.pack("!H", self._crc16))
+        return tm_packet_raw
+
+    @classmethod
+    def unpack(
+        cls,
+        raw_telemetry: bytes,
+        pus_version: PusVersion = PusVersion.GLOBAL_CONFIG,
+    ) -> PusTelemetry:
+        """Attempts to construct a generic PusTelemetry class given a raw bytearray.
+        :param pus_version:
+        :raises ValueError: if the format of the raw bytearray is invalid, for example the length
+        :param raw_telemetry:
+        """
+        if raw_telemetry is None:
+            logger = get_console_logger()
+            logger.warning("Given byte stream invalid!")
+            raise ValueError
+        elif len(raw_telemetry) == 0:
+            logger = get_console_logger()
+            logger.warning("Given byte stream is empty")
+            raise ValueError
+        pus_tm = cls.__empty(pus_version=pus_version)
+        pus_tm._valid = False
+        pus_tm.sp_header = SpacePacketHeader.unpack(space_packet_raw=raw_telemetry)
+        expected_packet_len = get_total_space_packet_len_from_len_field(
+            pus_tm.sp_header.data_len
+        )
+        if expected_packet_len > len(raw_telemetry):
+            logger = get_console_logger()
+            logger.warning(
+                f"PusTelemetry: Passed packet with length {len(raw_telemetry)} "
+                f"shorter than specified packet length in PUS header {expected_packet_len}"
+            )
+            raise ValueError
+        pus_tm.pus_tm_sec_header = PusTmSecondaryHeader.unpack(
+            header_start=raw_telemetry[SPACE_PACKET_HEADER_SIZE:],
+            pus_version=pus_version,
+        )
+        if (
+            expected_packet_len
+            < pus_tm.pus_tm_sec_header.header_size + SPACE_PACKET_HEADER_SIZE
+        ):
+            logger = get_console_logger()
+            logger.warning("Passed packet too short!")
+            raise ValueError
+        if pus_tm.packet_len != len(raw_telemetry):
+            logger = get_console_logger()
+            logger.warning(
+                f"PusTelemetry: Packet length field "
+                f"{pus_tm.sp_header.data_len} might be invalid!"
+            )
+            logger.warning(f"Packet size from size field: {pus_tm.packet_len}")
+            logger.warning(f"Length of raw telemetry: {len(raw_telemetry)}")
+        pus_tm._source_data = raw_telemetry[
+            pus_tm.pus_tm_sec_header.header_size + SPACE_PACKET_HEADER_SIZE : -2
+        ]
+        pus_tm._crc = struct.unpack(
+            "!H", raw_telemetry[expected_packet_len - 2 : expected_packet_len]
+        )[0]
+        pus_tm.__perform_crc_check(raw_telemetry=raw_telemetry[:expected_packet_len])
+        return pus_tm
+
+    @classmethod
+    def from_composite_fields(
+        cls, sph: SpacePacketHeader, sec_header: PusTmSecondaryHeader, tm_data: bytes
+    ) -> PusTelemetry:
+        pus_tm = cls.__empty()
+        if sph.packet_type == PacketTypes.TC:
+            raise ValueError(
+                f"Invalid Packet Type {sph.packet_type} in CCSDS primary header"
+            )
+        pus_tm.sp_header = sph
+        pus_tm.pus_tm_sec_header = sec_header
+        pus_tm._source_data = tm_data
+        return pus_tm
+
+    def to_space_packet(self):
+        user_data = bytearray(self._source_data)
+        user_data.extend(struct.pack("!H", self.crc16))
+        return SpacePacket(self.sp_header, self.pus_tm_sec_header.pack(), user_data)
+
+    def __str__(self):
+        return (
+            f"PUS TM[{self.pus_tm_sec_header.service_id},"
+            f"{self.pus_tm_sec_header.subservice_id}], APID {self.apid:#05x}, MSG Counter "
+            f"{self.pus_tm_sec_header.message_counter}, Size {self.packet_len}"
+        )
+
+    def __repr__(self):
+        return (
+            f"{self.__class__.__name__}.from_composite_fields({self.__class__.__name__}"
+            f"(sph={self.sp_header!r}, sec_header={self.pus_tm_sec_header!r}, "
+            f"tm_data={self.tm_data!r}"
+        )
+
+    @property
+    def service(self) -> int:
+        """Get the service type ID
+        :return: Service ID
+        """
+        return self.pus_tm_sec_header.service_id
+
+    @property
+    def subservice(self) -> int:
+        """Get the subservice type ID
+        :return: Subservice ID
+        """
+        return self.pus_tm_sec_header.subservice_id
+
+    @property
+    def valid(self) -> bool:
+        return self._valid
+
+    @property
+    def tm_data(self) -> bytearray:
+        """
+        :return: TM application data (raw)
+        """
+        return self._source_data
+
+    @property
+    def packet_id(self):
+        return self.sp_header.packet_id
+
+    def __perform_crc_check(self, raw_telemetry: bytes):
+        # CRC16-CCITT checksum
+        crc_func = mkPredefinedCrcFun(crc_name="crc-ccitt-false")
+        full_packet_size = self.packet_len
+        data_to_check = raw_telemetry[:full_packet_size]
+        crc = crc_func(data_to_check)
+        if crc == 0:
+            self._valid = True
+        else:
+            logger = get_console_logger()
+            logger.warning("Invalid CRC detected !")
+            self._valid = False
+
+    def get_source_data_length(
+        self, timestamp_len: int, pus_version: PusVersion
+    ) -> int:
+        """Retrieve size of TM packet data header in bytes.
+        Formula according to PUS Standard: C = (Number of octets in packet source data field) - 1.
+        The size of the TM packet is the size of the packet secondary header with
+        the timestamp + the length of the application data + PUS timestamp size +
+        length of the CRC16 checksum - 1
+
+        :param timestamp_len: Length of the used timestamp
+        :param pus_version: Used PUS version
+        :raises ValueError: Invalid PUS version
+        """
+        if pus_version == PusVersion.PUS_A:
+            data_length = (
+                PusTmSecondaryHeader.HEADER_SIZE_WITHOUT_TIME_PUS_A
+                + timestamp_len
+                + len(self._source_data)
+                + 1
+            )
+        elif pus_version == PusVersion.PUS_C:
+            data_length = (
+                PusTmSecondaryHeader.HEADER_SIZE_WITHOUT_TIME_PUS_C
+                + timestamp_len
+                + len(self._source_data)
+                + 1
+            )
+        else:
+            logger = get_console_logger()
+            logger.warning(f"PUS version {pus_version} not supported")
+            raise ValueError
+        return data_length
+
+    @property
+    def packet_len(self) -> int:
+        """Retrieve the full packet size when packed
+        :return: Size of the TM packet based on the space packet header data length field.
+        The space packet data field is the full length of data field minus one without
+        the space packet header.
+        """
+        return self.sp_header.packet_len
+
+    @property
+    def apid(self) -> int:
+        return self.sp_header.apid
+
+    @property
+    def seq_count(self) -> int:
+        """Get the source sequence count
+        :return: Source Sequence Count (see below, or PUS documentation)
+        """
+        return self.sp_header.seq_count
+
+    @property
+    def crc16(self) -> int:
+        return self._crc16
+
+    def get_full_packet_string(
+        self, print_format: PrintFormats = PrintFormats.HEX
+    ) -> str:
+        packet_raw = self.pack()
+        return get_printable_data_string(
+            print_format=print_format, data=packet_raw, length=len(packet_raw)
+        )
+
+    def print_full_packet_string(self, print_format: PrintFormats = PrintFormats.HEX):
+        """Print the full TM packet in a clean format."""
+        print(self.get_full_packet_string(print_format=print_format))
+
+    def print_source_data(self, print_format: PrintFormats = PrintFormats.HEX):
+        """Prints the TM source data in a clean format"""
+        print(self.get_source_data_string(print_format=print_format))
+
+    def get_source_data_string(
+        self, print_format: PrintFormats = PrintFormats.HEX
+    ) -> str:
+        """Returns the source data string"""
+        return get_printable_data_string(
+            print_format=print_format,
+            data=self._source_data,
+            length=len(self._source_data),
+        )

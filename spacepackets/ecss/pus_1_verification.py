@@ -65,7 +65,6 @@ class Service1TM:
         self.tc_ssc = tc_psc & 0x3FFF
 
     def pack(self) -> bytearray:
-        # TODO: Pack TM data according to standard and set it in PUS TM
         return self.pus_tm.pack()
 
     @classmethod

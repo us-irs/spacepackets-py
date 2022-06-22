@@ -159,6 +159,15 @@ class TestTelecommand(TestCase):
             tc_header_pus_c_raw,
             PusVersion.PUS_A,
         )
+        ccsds_packet = pus_17_telecommand.to_space_packet()
+        self.assertEqual(ccsds_packet.apid, pus_17_telecommand.apid)
+        self.assertEqual(ccsds_packet.pack(), pus_17_telecommand.pack())
+        pus_17_from_composite_fields = PusTelecommand.from_composite_fields(
+            sph=pus_17_telecommand.sp_header,
+            sec_header=pus_17_telecommand.pus_tc_sec_header,
+            app_data=pus_17_telecommand.app_data,
+        )
+        self.assertEqual(pus_17_from_composite_fields.pack(), pus_17_telecommand.pack())
 
     def test_crc_16(self):
         pus_17_telecommand = PusTelecommand(service=17, subservice=1, ssc=25)
@@ -234,7 +243,7 @@ class TestTelemetry(TestCase):
         crc16 = pus_17_tm.crc16
         crc_string = f"{(crc16 & 0xff00) >> 8:02x},{crc16 & 0xff:02x}"
         raw_time = pus_17_tm.pus_tm_sec_header.time.pack()
-        raw_space_packet_header = pus_17_tm.space_packet_header.pack()
+        raw_space_packet_header = pus_17_tm.sp_header.pack()
         sp_header_as_str = raw_space_packet_header.hex(sep=",", bytes_per_sep=1)
         raw_secondary_packet_header = pus_17_tm.pus_tm_sec_header.pack()
         self.assertEqual(raw_secondary_packet_header[0], 0x20)
@@ -389,6 +398,20 @@ class TestTelemetry(TestCase):
             time=CdsShortTimestamp.init_from_current_time(),
             message_counter=22,
         )
+
+        ccsds_packet = pus_17_tm.to_space_packet()
+        self.assertEqual(ccsds_packet.apid, pus_17_tm.apid)
+        self.assertEqual(ccsds_packet.pack(), pus_17_tm.pack())
+        self.assertEqual(ccsds_packet.seq_count, pus_17_tm.seq_count)
+        self.assertEqual(ccsds_packet.sec_header_flag, True)
+        pus_17_from_composite_fields = PusTelemetry.from_composite_fields(
+            sph=pus_17_tm.sp_header,
+            sec_header=pus_17_tm.pus_tm_sec_header,
+            tm_data=pus_17_tm.tm_data,
+        )
+        print(pus_17_from_composite_fields.pack().hex(sep=","))
+        print(pus_17_tm.pack().hex(sep=","))
+        self.assertEqual(pus_17_from_composite_fields.pack(), pus_17_tm.pack())
 
     def test_service_17_tm(self):
         srv_17_tm = Service17TM(subservice=2)
