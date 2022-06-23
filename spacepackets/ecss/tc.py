@@ -189,7 +189,7 @@ class PusTelecommand:
         """Returns string representation of a class instance."""
         return (
             f"PUS TC[{self.pus_tc_sec_header.service}, "
-            f"{self.pus_tc_sec_header.service}], APID {self.apid:#05x}, "
+            f"{self.pus_tc_sec_header.subservice}], APID {self.apid:#05x}, "
             f"SSC {self.sp_header.seq_count}, Size {self.packet_len}"
         )
 
