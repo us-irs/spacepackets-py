@@ -15,6 +15,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Remove PUS A support for PUS telecommands
 - Added multiple `__str__` and `__repr__` implementations where
   applicable
+- API simplification, shorter or better keywords for PUS TM and PUS TC
+  constructor calls
 
 ## [v0.9.0]
 
