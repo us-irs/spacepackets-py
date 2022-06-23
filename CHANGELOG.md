@@ -8,6 +8,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [unreleased]
 
+## [v0.10.0] 23.06.2022
+
+- New Helper objects for CCSDS Space Packet subfields, namely new
+  `PacketId` and `PacketSeqCtrl` class
+- Remove PUS A support for PUS telecommands
+- Added multiple `__str__` and `__repr__` implementations where
+  applicable
+
 ## [v0.9.0]
 
 - API improvements, bugfix and general improvements for CCSDS spacepacket
