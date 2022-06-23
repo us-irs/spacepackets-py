@@ -149,11 +149,11 @@ class TestCcsds(TestCase):
         self.assertEqual(sph.header_len, 6)
         # User data mandatory
         with self.assertRaises(ValueError):
-            SpacePacket(sph=sph, secondary_header=None, user_data_field=None).pack()
+            SpacePacket(sp_header=sph, sec_header=None, user_data=None).pack()
         sph.sec_header_flag = True
         # Secondary header mandatory
         with self.assertRaises(ValueError):
-            SpacePacket(sph=sph, secondary_header=None, user_data_field=None).pack()
+            SpacePacket(sp_header=sph, sec_header=None, user_data=None).pack()
         sph.packet_type = PacketTypes.TM
         self.assertEqual(sph.packet_type, PacketTypes.TM)
 

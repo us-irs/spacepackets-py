@@ -3,7 +3,7 @@ from __future__ import annotations
 import struct
 from typing import Optional
 
-from crcmod.predefined import mkPredefinedCrcFun
+from crcmod.predefined import mkPredefinedCrcFun, PredefinedCrc
 
 from spacepackets.util import PrintFormats, get_printable_data_string
 from spacepackets.log import get_console_logger
@@ -277,20 +277,30 @@ class PusTelemetry:
             pus_version=pus_version,
         )
 
-    def pack(self) -> bytearray:
-        """Serializes the PUS telemetry into a raw packet."""
+    def pack(self, calc_crc: bool = True) -> bytearray:
+        """Serializes the packet into a raw bytearray.
+
+        :param calc_crc: Recalculate the CRC. Can be disabled if :py:func:`calc_crc`
+            was called before.
+        """
         tm_packet_raw = bytearray()
-        # PUS Header
         tm_packet_raw.extend(self.sp_header.pack())
-        # PUS Source Data Field
         tm_packet_raw.extend(self.pus_tm_sec_header.pack())
-        # Source Data
         tm_packet_raw.extend(self._source_data)
-        # CRC16-CCITT checksum
-        crc_func = mkPredefinedCrcFun(crc_name="crc-ccitt-false")
-        self._crc16 = crc_func(tm_packet_raw)
+        if calc_crc:
+            # CRC16-CCITT checksum
+            crc_func = mkPredefinedCrcFun(crc_name="crc-ccitt-false")
+            self._crc16 = crc_func(tm_packet_raw)
         tm_packet_raw.extend(struct.pack("!H", self._crc16))
         return tm_packet_raw
+
+    def calc_crc(self):
+        """Can be called to calculate the CRC16"""
+        crc = PredefinedCrc(crc_name="crc-ccitt-false")
+        crc.update(self.sp_header.pack())
+        crc.update(self.pus_tm_sec_header.pack())
+        crc.update(self._source_data)
+        self._crc16 = crc.crcValue
 
     @classmethod
     def unpack(
@@ -354,19 +364,22 @@ class PusTelemetry:
 
     @classmethod
     def from_composite_fields(
-        cls, sph: SpacePacketHeader, sec_header: PusTmSecondaryHeader, tm_data: bytes
+        cls, sp_header: SpacePacketHeader, sec_header: PusTmSecondaryHeader, tm_data: bytes
     ) -> PusTelemetry:
         pus_tm = cls.__empty()
-        if sph.packet_type == PacketTypes.TC:
+        if sp_header.packet_type == PacketTypes.TC:
             raise ValueError(
-                f"Invalid Packet Type {sph.packet_type} in CCSDS primary header"
+                f"Invalid Packet Type {sp_header.packet_type} in CCSDS primary header"
             )
-        pus_tm.sp_header = sph
+        pus_tm.sp_header = sp_header
         pus_tm.pus_tm_sec_header = sec_header
         pus_tm._source_data = tm_data
         return pus_tm
 
     def to_space_packet(self):
+        """Retrieve the generic CCSDS space packet representation. This also calculates the CRC16
+        before converting the PUS TC to a generic Space Packet"""
+        self.calc_crc()
         user_data = bytearray(self._source_data)
         user_data.extend(struct.pack("!H", self.crc16))
         return SpacePacket(self.sp_header, self.pus_tm_sec_header.pack(), user_data)

@@ -24,7 +24,7 @@ from spacepackets.ecss.conf import (
 
 
 try:
-    from crcmod.predefined import mkPredefinedCrcFun
+    from crcmod.predefined import mkPredefinedCrcFun, PredefinedCrc
 except ImportError:
     print("crcmod package not installed!")
     sys.exit(1)
@@ -155,21 +155,21 @@ class PusTelecommand:
         )
         self._app_data = app_data
         self._valid = True
-        self._crc = 0
+        self._crc16 = 0
 
     @classmethod
     def from_composite_fields(
         cls,
-        sph: SpacePacketHeader,
+        sp_header: SpacePacketHeader,
         sec_header: PusTcDataFieldHeader,
         app_data: bytes = bytes([]),
     ) -> PusTelecommand:
         pus_tc = cls.__empty()
-        if sph.packet_type == PacketTypes.TM:
+        if sp_header.packet_type == PacketTypes.TM:
             raise ValueError(
-                f"Invalid Packet Type {sph.packet_type} in CCSDS primary header"
+                f"Invalid Packet Type {sp_header.packet_type} in CCSDS primary header"
             )
-        pus_tc.sp_header = sph
+        pus_tc.sp_header = sp_header
         pus_tc.pus_tc_sec_header = sec_header
         pus_tc._app_data = app_data
         return pus_tc
@@ -193,26 +193,39 @@ class PusTelecommand:
             f"SSC {self.sp_header.seq_count}, Size {self.packet_len}"
         )
 
-    def to_space_packet(self):
-        """Retrieve generic CCSDS space packet"""
+    def to_space_packet(self) -> SpacePacket:
+        """Retrieve the generic CCSDS space packet representation. This also calculates the CRC16
+        before converting the PUS TC to a generic Space Packet"""
+        self.calc_crc()
         user_data = bytearray(self._app_data)
-        user_data.extend(struct.pack("!H", self._crc))
+        user_data.extend(struct.pack("!H", self._crc16))
         return SpacePacket(self.sp_header, self.pus_tc_sec_header.pack(), user_data)
 
     @property
     def valid(self):
         return self._valid
 
-    def pack(self) -> bytearray:
-        """Serializes the TC data fields into a bytearray."""
+    def calc_crc(self):
+        """Can be called to calculate the CRC16"""
+        crc = PredefinedCrc(crc_name="crc-ccitt-false")
+        crc.update(self.sp_header.pack())
+        crc.update(self.pus_tc_sec_header.pack())
+        crc.update(self.app_data)
+        self._crc16 = crc.crcValue
+
+    def pack(self, calc_crc: bool = True) -> bytearray:
+        """Serializes the TC data fields into a bytearray.
+        :param calc_crc: Recalculate the CRC. Can be disabled if :py:func:`calc_crc`
+            was called before
+        """
         packed_data = bytearray()
         packed_data.extend(self.sp_header.pack())
         packed_data.extend(self.pus_tc_sec_header.pack())
         packed_data += self.app_data
-        crc_func = mkPredefinedCrcFun(crc_name="crc-ccitt-false")
-        self._crc = crc_func(packed_data)
-        self._valid = True
-        packed_data.extend(struct.pack("!H", self._crc))
+        if calc_crc:
+            crc_func = mkPredefinedCrcFun(crc_name="crc-ccitt-false")
+            self._crc16 = crc_func(packed_data)
+        packed_data.extend(struct.pack("!H", self._crc16))
         return packed_data
 
     @classmethod
@@ -234,7 +247,7 @@ class PusTelecommand:
             )
             raise ValueError
         tc_unpacked._app_data = raw_packet[header_len : expected_packet_len - 2]
-        tc_unpacked._crc = raw_packet[expected_packet_len - 2 : expected_packet_len]
+        tc_unpacked._crc16 = raw_packet[expected_packet_len - 2 : expected_packet_len]
         crc_func = mkPredefinedCrcFun(crc_name="crc-ccitt-false")
         whole_packet = raw_packet[:expected_packet_len]
         should_be_zero = crc_func(whole_packet)
@@ -300,6 +313,10 @@ class PusTelecommand:
     @property
     def app_data(self) -> bytes:
         return self._app_data
+
+    @property
+    def crc16(self):
+        return self._crc16
 
     def print(self, print_format: PrintFormats = PrintFormats.HEX):
         """Print the raw command in a clean format."""

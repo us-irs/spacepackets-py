@@ -83,7 +83,7 @@ class TestTelecommand(TestCase):
         self.assertEqual(ccsds_packet.apid, pus_17_telecommand.apid)
         self.assertEqual(ccsds_packet.pack(), pus_17_telecommand.pack())
         pus_17_from_composite_fields = PusTelecommand.from_composite_fields(
-            sph=pus_17_telecommand.sp_header,
+            sp_header=pus_17_telecommand.sp_header,
             sec_header=pus_17_telecommand.pus_tc_sec_header,
             app_data=pus_17_telecommand.app_data,
         )
@@ -324,7 +324,7 @@ class TestTelemetry(TestCase):
         self.assertEqual(ccsds_packet.seq_count, pus_17_tm.seq_count)
         self.assertEqual(ccsds_packet.sec_header_flag, True)
         pus_17_from_composite_fields = PusTelemetry.from_composite_fields(
-            sph=pus_17_tm.sp_header,
+            sp_header=pus_17_tm.sp_header,
             sec_header=pus_17_tm.pus_tm_sec_header,
             tm_data=pus_17_tm.tm_data,
         )

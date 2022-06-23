@@ -213,44 +213,50 @@ class SpacePacket:
 
     def __init__(
         self,
-        sph: SpacePacketHeader,
-        secondary_header: Optional[bytes],
-        user_data_field: Optional[bytes],
+        sp_header: SpacePacketHeader,
+        sec_header: Optional[bytes],
+        user_data: Optional[bytes],
     ):
-        self.sph = sph
-        self.sec_header = secondary_header
-        self.user_data_field = user_data_field
+        self.sp_header = sp_header
+        self.sec_header = sec_header
+        self.user_data = user_data
+
+    def __repr__(self):
+        return (
+            f"{self.__class__.__name__}(sph={self.sp_header!r}, "
+            f"sec_header={self.sec_header!r}, user_data={self.user_data!r})"
+        )
 
     def pack(self) -> bytearray:
         """Pack the raw byte representation of the space packet
         :raises ValueError: Mandatory fields were not supplied properly"""
-        packet = self.sph.pack()
-        if self.sph.sec_header_flag:
+        packet = self.sp_header.pack()
+        if self.sp_header.sec_header_flag:
             if self.sec_header is None:
                 raise ValueError(
                     "Secondary header flag is set but no secondary header was supplied"
                 )
             packet.extend(self.sec_header)
         else:
-            if self.user_data_field is None:
+            if self.user_data is None:
                 raise ValueError(
                     "Secondary header not present but no user data supplied"
                 )
-        if self.user_data_field is not None:
-            packet.extend(self.user_data_field)
+        if self.user_data is not None:
+            packet.extend(self.user_data)
         return packet
 
     @property
     def apid(self):
-        return self.sph.apid
+        return self.sp_header.apid
 
     @property
     def seq_count(self):
-        return self.sph.seq_count
+        return self.sp_header.seq_count
 
     @property
     def sec_header_flag(self):
-        return self.sph.sec_header_flag
+        return self.sp_header.sec_header_flag
 
 
 def get_space_packet_id_bytes(
