@@ -364,7 +364,10 @@ class PusTelemetry:
 
     @classmethod
     def from_composite_fields(
-        cls, sp_header: SpacePacketHeader, sec_header: PusTmSecondaryHeader, tm_data: bytes
+        cls,
+        sp_header: SpacePacketHeader,
+        sec_header: PusTmSecondaryHeader,
+        tm_data: bytes,
     ) -> PusTelemetry:
         pus_tm = cls.__empty()
         if sp_header.packet_type == PacketTypes.TC:
