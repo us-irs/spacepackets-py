@@ -5,6 +5,12 @@ from __future__ import annotations
 import enum
 import struct
 
+from spacepackets.ccsds.spacepacket import (
+    PacketId,
+    PacketSeqCtrl,
+    PacketTypes,
+    SequenceFlags,
+)
 from spacepackets.ccsds.time import CdsShortTimestamp
 from spacepackets.ecss.definitions import PusServices
 from spacepackets.ecss.tm import PusVersion, PusTelemetry
@@ -28,9 +34,9 @@ class Service1TM:
     def __init__(
         self,
         subservice: int,
+        tc_packet_id: PacketId,
+        tc_psc: PacketSeqCtrl,
         time: CdsShortTimestamp = None,
-        tc_packet_id: int = 0,
-        tc_psc: int = 0,
         ssc: int = 0,
         source_data: bytearray = bytearray([]),
         apid: int = -1,
@@ -62,14 +68,17 @@ class Service1TM:
         self._error_param2 = -1
         self.tc_packet_id = tc_packet_id
         self.tc_psc = tc_psc
-        self.tc_ssc = tc_psc & 0x3FFF
 
     def pack(self) -> bytearray:
         return self.pus_tm.pack()
 
     @classmethod
     def __empty(cls) -> Service1TM:
-        return cls(subservice=0)
+        return cls(
+            subservice=0,
+            tc_packet_id=PacketId(apid=0, sec_header_flag=False, ptype=PacketTypes.TM),
+            tc_psc=PacketSeqCtrl(SequenceFlags.CONTINUATION_SEGMENT, 0),
+        )
 
     @classmethod
     def unpack(

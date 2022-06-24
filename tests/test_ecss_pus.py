@@ -344,13 +344,10 @@ class TestTelemetry(TestCase):
         self.assertEqual(srv_17_tm_unpacked.pus_tm.subservice, 2)
 
     def test_service_1_tm(self):
-        srv_1_tm = Service1TM(subservice=2)
-        self.assertEqual(srv_1_tm.pus_tm.subservice, 2)
-        # TODO: Not implemented yet
-        """
-        srv_1_tm_raw = srv_1_tm.pack()
-        srv_1_tm_unpacked = Service1TM.unpack(
-            raw_telemetry=srv_1_tm_raw, pus_version=PusVersion.PUS_C
+        pus_tc = PusTelecommand(service=17, subservice=1)
+        srv_1_tm = Service1TM(
+            subservice=2, tc_packet_id=pus_tc.packet_id, tc_psc=pus_tc.packet_seq_ctrl
         )
-        self.assertEqual(srv_1_tm_unpacked.pus_tm.subservice, 2)
-        """
+        self.assertEqual(srv_1_tm.pus_tm.subservice, 2)
+        self.assertEqual(srv_1_tm.tc_packet_id, pus_tc.packet_id)
+        self.assertEqual(srv_1_tm.tc_psc, pus_tc.packet_seq_ctrl)

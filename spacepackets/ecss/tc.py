@@ -13,6 +13,7 @@ from spacepackets.ccsds.spacepacket import (
     SPACE_PACKET_HEADER_SIZE,
     SpacePacket,
     PacketId,
+    PacketSeqCtrl,
 )
 from spacepackets.util import get_printable_data_string, PrintFormats
 from spacepackets.ecss.conf import (
@@ -181,7 +182,7 @@ class PusTelecommand:
     def __repr__(self):
         """Returns the representation of a class instance."""
         return (
-            f"{self.__class__.__name__}.from_composite_fields(sph={self.sp_header!r}, "
+            f"{self.__class__.__name__}.from_composite_fields(sp_header={self.sp_header!r}, "
             f"sec_header={self.pus_tc_sec_header!r}, app_data={self.app_data!r})"
         )
 
@@ -309,6 +310,10 @@ class PusTelecommand:
     @property
     def packet_id(self) -> PacketId:
         return self.sp_header.packet_id
+
+    @property
+    def packet_seq_ctrl(self) -> PacketSeqCtrl:
+        return self.sp_header.psc
 
     @property
     def app_data(self) -> bytes:

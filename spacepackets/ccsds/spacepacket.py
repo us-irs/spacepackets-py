@@ -6,6 +6,8 @@ from typing import Tuple, Deque, List, Final, Optional
 from spacepackets.log import get_console_logger
 
 SPACE_PACKET_HEADER_SIZE: Final = 6
+SEQ_FLAG_MASK = 0xC000
+APID_MASK = 0x7FF
 
 
 class PacketTypes(enum.IntEnum):
@@ -38,6 +40,12 @@ class PacketSeqCtrl:
     def raw(self) -> int:
         return self.seq_flags << 14 | self.seq_count
 
+    @classmethod
+    def from_raw(cls, raw: int):
+        return cls(
+            seq_flags=SequenceFlags((raw >> 14) & 0b11), seq_count=raw & ~SEQ_FLAG_MASK
+        )
+
 
 class PacketId:
     def __init__(self, ptype: PacketTypes, sec_header_flag: bool, apid: int):
@@ -58,12 +66,18 @@ class PacketId:
     def raw(self) -> int:
         return self.ptype << 12 | self.sec_header_flag << 11 | self.apid
 
+    @classmethod
+    def from_raw(cls, raw: int):
+        cls(
+            ptype=PacketTypes((raw >> 12) & 0b1),
+            sec_header_flag=bool(raw >> 11 & 0b1),
+            apid=raw & APID_MASK,
+        )
+
 
 class SpacePacketHeader:
     """This class encapsulates the space packet header.
     Packet reference: Blue Book CCSDS 133.0-B-2"""
-
-    SEQ_FLAG_MASK = 0xC000
 
     def __init__(
         self,
@@ -183,8 +197,8 @@ class SpacePacketHeader:
         secondary_header_flag = (space_packet_raw[0] >> 3) & 0b1
         apid = ((space_packet_raw[0] & 0b111) << 8) | space_packet_raw[1]
         psc = struct.unpack("!H", space_packet_raw[2:4])[0]
-        sequence_flags = (psc & SpacePacketHeader.SEQ_FLAG_MASK) >> 14
-        ssc = psc & (~SpacePacketHeader.SEQ_FLAG_MASK)
+        sequence_flags = (psc & SEQ_FLAG_MASK) >> 14
+        ssc = psc & (~SEQ_FLAG_MASK)
         return SpacePacketHeader(
             packet_type=packet_type,
             apid=apid,

@@ -397,7 +397,7 @@ class PusTelemetry:
     def __repr__(self):
         return (
             f"{self.__class__.__name__}.from_composite_fields({self.__class__.__name__}"
-            f"(sph={self.sp_header!r}, sec_header={self.pus_tm_sec_header!r}, "
+            f"(sp_header={self.sp_header!r}, sec_header={self.pus_tm_sec_header!r}, "
             f"tm_data={self.tm_data!r}"
         )
 
