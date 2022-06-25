@@ -1,6 +1,6 @@
 [![package](https://github.com/robamu-org/py-spacepackets/actions/workflows/package.yml/badge.svg)](https://github.com/robamu-org/py-spacepackets/actions/workflows/package.yml)
 [![Documentation Status](https://readthedocs.org/projects/spacepackets/badge/?version=latest)](https://spacepackets.readthedocs.io/en/latest/?badge=latest)
-[![codecov](https://codecov.io/gh/robamu-org/py-spacepackets/branch/main/graph/badge.svg?token=YFLM60LCVI)](https://codecov.io/gh/robamu-org/py-spacepackets)
+[![codecov](https://codecov.io/gh/us-irs/py-spacepackets/branch/main/graph/badge.svg?token=YFLM60LCVI)](https://codecov.io/gh/us-irs/py-spacepackets)
 [![PyPI version](https://badge.fury.io/py/spacepackets.svg)](https://badge.fury.io/py/spacepackets)
 
 ECSS and CCSDS Spacepackets
