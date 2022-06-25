@@ -1,6 +1,4 @@
 #!/usr/bin/env python3
-import unittest
-
 from unittest import TestCase
 from crcmod import crcmod
 
@@ -27,7 +25,7 @@ from spacepackets.ecss.tm import (
     PusTmSecondaryHeader,
 )
 from spacepackets.ecss.pus_17_test import Service17TM
-from spacepackets.ecss.pus_1_verification import Service1TM
+from spacepackets.ecss.pus_1_verification import Service1TM, RequestId
 
 
 class TestTelecommand(TestCase):
@@ -346,8 +344,9 @@ class TestTelemetry(TestCase):
     def test_service_1_tm(self):
         pus_tc = PusTelecommand(service=17, subservice=1)
         srv_1_tm = Service1TM(
-            subservice=2, tc_packet_id=pus_tc.packet_id, tc_psc=pus_tc.packet_seq_ctrl
+            subservice=2,
+            tc_request_id=RequestId(pus_tc.packet_id, pus_tc.packet_seq_ctrl),
         )
         self.assertEqual(srv_1_tm.pus_tm.subservice, 2)
-        self.assertEqual(srv_1_tm.tc_packet_id, pus_tc.packet_id)
-        self.assertEqual(srv_1_tm.tc_psc, pus_tc.packet_seq_ctrl)
+        self.assertEqual(srv_1_tm.tc_req_id.tc_packet_id, pus_tc.packet_id)
+        self.assertEqual(srv_1_tm.tc_req_id.tc_psc, pus_tc.packet_seq_ctrl)

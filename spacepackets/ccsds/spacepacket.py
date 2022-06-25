@@ -246,7 +246,7 @@ class SpacePacket:
 
     def __repr__(self):
         return (
-            f"{self.__class__.__name__}(sph={self.sp_header!r}, "
+            f"{self.__class__.__name__}(sp_header={self.sp_header!r}, "
             f"sec_header={self.sec_header!r}, user_data={self.user_data!r})"
         )
 

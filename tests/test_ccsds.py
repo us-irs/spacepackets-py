@@ -26,11 +26,22 @@ class TestCcsds(TestCase):
             f"{psc}",
             f"PacketSeqCtrl(seq_flags={SequenceFlags.UNSEGMENTED!r}, seq_count={pow(2, 14) - 1})",
         )
+        psc_raw = psc.raw()
+        self.assertEqual(psc_raw, 0xFFFF)
+        psc_from_raw = PacketSeqCtrl.from_raw(psc_raw)
+        self.assertEqual(psc_from_raw.raw(), psc.raw())
+        self.assertEqual(PacketSeqCtrl.empty().raw(), 0)
+
         packet_id = PacketId(ptype=PacketTypes.TC, sec_header_flag=True, apid=0x7FF)
         self.assertEqual(
             f"{packet_id}",
             f"PacketId(ptype={PacketTypes.TC!r}, sec_header_flag=True, apid={0x7FF})",
         )
+        packet_id_raw = packet_id.raw()
+        self.assertEqual(packet_id_raw, 0x1FFF)
+        packet_id_from_raw = PacketId.from_raw(packet_id_raw)
+        self.assertEqual(packet_id_from_raw.raw(), packet_id.raw())
+        self.assertEqual(PacketId.empty().raw(), 0)
 
     def test_spacepacket(self):
         sp_header = SpacePacketHeader(
@@ -156,6 +167,8 @@ class TestCcsds(TestCase):
             SpacePacket(sp_header=sph, sec_header=None, user_data=None).pack()
         sph.packet_type = PacketTypes.TM
         self.assertEqual(sph.packet_type, PacketTypes.TM)
+        sp = SpacePacket(sp_header=sph, user_data=bytes([0, 1]), sec_header=None)
+        print(sp)
 
     def test_sp_parser(self):
         tm_packet = PusTelemetry(service=17, subservice=2, pus_version=PusVersion.PUS_C)
