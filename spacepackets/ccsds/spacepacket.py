@@ -8,6 +8,7 @@ from spacepackets.log import get_console_logger
 SPACE_PACKET_HEADER_SIZE: Final = 6
 SEQ_FLAG_MASK = 0xC000
 APID_MASK = 0x7FF
+PACKET_ID_MASK = 0x1FFF
 
 
 class PacketTypes(enum.IntEnum):
@@ -41,6 +42,10 @@ class PacketSeqCtrl:
         return self.seq_flags << 14 | self.seq_count
 
     @classmethod
+    def empty(cls):
+        return cls(seq_flags=SequenceFlags.CONTINUATION_SEGMENT, seq_count=0)
+
+    @classmethod
     def from_raw(cls, raw: int):
         return cls(
             seq_flags=SequenceFlags((raw >> 14) & 0b11), seq_count=raw & ~SEQ_FLAG_MASK
@@ -57,6 +62,10 @@ class PacketId:
         self.sec_header_flag = sec_header_flag
         self.apid = apid
 
+    @classmethod
+    def empty(cls):
+        return cls(ptype=PacketTypes.TM, sec_header_flag=False, apid=0)
+
     def __repr__(self):
         return (
             f"{self.__class__.__name__}(ptype={self.ptype!r}, "
@@ -67,8 +76,8 @@ class PacketId:
         return self.ptype << 12 | self.sec_header_flag << 11 | self.apid
 
     @classmethod
-    def from_raw(cls, raw: int):
-        cls(
+    def from_raw(cls, raw: int) -> PacketId:
+        return cls(
             ptype=PacketTypes((raw >> 12) & 0b1),
             sec_header_flag=bool(raw >> 11 & 0b1),
             apid=raw & APID_MASK,
@@ -332,8 +341,7 @@ def parse_space_packets(
     analysis_queue: Deque[bytearray], packet_ids: Tuple[int]
 ) -> List[bytearray]:
     """Given a deque of bytearrays, parse for space packets. Any broken headers will be removed.
-    If a packet is detected and the
-    Any broken tail packets will be reinserted into the given deque
+    If a packet is detected and the broken tail packets will be reinserted into the given deque
     :param analysis_queue:
     :param packet_ids:
     :return:
@@ -353,8 +361,9 @@ def parse_space_packets(
         if current_idx + 6 >= len(concatenated_packets):
             break
         current_packet_id = (
-            concatenated_packets[current_idx] << 8
-        ) | concatenated_packets[current_idx + 1]
+            struct.unpack("!H", concatenated_packets[current_idx : current_idx + 2])[0]
+            & PACKET_ID_MASK
+        )
         if current_packet_id in packet_ids:
             result, current_idx = __handle_packet_id_match(
                 concatenated_packets=concatenated_packets,
@@ -376,10 +385,9 @@ def __handle_packet_id_match(
     current_idx: int,
     tm_list: List[bytearray],
 ) -> (int, int):
-    next_packet_len_field = (
-        concatenated_packets[current_idx + 4] << 8
-    ) | concatenated_packets[current_idx + 5]
-    total_packet_len = get_total_space_packet_len_from_len_field(next_packet_len_field)
+    total_packet_len = get_total_space_packet_len_from_len_field(
+        struct.unpack("!H", concatenated_packets[current_idx + 4 : current_idx + 6])[0]
+    )
     # Might be part of packet. Put back into analysis queue as whole
     if total_packet_len > len(concatenated_packets):
         analysis_queue.appendleft(concatenated_packets)

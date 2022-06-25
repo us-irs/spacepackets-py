@@ -2,15 +2,11 @@
 """Deserialize PUS Service 1 Verification TM
 """
 from __future__ import annotations
+
 import enum
 import struct
 
-from spacepackets.ccsds.spacepacket import (
-    PacketId,
-    PacketSeqCtrl,
-    PacketTypes,
-    SequenceFlags,
-)
+from spacepackets.ccsds.spacepacket import PacketId, PacketSeqCtrl
 from spacepackets.ccsds.time import CdsShortTimestamp
 from spacepackets.ecss.definitions import PusServices
 from spacepackets.ecss.tm import PusVersion, PusTelemetry
@@ -28,14 +24,40 @@ class Subservices(enum.IntEnum):
     TM_COMPLETION_FAILURE = 8
 
 
+class RequestId:
+    def __init__(
+        self, tc_packet_id: PacketId, tc_psc: PacketSeqCtrl, ccsds_version: int = 0b000
+    ):
+        self.tc_packet_id = tc_packet_id
+        self.tc_psc = tc_psc
+        self.ccsds_version = ccsds_version
+
+    @classmethod
+    def empty(cls):
+        return cls(PacketId.empty(), PacketSeqCtrl.empty())
+
+    @classmethod
+    def from_raw(cls, tm_data: bytes) -> RequestId:
+        if len(tm_data) < 4:
+            raise ValueError(
+                "Given Raw TM data too small to parse Request ID. Must be 4 bytes at least"
+            )
+        packet_id_version_raw = struct.unpack("!H", tm_data[0:2])[0]
+        psc_raw = struct.unpack("!H", tm_data[2:4])[0]
+        return cls(
+            ccsds_version=(packet_id_version_raw >> 13) & 0b111,
+            tc_packet_id=PacketId.from_raw(packet_id_version_raw),
+            tc_psc=PacketSeqCtrl.from_raw(psc_raw),
+        )
+
+
 class Service1TM:
     """Service 1 TM class representation. Can be used to deserialize raw service 1 packets."""
 
     def __init__(
         self,
         subservice: int,
-        tc_packet_id: PacketId,
-        tc_psc: PacketSeqCtrl,
+        tc_request_id: RequestId,
         time: CdsShortTimestamp = None,
         ssc: int = 0,
         source_data: bytearray = bytearray([]),
@@ -66,19 +88,14 @@ class Service1TM:
         self._step_number = 0
         self._error_param1 = -1
         self._error_param2 = -1
-        self.tc_packet_id = tc_packet_id
-        self.tc_psc = tc_psc
+        self._tc_req_id = tc_request_id
 
     def pack(self) -> bytearray:
         return self.pus_tm.pack()
 
     @classmethod
     def __empty(cls) -> Service1TM:
-        return cls(
-            subservice=0,
-            tc_packet_id=PacketId(apid=0, sec_header_flag=False, ptype=PacketTypes.TM),
-            tc_psc=PacketSeqCtrl(SequenceFlags.CONTINUATION_SEGMENT, 0),
-        )
+        return cls(subservice=0, tc_request_id=RequestId.empty())
 
     @classmethod
     def unpack(
@@ -97,19 +114,19 @@ class Service1TM:
         service_1_tm.pus_tm = PusTelemetry.unpack(
             raw_telemetry=raw_telemetry, pus_version=pus_version
         )
-        tm_data = service_1_tm.pus_tm.tm_data
-        if len(tm_data) < 4:
-            logger = get_console_logger()
-            logger.warning("TM data less than 4 bytes!")
-            raise ValueError
-        service_1_tm.tc_packet_id = tm_data[0] << 8 | tm_data[1]
-        service_1_tm.tc_psc = tm_data[2] << 8 | tm_data[3]
-        service_1_tm.tc_ssc = service_1_tm.tc_psc & 0x3FFF
-        if service_1_tm.pus_tm.subservice % 2 == 0:
-            service_1_tm._handle_failure_verification()
-        else:
-            service_1_tm._handle_success_verification()
+        cls._unpack_raw_tm(service_1_tm)
         return service_1_tm
+
+    @classmethod
+    def _unpack_raw_tm(cls, instance: Service1TM):
+        tm_data = instance.pus_tm.tm_data
+        if len(tm_data) < 4:
+            raise ValueError("TM data less than 4 bytes")
+        instance.tc_req_id = RequestId.from_raw(tm_data[0:4])
+        if instance.pus_tm.subservice % 2 == 0:
+            instance._handle_failure_verification()
+        else:
+            instance._handle_success_verification()
 
     def _handle_failure_verification(self):
         """Handle parsing a verification failure packet, subservice ID 2, 4, 6 or 8"""
@@ -179,12 +196,12 @@ class Service1TM:
         return self._has_tc_error_code
 
     @property
-    def tc_ssc(self):
-        return self._tc_ssc
+    def tc_req_id(self):
+        return self._tc_req_id
 
-    @tc_ssc.setter
-    def tc_ssc(self, tc_ssc: int):
-        self._tc_ssc = tc_ssc
+    @tc_req_id.setter
+    def tc_req_id(self, value):
+        self._tc_req_id = value
 
     @property
     def error_code(self):

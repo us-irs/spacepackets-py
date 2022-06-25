@@ -430,7 +430,7 @@ class PusTelemetry:
     def packet_id(self):
         return self.sp_header.packet_id
 
-    def __perform_crc_check(self, raw_telemetry: bytes):
+    def __perform_crc_check(self, raw_telemetry: bytes) -> bool:
         # CRC16-CCITT checksum
         crc_func = mkPredefinedCrcFun(crc_name="crc-ccitt-false")
         full_packet_size = self.packet_len
@@ -438,10 +438,11 @@ class PusTelemetry:
         crc = crc_func(data_to_check)
         if crc == 0:
             self._valid = True
-        else:
-            logger = get_console_logger()
-            logger.warning("Invalid CRC detected !")
-            self._valid = False
+            return True
+        logger = get_console_logger()
+        logger.warning("Invalid CRC16 detected")
+        self._valid = False
+        return False
 
     def get_source_data_length(
         self, timestamp_len: int, pus_version: PusVersion
