@@ -9,7 +9,7 @@ class Subservices(enum.IntEnum):
     TM_REPLY = 2
 
 
-class Service17TM:
+class Service17Tm:
     def __init__(
         self,
         subservice: int,
@@ -41,7 +41,7 @@ class Service17TM:
         return self.pus_tm.pack()
 
     @classmethod
-    def __empty(cls) -> Service17TM:
+    def __empty(cls) -> Service17Tm:
         return cls(subservice=0)
 
     @classmethod
@@ -49,7 +49,7 @@ class Service17TM:
         cls,
         raw_telemetry: bytearray,
         pus_version: PusVersion = PusVersion.GLOBAL_CONFIG,
-    ) -> Service17TM:
+    ) -> Service17Tm:
         service_17_tm = cls.__empty()
         service_17_tm.pus_tm = PusTelemetry.unpack(
             raw_telemetry=raw_telemetry, pus_version=pus_version

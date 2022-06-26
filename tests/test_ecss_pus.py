@@ -24,8 +24,8 @@ from spacepackets.ecss.tm import (
     get_service_from_raw_pus_packet,
     PusTmSecondaryHeader,
 )
-from spacepackets.ecss.pus_17_test import Service17TM
-from spacepackets.ecss.pus_1_verification import Service1TM, RequestId
+from spacepackets.ecss.pus_17_test import Service17Tm
+from spacepackets.ecss.pus_1_verification import Service1Tm, RequestId
 
 
 class TestTelecommand(TestCase):
@@ -333,17 +333,17 @@ class TestTelemetry(TestCase):
         print(f"{pus_17_tm!r}")
 
     def test_service_17_tm(self):
-        srv_17_tm = Service17TM(subservice=2)
+        srv_17_tm = Service17Tm(subservice=2)
         self.assertEqual(srv_17_tm.pus_tm.subservice, 2)
         srv_17_tm_raw = srv_17_tm.pack()
-        srv_17_tm_unpacked = Service17TM.unpack(
+        srv_17_tm_unpacked = Service17Tm.unpack(
             raw_telemetry=srv_17_tm_raw, pus_version=PusVersion.PUS_C
         )
         self.assertEqual(srv_17_tm_unpacked.pus_tm.subservice, 2)
 
     def test_service_1_tm(self):
         pus_tc = PusTelecommand(service=17, subservice=1)
-        srv_1_tm = Service1TM(
+        srv_1_tm = Service1Tm(
             subservice=2,
             tc_request_id=RequestId(pus_tc.packet_id, pus_tc.packet_seq_ctrl),
         )
