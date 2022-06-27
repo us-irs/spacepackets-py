@@ -215,9 +215,7 @@ class Service1Tm:
             return self._error_code
         else:
             logger = get_console_logger()
-            logger.warning(
-                "Service1TM: get_error_code: This is not a failure packet, returning 0"
-            )
+            logger.warning("This is not a failure packet, returning 0")
             return 0
 
     @property
@@ -226,7 +224,5 @@ class Service1Tm:
             return self._step_number
         else:
             logger = get_console_logger()
-            logger.warning(
-                "Service1TM: get_step_number: This is not a step reply, returning 0"
-            )
+            logger.warning("This is not a step reply, returning 0")
             return 0

@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [unreleased]
 
+## [v0.11.0] 28.06.2022
+
+- Minor name change for PUS 17 and PUS 1 TM classes
+- New `RequestId` class to encapsulate the field used by the PUS 1 Verification
+  service
+- Update CRC16 handling for TMTC PUS classes. It is possible to calculate the CRC16
+  manually with a dedicated `calc_crc` call and then omit the calculation in
+  the `pack` call with an additional argument.
+
 ## [v0.10.0] 23.06.2022
 
 - New Helper objects for CCSDS Space Packet subfields, namely new
