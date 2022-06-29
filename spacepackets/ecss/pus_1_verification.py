@@ -1,12 +1,11 @@
 # -*- coding: utf-8 -*-
-"""Deserialize PUS Service 1 Verification TM
-"""
+"""ECSS PUS Service 1 Verification"""
 from __future__ import annotations
 
 import enum
 import struct
 
-from spacepackets.ccsds.spacepacket import PacketId, PacketSeqCtrl
+from spacepackets.ccsds.spacepacket import PacketId, PacketSeqCtrl, SpacePacketHeader
 from spacepackets.ccsds.time import CdsShortTimestamp
 from spacepackets.ecss.definitions import PusServices
 from spacepackets.ecss.tm import PusVersion, PusTelemetry
@@ -14,6 +13,7 @@ from spacepackets.log import get_console_logger
 
 
 class Subservices(enum.IntEnum):
+    INVALID = 0
     TM_ACCEPTANCE_SUCCESS = 1
     TM_ACCEPTANCE_FAILURE = 2
     TM_START_SUCCESS = 3
@@ -50,6 +50,14 @@ class RequestId:
             tc_psc=PacketSeqCtrl.from_raw(psc_raw),
         )
 
+    @classmethod
+    def from_sp_header(cls, header: SpacePacketHeader) -> RequestId:
+        return cls(
+            ccsds_version=header.ccsds_version,
+            tc_packet_id=header.packet_id,
+            tc_psc=header.psc
+        )
+
     def pack(self) -> bytes:
         raw = bytearray()
         packet_id_and_version = (self.ccsds_version << 13) | self.tc_packet_id.raw()
@@ -63,7 +71,7 @@ class Service1Tm:
 
     def __init__(
         self,
-        subservice: int,
+        subservice: Subservices,
         tc_request_id: RequestId,
         time: CdsShortTimestamp = None,
         ssc: int = 0,
@@ -101,7 +109,7 @@ class Service1Tm:
 
     @classmethod
     def __empty(cls) -> Service1Tm:
-        return cls(subservice=0, tc_request_id=RequestId.empty())
+        return cls(subservice=Subservices.INVALID, tc_request_id=RequestId.empty())
 
     @classmethod
     def unpack(
@@ -122,6 +130,10 @@ class Service1Tm:
         )
         cls._unpack_raw_tm(service_1_tm)
         return service_1_tm
+
+    @property
+    def subservice(self):
+        return self.pus_tm.subservice
 
     @classmethod
     def _unpack_raw_tm(cls, instance: Service1Tm):
@@ -194,10 +206,6 @@ class Service1Tm:
             return self._error_param2
 
     @property
-    def is_step_reply(self):
-        return self._is_step_reply
-
-    @property
     def has_tc_error_code(self):
         return self._has_tc_error_code
 
@@ -210,19 +218,24 @@ class Service1Tm:
         self._tc_req_id = value
 
     @property
-    def error_code(self):
+    def error_code(self) -> int:
+        """Retrieve error code
+
+        :return Error code or -1 if there is no error code"""
         if self._has_tc_error_code:
             return self._error_code
         else:
-            logger = get_console_logger()
-            logger.warning("This is not a failure packet, returning 0")
-            return 0
+            return -1
+
+    @property
+    def is_step_reply(self):
+        return self._is_step_reply
 
     @property
     def step_number(self):
+        """Retrieve the step number
+        :return step number or -1 if this is not a step reply"""
         if self._is_step_reply:
             return self._step_number
         else:
-            logger = get_console_logger()
-            logger.warning("This is not a step reply, returning 0")
-            return 0
+            return -1
