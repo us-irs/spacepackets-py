@@ -13,7 +13,7 @@ from spacepackets.ecss import PusTelecommand
 from spacepackets.ecss.conf import FETCH_GLOBAL_APID
 from spacepackets.ecss.definitions import PusServices
 from spacepackets.ecss.field import PacketFieldEnum
-from spacepackets.ecss.tm import PusVersion, PusTelemetry
+from spacepackets.ecss.tm import PusTelemetry
 from spacepackets.log import get_console_logger
 
 
@@ -77,8 +77,11 @@ class RequestId:
         )
 
 
+ErrorCode = PacketFieldEnum
+
+
 class FailureNotice:
-    def __init__(self, code: PacketFieldEnum, data: bytes):
+    def __init__(self, code: ErrorCode, data: bytes):
         if (code.pfc % 8) != 0:
             raise ValueError("PFC values for error code must be byte-aligned")
         elif round(code.pfc / 8) not in [1, 2, 4, 8]:
@@ -116,10 +119,13 @@ class UnpackParams:
     bytes_err_code: int = 1
 
 
+StepId = PacketFieldEnum
+
+
 @dataclass
 class VerificationParams:
     req_id: RequestId
-    step_id: Optional[PacketFieldEnum] = None
+    step_id: Optional[StepId] = None
     failure_notice: Optional[FailureNotice] = None
 
     def pack(self) -> bytearray:
@@ -137,6 +143,22 @@ class VerificationParams:
         if self.failure_notice is not None:
             init_len += self.failure_notice.len()
         return init_len
+
+    def verify_against_subservice(self, subservice: Subservices):
+        if subservice % 2 == 0:
+            if self.failure_notice is None:
+                raise InvalidVerifParams("Failure Notice should be something")
+            if subservice == Subservices.TM_STEP_FAILURE and self.step_id is None:
+                raise InvalidVerifParams("Step ID should be something")
+            elif subservice != Subservices.TM_STEP_FAILURE and self.step_id is not None:
+                raise InvalidVerifParams("Step ID should be empty")
+        else:
+            if self.failure_notice is not None:
+                raise InvalidVerifParams("Failure Notice should be empty")
+            if subservice == Subservices.TM_STEP_SUCCESS and self.step_id is None:
+                raise InvalidVerifParams("Step ID should be something")
+            elif subservice != Subservices.TM_STEP_SUCCESS and self.step_id is not None:
+                raise InvalidVerifParams("Step ID should be empty")
 
 
 class InvalidVerifParams(Exception):
@@ -174,29 +196,8 @@ class Service1Tm:
             destination_id=destination_id,
         )
         if verif_params is not None:
-
+            verif_params.verify_against_subservice(subservice)
             self.pus_tm.tm_data = verif_params.pack()
-
-    @staticmethod
-    def verify_params(params: VerificationParams, subservice: Subservices):
-        if subservice % 2 == 0:
-            if params.failure_notice is None:
-                raise InvalidVerifParams("Failure Notice should be something")
-            if subservice == Subservices.TM_STEP_FAILURE and params.step_id is None:
-                raise InvalidVerifParams("Step ID should be something")
-            elif (
-                subservice != Subservices.TM_STEP_FAILURE and params.step_id is not None
-            ):
-                raise InvalidVerifParams("Step ID should be empty")
-        else:
-            if params.failure_notice is not None:
-                raise InvalidVerifParams("Failure Notice should be empty")
-            if subservice == Subservices.TM_STEP_SUCCESS and params.step_id is None:
-                raise InvalidVerifParams("Step ID should be something")
-            elif (
-                subservice != Subservices.TM_STEP_SUCCESS and params.step_id is not None
-            ):
-                raise InvalidVerifParams("Step ID should be empty")
 
     def pack(self) -> bytearray:
         return self.pus_tm.pack()
@@ -286,7 +287,7 @@ class Service1Tm:
         self._verif_params.req_id = value
 
     @property
-    def error_code(self) -> Optional[PacketFieldEnum]:
+    def error_code(self) -> Optional[ErrorCode]:
         if self.has_failure_notice:
             return self._verif_params.failure_notice.code
         else:
@@ -300,7 +301,7 @@ class Service1Tm:
         )
 
     @property
-    def step_id(self) -> Optional[PacketFieldEnum]:
+    def step_id(self) -> Optional[StepId]:
         """Retrieve the step number. Returns NONE if this packet does not have a step ID"""
         return self._verif_params.step_id
 

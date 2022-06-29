@@ -36,6 +36,8 @@ from spacepackets.ecss.pus_1_verification import (
     create_start_failure_tm,
     create_step_failure_tm,
     create_completion_failure_tm,
+    StepId,
+    ErrorCode,
 )
 
 
@@ -244,6 +246,25 @@ class TestTelemetry(TestCase):
             if helper_created is not None:
                 self._test_srv_1_success_tm(pus_tc, helper_created, subservice, step_id)
 
+    def test_verif_params(self):
+        sp_header = SpacePacketHeader(
+            packet_type=PacketTypes.TM,
+            apid=0x22,
+            sec_header_flag=False,
+            seq_count=22,
+            data_len=35,
+        )
+        verif_param = VerificationParams(req_id=RequestId.from_sp_header(sp_header))
+        self.assertEqual(verif_param.len(), 4)
+        verif_param.step_id = StepId(pfc=8, val=12)
+        self.assertEqual(verif_param.len(), 5)
+        verif_param.step_id.pfc = 16
+        self.assertEqual(verif_param.len(), 6)
+        verif_param.failure_notice = FailureNotice(
+            code=ErrorCode(pfc=16, val=22), data=bytes([0, 1, 2])
+        )
+        self.assertEqual(verif_param.len(), 11)
+
     def test_service_1_tm_acceptance_failure(self):
         self._generic_test_srv_1_failure(Subservices.TM_ACCEPTANCE_FAILURE)
 
@@ -336,6 +357,7 @@ class TestTelemetry(TestCase):
         if step_id is not None:
             unpack_params.bytes_step_id = step_id.len()
         srv_1_tm_unpacked = Service1Tm.unpack(srv_1_tm_raw, unpack_params)
+        self.assertEqual(srv_1_tm_unpacked.error_code.val, failure_notice.code.val)
         self.assertEqual(
             srv_1_tm_unpacked.tc_req_id.tc_packet_id.raw(), pus_tc.packet_id.raw()
         )
