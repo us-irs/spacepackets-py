@@ -33,6 +33,9 @@ from spacepackets.ecss.pus_1_verification import (
     create_start_success_tm,
     create_step_success_tm,
     create_completion_success_tm,
+    create_start_failure_tm,
+    create_step_failure_tm,
+    create_completion_failure_tm,
 )
 
 
@@ -233,7 +236,7 @@ class TestTelemetry(TestCase):
                     subservice=subservice,
                     verif_params=VerificationParams(
                         req_id=RequestId(pus_tc.packet_id, pus_tc.packet_seq_ctrl),
-                        step_id=step_id
+                        step_id=step_id,
                     ),
                 ),
                 subservice,
@@ -241,24 +244,17 @@ class TestTelemetry(TestCase):
             if helper_created is not None:
                 self._test_srv_1_success_tm(pus_tc, helper_created, subservice, step_id)
 
-    def test_service_1_tm_failure(self):
-        pus_tc = PusTelecommand(service=17, subservice=1)
-        failure_notice = FailureNotice(
-            code=PacketFieldEnum.from_byte_size(1, 8), data=bytes([2, 4])
-        )
-        self._test_srv_1_acc_failure_tm(
-            pus_tc,
-            Service1Tm(
-                subservice=Subservices.TM_ACCEPTANCE_FAILURE,
-                verif_params=VerificationParams(
-                    req_id=RequestId(pus_tc.packet_id, pus_tc.packet_seq_ctrl),
-                    failure_notice=failure_notice,
-                ),
-            ),
-        )
-        self._test_srv_1_acc_failure_tm(
-            pus_tc, create_acceptance_failure_tm(pus_tc, failure_notice)
-        )
+    def test_service_1_tm_acceptance_failure(self):
+        self._generic_test_srv_1_failure(Subservices.TM_ACCEPTANCE_FAILURE)
+
+    def test_service_1_tm_start_failure(self):
+        self._generic_test_srv_1_failure(Subservices.TM_START_FAILURE)
+
+    def test_service_1_tm_step_failure(self):
+        self._generic_test_srv_1_failure(Subservices.TM_STEP_FAILURE)
+
+    def test_service_1_tm_completion_failure(self):
+        self._generic_test_srv_1_failure(Subservices.TM_COMPLETION_FAILURE)
 
     def _test_srv_1_success_tm(
         self,
@@ -281,16 +277,74 @@ class TestTelemetry(TestCase):
         if step_id is not None and subservice == Subservices.TM_STEP_SUCCESS:
             self.assertEqual(srv_1_tm_unpacked.step_id, step_id)
 
-    def _test_srv_1_acc_failure_tm(self, pus_tc: PusTelecommand, srv_1_tm: Service1Tm):
+    def _generic_test_srv_1_failure(self, subservice: Subservices):
+        pus_tc = PusTelecommand(service=17, subservice=1)
+        failure_notice = FailureNotice(
+            code=PacketFieldEnum.from_byte_size(1, 8), data=bytes([2, 4])
+        )
+        helper_created = None
+        step_id = None
+        if subservice == Subservices.TM_ACCEPTANCE_FAILURE:
+            helper_created = create_acceptance_failure_tm(pus_tc, failure_notice)
+        elif subservice == Subservices.TM_START_FAILURE:
+            helper_created = create_start_failure_tm(pus_tc, failure_notice)
+        elif subservice == Subservices.TM_STEP_FAILURE:
+            step_id = PacketFieldEnum.from_byte_size(2, 12)
+            helper_created = create_step_failure_tm(
+                pus_tc, failure_notice=failure_notice, step_id=step_id
+            )
+        elif subservice == Subservices.TM_COMPLETION_FAILURE:
+            helper_created = create_completion_failure_tm(pus_tc, failure_notice)
+        self._test_srv_1_failure_comparison_helper(
+            pus_tc,
+            Service1Tm(
+                subservice=subservice,
+                verif_params=VerificationParams(
+                    req_id=RequestId(pus_tc.packet_id, pus_tc.packet_seq_ctrl),
+                    failure_notice=failure_notice,
+                    step_id=step_id,
+                ),
+            ),
+            subservice=subservice,
+            failure_notice=failure_notice,
+            step_id=step_id,
+        )
+        if helper_created is not None:
+            self._test_srv_1_failure_comparison_helper(
+                pus_tc=pus_tc,
+                srv_1_tm=helper_created,
+                failure_notice=failure_notice,
+                subservice=subservice,
+                step_id=step_id,
+            )
 
-        self.assertEqual(srv_1_tm.pus_tm.subservice, Subservices.TM_ACCEPTANCE_FAILURE)
+    def _test_srv_1_failure_comparison_helper(
+        self,
+        pus_tc: PusTelecommand,
+        srv_1_tm: Service1Tm,
+        subservice: Subservices,
+        failure_notice: Optional[FailureNotice],
+        step_id: Optional[PacketFieldEnum] = None,
+    ):
+        self.assertEqual(srv_1_tm.pus_tm.subservice, subservice)
         self.assertEqual(srv_1_tm.tc_req_id.tc_packet_id, pus_tc.packet_id)
         self.assertEqual(srv_1_tm.tc_req_id.tc_psc, pus_tc.packet_seq_ctrl)
         srv_1_tm_raw = srv_1_tm.pack()
-        srv_1_tm_unpacked = Service1Tm.unpack(srv_1_tm_raw, UnpackParams(0, 2))
+        unpack_params = UnpackParams()
+        if failure_notice is not None:
+            unpack_params.bytes_err_code = failure_notice.code.len()
+        if step_id is not None:
+            unpack_params.bytes_step_id = step_id.len()
+        srv_1_tm_unpacked = Service1Tm.unpack(srv_1_tm_raw, unpack_params)
         self.assertEqual(
             srv_1_tm_unpacked.tc_req_id.tc_packet_id.raw(), pus_tc.packet_id.raw()
         )
         self.assertEqual(
             srv_1_tm_unpacked.tc_req_id.tc_psc.raw(), pus_tc.packet_seq_ctrl.raw()
         )
+        if failure_notice is not None:
+            self.assertEqual(
+                srv_1_tm_unpacked.failure_notice.pack(), failure_notice.pack()
+            )
+        if step_id is not None:
+            self.assertEqual(srv_1_tm_unpacked.step_id.pack(), step_id.pack())

@@ -70,6 +70,12 @@ class RequestId:
         raw.extend(struct.pack("!H", self.tc_psc.raw()))
         return raw
 
+    def __repr__(self):
+        return (
+            f"{self.__class__.__name__}(tc_packet_id={self.tc_packet_id!r}, "
+            f"tc_psc={self.tc_psc!r}, ccsds_version={self.ccsds_version!r})"
+        )
+
 
 class FailureNotice:
     def __init__(self, code: PacketFieldEnum, data: bytes):
@@ -85,13 +91,23 @@ class FailureNotice:
         data.extend(self.data)
         return data
 
+    def len(self):
+        return self.code.len() + len(self.data)
+
     @classmethod
-    def unpack(cls, data: bytes, num_bytes_err_code: int, num_bytes_data: int):
+    def unpack(
+        cls, data: bytes, num_bytes_err_code: int, num_bytes_data: Optional[int] = None
+    ):
         pfc = num_bytes_err_code * 8
+        if num_bytes_data is None:
+            num_bytes_data = len(data) - num_bytes_err_code
         return cls(
             code=PacketFieldEnum.unpack(data, pfc),
             data=data[num_bytes_err_code : num_bytes_err_code + num_bytes_data],
         )
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}(code={self.code!r}, data={self.data!r})"
 
 
 @dataclass
@@ -106,13 +122,25 @@ class VerificationParams:
     step_id: Optional[PacketFieldEnum] = None
     failure_notice: Optional[FailureNotice] = None
 
-    def pack(self, pack_step_id: bool, pack_failure_notice: bool) -> bytearray:
+    def pack(self) -> bytearray:
         data = bytearray(self.req_id.pack())
-        if self.step_id is not None and pack_step_id:
-            self.step_id.pack()
-        if pack_failure_notice:
+        if self.step_id is not None:
+            data.extend(self.step_id.pack())
+        if self.failure_notice is not None:
             data.extend(self.failure_notice.pack())
         return data
+
+    def len(self):
+        init_len = 4
+        if self.step_id is not None:
+            init_len += self.step_id.len()
+        if self.failure_notice is not None:
+            init_len += self.failure_notice.len()
+        return init_len
+
+
+class InvalidVerifParams(Exception):
+    pass
 
 
 class Service1Tm:
@@ -126,7 +154,6 @@ class Service1Tm:
         seq_count: int = 0,
         apid: int = FETCH_GLOBAL_APID,
         packet_version: int = 0b000,
-        pus_version: PusVersion = PusVersion.GLOBAL_CONFIG,
         secondary_header_flag: bool = True,
         space_time_ref: int = 0b0000,
         destination_id: int = 0,
@@ -147,10 +174,29 @@ class Service1Tm:
             destination_id=destination_id,
         )
         if verif_params is not None:
-            self.pus_tm.tm_data = verif_params.pack(
-                pack_step_id=self.is_step_reply,
-                pack_failure_notice=self.has_failure_notice,
-            )
+
+            self.pus_tm.tm_data = verif_params.pack()
+
+    @staticmethod
+    def verify_params(params: VerificationParams, subservice: Subservices):
+        if subservice % 2 == 0:
+            if params.failure_notice is None:
+                raise InvalidVerifParams("Failure Notice should be something")
+            if subservice == Subservices.TM_STEP_FAILURE and params.step_id is None:
+                raise InvalidVerifParams("Step ID should be something")
+            elif (
+                subservice != Subservices.TM_STEP_FAILURE and params.step_id is not None
+            ):
+                raise InvalidVerifParams("Step ID should be empty")
+        else:
+            if params.failure_notice is not None:
+                raise InvalidVerifParams("Failure Notice should be empty")
+            if subservice == Subservices.TM_STEP_SUCCESS and params.step_id is None:
+                raise InvalidVerifParams("Step ID should be something")
+            elif (
+                subservice != Subservices.TM_STEP_SUCCESS and params.step_id is not None
+            ):
+                raise InvalidVerifParams("Step ID should be empty")
 
     def pack(self) -> bytearray:
         return self.pus_tm.pack()
@@ -206,7 +252,7 @@ class Service1Tm:
         current_idx = 4
         if self.is_step_reply:
             self._verif_params.step_id = PacketFieldEnum.unpack(
-                tm_data[current_idx:], unpack_cfg.bytes_step_id
+                tm_data[current_idx:], unpack_cfg.bytes_step_id * 8
             )
             current_idx += unpack_cfg.bytes_step_id
         self._verif_params.failure_notice = FailureNotice.unpack(

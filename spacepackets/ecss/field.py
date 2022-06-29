@@ -91,13 +91,18 @@ class PacketFieldEnum(PacketFieldBase):
             struct.pack(byte_num_to_unsigned_struct_specifier(num_bytes), self.val)
         )
 
+    def len(self):
+        """Return the length in bytes. This will raise a ValueError for non-byte-aligned
+        PFC values"""
+        return self.check_pfc(self.pfc)
+
     @classmethod
     def unpack(cls, data: bytes, pfc: int):
         num_bytes = cls.check_pfc(pfc)
         return cls(
             pfc,
             struct.unpack(
-                byte_num_to_unsigned_struct_specifier(num_bytes), data[:num_bytes]
+                byte_num_to_unsigned_struct_specifier(num_bytes), data[0:num_bytes]
             )[0],
         )
 
