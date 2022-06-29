@@ -254,13 +254,9 @@ class Service1Tm:
         )
 
     @property
-    def step_id(self):
-        """Retrieve the step number
-        :return step number or -1 if this is not a step reply"""
-        if self.is_step_reply:
-            return self._verif_params.step_id
-        else:
-            return -1
+    def step_id(self) -> Optional[PacketFieldEnum]:
+        """Retrieve the step number. Returns NONE if this packet does not have a step ID"""
+        return self._verif_params.step_id
 
 
 def create_acceptance_success_tm(pus_tc: PusTelecommand) -> Service1Tm:
@@ -301,12 +297,13 @@ def create_start_failure_tm(
     )
 
 
-def create_step_success_tm(pus_tc: PusTelecommand, step_id: PacketFieldEnum) -> Service1Tm:
+def create_step_success_tm(
+    pus_tc: PusTelecommand, step_id: PacketFieldEnum
+) -> Service1Tm:
     return Service1Tm(
         subservice=Subservices.TM_STEP_SUCCESS,
         verif_params=VerificationParams(
-            req_id=RequestId.from_sp_header(pus_tc.sp_header),
-            step_id=step_id
+            req_id=RequestId.from_sp_header(pus_tc.sp_header), step_id=step_id
         ),
     )
 
