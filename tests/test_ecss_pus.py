@@ -25,7 +25,12 @@ from spacepackets.ecss.tm import (
     PusTmSecondaryHeader,
 )
 from spacepackets.ecss.pus_17_test import Service17Tm
-from spacepackets.ecss.pus_1_verification import Service1Tm, RequestId
+from spacepackets.ecss.pus_1_verification import (
+    Service1Tm,
+    RequestId,
+    Subservices,
+    VerificationParams,
+)
 
 
 class TestTelecommand(TestCase):
@@ -120,7 +125,7 @@ class TestTelemetry(TestCase):
             subservice=2,
             pus_version=PusVersion.PUS_C,
             apid=0xEF,
-            ssc=22,
+            seq_count=22,
             source_data=bytearray(),
             time=CdsShortTimestamp.init_from_current_time(),
         )
@@ -140,7 +145,7 @@ class TestTelemetry(TestCase):
         pus_17_tm = PusTelemetry(
             service=17,
             subservice=2,
-            ssc=22,
+            seq_count=22,
             source_data=source_data,
         )
         self.assertEqual(
@@ -225,7 +230,7 @@ class TestTelemetry(TestCase):
         pus_17_a_type = PusTelemetry(
             service=17,
             subservice=2,
-            ssc=22,
+            seq_count=22,
             source_data=bytearray([0x42]),
             pus_version=PusVersion.PUS_A,
         )
@@ -254,7 +259,7 @@ class TestTelemetry(TestCase):
         pus_17_a_type = PusTelemetry(
             service=17,
             subservice=4,
-            ssc=34,
+            seq_count=34,
             source_data=bytearray([0x42, 0x38]),
         )
         self.assertEqual(pus_17_a_type.packet_len, 21)
@@ -344,9 +349,11 @@ class TestTelemetry(TestCase):
     def test_service_1_tm(self):
         pus_tc = PusTelecommand(service=17, subservice=1)
         srv_1_tm = Service1Tm(
-            subservice=2,
-            tc_request_id=RequestId(pus_tc.packet_id, pus_tc.packet_seq_ctrl),
+            subservice=Subservices.TM_ACCEPTANCE_SUCCESS,
+            verif_params=VerificationParams(
+                RequestId(pus_tc.packet_id, pus_tc.packet_seq_ctrl)
+            ),
         )
-        self.assertEqual(srv_1_tm.pus_tm.subservice, 2)
+        self.assertEqual(srv_1_tm.pus_tm.subservice, Subservices.TM_ACCEPTANCE_SUCCESS)
         self.assertEqual(srv_1_tm.tc_req_id.tc_packet_id, pus_tc.packet_id)
         self.assertEqual(srv_1_tm.tc_req_id.tc_psc, pus_tc.packet_seq_ctrl)

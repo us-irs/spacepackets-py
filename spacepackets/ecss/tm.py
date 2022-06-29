@@ -224,7 +224,7 @@ class PusTelemetry:
         subservice: int,
         time: Optional[CdsShortTimestamp] = None,
         source_data: bytearray = bytearray([]),
-        ssc: int = 0,
+        seq_count: int = 0,
         apid: int = FETCH_GLOBAL_APID,
         message_counter: int = 0,
         space_time_ref: int = 0b0000,
@@ -252,7 +252,7 @@ class PusTelemetry:
             sec_header_flag=secondary_header_flag,
             ccsds_version=packet_version,
             data_len=data_length,
-            seq_count=ssc,
+            seq_count=seq_count,
         )
         self.pus_tm_sec_header = PusTmSecondaryHeader(
             pus_version=pus_version,

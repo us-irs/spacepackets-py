@@ -27,7 +27,7 @@ class Service17Tm:
             service=PusServices.S17_TEST,
             subservice=subservice,
             time=time,
-            ssc=ssc,
+            seq_count=ssc,
             source_data=source_data,
             apid=apid,
             packet_version=packet_version,

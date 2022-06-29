@@ -4,10 +4,15 @@ from __future__ import annotations
 
 import enum
 import struct
+from dataclasses import dataclass
+from typing import Optional
 
 from spacepackets.ccsds.spacepacket import PacketId, PacketSeqCtrl, SpacePacketHeader
 from spacepackets.ccsds.time import CdsShortTimestamp
+from spacepackets.ecss import PusTelecommand
+from spacepackets.ecss.conf import FETCH_GLOBAL_APID
 from spacepackets.ecss.definitions import PusServices
+from spacepackets.ecss.field import PacketFieldEnum
 from spacepackets.ecss.tm import PusVersion, PusTelemetry
 from spacepackets.log import get_console_logger
 
@@ -55,7 +60,7 @@ class RequestId:
         return cls(
             ccsds_version=header.ccsds_version,
             tc_packet_id=header.packet_id,
-            tc_psc=header.psc
+            tc_psc=header.psc,
         )
 
     def pack(self) -> bytes:
@@ -66,28 +71,75 @@ class RequestId:
         return raw
 
 
+class FailureNotice:
+    def __init__(self, code: PacketFieldEnum, data: bytes):
+        if (code.pfc % 8) != 0:
+            raise ValueError("PFC values for error code must be byte-aligned")
+        elif round(code.pfc / 8) not in [1, 2, 4, 8]:
+            raise ValueError("Allowed byte size for failure notice: 1, 2, 4 or 8")
+        self.code = code
+        self.data = data
+
+    def pack(self) -> bytes:
+        data = self.code.pack()
+        data.extend(self.data)
+        return data
+
+    @classmethod
+    def from_raw(cls, data: bytes, num_bytes_err_code: int, num_bytes_data: int):
+        pfc = num_bytes_err_code * 8
+        return cls(
+            code=PacketFieldEnum(pfc, PacketFieldEnum.unpack(data, pfc)),
+            data=data[num_bytes_err_code:num_bytes_data],
+        )
+
+
+@dataclass
+class UnpackParams:
+    bytes_step_id: int
+    bytes_err_code: int
+
+
+@dataclass
+class VerificationParams:
+    req_id: RequestId
+    step_id: Optional[PacketFieldEnum] = None
+    failure_notice: Optional[FailureNotice] = None
+
+    def pack(self, pack_step_id: bool, pack_failure_notice: bool) -> bytearray:
+        data = bytearray(self.req_id.pack())
+        if self.step_id is not None and pack_step_id:
+            self.step_id.pack()
+        if pack_failure_notice:
+            data.extend(self.failure_notice.pack())
+        return data
+
+
 class Service1Tm:
-    """Service 1 TM class representation. Can be used to deserialize raw service 1 packets."""
+    """Service 1 TM class representation"""
 
     def __init__(
         self,
         subservice: Subservices,
-        tc_request_id: RequestId,
+        verif_params: Optional[VerificationParams] = None,
         time: CdsShortTimestamp = None,
-        ssc: int = 0,
-        apid: int = -1,
+        seq_count: int = 0,
+        apid: int = FETCH_GLOBAL_APID,
         packet_version: int = 0b000,
         pus_version: PusVersion = PusVersion.GLOBAL_CONFIG,
         secondary_header_flag: bool = True,
         space_time_ref: int = 0b0000,
         destination_id: int = 0,
     ):
+        if verif_params is None:
+            self._verif_params = VerificationParams(RequestId.empty())
+        else:
+            self._verif_params = verif_params
         self.pus_tm = PusTelemetry(
             service=PusServices.S1_VERIFICATION,
             subservice=subservice,
             time=time,
-            ssc=ssc,
-            source_data=bytearray(tc_request_id.pack()),
+            seq_count=seq_count,
             apid=apid,
             packet_version=packet_version,
             pus_version=pus_version,
@@ -95,40 +147,31 @@ class Service1Tm:
             space_time_ref=space_time_ref,
             destination_id=destination_id,
         )
-        self._has_tc_error_code = False
-        self._is_step_reply = False
-        # Failure Reports with error code
-        self._error_code = 0
-        self._step_number = 0
-        self._error_param1 = -1
-        self._error_param2 = -1
-        self._tc_req_id = tc_request_id
+        if verif_params is not None:
+            self.pus_tm._source_data = verif_params.pack(
+                pack_step_id=self.is_step_reply,
+                pack_failure_notice=self.has_failure_notice,
+            )
 
     def pack(self) -> bytearray:
         return self.pus_tm.pack()
 
     @classmethod
     def __empty(cls) -> Service1Tm:
-        return cls(subservice=Subservices.INVALID, tc_request_id=RequestId.empty())
+        return cls(subservice=Subservices.INVALID)
 
     @classmethod
-    def unpack(
-        cls,
-        raw_telemetry: bytearray,
-        pus_version: PusVersion = PusVersion.GLOBAL_CONFIG,
-    ) -> Service1Tm:
+    def unpack(cls, data: bytes, params: UnpackParams) -> Service1Tm:
         """Parse a service 1 telemetry packet
 
-        :param raw_telemetry:
-        :param pus_version:
+        :param params:
+        :param data:
         :raises ValueError: Raw telemetry too short
         :return:
         """
         service_1_tm = cls.__empty()
-        service_1_tm.pus_tm = PusTelemetry.unpack(
-            raw_telemetry=raw_telemetry, pus_version=pus_version
-        )
-        cls._unpack_raw_tm(service_1_tm)
+        service_1_tm.pus_tm = PusTelemetry.unpack(raw_telemetry=data)
+        cls._unpack_raw_tm(service_1_tm, params)
         return service_1_tm
 
     @property
@@ -136,106 +179,99 @@ class Service1Tm:
         return self.pus_tm.subservice
 
     @classmethod
-    def _unpack_raw_tm(cls, instance: Service1Tm):
+    def _unpack_raw_tm(cls, instance: Service1Tm, params: UnpackParams):
         tm_data = instance.pus_tm.tm_data
         if len(tm_data) < 4:
             raise ValueError("TM data less than 4 bytes")
         instance.tc_req_id = RequestId.from_raw(tm_data[0:4])
         if instance.pus_tm.subservice % 2 == 0:
-            instance._handle_failure_verification()
+            instance._unpack_failure_verification(params)
         else:
-            instance._handle_success_verification()
+            instance._unpack_success_verification(params)
 
-    def _handle_failure_verification(self):
+    def _unpack_failure_verification(self, unpack_cfg: UnpackParams):
         """Handle parsing a verification failure packet, subservice ID 2, 4, 6 or 8"""
-        self._has_tc_error_code = True
         tm_data = self.pus_tm.tm_data
         subservice = self.pus_tm.subservice
         expected_len = 14
         if subservice == 6:
-            self._is_step_reply = True
             expected_len = 15
         elif subservice not in [2, 4, 8]:
             logger = get_console_logger()
             logger.error("Service1TM: Invalid subservice")
         if len(tm_data) < expected_len:
-            logger = get_console_logger()
-            logger.warning(
+            raise ValueError(
                 f"PUS TM[1,{subservice}] source data smaller than expected 15 bytes"
             )
-            raise ValueError
         current_idx = 4
         if self.is_step_reply:
-            self._step_number = struct.unpack(
-                ">B", tm_data[current_idx : current_idx + 1]
-            )[0]
-            current_idx += 1
-        self._error_code = struct.unpack(">H", tm_data[current_idx : current_idx + 2])[
-            0
-        ]
-        current_idx += 2
-        self._error_param1 = struct.unpack(
-            ">I", tm_data[current_idx : current_idx + 4]
-        )[0]
-        current_idx += 2
-        self._error_param2 = struct.unpack(
-            ">I", tm_data[current_idx : current_idx + 4]
-        )[0]
+            self._verif_params.step_id = PacketFieldEnum.unpack(
+                tm_data[current_idx:], unpack_cfg.bytes_step_id
+            )
+            current_idx += unpack_cfg.bytes_step_id
+        self._verif_params.failure_notice = FailureNotice.from_raw(
+            tm_data[current_idx:], unpack_cfg.bytes_err_code, len(tm_data) - current_idx
+        )
 
-    def _handle_success_verification(self):
+    def _unpack_success_verification(self, unpack_cfg: UnpackParams):
         if self.pus_tm.subservice == 5:
-            self._is_step_reply = True
-            self._step_number = struct.unpack(">B", self.pus_tm.tm_data[4:5])[0]
+            self._verif_params.step_number = PacketFieldEnum.unpack(
+                self.pus_tm.tm_data[0 : unpack_cfg.bytes_step_id],
+                pfc=unpack_cfg.bytes_step_id * 8,
+            )
         elif self.pus_tm.subservice not in [1, 3, 7]:
             logger = get_console_logger()
             logger.warning("Service1TM: Invalid subservice")
 
     @property
-    def error_param_1(self) -> int:
-        """Returns -1 if the packet does not have a failure code"""
-        if not self._has_tc_error_code:
-            return -1
-        else:
-            return self._error_param1
+    def failure_notice(self) -> Optional[FailureNotice]:
+        return self._verif_params.failure_notice
 
     @property
-    def error_param_2(self) -> int:
-        if not self._has_tc_error_code:
-            return -1
-        else:
-            return self._error_param2
-
-    @property
-    def has_tc_error_code(self):
-        return self._has_tc_error_code
+    def has_failure_notice(self) -> bool:
+        return (self.subservice % 2) == 0
 
     @property
     def tc_req_id(self):
-        return self._tc_req_id
+        return self._verif_params.req_id
 
     @tc_req_id.setter
     def tc_req_id(self, value):
-        self._tc_req_id = value
+        self._verif_params.req_id = value
 
     @property
-    def error_code(self) -> int:
-        """Retrieve error code
-
-        :return Error code or -1 if there is no error code"""
-        if self._has_tc_error_code:
-            return self._error_code
+    def error_code(self) -> Optional[PacketFieldEnum]:
+        if self.has_failure_notice:
+            return self._verif_params.failure_notice.code
         else:
-            return -1
+            return None
 
     @property
-    def is_step_reply(self):
-        return self._is_step_reply
+    def is_step_reply(self) -> bool:
+        return (
+            self.subservice == Subservices.TM_STEP_FAILURE
+            or self.subservice == Subservices.TM_STEP_SUCCESS
+        )
 
     @property
-    def step_number(self):
+    def step_id(self):
         """Retrieve the step number
         :return step number or -1 if this is not a step reply"""
-        if self._is_step_reply:
-            return self._step_number
+        if self.is_step_reply:
+            return self._verif_params.step_id
         else:
             return -1
+
+
+def create_start_verification_tm(pus_tc: PusTelecommand) -> Service1Tm:
+    return Service1Tm(
+        subservice=Subservices.TM_START_SUCCESS,
+        verif_params=VerificationParams(RequestId.from_sp_header(pus_tc.sp_header)),
+    )
+
+
+def create_start_failure_tm(pus_tc: PusTelecommand) -> Service1Tm:
+    return Service1Tm(
+        subservice=Subservices.TM_START_FAILURE,
+        verif_params=VerificationParams(RequestId.from_sp_header(pus_tc.sp_header)),
+    )
