@@ -31,7 +31,6 @@ class Service17Tm:
             source_data=source_data,
             apid=apid,
             packet_version=packet_version,
-            pus_version=pus_version,
             secondary_header_flag=secondary_header_flag,
             space_time_ref=space_time_ref,
             destination_id=destination_id,
@@ -51,7 +50,5 @@ class Service17Tm:
         pus_version: PusVersion = PusVersion.GLOBAL_CONFIG,
     ) -> Service17Tm:
         service_17_tm = cls.__empty()
-        service_17_tm.pus_tm = PusTelemetry.unpack(
-            raw_telemetry=raw_telemetry, pus_version=pus_version
-        )
+        service_17_tm.pus_tm = PusTelemetry.unpack(raw_telemetry=raw_telemetry)
         return service_17_tm

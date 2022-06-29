@@ -142,13 +142,12 @@ class Service1Tm:
             seq_count=seq_count,
             apid=apid,
             packet_version=packet_version,
-            pus_version=pus_version,
             secondary_header_flag=secondary_header_flag,
             space_time_ref=space_time_ref,
             destination_id=destination_id,
         )
         if verif_params is not None:
-            self.pus_tm._source_data = verif_params.pack(
+            self.pus_tm.tm_data = verif_params.pack(
                 pack_step_id=self.is_step_reply,
                 pack_failure_notice=self.has_failure_notice,
             )

@@ -171,7 +171,7 @@ class TestCcsds(TestCase):
         print(sp)
 
     def test_sp_parser(self):
-        tm_packet = PusTelemetry(service=17, subservice=2, pus_version=PusVersion.PUS_C)
+        tm_packet = PusTelemetry(service=17, subservice=2)
         packet_ids = (tm_packet.packet_id.raw(),)
         tm_packet_raw = tm_packet.pack()
         packet_deque = deque()
@@ -187,7 +187,6 @@ class TestCcsds(TestCase):
         other_larger_packet = PusTelemetry(
             service=8,
             subservice=128,
-            pus_version=PusVersion.PUS_C,
             source_data=bytearray(64),
         )
         other_larger_packet_raw = other_larger_packet.pack()

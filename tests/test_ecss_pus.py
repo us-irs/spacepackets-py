@@ -123,7 +123,6 @@ class TestTelemetry(TestCase):
         pus_17_tm = PusTelemetry(
             service=17,
             subservice=2,
-            pus_version=PusVersion.PUS_C,
             apid=0xEF,
             seq_count=22,
             source_data=bytearray(),
@@ -185,9 +184,7 @@ class TestTelemetry(TestCase):
         )
         pus_17_raw = pus_17_tm.pack()
 
-        pus_17_tm_unpacked = PusTelemetry.unpack(
-            raw_telemetry=pus_17_raw, pus_version=PusVersion.PUS_C
-        )
+        pus_17_tm_unpacked = PusTelemetry.unpack(raw_telemetry=pus_17_raw)
         print(pus_17_tm)
         print(pus_17_tm.__repr__())
         self.assertEqual(pus_17_tm_unpacked.apid, 0x22)
@@ -197,122 +194,40 @@ class TestTelemetry(TestCase):
         self.assertTrue(pus_17_tm_unpacked.valid)
         self.assertEqual(pus_17_tm_unpacked.tm_data, source_data)
         self.assertEqual(pus_17_tm_unpacked.packet_id.raw(), 0x0822)
-        self.assertRaises(ValueError, PusTelemetry.unpack, None, PusVersion.PUS_C)
-        self.assertRaises(
-            ValueError, PusTelemetry.unpack, bytearray(), PusVersion.PUS_C
-        )
-        self.assertRaises(ValueError, PusTelemetry.unpack, pus_17_raw, PusVersion.PUS_A)
+        self.assertRaises(ValueError, PusTelemetry.unpack, None)
+        self.assertRaises(ValueError, PusTelemetry.unpack, bytearray())
         correct_size = pus_17_raw[4] << 8 | pus_17_raw[5]
         # Set length field invalid
         pus_17_raw[4] = 0x00
         pus_17_raw[5] = 0x00
-        self.assertRaises(ValueError, PusTelemetry.unpack, pus_17_raw, PusVersion.PUS_C)
+        self.assertRaises(ValueError, PusTelemetry.unpack, pus_17_raw)
         pus_17_raw[4] = 0xFF
         pus_17_raw[5] = 0xFF
-        self.assertRaises(ValueError, PusTelemetry.unpack, pus_17_raw, PusVersion.PUS_C)
+        self.assertRaises(ValueError, PusTelemetry.unpack, pus_17_raw)
 
         pus_17_raw[4] = (correct_size & 0xFF00) >> 8
         pus_17_raw[5] = correct_size & 0xFF
         pus_17_raw.append(0)
         # Should work with a warning
-        pus_17_tm_unpacked = PusTelemetry.unpack(
-            raw_telemetry=pus_17_raw, pus_version=PusVersion.PUS_C
-        )
+        pus_17_tm_unpacked = PusTelemetry.unpack(raw_telemetry=pus_17_raw)
 
         # This should cause the CRC calculation to fail
         incorrect_size = correct_size + 1
         pus_17_raw[4] = (incorrect_size & 0xFF00) >> 8
         pus_17_raw[5] = incorrect_size & 0xFF
-        pus_17_tm_unpacked = PusTelemetry.unpack(
-            raw_telemetry=pus_17_raw, pus_version=PusVersion.PUS_C
-        )
-
-        pus_17_a_type = PusTelemetry(
-            service=17,
-            subservice=2,
-            seq_count=22,
-            source_data=bytearray([0x42]),
-            pus_version=PusVersion.PUS_A,
-        )
-        expected_len = pus_17_a_type.packet_len
-        self.assertEqual(expected_len, 20)
-        self.assertEqual(
-            pus_17_a_type.get_source_data_string(PrintFormats.HEX), "hex [42]"
-        )
-        self.assertEqual(
-            pus_17_a_type.get_source_data_string(PrintFormats.DEC), "dec [66]"
-        )
-        self.assertEqual(
-            pus_17_a_type.get_source_data_string(PrintFormats.BIN), "bin [0:01000010]"
-        )
-        self.assertRaises(
-            ValueError,
-            pus_17_a_type.get_source_data_length,
-            timestamp_len=7,
-            pus_version=PusVersion.ESA_PUS,
-        )
-        pus_17_a_type.print_source_data(PrintFormats.HEX)
-        pus_17_a_raw = pus_17_a_type.pack()
-        self.assertEqual(len(pus_17_a_raw), expected_len)
-
-        set_pus_tm_version(PusVersion.PUS_A)
-        pus_17_a_type = PusTelemetry(
-            service=17,
-            subservice=4,
-            seq_count=34,
-            source_data=bytearray([0x42, 0x38]),
-        )
-        self.assertEqual(pus_17_a_type.packet_len, 21)
-        self.assertEqual(
-            pus_17_a_type.get_source_data_string(PrintFormats.HEX), "hex [42,38]"
-        )
-        self.assertEqual(
-            pus_17_a_type.get_source_data_string(PrintFormats.DEC), "dec [66,56]"
-        )
-        self.assertEqual(
-            pus_17_a_type.get_source_data_string(PrintFormats.BIN),
-            "bin [\n0:01000010\n1:00111000\n]",
-        )
-        pus_17_a_type_unpacked = PusTelemetry.unpack(raw_telemetry=pus_17_a_raw)
-        self.assertRaises(
-            ValueError, PusTelemetry.unpack, pus_17_a_raw, PusVersion.PUS_C
-        )
-        self.assertRaises(
-            ValueError, PusTmSecondaryHeader.unpack, bytearray(), PusVersion.PUS_A
-        )
+        pus_17_tm_unpacked = PusTelemetry.unpack(raw_telemetry=pus_17_raw)
 
         invalid_secondary_header = bytearray([0x20, 0x00, 0x01, 0x06])
         self.assertRaises(
-            ValueError,
-            PusTmSecondaryHeader.unpack,
-            invalid_secondary_header,
-            PusVersion.PUS_C,
+            ValueError, PusTmSecondaryHeader.unpack, invalid_secondary_header
         )
-        with self.assertRaises(ValueError):
-            PusTmSecondaryHeader(
-                pus_version=PusVersion.ESA_PUS,
-                service=0,
-                subservice=0,
-                time=CdsShortTimestamp.init_from_current_time(),
-                message_counter=0,
-            )
         with self.assertRaises(ValueError):
             # Message Counter too large
             PusTmSecondaryHeader(
-                pus_version=PusVersion.PUS_C,
                 service=0,
                 subservice=0,
                 time=CdsShortTimestamp.init_from_current_time(),
                 message_counter=129302,
-            )
-        # Message Counter too large
-        with self.assertRaises(ValueError):
-            PusTmSecondaryHeader(
-                pus_version=PusVersion.PUS_A,
-                service=0,
-                subservice=0,
-                time=CdsShortTimestamp.init_from_current_time(),
-                message_counter=9323,
             )
         valid_secondary_header = PusTmSecondaryHeader(
             service=0,
