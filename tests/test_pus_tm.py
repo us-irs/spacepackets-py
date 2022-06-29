@@ -8,6 +8,7 @@ from spacepackets.ccsds.spacepacket import (
     SequenceFlags,
     SpacePacketHeader,
 )
+from spacepackets.ecss import PacketFieldEnum
 from spacepackets.ecss.tc import PusTelecommand
 from spacepackets.ecss.conf import set_default_tm_apid
 from spacepackets.util import PrintFormats
@@ -24,6 +25,8 @@ from spacepackets.ecss.pus_1_verification import (
     RequestId,
     Subservices,
     VerificationParams,
+    UnpackParams,
+    FailureNotice,
 )
 
 
@@ -175,7 +178,7 @@ class TestTelemetry(TestCase):
         tc_psc = PacketSeqCtrl(seq_flags=SequenceFlags.UNSEGMENTED, seq_count=22)
         req_id = RequestId(tc_packet_id, tc_psc)
         req_id_as_bytes = req_id.pack()
-        unpack_req_id = RequestId.from_raw(req_id_as_bytes)
+        unpack_req_id = RequestId.unpack(req_id_as_bytes)
         self.assertEqual(unpack_req_id.tc_packet_id.raw(), tc_packet_id.raw())
         self.assertEqual(unpack_req_id.tc_psc.raw(), tc_psc.raw())
         sp_header = SpacePacketHeader.from_composite_fields(
@@ -184,8 +187,21 @@ class TestTelemetry(TestCase):
         unpack_req_id = RequestId.from_sp_header(sp_header)
         self.assertEqual(unpack_req_id.tc_packet_id.raw(), tc_packet_id.raw())
         self.assertEqual(unpack_req_id.tc_psc.raw(), tc_psc.raw())
+        with self.assertRaises(ValueError):
+            RequestId.unpack(bytes([0, 1, 2]))
 
-    def test_service_1_tm(self):
+    def test_failure_notice(self):
+        error_code = PacketFieldEnum(pfc=8, val=2)
+        failure_notice = FailureNotice(code=error_code, data=bytes([0, 2, 4, 8]))
+        self.assertEqual(failure_notice.code.val, error_code.val)
+        self.assertEqual(failure_notice.code.pfc, error_code.pfc)
+        notice_raw = failure_notice.pack()
+        notice_unpacked = FailureNotice.unpack(notice_raw, 1, 4)
+        self.assertEqual(notice_unpacked.code.val, error_code.val)
+        self.assertEqual(notice_unpacked.code.pfc, error_code.pfc)
+        self.assertEqual(notice_unpacked.data, bytes([0, 2, 4, 8]))
+
+    def test_service_1_tm_success(self):
         pus_tc = PusTelecommand(service=17, subservice=1)
         srv_1_tm = Service1Tm(
             subservice=Subservices.TM_ACCEPTANCE_SUCCESS,
@@ -196,3 +212,35 @@ class TestTelemetry(TestCase):
         self.assertEqual(srv_1_tm.pus_tm.subservice, Subservices.TM_ACCEPTANCE_SUCCESS)
         self.assertEqual(srv_1_tm.tc_req_id.tc_packet_id, pus_tc.packet_id)
         self.assertEqual(srv_1_tm.tc_req_id.tc_psc, pus_tc.packet_seq_ctrl)
+        srv_1_tm_raw = srv_1_tm.pack()
+        srv_1_tm_unpacked = Service1Tm.unpack(srv_1_tm_raw, UnpackParams(0, 0))
+        self.assertEqual(
+            srv_1_tm_unpacked.tc_req_id.tc_packet_id.raw(), pus_tc.packet_id.raw()
+        )
+        self.assertEqual(
+            srv_1_tm_unpacked.tc_req_id.tc_psc.raw(), pus_tc.packet_seq_ctrl.raw()
+        )
+
+    def test_service_1_tm_failure(self):
+        pus_tc = PusTelecommand(service=17, subservice=1)
+        failure_notice = FailureNotice(
+            code=PacketFieldEnum.from_byte_size(1, 8), data=bytes([2, 4])
+        )
+        srv_1_tm = Service1Tm(
+            subservice=Subservices.TM_ACCEPTANCE_FAILURE,
+            verif_params=VerificationParams(
+                req_id=RequestId(pus_tc.packet_id, pus_tc.packet_seq_ctrl),
+                failure_notice=failure_notice,
+            ),
+        )
+        self.assertEqual(srv_1_tm.pus_tm.subservice, Subservices.TM_ACCEPTANCE_FAILURE)
+        self.assertEqual(srv_1_tm.tc_req_id.tc_packet_id, pus_tc.packet_id)
+        self.assertEqual(srv_1_tm.tc_req_id.tc_psc, pus_tc.packet_seq_ctrl)
+        srv_1_tm_raw = srv_1_tm.pack()
+        srv_1_tm_unpacked = Service1Tm.unpack(srv_1_tm_raw, UnpackParams(0, 2))
+        self.assertEqual(
+            srv_1_tm_unpacked.tc_req_id.tc_packet_id.raw(), pus_tc.packet_id.raw()
+        )
+        self.assertEqual(
+            srv_1_tm_unpacked.tc_req_id.tc_psc.raw(), pus_tc.packet_seq_ctrl.raw()
+        )

@@ -42,7 +42,7 @@ class RequestId:
         return cls(PacketId.empty(), PacketSeqCtrl.empty())
 
     @classmethod
-    def from_raw(cls, tm_data: bytes) -> RequestId:
+    def unpack(cls, tm_data: bytes) -> RequestId:
         if len(tm_data) < 4:
             raise ValueError(
                 "Given Raw TM data too small to parse Request ID. Must be 4 bytes at least"
@@ -86,18 +86,18 @@ class FailureNotice:
         return data
 
     @classmethod
-    def from_raw(cls, data: bytes, num_bytes_err_code: int, num_bytes_data: int):
+    def unpack(cls, data: bytes, num_bytes_err_code: int, num_bytes_data: int):
         pfc = num_bytes_err_code * 8
         return cls(
-            code=PacketFieldEnum(pfc, PacketFieldEnum.unpack(data, pfc)),
-            data=data[num_bytes_err_code:num_bytes_data],
+            code=PacketFieldEnum.unpack(data, pfc),
+            data=data[num_bytes_err_code : num_bytes_err_code + num_bytes_data],
         )
 
 
 @dataclass
 class UnpackParams:
-    bytes_step_id: int
-    bytes_err_code: int
+    bytes_step_id: int = 1
+    bytes_err_code: int = 1
 
 
 @dataclass
@@ -182,7 +182,7 @@ class Service1Tm:
         tm_data = instance.pus_tm.tm_data
         if len(tm_data) < 4:
             raise ValueError("TM data less than 4 bytes")
-        instance.tc_req_id = RequestId.from_raw(tm_data[0:4])
+        instance.tc_req_id = RequestId.unpack(tm_data[0:4])
         if instance.pus_tm.subservice % 2 == 0:
             instance._unpack_failure_verification(params)
         else:
@@ -192,15 +192,16 @@ class Service1Tm:
         """Handle parsing a verification failure packet, subservice ID 2, 4, 6 or 8"""
         tm_data = self.pus_tm.tm_data
         subservice = self.pus_tm.subservice
-        expected_len = 14
+        expected_len = unpack_cfg.bytes_err_code
         if subservice == 6:
-            expected_len = 15
+            expected_len += unpack_cfg.bytes_step_id
         elif subservice not in [2, 4, 8]:
             logger = get_console_logger()
             logger.error("Service1TM: Invalid subservice")
         if len(tm_data) < expected_len:
             raise ValueError(
-                f"PUS TM[1,{subservice}] source data smaller than expected 15 bytes"
+                f"PUS TM[1,{subservice}] source data with length {len(tm_data)} smaller than "
+                f"expected {expected_len} bytes"
             )
         current_idx = 4
         if self.is_step_reply:
@@ -208,7 +209,7 @@ class Service1Tm:
                 tm_data[current_idx:], unpack_cfg.bytes_step_id
             )
             current_idx += unpack_cfg.bytes_step_id
-        self._verif_params.failure_notice = FailureNotice.from_raw(
+        self._verif_params.failure_notice = FailureNotice.unpack(
             tm_data[current_idx:], unpack_cfg.bytes_err_code, len(tm_data) - current_idx
         )
 

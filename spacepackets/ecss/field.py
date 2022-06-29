@@ -78,7 +78,12 @@ class PacketFieldBase:
 class PacketFieldEnum(PacketFieldBase):
     def __init__(self, pfc: int, val: int):
         super().__init__(ptc=Ptc.ENUMERATED, pfc=pfc)
+        self.check_pfc(pfc)
         self.val = val
+
+    @classmethod
+    def from_byte_size(cls, num_bytes: int, val: int):
+        return cls(num_bytes * 8, val)
 
     def pack(self) -> bytearray:
         num_bytes = self.check_pfc(self.pfc)
