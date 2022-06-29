@@ -263,7 +263,26 @@ class Service1Tm:
             return -1
 
 
-def create_start_verification_tm(pus_tc: PusTelecommand) -> Service1Tm:
+def create_acceptance_success_tm(pus_tc: PusTelecommand) -> Service1Tm:
+    return Service1Tm(
+        subservice=Subservices.TM_ACCEPTANCE_SUCCESS,
+        verif_params=VerificationParams(RequestId.from_sp_header(pus_tc.sp_header)),
+    )
+
+
+def create_acceptance_failure_tm(
+    pus_tc: PusTelecommand, failure_notice: FailureNotice
+) -> Service1Tm:
+    return Service1Tm(
+        subservice=Subservices.TM_ACCEPTANCE_FAILURE,
+        verif_params=VerificationParams(
+            req_id=RequestId.from_sp_header(pus_tc.sp_header),
+            failure_notice=failure_notice,
+        ),
+    )
+
+
+def create_start_success_tm(pus_tc: PusTelecommand) -> Service1Tm:
     return Service1Tm(
         subservice=Subservices.TM_START_SUCCESS,
         verif_params=VerificationParams(RequestId.from_sp_header(pus_tc.sp_header)),
@@ -275,6 +294,48 @@ def create_start_failure_tm(
 ) -> Service1Tm:
     return Service1Tm(
         subservice=Subservices.TM_START_FAILURE,
+        verif_params=VerificationParams(
+            req_id=RequestId.from_sp_header(pus_tc.sp_header),
+            failure_notice=failure_notice,
+        ),
+    )
+
+
+def create_step_success_tm(pus_tc: PusTelecommand, step_id: PacketFieldEnum) -> Service1Tm:
+    return Service1Tm(
+        subservice=Subservices.TM_STEP_SUCCESS,
+        verif_params=VerificationParams(
+            req_id=RequestId.from_sp_header(pus_tc.sp_header),
+            step_id=step_id
+        ),
+    )
+
+
+def create_step_failure_tm(
+    pus_tc: PusTelecommand, step_id: PacketFieldEnum, failure_notice: FailureNotice
+) -> Service1Tm:
+    return Service1Tm(
+        subservice=Subservices.TM_STEP_FAILURE,
+        verif_params=VerificationParams(
+            req_id=RequestId.from_sp_header(pus_tc.sp_header),
+            step_id=step_id,
+            failure_notice=failure_notice,
+        ),
+    )
+
+
+def create_completion_success_tm(pus_tc: PusTelecommand) -> Service1Tm:
+    return Service1Tm(
+        subservice=Subservices.TM_COMPLETION_SUCCESS,
+        verif_params=VerificationParams(RequestId.from_sp_header(pus_tc.sp_header)),
+    )
+
+
+def create_completion_failure_tm(
+    pus_tc: PusTelecommand, failure_notice: FailureNotice
+) -> Service1Tm:
+    return Service1Tm(
+        subservice=Subservices.TM_COMPLETION_FAILURE,
         verif_params=VerificationParams(
             req_id=RequestId.from_sp_header(pus_tc.sp_header),
             failure_notice=failure_notice,
