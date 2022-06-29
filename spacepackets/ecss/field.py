@@ -69,10 +69,10 @@ class PfcReal(enum.IntEnum):
     DOUBLE_PRECISION_MIL_STD_6_OCTETS = 4
 
 
+@dataclass
 class PacketFieldBase:
-    def __init__(self, ptc: int, pfc: int):
-        self.ptc = ptc
-        self.pfc = pfc
+    ptc: int
+    pfc: int
 
 
 class PacketFieldEnum(PacketFieldBase):
@@ -103,6 +103,9 @@ class PacketFieldEnum(PacketFieldBase):
             raise ValueError("Invalid PFC number to pack into a bytearray")
         return num_bytes
 
+    def __repr__(self):
+        return f"{self.__class__.__name__}(pfc={self.pfc!r}, val={self.val!r})"
+
 
 def byte_num_to_signed_struct_specifier(byte_num: int) -> str:
     """Convert number of bytes in a field to the struct API signed format specifier,
@@ -115,7 +118,7 @@ def byte_num_to_signed_struct_specifier(byte_num: int) -> str:
         return "!i"
     elif byte_num == 8:
         return "!q"
-    raise ValueError("Invalid number of bits specified")
+    raise ValueError("Invalid number of bytes specified")
 
 
 def byte_num_to_unsigned_struct_specifier(byte_num: int) -> str:
@@ -129,4 +132,4 @@ def byte_num_to_unsigned_struct_specifier(byte_num: int) -> str:
         return "!I"
     elif byte_num == 8:
         return "!Q"
-    raise ValueError("Invalid number of bits specified")
+    raise ValueError("Invalid number of bytes specified")

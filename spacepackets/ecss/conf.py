@@ -25,28 +25,10 @@ class EcssConfKeys(enum.IntEnum):
 
 
 __ECSS_DICT = {
-    EcssConfKeys.PUS_TM_TYPE: PusVersion.PUS_C,
-    EcssConfKeys.PUS_TC_TYPE: PusVersion.PUS_C,
     EcssConfKeys.ECSS_TM_APID: 0x00,
     EcssConfKeys.ECSS_TC_APID: 0x00,
     EcssConfKeys.MAX_TC_PACKET_SIZE: DEFAULT_MAX_TC_DATA_SIZE,
 }
-
-
-def set_pus_tc_version(pus_version: PusVersion):
-    __ECSS_DICT[EcssConfKeys.PUS_TC_TYPE] = pus_version
-
-
-def get_pus_tc_version() -> PusVersion:
-    return __ECSS_DICT[EcssConfKeys.PUS_TC_TYPE]
-
-
-def set_pus_tm_version(pus_type: PusVersion):
-    __ECSS_DICT[EcssConfKeys.PUS_TM_TYPE] = pus_type
-
-
-def get_pus_tm_version() -> PusVersion:
-    return __ECSS_DICT[EcssConfKeys.PUS_TM_TYPE]
 
 
 def set_default_tm_apid(tm_apid: int):

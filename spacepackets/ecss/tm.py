@@ -16,7 +16,6 @@ from spacepackets.ccsds.spacepacket import (
 )
 from spacepackets.ccsds.time import CdsShortTimestamp, read_p_field
 from spacepackets.ecss.conf import (
-    get_pus_tm_version,
     PusVersion,
     get_default_tm_apid,
     FETCH_GLOBAL_APID,
