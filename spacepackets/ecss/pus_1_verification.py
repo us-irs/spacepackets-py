@@ -214,8 +214,8 @@ class Service1Tm:
         )
 
     def _unpack_success_verification(self, unpack_cfg: UnpackParams):
-        if self.pus_tm.subservice == 5:
-            self._verif_params.step_number = PacketFieldEnum.unpack(
+        if self.pus_tm.subservice == Subservices.TM_STEP_SUCCESS:
+            self._verif_params.step_id = PacketFieldEnum.unpack(
                 self.pus_tm.tm_data[0 : unpack_cfg.bytes_step_id],
                 pfc=unpack_cfg.bytes_step_id * 8,
             )

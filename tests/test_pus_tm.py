@@ -232,7 +232,8 @@ class TestTelemetry(TestCase):
                 Service1Tm(
                     subservice=subservice,
                     verif_params=VerificationParams(
-                        RequestId(pus_tc.packet_id, pus_tc.packet_seq_ctrl)
+                        req_id=RequestId(pus_tc.packet_id, pus_tc.packet_seq_ctrl),
+                        step_id=step_id
                     ),
                 ),
                 subservice,
