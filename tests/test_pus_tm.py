@@ -1,6 +1,13 @@
 #!/usr/bin/env python3
 from unittest import TestCase
 
+from spacepackets.ccsds.spacepacket import (
+    PacketId,
+    PacketTypes,
+    PacketSeqCtrl,
+    SequenceFlags,
+    SpacePacketHeader,
+)
 from spacepackets.ecss.tc import PusTelecommand
 from spacepackets.ecss.conf import set_default_tm_apid
 from spacepackets.util import PrintFormats
@@ -162,6 +169,21 @@ class TestTelemetry(TestCase):
             raw_telemetry=srv_17_tm_raw, pus_version=PusVersion.PUS_C
         )
         self.assertEqual(srv_17_tm_unpacked.pus_tm.subservice, 2)
+
+    def test_req_id(self):
+        tc_packet_id = PacketId(ptype=PacketTypes.TC, sec_header_flag=True, apid=0x42)
+        tc_psc = PacketSeqCtrl(seq_flags=SequenceFlags.UNSEGMENTED, seq_count=22)
+        req_id = RequestId(tc_packet_id, tc_psc)
+        req_id_as_bytes = req_id.pack()
+        unpack_req_id = RequestId.from_raw(req_id_as_bytes)
+        self.assertEqual(unpack_req_id.tc_packet_id.raw(), tc_packet_id.raw())
+        self.assertEqual(unpack_req_id.tc_psc.raw(), tc_psc.raw())
+        sp_header = SpacePacketHeader.from_composite_fields(
+            packet_id=tc_packet_id, psc=tc_psc, data_length=12
+        )
+        unpack_req_id = RequestId.from_sp_header(sp_header)
+        self.assertEqual(unpack_req_id.tc_packet_id.raw(), tc_packet_id.raw())
+        self.assertEqual(unpack_req_id.tc_psc.raw(), tc_psc.raw())
 
     def test_service_1_tm(self):
         pus_tc = PusTelecommand(service=17, subservice=1)

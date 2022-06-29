@@ -269,8 +269,13 @@ def create_start_verification_tm(pus_tc: PusTelecommand) -> Service1Tm:
     )
 
 
-def create_start_failure_tm(pus_tc: PusTelecommand) -> Service1Tm:
+def create_start_failure_tm(
+    pus_tc: PusTelecommand, failure_notice: FailureNotice
+) -> Service1Tm:
     return Service1Tm(
         subservice=Subservices.TM_START_FAILURE,
-        verif_params=VerificationParams(RequestId.from_sp_header(pus_tc.sp_header)),
+        verif_params=VerificationParams(
+            req_id=RequestId.from_sp_header(pus_tc.sp_header),
+            failure_notice=failure_notice,
+        ),
     )

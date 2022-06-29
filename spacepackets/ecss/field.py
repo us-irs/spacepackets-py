@@ -98,9 +98,12 @@ class PacketFieldEnum(PacketFieldBase):
 
     @staticmethod
     def check_pfc(pfc: int) -> int:
+        """Check for byte alignment of the PFC. Do not use this if to plan to pack multiple
+        enumerations into one byte
+        """
         num_bytes = round(pfc / 8)
         if num_bytes not in [1, 2, 4, 8]:
-            raise ValueError("Invalid PFC number to pack into a bytearray")
+            raise ValueError("Invalid PFC, not byte aligned")
         return num_bytes
 
     def __repr__(self):
