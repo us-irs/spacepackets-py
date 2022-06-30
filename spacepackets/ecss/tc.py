@@ -14,6 +14,7 @@ from spacepackets.ccsds.spacepacket import (
     SpacePacket,
     PacketId,
     PacketSeqCtrl,
+    SequenceFlags,
 )
 from spacepackets.util import get_printable_data_string, PrintFormats
 from spacepackets.ecss.conf import (
@@ -114,7 +115,8 @@ class PusTelecommand:
         service: int,
         subservice: int,
         app_data: bytes = bytes([]),
-        ssc: int = 0,
+        seq_count: int = 0,
+        seq_flags: SequenceFlags = SequenceFlags.UNSEGMENTED,
         source_id: int = 0,
         ack_flags: int = 0b1111,
         apid: int = FETCH_GLOBAL_APID,
@@ -125,7 +127,7 @@ class PusTelecommand:
         :param service: PUS service number
         :param subservice: PUS subservice number
         :param apid: Application Process ID as specified by CCSDS
-        :param ssc: Source Sequence Count. Application should take care of incrementing this.
+        :param seq_count: Source Sequence Count. Application should take care of incrementing this.
             Limited to 2 to the power of 14 by the number of bits in the header
         :param app_data: Application data in the Packet Data Field
         :param source_id: Source ID will be supplied as well. Can be used to distinguish
@@ -154,12 +156,38 @@ class PusTelecommand:
             apid=apid,
             sec_header_flag=bool(secondary_header_flag),
             packet_type=PacketTypes.TC,
+            seq_flags=seq_flags,
             data_len=data_length,
-            seq_count=ssc,
+            seq_count=seq_count,
         )
         self._app_data = app_data
         self._valid = True
         self._crc16 = 0
+
+    @classmethod
+    def from_sp_header(
+        cls,
+        sp_header: SpacePacketHeader,
+        service: int,
+        subservice: int,
+        app_data: bytes = bytes([]),
+        source_id: int = 0,
+        ack_flags: int = 0b1111,
+    ):
+        pus_tc = cls.__empty()
+        if sp_header.packet_type == PacketTypes.TM:
+            raise ValueError(
+                f"Invalid Packet Type {sp_header.packet_type} in CCSDS primary header"
+            )
+        pus_tc.sp_header = sp_header
+        pus_tc.pus_tc_sec_header = PusTcDataFieldHeader(
+            service=service,
+            subservice=subservice,
+            source_id=source_id,
+            ack_flags=ack_flags,
+        )
+        pus_tc._app_data = app_data
+        return pus_tc
 
     @classmethod
     def from_composite_fields(

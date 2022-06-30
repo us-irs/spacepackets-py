@@ -10,7 +10,7 @@ from spacepackets.util import PrintFormats
 
 class TestTelecommand(TestCase):
     def test_generic(self):
-        pus_17_telecommand = PusTelecommand(service=17, subservice=1, ssc=25)
+        pus_17_telecommand = PusTelecommand(service=17, subservice=1, seq_count=25)
         pus_17_telecommand.print(PrintFormats.HEX)
         self.assertTrue(pus_17_telecommand.packet_len == len(pus_17_telecommand.pack()))
         command_tuple = pus_17_telecommand.pack_command_tuple()
@@ -27,7 +27,7 @@ class TestTelecommand(TestCase):
 
         test_app_data = bytearray([1, 2, 3])
         pus_17_telecommand_with_app_data = PusTelecommand(
-            service=17, subservice=32, ssc=52, app_data=test_app_data
+            service=17, subservice=32, seq_count=52, app_data=test_app_data
         )
 
         self.assertTrue(len(pus_17_telecommand_with_app_data.app_data) == 3)
@@ -35,7 +35,7 @@ class TestTelecommand(TestCase):
             pus_17_telecommand_with_app_data.app_data == bytearray([1, 2, 3])
         )
         with self.assertRaises(ValueError):
-            PusTelecommand(service=493, subservice=5252, ssc=99432942)
+            PusTelecommand(service=493, subservice=5252, seq_count=99432942)
 
         pus_17_raw = pus_17_telecommand.pack()
         pus_17_unpacked = PusTelecommand.unpack(raw_packet=pus_17_raw)
@@ -68,7 +68,7 @@ class TestTelecommand(TestCase):
         print(f"{pus_17_telecommand!r}")
 
     def test_crc_16(self):
-        pus_17_telecommand = PusTelecommand(service=17, subservice=1, ssc=25)
+        pus_17_telecommand = PusTelecommand(service=17, subservice=1, seq_count=25)
         crc_func = crcmod.mkCrcFun(0x11021, rev=False, initCrc=0xFFFF, xorOut=0x0000)
         crc = crc_func(pus_17_telecommand.pack())
         self.assertTrue(crc == 0)
@@ -85,7 +85,7 @@ class TestTelecommand(TestCase):
         self.assertTrue(crc_func(packet_raw) == 0)
 
     def test_getter_functions(self):
-        pus_17_telecommand = PusTelecommand(service=17, subservice=1, ssc=25)
+        pus_17_telecommand = PusTelecommand(service=17, subservice=1, seq_count=25)
         self.assertTrue(pus_17_telecommand.seq_count == 25)
         self.assertTrue(pus_17_telecommand.service == 17)
         self.assertEqual(pus_17_telecommand.subservice, 1)
