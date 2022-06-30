@@ -226,6 +226,9 @@ class SpacePacketHeader:
             f"seq_flags={self.seq_flags!r}"
         )
 
+    def __eq__(self, other: SpacePacketHeader):
+        return self.pack() == other.pack()
+
 
 class SpacePacket:
     """Generic CCSDS space packet which consists of the primary header and can optionally include
@@ -280,6 +283,13 @@ class SpacePacket:
     @property
     def sec_header_flag(self):
         return self.sp_header.sec_header_flag
+
+    def __eq__(self, other: SpacePacket):
+        return (
+            self.sp_header == other.sp_header
+            and self.sec_header == other.sec_header
+            and self.user_data == other.user_data
+        )
 
 
 def get_space_packet_id_bytes(

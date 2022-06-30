@@ -95,6 +95,9 @@ class PusTcDataFieldHeader:
             f" ack_flags={self.ack_flags!r} "
         )
 
+    def __eq__(self, other: PusTcDataFieldHeader):
+        return self.pack() == other.pack()
+
     @classmethod
     def get_header_size(cls):
         return cls.PUS_C_SEC_HEADER_LEN
@@ -192,6 +195,13 @@ class PusTelecommand:
             f"PUS TC[{self.pus_tc_sec_header.service}, "
             f"{self.pus_tc_sec_header.subservice}], APID {self.apid:#05x}, "
             f"SSC {self.sp_header.seq_count}, Size {self.packet_len}"
+        )
+
+    def __eq__(self, other: PusTelecommand):
+        return (
+            self.sp_header == other.sp_header
+            and self.pus_tc_sec_header == other.pus_tc_sec_header
+            and self._app_data == other._app_data
         )
 
     def to_space_packet(self) -> SpacePacket:

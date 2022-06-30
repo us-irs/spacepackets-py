@@ -155,6 +155,9 @@ class PusTmSecondaryHeader:
             f"pus_version={self.pus_version!r})"
         )
 
+    def __eq__(self, other: PusTmSecondaryHeader):
+        return self.pack() == other.pack()
+
     @property
     def header_size(self) -> int:
         return self.time.len() + 7
@@ -337,6 +340,13 @@ class PusTelemetry:
             f"{self.__class__.__name__}.from_composite_fields({self.__class__.__name__}"
             f"(sp_header={self.sp_header!r}, sec_header={self.pus_tm_sec_header!r}, "
             f"tm_data={self.tm_data!r}"
+        )
+
+    def __eq__(self, other: PusTelemetry):
+        return (
+            self.sp_header == other.sp_header
+            and self.pus_tm_sec_header == other.pus_tm_sec_header
+            and self._source_data == other._source_data
         )
 
     @property

@@ -56,6 +56,10 @@ class RequestId:
         )
 
     @classmethod
+    def from_pus_tc(cls, pus_tc: PusTelecommand):
+        return cls.from_sp_header(pus_tc.sp_header)
+
+    @classmethod
     def from_sp_header(cls, header: SpacePacketHeader) -> RequestId:
         return cls(
             ccsds_version=header.ccsds_version,
@@ -70,11 +74,21 @@ class RequestId:
         raw.extend(struct.pack("!H", self.tc_psc.raw()))
         return raw
 
+    def _as_u32(self):
+        packet_id_and_version = (self.ccsds_version << 13) | self.tc_packet_id.raw()
+        return (packet_id_and_version << 16) | self.tc_psc.raw()
+
     def __repr__(self):
         return (
             f"{self.__class__.__name__}(tc_packet_id={self.tc_packet_id!r}, "
             f"tc_psc={self.tc_psc!r}, ccsds_version={self.ccsds_version!r})"
         )
+
+    def __eq__(self, other: RequestId):
+        return self._as_u32() == other._as_u32()
+
+    def __hash__(self):
+        return self._as_u32().__hash__()
 
 
 ErrorCode = PacketFieldEnum
