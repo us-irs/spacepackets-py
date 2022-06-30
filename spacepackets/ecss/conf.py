@@ -1,5 +1,4 @@
 import enum
-from .definitions import DEFAULT_MAX_TC_DATA_SIZE
 
 
 FETCH_GLOBAL_APID = -1
@@ -27,7 +26,7 @@ class EcssConfKeys(enum.IntEnum):
 __ECSS_DICT = {
     EcssConfKeys.ECSS_TM_APID: 0x00,
     EcssConfKeys.ECSS_TC_APID: 0x00,
-    EcssConfKeys.MAX_TC_PACKET_SIZE: DEFAULT_MAX_TC_DATA_SIZE,
+    EcssConfKeys.MAX_TC_PACKET_SIZE: 1500,
 }
 
 

@@ -9,7 +9,7 @@ from .header import (
     determine_header_type,
     HeaderType,
 )
-from .definitions import (
+from .defs import (
     UslpInvalidRawPacketOrFrameLen,
     UslpTruncatedFrameNotAllowed,
     UslpInvalidConstructionRules,

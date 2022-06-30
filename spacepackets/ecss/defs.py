@@ -1,8 +1,4 @@
 import enum
-from typing import Final
-
-
-DEFAULT_MAX_TC_DATA_SIZE: Final = 1004
 
 
 class PusServices(enum.IntEnum):

@@ -4,7 +4,7 @@ from typing import Optional
 import enum
 import struct
 
-from .definitions import (
+from .defs import (
     UslpVersionMissmatch,
     UslpTypeMissmatch,
     UslpInvalidRawPacketOrFrameLen,

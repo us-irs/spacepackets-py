@@ -12,3 +12,4 @@ from .header import (
     ProtocolCommandFlag,
     BypassSequenceControlFlag,
 )
+from .defs import *

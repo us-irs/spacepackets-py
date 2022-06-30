@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from spacepackets.uslp.definitions import (
+from spacepackets.uslp.defs import (
     UslpFhpVhopFieldMissing,
     UslpInvalidConstructionRules,
     UslpInvalidFrameHeader,
