@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [unreleased]
 
+## [v0.12.1] 30.06.2022
+
+- Small bugfix for PUS 1 Step ID unpacking
+
 ## [v0.12.0] 30.06.2022
 
 - Added `PusVerificator` module which can track the verification status of sent telecommands
