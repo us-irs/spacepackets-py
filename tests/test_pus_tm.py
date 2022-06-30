@@ -188,6 +188,7 @@ class TestTelemetry(TestCase):
         tc_packet_id = PacketId(ptype=PacketTypes.TC, sec_header_flag=True, apid=0x42)
         tc_psc = PacketSeqCtrl(seq_flags=SequenceFlags.UNSEGMENTED, seq_count=22)
         req_id = RequestId(tc_packet_id, tc_psc)
+        print(req_id)
         req_id_as_bytes = req_id.pack()
         unpack_req_id = RequestId.unpack(req_id_as_bytes)
         self.assertEqual(unpack_req_id.tc_packet_id.raw(), tc_packet_id.raw())

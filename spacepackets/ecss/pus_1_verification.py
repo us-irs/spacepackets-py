@@ -74,7 +74,7 @@ class RequestId:
         raw.extend(struct.pack("!H", self.tc_psc.raw()))
         return raw
 
-    def _as_u32(self):
+    def as_u32(self):
         packet_id_and_version = (self.ccsds_version << 13) | self.tc_packet_id.raw()
         return (packet_id_and_version << 16) | self.tc_psc.raw()
 
@@ -84,11 +84,14 @@ class RequestId:
             f"tc_psc={self.tc_psc!r}, ccsds_version={self.ccsds_version!r})"
         )
 
+    def __str__(self):
+        return f"Request ID: [{self.tc_packet_id}, {self.tc_psc}]"
+
     def __eq__(self, other: RequestId):
-        return self._as_u32() == other._as_u32()
+        return self.as_u32() == other.as_u32()
 
     def __hash__(self):
-        return self._as_u32().__hash__()
+        return self.as_u32().__hash__()
 
 
 ErrorCode = PacketFieldEnum

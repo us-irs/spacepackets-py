@@ -38,6 +38,17 @@ class PacketSeqCtrl:
             f"seq_count={self.seq_count!r})"
         )
 
+    def __str__(self):
+        if self.seq_flags == SequenceFlags.CONTINUATION_SEGMENT:
+            seqstr = "CONT"
+        elif self.seq_flags == SequenceFlags.LAST_SEGMENT:
+            seqstr = "FIRST"
+        elif self.seq_flags == SequenceFlags.LAST_SEGMENT:
+            seqstr = "LAST"
+        elif self.seq_flags == SequenceFlags.UNSEGMENTED:
+            seqstr = "UNSEG"
+        return f"PSC: [Seq Flags: {seqstr}, Seq Count: {self.seq_count}]"
+
     def raw(self) -> int:
         return self.seq_flags << 14 | self.seq_count
 
@@ -71,6 +82,11 @@ class PacketId:
             f"{self.__class__.__name__}(ptype={self.ptype!r}, "
             f"sec_header_flag={self.sec_header_flag!r}, apid={self.apid!r})"
         )
+
+    def __str__(self):
+        pstr = "TM" if self.ptype == PacketTypes.TM else "TC"
+        return f"Packet ID: [Packet Type: {pstr}, Sec Header Flag: {self.sec_header_flag}, " \
+               f"APID: {self.apid:#05x}]"
 
     def raw(self) -> int:
         return self.ptype << 12 | self.sec_header_flag << 11 | self.apid
