@@ -367,6 +367,10 @@ class PusTelecommand:
     def seq_count(self, value):
         self.sp_header.seq_count = value
 
+    @apid.setter
+    def apid(self, apid):
+        self.sp_header.apid = apid
+
     def print(self, print_format: PrintFormats = PrintFormats.HEX):
         """Print the raw command in a clean format."""
         packet = self.pack()

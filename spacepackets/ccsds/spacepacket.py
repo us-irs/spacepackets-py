@@ -205,6 +205,10 @@ class SpacePacketHeader:
     def header_len(self) -> int:
         return SPACE_PACKET_HEADER_SIZE
 
+    @apid.setter
+    def apid(self, apid):
+        self.packet_id.apid = apid
+
     @property
     def packet_len(self) -> int:
         """Retrieve the full space packet size when packed

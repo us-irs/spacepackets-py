@@ -37,8 +37,7 @@ class TmCheckResult:
     set to True
     """
 
-    req_id_in_dict: bool
-    status: Optional[VerificationStatus]
+    status: VerificationStatus
     completed: bool
 
 
@@ -54,17 +53,16 @@ class PusVerificator:
         self._verif_dict.update({req_id: VerificationStatus()})
         return True
 
-    def add_tm(self, pus_1_tm: Service1Tm) -> TmCheckResult:
+    def add_tm(self, pus_1_tm: Service1Tm) -> Optional[TmCheckResult]:
         req_id = pus_1_tm.tc_req_id
-        res = TmCheckResult(False, None, False)
         if req_id not in self._verif_dict:
-            return res
-        res.req_id_in_dict = True
+            return None
         verif_status = self._verif_dict.get(req_id)
         if pus_1_tm.subservice <= 0 or pus_1_tm.subservice > 8:
             raise ValueError(
                 f"PUS 1 TM with invalid subservice {pus_1_tm.subservice} was passed"
             )
+        res = TmCheckResult(status=VerificationStatus(), completed=False)
         res.status = verif_status
 
         return self._check_subservice(pus_1_tm, res, verif_status)

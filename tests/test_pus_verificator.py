@@ -132,8 +132,8 @@ class TestPusVerificator(TestCase):
         )
         self.assertTrue(self.pus_verificator.add_tc(fail_set.pus_tc))
         status = self.pus_verificator.add_tm(fail_set.acc_fail_tm)
+        self.assertIsNotNone(status)
         self.assertTrue(status.completed)
-        self.assertTrue(status.req_id_in_dict)
         self._check_status(
             status.status,
             True,
@@ -151,8 +151,8 @@ class TestPusVerificator(TestCase):
         )
         self.assertTrue(self.pus_verificator.add_tc(fail_set.pus_tc))
         status = self.pus_verificator.add_tm(fail_set.suc_set.acc_suc_tm)
+        self.assertIsNotNone(status)
         self.assertFalse(status.completed)
-        self.assertTrue(status.req_id_in_dict)
         self._check_status(
             status.status,
             False,
@@ -164,7 +164,7 @@ class TestPusVerificator(TestCase):
         )
         status = self.pus_verificator.add_tm(fail_set.suc_set.sta_suc_tm)
         self.assertFalse(status.completed)
-        self.assertTrue(status.req_id_in_dict)
+        self.assertIsNotNone(status)
         self._check_status(
             status.status,
             False,
@@ -175,8 +175,8 @@ class TestPusVerificator(TestCase):
             StatusField.UNSET,
         )
         status = self.pus_verificator.add_tm(fail_set.ste_fail_tm)
+        self.assertIsNotNone(status)
         self.assertTrue(status.completed)
-        self.assertTrue(status.req_id_in_dict)
         self._check_status(
             status.status,
             True,
@@ -190,7 +190,7 @@ class TestPusVerificator(TestCase):
     def _regular_success_seq(self, suc_set: TestSuccessSet):
         self.assertTrue(self.pus_verificator.add_tc(suc_set.pus_tc))
         check_res = self.pus_verificator.add_tm(suc_set.acc_suc_tm)
-        self.assertTrue(check_res.req_id_in_dict)
+        self.assertIsNotNone(check_res)
         status = check_res.status
         self._check_status(
             status,
@@ -202,7 +202,7 @@ class TestPusVerificator(TestCase):
             StatusField.UNSET,
         )
         check_res = self.pus_verificator.add_tm(suc_set.sta_suc_tm)
-        self.assertTrue(check_res.req_id_in_dict)
+        self.assertIsNotNone(check_res)
         status = check_res.status
         self._check_status(
             status,
@@ -214,7 +214,7 @@ class TestPusVerificator(TestCase):
             StatusField.UNSET,
         )
         check_res = self.pus_verificator.add_tm(suc_set.ste_suc_tm)
-        self.assertTrue(check_res.req_id_in_dict)
+        self.assertIsNotNone(check_res)
         status = check_res.status
         self._check_status(
             status,
@@ -226,7 +226,7 @@ class TestPusVerificator(TestCase):
             StatusField.UNSET,
         )
         check_res = self.pus_verificator.add_tm(suc_set.fin_suc_tm)
-        self.assertTrue(check_res.req_id_in_dict)
+        self.assertIsNotNone(check_res)
         status = check_res.status
         self._check_status(
             status,
