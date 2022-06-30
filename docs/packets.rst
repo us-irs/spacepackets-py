@@ -63,6 +63,8 @@ PUS C
 PUS A
 """"""
 
+PUS A is not supported anymore starting at version ``v0.12.0``.
+
 .. code-block::
 
      o = optional, Srv = Service
@@ -116,6 +118,8 @@ PUS C
 
 PUS A
 """"""
+
+PUS A is not supported anymore starting at version ``v0.12.0``.
 
 .. code-block::
 

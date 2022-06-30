@@ -18,6 +18,11 @@ Currently, this includes the following components:
 - CCSDS File Delivery Protcol (CFDP) packet implementations according to
   `CCSDS Blue Book 727.0-B-5`_.
 
+It also contains various helper modules
+
+- `PusVerificator` module to track the verification of sent telecommands
+- PTC and PFC definitions for ECSS packets
+
 Other pages (online)
 ---------------------
 
