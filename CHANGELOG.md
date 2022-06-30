@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [unreleased]
 
+## [v0.12.0]
+
+- Added `PusVerificator` module which can track the verification status of sent telecommands
+
 ## [v0.11.0] 28.06.2022
 
 - Minor name change for PUS 17 and PUS 1 TM classes
