@@ -212,39 +212,44 @@ class TestTelemetry(TestCase):
         self.assertEqual(notice_unpacked.code.pfc, error_code.pfc)
         self.assertEqual(notice_unpacked.data, bytes([0, 2, 4, 8]))
 
-    def test_service_1_tm_success(self):
-        success_subservices = [
-            Subservices.TM_ACCEPTANCE_SUCCESS,
-            Subservices.TM_START_SUCCESS,
-            Subservices.TM_STEP_SUCCESS,
-            Subservices.TM_COMPLETION_SUCCESS,
-        ]
-        for subservice in success_subservices:
-            pus_tc = PusTelecommand(service=17, subservice=1)
-            helper_created = None
-            step_id = None
-            if subservice == Subservices.TM_ACCEPTANCE_SUCCESS:
-                helper_created = create_acceptance_success_tm(pus_tc)
-            elif subservice == Subservices.TM_START_SUCCESS:
-                helper_created = create_start_success_tm(pus_tc)
-            elif subservice == Subservices.TM_STEP_SUCCESS:
-                step_id = PacketFieldEnum.with_byte_size(1, 4)
-                helper_created = create_step_success_tm(pus_tc, step_id)
-            elif subservice == Subservices.TM_COMPLETION_SUCCESS:
-                helper_created = create_completion_success_tm(pus_tc)
-            self._test_srv_1_success_tm(
-                pus_tc,
-                Service1Tm(
-                    subservice=subservice,
-                    verif_params=VerificationParams(
-                        req_id=RequestId(pus_tc.packet_id, pus_tc.packet_seq_ctrl),
-                        step_id=step_id,
-                    ),
+    def test_service_1_tm_acc_success(self):
+        self._generic_test_srv_1_success(Subservices.TM_ACCEPTANCE_SUCCESS)
+
+    def test_service_1_tm_start_success(self):
+        self._generic_test_srv_1_success(Subservices.TM_START_SUCCESS)
+
+    def test_service_1_tm_step_success(self):
+        self._generic_test_srv_1_success(Subservices.TM_STEP_SUCCESS)
+
+    def test_service_1_tm_completion_success(self):
+        self._generic_test_srv_1_success(Subservices.TM_COMPLETION_SUCCESS)
+
+    def _generic_test_srv_1_success(self, subservice: Subservices):
+        pus_tc = PusTelecommand(service=17, subservice=1)
+        helper_created = None
+        step_id = None
+        if subservice == Subservices.TM_ACCEPTANCE_SUCCESS:
+            helper_created = create_acceptance_success_tm(pus_tc)
+        elif subservice == Subservices.TM_START_SUCCESS:
+            helper_created = create_start_success_tm(pus_tc)
+        elif subservice == Subservices.TM_STEP_SUCCESS:
+            step_id = PacketFieldEnum.with_byte_size(1, 4)
+            helper_created = create_step_success_tm(pus_tc, step_id)
+        elif subservice == Subservices.TM_COMPLETION_SUCCESS:
+            helper_created = create_completion_success_tm(pus_tc)
+        self._test_srv_1_success_tm(
+            pus_tc,
+            Service1Tm(
+                subservice=subservice,
+                verif_params=VerificationParams(
+                    req_id=RequestId(pus_tc.packet_id, pus_tc.packet_seq_ctrl),
+                    step_id=step_id,
                 ),
-                subservice,
-            )
-            if helper_created is not None:
-                self._test_srv_1_success_tm(pus_tc, helper_created, subservice, step_id)
+            ),
+            subservice,
+        )
+        if helper_created is not None:
+            self._test_srv_1_success_tm(pus_tc, helper_created, subservice, step_id)
 
     def test_verif_params(self):
         sp_header = SpacePacketHeader(

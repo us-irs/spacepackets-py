@@ -276,9 +276,9 @@ class Service1Tm:
 
     def _unpack_success_verification(self, unpack_cfg: UnpackParams):
         if self.pus_tm.subservice == Subservices.TM_STEP_SUCCESS:
-            self._verif_params.step_id = PacketFieldEnum.unpack(
-                self.pus_tm.tm_data[0 : unpack_cfg.bytes_step_id],
+            self._verif_params.step_id = StepId.unpack(
                 pfc=unpack_cfg.bytes_step_id * 8,
+                data=self.pus_tm.tm_data[4 : 4 + unpack_cfg.bytes_step_id],
             )
         elif self.pus_tm.subservice not in [1, 3, 7]:
             logger = get_console_logger()
