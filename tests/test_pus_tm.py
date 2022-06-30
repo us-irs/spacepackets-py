@@ -228,7 +228,7 @@ class TestTelemetry(TestCase):
             elif subservice == Subservices.TM_START_SUCCESS:
                 helper_created = create_start_success_tm(pus_tc)
             elif subservice == Subservices.TM_STEP_SUCCESS:
-                step_id = PacketFieldEnum.from_byte_size(1, 4)
+                step_id = PacketFieldEnum.with_byte_size(1, 4)
                 helper_created = create_step_success_tm(pus_tc, step_id)
             elif subservice == Subservices.TM_COMPLETION_SUCCESS:
                 helper_created = create_completion_success_tm(pus_tc)
@@ -301,7 +301,7 @@ class TestTelemetry(TestCase):
     def _generic_test_srv_1_failure(self, subservice: Subservices):
         pus_tc = PusTelecommand(service=17, subservice=1)
         failure_notice = FailureNotice(
-            code=PacketFieldEnum.from_byte_size(1, 8), data=bytes([2, 4])
+            code=PacketFieldEnum.with_byte_size(1, 8), data=bytes([2, 4])
         )
         helper_created = None
         step_id = None
@@ -310,7 +310,7 @@ class TestTelemetry(TestCase):
         elif subservice == Subservices.TM_START_FAILURE:
             helper_created = create_start_failure_tm(pus_tc, failure_notice)
         elif subservice == Subservices.TM_STEP_FAILURE:
-            step_id = PacketFieldEnum.from_byte_size(2, 12)
+            step_id = PacketFieldEnum.with_byte_size(2, 12)
             helper_created = create_step_failure_tm(
                 pus_tc, failure_notice=failure_notice, step_id=step_id
             )

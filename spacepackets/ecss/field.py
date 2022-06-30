@@ -82,7 +82,7 @@ class PacketFieldEnum(PacketFieldBase):
         self.val = val
 
     @classmethod
-    def from_byte_size(cls, num_bytes: int, val: int):
+    def with_byte_size(cls, num_bytes: int, val: int):
         return cls(num_bytes * 8, val)
 
     def pack(self) -> bytearray:
