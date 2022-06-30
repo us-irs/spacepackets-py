@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## [v0.12.0]
 
 - Added `PusVerificator` module which can track the verification status of sent telecommands
+- Added several magic method implementations, notably `__eq__` and `__hash__` where 
+  applicable
 
 ## [v0.11.0] 28.06.2022
 
