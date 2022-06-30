@@ -12,7 +12,7 @@ from spacepackets.ccsds.time import CdsShortTimestamp
 from spacepackets.ecss import PusTelecommand
 from spacepackets.ecss.conf import FETCH_GLOBAL_APID
 from spacepackets.ecss.defs import PusServices
-from spacepackets.ecss.field import PacketFieldEnum
+from spacepackets.ecss.fields import PacketFieldEnum
 from spacepackets.ecss.tm import PusTelemetry
 from spacepackets.log import get_console_logger
 

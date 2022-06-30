@@ -3,7 +3,7 @@ import struct
 from unittest import TestCase
 
 from spacepackets.ecss import PacketFieldEnum
-from spacepackets.ecss.field import (
+from spacepackets.ecss.fields import (
     byte_num_to_unsigned_struct_specifier,
     byte_num_to_signed_struct_specifier,
 )

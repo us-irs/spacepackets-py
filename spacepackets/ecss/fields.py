@@ -1,3 +1,4 @@
+from __future__ import annotations
 import enum
 import struct
 from dataclasses import dataclass
@@ -118,6 +119,9 @@ class PacketFieldEnum(PacketFieldBase):
 
     def __repr__(self):
         return f"{self.__class__.__name__}(pfc={self.pfc!r}, val={self.val!r})"
+
+    def __eq__(self, other: PacketFieldEnum):
+        return self.pfc == other.pfc and self.val == other.val
 
 
 def byte_num_to_signed_struct_specifier(byte_num: int) -> str:

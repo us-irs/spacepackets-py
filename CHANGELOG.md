@@ -13,6 +13,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Added `PusVerificator` module which can track the verification status of sent telecommands
 - Added several magic method implementations, notably `__eq__` and `__hash__` where 
   applicable
+- Removed PUS A support completely. PUS A is relatively old, and specialicing on one packet version
+  makes the code a lot simpler
+- Added `ecss.fields` module which contains the `Ptc` and various PFC enumerations. Also add
+  a generic abstraction for enumerated fields in form of a `PacketFieldEnum` and a
+  `PacketFieldBase`. This is useful to have an abstraction for the various PUS standard packet
+  fields which can have variable sizes
 
 ## [v0.11.0] 28.06.2022
 
