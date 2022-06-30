@@ -363,6 +363,10 @@ class PusTelecommand:
     def crc16(self):
         return self._crc16
 
+    @seq_count.setter
+    def seq_count(self, value):
+        self.sp_header.seq_count = value
+
     def print(self, print_format: PrintFormats = PrintFormats.HEX):
         """Print the raw command in a clean format."""
         packet = self.pack()

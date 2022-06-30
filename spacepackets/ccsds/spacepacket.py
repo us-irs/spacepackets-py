@@ -193,6 +193,10 @@ class SpacePacketHeader:
     def seq_count(self):
         return self.psc.seq_count
 
+    @seq_count.setter
+    def seq_count(self, seq_cnt):
+        self.psc.seq_count = seq_cnt
+
     @property
     def seq_flags(self):
         return self.psc.seq_flags
