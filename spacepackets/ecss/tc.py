@@ -219,10 +219,12 @@ class PusTelecommand:
 
     def __str__(self):
         """Returns string representation of a class instance."""
+        from .req_id import RequestId
+
         return (
-            f"PUS TC[{self.pus_tc_sec_header.service}, "
-            f"{self.pus_tc_sec_header.subservice}], APID {self.apid:#05x}, "
-            f"SSC {self.sp_header.seq_count}, Size {self.packet_len}"
+            f"PUS TC[{self.pus_tc_sec_header.service}, {self.pus_tc_sec_header.subservice}] with "
+            f"Request ID {RequestId.from_sp_header(self.sp_header).as_u32():#08x}"
+            f", APID {self.apid:#05x}, SSC {self.sp_header.seq_count}"
         )
 
     def __eq__(self, other: PusTelecommand):

@@ -85,8 +85,10 @@ class PacketId:
 
     def __str__(self):
         pstr = "TM" if self.ptype == PacketTypes.TM else "TC"
-        return f"Packet ID: [Packet Type: {pstr}, Sec Header Flag: {self.sec_header_flag}, " \
-               f"APID: {self.apid:#05x}]"
+        return (
+            f"Packet ID: [Packet Type: {pstr}, Sec Header Flag: {self.sec_header_flag}, "
+            f"APID: {self.apid:#05x}]"
+        )
 
     def raw(self) -> int:
         return self.ptype << 12 | self.sec_header_flag << 11 | self.apid

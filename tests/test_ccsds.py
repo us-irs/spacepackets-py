@@ -24,7 +24,7 @@ class TestCcsds(TestCase):
         )
         self.assertEqual(
             f"{psc}",
-            f"PacketSeqCtrl(seq_flags={SequenceFlags.UNSEGMENTED!r}, seq_count={pow(2, 14) - 1})",
+            f"PSC: [Seq Flags: UNSEG, Seq Count: {pow(2, 14) - 1}]",
         )
         psc_raw = psc.raw()
         self.assertEqual(psc_raw, 0xFFFF)
@@ -35,7 +35,7 @@ class TestCcsds(TestCase):
         packet_id = PacketId(ptype=PacketTypes.TC, sec_header_flag=True, apid=0x7FF)
         self.assertEqual(
             f"{packet_id}",
-            f"PacketId(ptype={PacketTypes.TC!r}, sec_header_flag=True, apid={0x7FF})",
+            f"Packet ID: [Packet Type: TC, Sec Header Flag: True, APID: 0x7ff]",
         )
         packet_id_raw = packet_id.raw()
         self.assertEqual(packet_id_raw, 0x1FFF)

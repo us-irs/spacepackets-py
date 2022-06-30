@@ -36,6 +36,7 @@ class TmCheckResult:
     packets were received, the :py:attr:`VerificationStatus.all_verifs_recvd` field will bet
     set to True
     """
+
     req_id_in_dict: bool
     status: Optional[VerificationStatus]
     completed: bool
