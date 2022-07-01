@@ -377,7 +377,8 @@ def parse_space_packets(
     analysis_queue: Deque[bytearray], packet_ids: Tuple[int]
 ) -> List[bytearray]:
     """Given a deque of bytearrays, parse for space packets. Any broken headers will be removed.
-    If a packet is detected and the broken tail packets will be reinserted into the given deque
+    If a packet is detected and the broken tail packets will be reinserted into the given deque.
+
     :param analysis_queue:
     :param packet_ids:
     :return:

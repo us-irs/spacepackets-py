@@ -50,6 +50,7 @@ class PusTmSecondaryHeader:
         spacecraft_time_ref: int = 0,
     ):
         """Create a PUS telemetry secondary header object.
+
         :param service:
         :param subservice:
         :param time: Time field

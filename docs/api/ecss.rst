@@ -1,14 +1,6 @@
 spacepackets.ecss package
 ==========================
 
-Module contents
----------------
-
-.. automodule:: spacepackets.ecss
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 spacepackets.ecss.conf module
 -------------------------------------
 
@@ -16,22 +8,6 @@ This module can be used to configure common default values so these don't have t
 each time anymore when creating ECSS packets
 
 .. automodule:: spacepackets.ecss.conf
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-spacepackets.ecss.tc module
--------------------------------------
-
-.. automodule:: spacepackets.ecss.tc
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-spacepackets.ecss.tm
--------------------------------------
-
-.. automodule:: spacepackets.ecss.tm
    :members:
    :undoc-members:
    :show-inheritance:
@@ -52,10 +28,26 @@ spacepackets.ecss.req\_id
    :undoc-members:
    :show-inheritance:
 
+spacepackets.ecss.pus\_1\_verification
+---------------------------------------
+
+.. automodule:: spacepackets.ecss.pus_1_verification
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 spacepackets.ecss.pus\_verificator
 -------------------------------------
 
 .. automodule:: spacepackets.ecss.pus_verificator
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Module contents
+---------------
+
+.. automodule:: spacepackets.ecss
    :members:
    :undoc-members:
    :show-inheritance:

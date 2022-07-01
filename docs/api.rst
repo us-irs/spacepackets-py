@@ -20,6 +20,8 @@ can use the ``log`` module of the package to specify a custom logger name.
    :maxdepth: 4
 
    api/ccsds
+   api/ecss_tc
+   api/ecss_tm
    api/ecss
    api/cfdp
    api/cfdp_pdu
