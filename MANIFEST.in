@@ -3,6 +3,6 @@ include NOTICE
 include CHANGELOG.md
 
 graft docs
+graft tests
 
-include tests/*
 include requirements.txt
