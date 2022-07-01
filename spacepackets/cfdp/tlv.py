@@ -538,7 +538,8 @@ def concrete_tlv_factory(
 
     Please note that this might not be the most efficient way to create the concrete classes and
     it might be more efficient to deserialize a raw buffer into the concrete class directly after
-    checking the TLV type
+    checking the TLV type.
+
     :param cfdp_tlv: Generic TLV packet
     :param _tlv_type: Optional type specification of the concrete class. This is useful for IDEs
         and type checkers

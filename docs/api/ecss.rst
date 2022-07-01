@@ -1,6 +1,14 @@
 spacepackets.ecss package
 ==========================
 
+Module contents
+---------------
+
+.. automodule:: spacepackets.ecss
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 spacepackets.ecss.conf module
 -------------------------------------
 

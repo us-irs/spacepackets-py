@@ -25,7 +25,7 @@ can use the ``log`` module of the package to specify a custom logger name.
    api/cfdp_pdu
 
 spacepackets.log module
------------------------
+-------------------------
 
 .. automodule:: spacepackets.log
    :members:
@@ -33,7 +33,7 @@ spacepackets.log module
    :show-inheritance:
 
 spacepackets.util module
------------------------
+--------------------------
 
 .. automodule:: spacepackets.util
    :members:

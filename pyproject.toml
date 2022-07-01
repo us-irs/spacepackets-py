@@ -1,6 +1,59 @@
+# This is the most recent recommended configuration format.
+# It will probably replace setup.cfg in the near future
+
 [build-system]
-requires = [
-    "setuptools>=42",
-    "wheel"
-]
+requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "spacepackets"
+description = "Various CCSDS and ECSS packet implementations"
+dynamic = ["version", "readme"]
+requires-python = ">=3.7"
+license = {file = "LICENSE"}
+authors = [
+  {name = "Robin Mueller", email = "robin.mueller.m@gmail.com"}
+]
+keywords = ["ccsds", "ecss", "space", "communication", "packet"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "License :: OSI Approved :: Apache Software License",
+    "Natural Language :: English",
+    "Operating System :: POSIX",
+    "Operating System :: Microsoft :: Windows",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Topic :: Communications",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Scientific/Engineering"
+]
+dependencies = [
+    "crcmod>=1.7"
+]
+
+[project.urls]
+"Homepage" = "https://github.com/us-irs/py-spacepackets"
+
+[tool.setuptools.dynamic]
+version = {attr = "spacepackets.__version__"}
+readme = {file = ["README.md", "NOTICE"]}
+
+# Default flake8 does not appear to have implemented proper pyproject.toml
+# support yet but there are project like flake9 and pyproject-flake8 which
+# aim to alleviate this problem
+[tool.flake8]
+max-line-length = 100
+ignore = "D203, W503"
+exclude = [
+    ".git",
+    "__pycache__",
+    "docs/conf.py",
+    "old",
+    "build",
+    "dist",
+    "venv"
+]
+max-complexity = 10
+extend-ignore = "E203,"

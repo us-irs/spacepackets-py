@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 import struct
-import sys
 from typing import Tuple
+
+from crcmod.predefined import mkPredefinedCrcFun, PredefinedCrc
 
 from spacepackets.log import get_console_logger
 from spacepackets.ccsds.spacepacket import (
@@ -23,13 +24,6 @@ from spacepackets.ecss.conf import (
     get_max_tc_packet_size,
     FETCH_GLOBAL_APID,
 )
-
-
-try:
-    from crcmod.predefined import mkPredefinedCrcFun, PredefinedCrc
-except ImportError:
-    print("crcmod package not installed!")
-    sys.exit(1)
 
 
 class PusTcDataFieldHeader:
@@ -256,6 +250,7 @@ class PusTelecommand:
 
     def pack(self, calc_crc: bool = True) -> bytearray:
         """Serializes the TC data fields into a bytearray.
+
         :param calc_crc: Recalculate the CRC. Can be disabled if :py:func:`calc_crc`
             was called before
         """

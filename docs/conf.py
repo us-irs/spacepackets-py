@@ -14,7 +14,7 @@ import os
 import sys
 
 sys.path.insert(0, os.path.abspath(".."))
-import spacepackets
+from spacepackets import __version__
 
 # -- Project information -----------------------------------------------------
 
@@ -23,7 +23,7 @@ copyright = "2021, Robin Mueller"
 author = "Robin Mueller"
 
 # The full version, including alpha/beta/rc tags
-version = release = spacepackets.__version__
+version = release = __version__
 
 
 # -- General configuration ---------------------------------------------------
