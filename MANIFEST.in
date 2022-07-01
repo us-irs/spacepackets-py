@@ -2,8 +2,7 @@ include LICENSE
 include NOTICE
 include CHANGELOG.md
 
-include docs/*
-include docs/api/*
+graft docs
 
 include tests/*
 include requirements.txt
