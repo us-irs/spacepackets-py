@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [unreleased]
 
+## [v0.13.0rc1] 01.07.2022
+
+- Update `pyproject.toml` file for full support, but still keep `setup.cfg` for now
+- API improvements for PUS Verificator
+- Setter properties for sequence count and APID in ECSS module
+- Make `as_u32` function of `RequestId` public
+
 ## [v0.12.1] 30.06.2022
 
 - Small bugfix for PUS 1 Step ID unpacking
