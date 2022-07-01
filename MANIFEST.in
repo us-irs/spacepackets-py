@@ -1,0 +1,9 @@
+include LICENSE
+include NOTICE
+include CHANGELOG.md
+
+include docs/*
+include docs/api/*
+
+include tests/*
+include requirements.txt
