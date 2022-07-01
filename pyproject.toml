@@ -8,7 +8,8 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "spacepackets"
 description = "Various CCSDS and ECSS packet implementations"
-dynamic = ["version", "readme"]
+readme = "README.md"
+dynamic = ["version"]
 requires-python = ">=3.7"
 license = {file = "LICENSE"}
 authors = [
@@ -38,7 +39,6 @@ dependencies = [
 
 [tool.setuptools.dynamic]
 version = {attr = "spacepackets.__version__"}
-readme = {file = ["README.md", "NOTICE"]}
 
 # Default flake8 does not appear to have implemented proper pyproject.toml
 # support yet but there are project like flake9 and pyproject-flake8 which
