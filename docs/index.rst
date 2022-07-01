@@ -20,7 +20,7 @@ Currently, this includes the following components:
 
 It also contains various helper modules
 
-- :py:class:`spacepackets.ecss.pus_verificator.PusVerificator` module to track the verification of sent telecommands
+- :py:class:`spacepackets.ecss.pus_verificator.PusVerificator` class to track the verification of sent telecommands
 - PTC and PFC definitions for ECSS packets inside the :py:mod:`spacepackets.ecss.fields` module
 
 Other pages (online)

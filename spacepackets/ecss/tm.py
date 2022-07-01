@@ -1,3 +1,6 @@
+"""This module contains import PUS TM packet classes, most notably the
+:py:class:`spacepackets.ecss.tm.PusTelemetry` class.
+"""
 from __future__ import annotations
 
 import struct

@@ -1,4 +1,5 @@
-"""This module contains the PUS telecommand class representation to pack telecommands.
+"""This module contains the PUS telecommand class representation to pack telecommands, most notably
+the :py:class:`PusTelecommand` class.
 """
 from __future__ import annotations
 

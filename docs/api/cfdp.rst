@@ -1,6 +1,14 @@
 spacepackets.cfdp package
 ==========================
 
+Module contents
+-----------------
+
+.. automodule:: spacepackets.cfdp
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 spacepackets.cfdp.conf module
 -------------------------------------
 

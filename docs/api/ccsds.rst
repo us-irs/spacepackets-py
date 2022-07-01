@@ -1,6 +1,14 @@
 spacepackets.ccsds package
 ==========================
 
+Module content
+---------------
+
+.. automodule:: spacepackets.ccsds
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 spacepackets.ccsds.spacepacket module
 -------------------------------------
 
