@@ -23,7 +23,7 @@ from spacepackets.ecss.pus_verificator import (
 )
 
 
-class TestSuccessSet:
+class SuccessSet:
     def __init__(self, pus_tc: PusTelecommand):
         self.pus_tc = pus_tc
         self.req_id = RequestId.from_pus_tc(pus_tc)
@@ -35,9 +35,9 @@ class TestSuccessSet:
         self.fin_suc_tm = create_completion_success_tm(pus_tc)
 
 
-class TestFailureSet:
+class FailureSet:
     def __init__(self, pus_tc: PusTelecommand, failure_notice: FailureNotice):
-        self.suc_set = TestSuccessSet(pus_tc)
+        self.suc_set = SuccessSet(pus_tc)
         self.failure_notice = failure_notice
         self.acc_fail_tm = create_acceptance_failure_tm(pus_tc, self.failure_notice)
         self.sta_fail_tm = create_start_failure_tm(pus_tc, self.failure_notice)
@@ -64,7 +64,7 @@ class TestPusVerificator(TestCase):
         self.pus_verificator = PusVerificator()
 
     def test_basic(self):
-        suc_set = TestSuccessSet(PusTelecommand(service=17, subservice=1))
+        suc_set = SuccessSet(PusTelecommand(service=17, subservice=1))
         self.pus_verificator.add_tc(suc_set.pus_tc)
         check_res = self.pus_verificator.add_tm(suc_set.acc_suc_tm)
         self.assertEqual(check_res.completed, False)
@@ -93,32 +93,30 @@ class TestPusVerificator(TestCase):
             )
 
     def test_complete_verification_clear_completed(self):
-        self._regular_success_seq(
-            TestSuccessSet(PusTelecommand(service=17, subservice=1))
-        )
+        self._regular_success_seq(SuccessSet(PusTelecommand(service=17, subservice=1)))
         self.pus_verificator.remove_completed_entries()
         self.assertEqual(len(self.pus_verificator.verif_dict), 0)
 
     def test_complete_verification_clear_completed_multi(self):
         self._regular_success_seq(
-            TestSuccessSet(PusTelecommand(service=17, subservice=1, seq_count=0))
+            SuccessSet(PusTelecommand(service=17, subservice=1, seq_count=0))
         )
         self._regular_success_seq(
-            TestSuccessSet(PusTelecommand(service=5, subservice=4, seq_count=1))
+            SuccessSet(PusTelecommand(service=5, subservice=4, seq_count=1))
         )
         self.pus_verificator.remove_completed_entries()
         self.assertEqual(len(self.pus_verificator.verif_dict), 0)
 
     def test_complete_verification_remove_manually(self):
-        suc_set = TestSuccessSet(PusTelecommand(service=17, subservice=1))
+        suc_set = SuccessSet(PusTelecommand(service=17, subservice=1))
         self._regular_success_seq(suc_set)
         self.assertTrue(self.pus_verificator.remove_entry(suc_set.req_id))
         self.assertEqual(len(self.pus_verificator.verif_dict), 0)
 
     def test_complete_verification_multi_remove_manually(self):
-        set_0 = TestSuccessSet(PusTelecommand(service=17, subservice=1, seq_count=0))
+        set_0 = SuccessSet(PusTelecommand(service=17, subservice=1, seq_count=0))
         self._regular_success_seq(set_0)
-        set_1 = TestSuccessSet(PusTelecommand(service=5, subservice=4, seq_count=1))
+        set_1 = SuccessSet(PusTelecommand(service=5, subservice=4, seq_count=1))
         self._regular_success_seq(set_1)
         self.assertTrue(self.pus_verificator.remove_entry(set_0.req_id))
         self.assertEqual(len(self.pus_verificator.verif_dict), 1)
@@ -127,7 +125,7 @@ class TestPusVerificator(TestCase):
 
     def test_acceptance_failure(self):
         notice = FailureNotice(ErrorCode.with_byte_size(1, 8), data=bytes([0, 1]))
-        fail_set = TestFailureSet(
+        fail_set = FailureSet(
             PusTelecommand(service=17, subservice=1, seq_count=0), notice
         )
         self.assertTrue(self.pus_verificator.add_tc(fail_set.pus_tc))
@@ -146,7 +144,7 @@ class TestPusVerificator(TestCase):
 
     def test_step_failure(self):
         notice = FailureNotice(ErrorCode.with_byte_size(1, 8), data=bytes([0, 1]))
-        fail_set = TestFailureSet(
+        fail_set = FailureSet(
             PusTelecommand(service=17, subservice=1, seq_count=0), notice
         )
         self.assertTrue(self.pus_verificator.add_tc(fail_set.pus_tc))
@@ -187,7 +185,7 @@ class TestPusVerificator(TestCase):
             StatusField.UNSET,
         )
 
-    def _regular_success_seq(self, suc_set: TestSuccessSet):
+    def _regular_success_seq(self, suc_set: SuccessSet):
         self.assertTrue(self.pus_verificator.add_tc(suc_set.pus_tc))
         check_res = self.pus_verificator.add_tm(suc_set.acc_suc_tm)
         self.assertIsNotNone(check_res)

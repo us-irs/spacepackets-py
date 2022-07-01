@@ -9,7 +9,7 @@ from spacepackets.ecss.fields import (
 )
 
 
-class TestEnum(enum.IntEnum):
+class ExampleEnum(enum.IntEnum):
     OH_NO = 0
     OH_YES = 1
     HMM = 2
@@ -31,7 +31,7 @@ class TestEcss(TestCase):
             byte_num_to_signed_struct_specifier(0)
 
     def _enum_serialize_deserialize_different_sizes(self, pfc: int):
-        for val in TestEnum:
+        for val in ExampleEnum:
             test_enum = PacketFieldEnum(pfc=pfc, val=val)
             self.assertEqual(test_enum.val, val)
             self.assertEqual(test_enum.pfc, pfc)
