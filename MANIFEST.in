@@ -3,6 +3,10 @@ include NOTICE
 include CHANGELOG.md
 
 graft docs
+prune docs/_build
+
 graft tests
 
 include requirements.txt
+
+recursive-exclude * *.pyc *.pyo
