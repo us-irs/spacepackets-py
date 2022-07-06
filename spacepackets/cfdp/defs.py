@@ -8,6 +8,8 @@ class PduType(enum.IntEnum):
 
 
 class Direction(enum.IntEnum):
+    """This is used for PDU forwarding"""
+
     TOWARDS_RECEIVER = 0
     TOWARDS_SENDER = 1
 
