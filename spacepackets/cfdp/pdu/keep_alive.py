@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import struct
 
-from spacepackets.cfdp.pdu.file_directive import FileDirectivePduBase, DirectiveCodes
+from spacepackets.cfdp.pdu.file_directive import FileDirectivePduBase, DirectiveType
 from spacepackets.cfdp.conf import PduConfig, FileSize, get_default_file_size
 from spacepackets.log import get_console_logger
 
@@ -18,7 +18,7 @@ class KeepAlivePdu:
             directive_param_field_len = 8
         # Directive param field length is minimum FSS size which is 4 bytes
         self.pdu_file_directive = FileDirectivePduBase(
-            directive_code=DirectiveCodes.KEEP_ALIVE_PDU,
+            directive_code=DirectiveType.KEEP_ALIVE_PDU,
             pdu_conf=pdu_conf,
             directive_param_field_len=directive_param_field_len,
         )

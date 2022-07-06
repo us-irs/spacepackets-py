@@ -3,16 +3,16 @@ import struct
 from typing import List, Tuple, Optional
 
 from spacepackets.cfdp.pdu.file_directive import (
-    IsFileDirective,
+    AbstractFileDirectiveBase,
     FileDirectivePduBase,
-    DirectiveCodes,
+    DirectiveType,
     FileSize,
 )
 from spacepackets.cfdp.conf import PduConfig
 from spacepackets.log import get_console_logger
 
 
-class NakPdu(IsFileDirective):
+class NakPdu(AbstractFileDirectiveBase):
     """Encapsulates the NAK file directive PDU, see CCSDS 727.0-B-5 p.84"""
 
     def __init__(
@@ -31,13 +31,15 @@ class NakPdu(IsFileDirective):
             list element is the start offset and the second entry is the end offset
         """
         self.pdu_file_directive = FileDirectivePduBase(
-            directive_code=DirectiveCodes.ACK_PDU,
+            directive_code=DirectiveType.ACK_PDU,
             directive_param_field_len=8,
             pdu_conf=pdu_conf,
         )
         # Calling this will also update the directive parameter field length
         self.segment_requests = segment_requests
-        IsFileDirective.__init__(self, pdu_file_directive=self.pdu_file_directive)
+        AbstractFileDirectiveBase.__init__(
+            self, pdu_file_directive=self.pdu_file_directive
+        )
         self.start_of_scope = start_of_scope
         self.end_of_scope = end_of_scope
 

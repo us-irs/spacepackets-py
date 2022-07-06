@@ -2,7 +2,7 @@ from __future__ import annotations
 import struct
 from typing import Optional
 
-from spacepackets.cfdp.pdu.file_directive import FileDirectivePduBase, DirectiveCodes
+from spacepackets.cfdp.pdu.file_directive import FileDirectivePduBase, DirectiveType
 from spacepackets.cfdp.defs import ConditionCode
 from spacepackets.cfdp.conf import PduConfig
 from spacepackets.cfdp.tlv import EntityIdTlv
@@ -36,7 +36,7 @@ class EofPdu:
         self.file_size = file_size
         self._fault_location = fault_location
         self.pdu_file_directive = FileDirectivePduBase(
-            directive_code=DirectiveCodes.EOF_PDU,
+            directive_code=DirectiveType.EOF_PDU,
             pdu_conf=pdu_conf,
             directive_param_field_len=0,
         )

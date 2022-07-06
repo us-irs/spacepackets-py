@@ -1,18 +1,17 @@
 from __future__ import annotations
 import struct
-from typing import List, Optional, Type, Union
+from typing import List, Optional
 
-from spacepackets.cfdp.pdu.file_directive import FileDirectivePduBase, DirectiveCodes
+from spacepackets.cfdp.pdu.file_directive import FileDirectivePduBase, DirectiveType
 from spacepackets.cfdp.conf import PduConfig, FileSize
 from spacepackets.cfdp.tlv import CfdpTlv, TlvList
 from spacepackets.cfdp.lv import CfdpLv
 from spacepackets.cfdp.defs import ChecksumTypes
 from spacepackets.cfdp.conf import check_packet_length
-from spacepackets.log import get_console_logger
 
 
 class MetadataPdu:
-    """Encapsulates the Keep Alive file directive PDU, see CCSDS 727.0-B-5 p.83"""
+    """Encapsulates the Metadata file directive PDU, see CCSDS 727.0-B-5 p.83"""
 
     def __init__(
         self,
@@ -42,7 +41,7 @@ class MetadataPdu:
         else:
             self._options = options
         self.pdu_file_directive = FileDirectivePduBase(
-            directive_code=DirectiveCodes.METADATA_PDU,
+            directive_code=DirectiveType.METADATA_PDU,
             pdu_conf=pdu_conf,
             directive_param_field_len=5,
         )

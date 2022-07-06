@@ -2,7 +2,7 @@ import struct
 from unittest import TestCase
 
 from spacepackets.cfdp.defs import FileSize
-from spacepackets.cfdp.pdu.file_directive import FileDirectivePduBase, DirectiveCodes
+from spacepackets.cfdp.pdu.file_directive import FileDirectivePduBase, DirectiveType
 from spacepackets.util import get_printable_data_string, PrintFormats
 from spacepackets.cfdp.pdu.prompt import PromptPdu, ResponseRequired
 from spacepackets.cfdp.defs import LenInBytes, get_transaction_seq_num_as_bytes
@@ -139,12 +139,12 @@ class TestTlvsLvsHeader(TestCase):
         )
         self.assertEqual(prompt_pdu.pdu_file_directive.header_len, 9)
         self.assertEqual(prompt_pdu.packet_len, 10)
-        self.assertEqual(prompt_pdu.crc_flag, CrcFlag.WITH_CRC)
-        self.assertEqual(prompt_pdu.source_entity_id, bytes([0]))
-        self.assertEqual(prompt_pdu.dest_entity_id, bytes([0]))
-        self.assertEqual(prompt_pdu.file_size, FileSize.LARGE)
-        prompt_pdu.file_size = FileSize.NORMAL
-        self.assertEqual(prompt_pdu.file_size, FileSize.NORMAL)
+        self.assertEqual(prompt_pdu.pdu_header.crc_flag, CrcFlag.WITH_CRC)
+        self.assertEqual(prompt_pdu.pdu_header.source_entity_id, bytes([0]))
+        self.assertEqual(prompt_pdu.pdu_header.dest_entity_id, bytes([0]))
+        self.assertEqual(prompt_pdu.pdu_header.file_size, FileSize.LARGE)
+        prompt_pdu.pdu_header.file_size = FileSize.NORMAL
+        self.assertEqual(prompt_pdu.pdu_header.file_size, FileSize.NORMAL)
         self.assertEqual(
             prompt_pdu.pdu_file_directive.pdu_header.file_size, FileSize.NORMAL
         )
@@ -219,7 +219,7 @@ class TestTlvsLvsHeader(TestCase):
     def test_file_directive(self):
         pdu_conf = PduConfig.empty()
         file_directive_header = FileDirectivePduBase(
-            directive_code=DirectiveCodes.METADATA_PDU,
+            directive_code=DirectiveType.METADATA_PDU,
             pdu_conf=pdu_conf,
             directive_param_field_len=0,
         )

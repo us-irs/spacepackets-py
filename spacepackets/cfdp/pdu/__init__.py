@@ -5,7 +5,11 @@ from ..defs import SegmentMetadataFlag, PduType
 from .header import PduHeader, PduConfig
 from .ack import TransactionStatus, AckPdu
 from .eof import EofPdu
-from .file_directive import FileDirectivePduBase, DirectiveCodes, IsFileDirective
+from .file_directive import (
+    FileDirectivePduBase,
+    DirectiveType,
+    AbstractFileDirectiveBase,
+)
 from .finished import FinishedPdu
 from .keep_alive import KeepAlivePdu
 from .metadata import MetadataPdu

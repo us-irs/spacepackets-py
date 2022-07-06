@@ -2,7 +2,7 @@ from __future__ import annotations
 import enum
 from typing import List, Optional
 
-from spacepackets.cfdp.pdu.file_directive import FileDirectivePduBase, DirectiveCodes
+from spacepackets.cfdp.pdu.file_directive import FileDirectivePduBase, DirectiveType
 from spacepackets.cfdp.defs import ConditionCode
 from spacepackets.cfdp.conf import check_packet_length, PduConfig
 from spacepackets.cfdp.tlv import TlvTypes, FileStoreResponseTlv, EntityIdTlv
@@ -34,7 +34,7 @@ class FinishedPdu:
         fault_location: Optional[EntityIdTlv] = None,
     ):
         self.pdu_file_directive = FileDirectivePduBase(
-            directive_code=DirectiveCodes.FINISHED_PDU,
+            directive_code=DirectiveType.FINISHED_PDU,
             pdu_conf=pdu_conf,
             directive_param_field_len=1,
         )

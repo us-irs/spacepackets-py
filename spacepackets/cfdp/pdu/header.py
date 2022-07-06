@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import abc
+
 from spacepackets.log import get_console_logger
 from spacepackets.cfdp.defs import (
     LenInBytes,
@@ -14,12 +16,55 @@ from spacepackets.cfdp.defs import (
 from spacepackets.cfdp.conf import (
     PduConfig,
     get_default_pdu_crc_mode,
-    get_default_file_size,
     get_entity_ids,
 )
 
 
-class PduHeader:
+class AbstractPduBase(abc.ABC):
+    """Encapsulate common functions for classes which have a PDU header"""
+
+    @property
+    @abc.abstractmethod
+    def pdu_type(self) -> PduType:
+        pass
+
+    @property
+    @abc.abstractmethod
+    def file_size(self) -> FileSize:
+        pass
+
+    @file_size.setter
+    @abc.abstractmethod
+    def file_size(self, file_size: FileSize):
+        pass
+
+    @property
+    @abc.abstractmethod
+    def source_entity_id(self) -> bytes:
+        pass
+
+    @property
+    @abc.abstractmethod
+    def dest_entity_id(self) -> bytes:
+        pass
+
+    @property
+    @abc.abstractmethod
+    def packet_len(self) -> int:
+        pass
+
+    @property
+    @abc.abstractmethod
+    def crc_flag(self):
+        pass
+
+    @crc_flag.setter
+    @abc.abstractmethod
+    def crc_flag(self, crc_flag: CrcFlag):
+        pass
+
+
+class PduHeader(AbstractPduBase):
     """This class encapsulates the fixed-format PDU header.
     For more, information, refer to CCSDS 727.0-B-5 p.75"""
 
@@ -41,7 +86,7 @@ class PduHeader:
         :param pdu_conf:
         :raise ValueError: If some field are invalid or default values were unset
         """
-        self.pdu_type = pdu_type
+        self._pdu_type = pdu_type
         self.pdu_conf = pdu_conf
         self.pdu_data_field_len = pdu_data_field_len
 
@@ -54,6 +99,14 @@ class PduHeader:
         self.len_transaction_seq_num = 0
         self.transaction_seq_num = pdu_conf.transaction_seq_num
         self.segment_metadata_flag = segment_metadata_flag
+
+    @property
+    def pdu_type(self) -> PduType:
+        return self._pdu_type
+
+    @pdu_type.setter
+    def pdu_type(self, pdu_type: PduType):
+        self._pdu_type = pdu_type
 
     @property
     def source_entity_id(self):
@@ -178,6 +231,10 @@ class PduHeader:
         length was already set"""
         return self.pdu_data_field_len + self.header_len
 
+    @property
+    def packet_len(self) -> int:
+        return self.pdu_len
+
     def is_large_file(self) -> bool:
         if self.pdu_conf.file_size == FileSize.LARGE:
             return True
@@ -230,7 +287,7 @@ class PduHeader:
             logger.warning("Can not unpack less than four bytes into PDU header")
             raise ValueError
         pdu_header = cls.__empty()
-        pdu_header.pdu_type = (raw_packet[0] & 0x10) >> 4
+        pdu_header._pdu_type = (raw_packet[0] & 0x10) >> 4
         pdu_header.direction = (raw_packet[0] & 0x08) >> 3
         pdu_header.trans_mode = (raw_packet[0] & 0x04) >> 2
         pdu_header.crc_flag = (raw_packet[0] & 0x02) >> 1
@@ -282,38 +339,3 @@ class PduHeader:
             )
             raise ValueError
         return len_in_bytes
-
-
-class HasPduHeader:
-    """Encapsulate common functions for classes which have a PDU header"""
-
-    def __init__(self, pdu_header: PduHeader):
-        self.pdu_header = pdu_header
-
-    @property
-    def file_size(self):
-        return self.pdu_header.file_size
-
-    @file_size.setter
-    def file_size(self, file_size: FileSize):
-        self.pdu_header.file_size = file_size
-
-    @property
-    def source_entity_id(self):
-        return self.pdu_header.source_entity_id
-
-    @property
-    def dest_entity_id(self):
-        return self.pdu_header.dest_entity_id
-
-    @property
-    def packet_len(self):
-        return self.pdu_header.pdu_len
-
-    @property
-    def crc_flag(self):
-        return self.pdu_header.crc_flag
-
-    @crc_flag.setter
-    def crc_flag(self, crc_flag: CrcFlag):
-        self.pdu_header.crc_flag = crc_flag

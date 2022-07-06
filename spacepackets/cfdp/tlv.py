@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import abc
-from typing import Tuple, Optional, TypeVar, Type, Union, List, Any, cast
+from typing import Tuple, Optional, Type, Union, List, Any, cast
 import enum
 from spacepackets.log import get_console_logger
 from spacepackets.cfdp.lv import CfdpLv
@@ -147,9 +147,7 @@ class CfdpTlv:
         """
         self.length = len(value)
         if self.length > 255:
-            logger = get_console_logger()
-            logger.warning("Length larger than allowed 255 bytes")
-            raise ValueError
+            raise ValueError("Length larger than allowed 255 bytes")
         self.tlv_type = tlv_type
         self.value = value
 
@@ -169,25 +167,21 @@ class CfdpTlv:
         :return:
         """
         if len(raw_bytes) < 2:
-            logger = get_console_logger()
-            logger.warning("Invalid length for TLV field, less than 2")
-            raise ValueError
+            raise ValueError("Invalid length for TLV field, less than 2")
         try:
             tlv_type = TlvTypes(raw_bytes[0])
         except ValueError:
-            logger = get_console_logger()
-            logger.warning(
+            raise ValueError(
                 f"TLV field invalid, found value {raw_bytes[0]} is not a possible TLV parameter"
             )
-            raise ValueError
 
         value = bytearray()
         if len(raw_bytes) > 2:
             length = raw_bytes[1]
             if 2 + length > len(raw_bytes):
-                logger = get_console_logger()
-                logger.warning(f"Detected TLV length exceeds size of passed bytearray")
-                raise ValueError
+                raise ValueError(
+                    f"Detected TLV length exceeds size of passed bytearray"
+                )
             value.extend(raw_bytes[2 : 2 + length])
         return cls(tlv_type=tlv_type, value=value)
 
@@ -539,6 +533,10 @@ TlvList = List[Union[CfdpTlv, ConcreteTlvBase]]
 class TlvWrapper:
     def __init__(self, tlv_base: Optional[ConcreteTlvBase]):
         self.base = tlv_base
+
+    @property
+    def tlv_type(self):
+        return self.base.tlv_type
 
     def __cast_internally(
         self,
