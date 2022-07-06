@@ -49,6 +49,8 @@ class PacketSeqCtrl:
             seqstr = "LAST"
         elif self.seq_flags == SequenceFlags.UNSEGMENTED:
             seqstr = "UNSEG"
+        else:
+            raise ValueError("Invalid sequence flag")
         return f"PSC: [Seq Flags: {seqstr}, Seq Count: {self.seq_count}]"
 
     def raw(self) -> int:

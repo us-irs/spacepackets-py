@@ -1,8 +1,14 @@
 from __future__ import annotations
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import TypedDict, Tuple
 
-from spacepackets.cfdp.defs import TransmissionModes
+from spacepackets.cfdp.defs import (
+    TransmissionModes,
+    FileSize,
+    CrcFlag,
+    Direction,
+    SegmentationControl,
+)
 from spacepackets.log import get_console_logger
 
 

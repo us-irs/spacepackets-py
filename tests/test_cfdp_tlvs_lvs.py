@@ -14,10 +14,10 @@ from spacepackets.cfdp.tlv import (
     FileStoreResponseTlv,
     MessageToUserTlv,
     FaultHandlerOverrideTlv,
-    concrete_tlv_factory,
     ConditionCode,
     FaultHandlerCodes,
     create_cfdp_proxy_and_dir_op_message_marker,
+    TlvWrapper,
 )
 
 
@@ -104,9 +104,8 @@ class TestTlvsLvs(TestCase):
     def test_entity_id_tlv(self):
         entity_id_tlv = EntityIdTlv(entity_id=bytes([0x00, 0x01, 0x02, 0x03]))
         entity_id_tlv_tlv = entity_id_tlv.tlv
-        entity_id_tlv_from_factory = concrete_tlv_factory(
-            cfdp_tlv=entity_id_tlv_tlv, _tlv_type=EntityIdTlv
-        )
+        wrapper = TlvWrapper(entity_id_tlv)
+        entity_id_tlv_from_factory = wrapper.to_entity_id()
         self.assertEqual(entity_id_tlv_from_factory.pack(), entity_id_tlv.pack())
         entity_id_tlv_tlv.tlv_type = TlvTypes.FILESTORE_REQUEST
         with self.assertRaises(ValueError):
@@ -117,9 +116,8 @@ class TestTlvsLvs(TestCase):
             action_code=FilestoreActionCode.APPEND_FILE_SNP, first_file_name="test.txt"
         )
         fs_reqeust_tlv_tlv = fs_reqeust_tlv.tlv
-        fs_req_tlv_from_fac = concrete_tlv_factory(
-            cfdp_tlv=fs_reqeust_tlv_tlv, _tlv_type=FileStoreRequestTlv
-        )
+        wrapper = TlvWrapper(fs_reqeust_tlv)
+        fs_req_tlv_from_fac = wrapper.to_fs_request()
         self.assertEqual(fs_req_tlv_from_fac.pack(), fs_reqeust_tlv.pack())
         fs_reqeust_tlv_raw = fs_reqeust_tlv.pack()
         fs_reqeust_tlv_unpacked = FileStoreRequestTlv.unpack(
@@ -141,9 +139,8 @@ class TestTlvsLvs(TestCase):
             status_code=FilestoreResponseStatusCode.APPEND_NOT_PERFORMED,
         )
         fs_response_tlv_tlv = fs_response_tlv.tlv
-        fs_reply_tlv_from_fac = concrete_tlv_factory(
-            cfdp_tlv=fs_response_tlv_tlv, _tlv_type=FileStoreResponseTlv
-        )
+        wrapper = TlvWrapper(fs_response_tlv)
+        fs_reply_tlv_from_fac = wrapper.to_fs_response()
 
         self.assertEqual(fs_reply_tlv_from_fac.pack(), fs_response_tlv.pack())
         fs_response_tlv_tlv.tlv_type = TlvTypes.ENTITY_ID
@@ -170,9 +167,8 @@ class TestTlvsLvs(TestCase):
             handler_code=FaultHandlerCodes.IGNORE_ERROR,
         )
         fault_handler_ovvrd_tlv_tlv = fault_handler_ovvrd_tlv.tlv
-        fault_handler_ovvrd_tlv_from_fac = concrete_tlv_factory(
-            cfdp_tlv=fault_handler_ovvrd_tlv_tlv, _tlv_type=FaultHandlerOverrideTlv
-        )
+        wrapper = TlvWrapper(fault_handler_ovvrd_tlv)
+        fault_handler_ovvrd_tlv_from_fac = wrapper.to_fault_handler_override()
         self.assertEqual(
             fault_handler_ovvrd_tlv_from_fac.pack(), fault_handler_ovvrd_tlv.pack()
         )
@@ -183,9 +179,8 @@ class TestTlvsLvs(TestCase):
     def test_msg_to_user_tlv(self):
         msg_to_usr_tlv = MessageToUserTlv(value=bytes([0x00]))
         msg_to_usr_tlv_tlv = msg_to_usr_tlv.tlv
-        msg_to_usr_tlv_from_fac = concrete_tlv_factory(
-            cfdp_tlv=msg_to_usr_tlv_tlv, _tlv_type=MessageToUserTlv
-        )
+        wrapper = TlvWrapper(msg_to_usr_tlv)
+        msg_to_usr_tlv_from_fac = wrapper.to_msg_to_user()
         self.assertEqual(msg_to_usr_tlv_from_fac.pack(), msg_to_usr_tlv.pack())
         msg_to_usr_tlv_tlv.tlv_type = TlvTypes.FILESTORE_REQUEST
         with self.assertRaises(ValueError):
@@ -202,9 +197,8 @@ class TestTlvsLvs(TestCase):
     def test_flow_label_tlv(self):
         flow_label_tlv = FlowLabelTlv(value=bytes([0x00]))
         flow_label_tlv_tlv = flow_label_tlv.tlv
-        flow_label_tlv_from_fac = concrete_tlv_factory(
-            cfdp_tlv=flow_label_tlv_tlv, _tlv_type=FlowLabelTlv
-        )
+        wrapper = TlvWrapper(flow_label_tlv)
+        flow_label_tlv_from_fac = wrapper.to_flow_label()
         self.assertEqual(flow_label_tlv_from_fac.pack(), flow_label_tlv.pack())
         flow_label_tlv_raw = flow_label_tlv.pack()
         flow_label_tlv_unpacked = FlowLabelTlv.unpack(raw_bytes=flow_label_tlv_raw)

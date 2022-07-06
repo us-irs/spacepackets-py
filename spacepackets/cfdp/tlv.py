@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import abc
-from typing import Tuple, Optional, TypeVar, Type, Union, List
+from typing import Tuple, Optional, TypeVar, Type, Union, List, Any, cast
 import enum
 from spacepackets.log import get_console_logger
 from spacepackets.cfdp.lv import CfdpLv
@@ -533,40 +533,36 @@ class FileStoreResponseTlv(FileStoreRequestBase, ConcreteTlvBase):
         return file_store_response_tlv
 
 
-TlvBase = TypeVar("TlvBase", bound=ConcreteTlvBase)
-TlvList = List[Union[CfdpTlv, TlvBase]]
+TlvList = List[Union[CfdpTlv, ConcreteTlvBase]]
 
 
 class TlvWrapper:
-    def __init__(self, tlv_base: ConcreteTlvBase):
+    def __init__(self, tlv_base: Optional[ConcreteTlvBase]):
         self.base = tlv_base
 
+    def __cast_internally(
+        self,
+        obj_type: Type[ConcreteTlvBase],
+        expected_type: TlvTypes,
+    ) -> Any:
+        if self.base.tlv_type != expected_type:
+            raise TypeError(f"Invalid object {self.base} for type {self.base.tlv_type}")
+        return cast(obj_type, self.base)
+
     def to_fs_request(self) -> FileStoreRequestTlv:
-        pass
+        return self.__cast_internally(FileStoreRequestTlv, TlvTypes.FILESTORE_REQUEST)
 
+    def to_fs_response(self) -> FileStoreResponseTlv:
+        return self.__cast_internally(FileStoreResponseTlv, TlvTypes.FILESTORE_RESPONSE)
 
-def concrete_tlv_factory(
-    cfdp_tlv: CfdpTlv, _tlv_type: Type[TlvBase] = TlvBase
-) -> TlvBase:
-    """This factory returns the concrete CFDP TLV class from a generic CFDP TLV.
+    def to_msg_to_user(self) -> MessageToUserTlv:
+        return self.__cast_internally(MessageToUserTlv, TlvTypes.MESSAGE_TO_USER)
 
-    Please note that this might not be the most efficient way to create the concrete classes and
-    it might be more efficient to deserialize a raw buffer into the concrete class directly after
-    checking the TLV type.
+    def to_fault_handler_override(self) -> FaultHandlerOverrideTlv:
+        return self.__cast_internally(FaultHandlerOverrideTlv, TlvTypes.FAULT_HANDLER)
 
-    :param cfdp_tlv: Generic TLV packet
-    :param _tlv_type: Optional type specification of the concrete class. This is useful for IDEs
-        and type checkers
-    """
-    if cfdp_tlv.tlv_type == TlvTypes.FILESTORE_REQUEST:
-        return FileStoreRequestTlv.from_tlv(cfdp_tlv=cfdp_tlv)
-    elif cfdp_tlv.tlv_type == TlvTypes.FILESTORE_RESPONSE:
-        return FileStoreResponseTlv.from_tlv(cfdp_tlv=cfdp_tlv)
-    elif cfdp_tlv.tlv_type == TlvTypes.MESSAGE_TO_USER:
-        return MessageToUserTlv.from_tlv(cfdp_tlv=cfdp_tlv)
-    elif cfdp_tlv.tlv_type == TlvTypes.FAULT_HANDLER:
-        return FaultHandlerOverrideTlv.from_tlv(cfdp_tlv=cfdp_tlv)
-    elif cfdp_tlv.tlv_type == TlvTypes.FLOW_LABEL:
-        return FlowLabelTlv.from_tlv(cfdp_tlv=cfdp_tlv)
-    elif cfdp_tlv.tlv_type == TlvTypes.ENTITY_ID:
-        return EntityIdTlv.from_tlv(cfdp_tlv=cfdp_tlv)
+    def to_flow_label(self) -> FlowLabelTlv:
+        return self.__cast_internally(FlowLabelTlv, TlvTypes.FLOW_LABEL)
+
+    def to_entity_id(self) -> EntityIdTlv:
+        return self.__cast_internally(EntityIdTlv, TlvTypes.ENTITY_ID)

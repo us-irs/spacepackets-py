@@ -10,7 +10,6 @@ from spacepackets.cfdp.conf import PduConfig, TransmissionModes, Direction, File
 from spacepackets.cfdp.pdu.nak import NakPdu
 from spacepackets.cfdp.pdu.finished import FinishedPdu, DeliveryCode, FileDeliveryStatus
 from spacepackets.cfdp.tlv import (
-    CfdpTlv,
     TlvTypes,
     FileStoreResponseTlv,
     FilestoreActionCode,
@@ -18,14 +17,13 @@ from spacepackets.cfdp.tlv import (
     EntityIdTlv,
     FaultHandlerOverrideTlv,
     FileStoreRequestTlv,
-    concrete_tlv_factory,
     FaultHandlerCodes,
+    TlvWrapper,
 )
 from spacepackets.cfdp.pdu.metadata import MetadataPdu, ChecksumTypes
 from spacepackets.cfdp.pdu.keep_alive import KeepAlivePdu
 from spacepackets.cfdp.pdu.eof import EofPdu
 from spacepackets.cfdp.pdu.prompt import PromptPdu, ResponseRequired
-from spacepackets.util import get_printable_data_string, PrintFormats
 
 
 class TestPdus(TestCase):
@@ -511,9 +509,9 @@ class TestPdus(TestCase):
         pdu_with_option_raw = pdu_with_option.pack()
         self.assertEqual(len(pdu_with_option_raw), expected_len)
         pdu_with_option_unpacked = MetadataPdu.unpack(raw_packet=pdu_with_option_raw)
-        tlv_typed = concrete_tlv_factory(
-            cfdp_tlv=pdu_with_option_unpacked.options[0], _tlv_type=FileStoreRequestTlv
-        )
+        tlv_wrapper = TlvWrapper(pdu_with_option_unpacked.options[0])
+        tlv_typed = tlv_wrapper.to_fs_request()
+        self.assertIsNotNone(tlv_typed)
         self.assertEqual(tlv_typed.pack(), option_0.pack())
 
         pdu_with_option.source_file_name = None
