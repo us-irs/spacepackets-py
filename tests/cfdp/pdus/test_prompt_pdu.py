@@ -24,7 +24,7 @@ class TestPromptPdu(TestCase):
         self.assertEqual(
             prompt_pdu_unpacked.response_required, ResponseRequired.KEEP_ALIVE
         )
-        self.assertEqual(prompt_pdu.pdu_file_directive.is_large_file(), False)
+        self.assertEqual(prompt_pdu.pdu_file_directive.large_file_flag_set, False)
         prompt_pdu_raw = prompt_pdu_raw[:-1]
         with self.assertRaises(ValueError):
             PromptPdu.unpack(raw_packet=prompt_pdu_raw)

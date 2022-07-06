@@ -64,6 +64,14 @@ class FileDataPdu(AbstractPduBase):
         )
 
     @property
+    def header_len(self) -> int:
+        return self.pdu_header.header_len
+
+    @property
+    def pdu_data_field_len(self) -> int:
+        return self.pdu_header.pdu_data_field_len
+
+    @property
     def pdu_type(self) -> PduType:
         return self.pdu_header.pdu_type
 
@@ -105,7 +113,7 @@ class FileDataPdu(AbstractPduBase):
         pdu_data_field_len = 0
         if self.segment_metadata_flag:
             pdu_data_field_len = 1 + len(self._segment_metadata)
-        if self.pdu_header.is_large_file():
+        if self.pdu_header.large_file_flag_set:
             pdu_data_field_len += 8
         else:
             pdu_data_field_len += 4
@@ -125,7 +133,7 @@ class FileDataPdu(AbstractPduBase):
             file_data_pdu.append(self.record_continuation_state << 6 | len_metadata)
             if len_metadata > 0:
                 file_data_pdu.extend(self._segment_metadata)
-        if not self.pdu_header.is_large_file():
+        if not self.pdu_header.large_file_flag_set:
             file_data_pdu.extend(struct.pack("!I", self.offset))
         else:
             file_data_pdu.extend(struct.pack("!Q", self.offset))
@@ -153,7 +161,7 @@ class FileDataPdu(AbstractPduBase):
                 current_idx : current_idx + file_data_packet.segment_metadata_length
             ]
             current_idx += file_data_packet.segment_metadata_length
-        if not file_data_packet.pdu_header.is_large_file():
+        if not file_data_packet.pdu_header.large_file_flag_set:
             struct_arg_tuple = ("!I", 4)
         else:
             struct_arg_tuple = ("!Q", 8)
@@ -172,7 +180,7 @@ class FileDataPdu(AbstractPduBase):
 
     @property
     def packet_len(self):
-        return self.pdu_header.pdu_len
+        return self.pdu_header.packet_len
 
     def __eq__(self, other: FileDataPdu):
         return (

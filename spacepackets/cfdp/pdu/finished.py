@@ -1,6 +1,6 @@
 from __future__ import annotations
 import enum
-from typing import List, Optional
+from typing import List, Optional, cast
 
 from spacepackets.cfdp.pdu import PduHeader
 from spacepackets.cfdp.pdu.file_directive import (

@@ -63,7 +63,7 @@ class TestHeader(TestCase):
         self.assertEqual(
             pdu_header.segment_metadata_flag, SegmentMetadataFlag.NOT_PRESENT
         )
-        self.assertFalse(pdu_header.is_large_file())
+        self.assertFalse(pdu_header.large_file_flag_set)
         self.assertEqual(pdu_header.transaction_seq_num, bytes([0]))
         self.assertEqual(pdu_header.len_transaction_seq_num, 1)
         self.assertEqual(pdu_header.crc_flag, CrcFlag.NO_CRC)
@@ -98,7 +98,7 @@ class TestHeader(TestCase):
         pdu_header.seg_ctrl = SegmentationControl.RECORD_BOUNDARIES_PRESERVATION
         pdu_header.segment_metadata_flag = SegmentMetadataFlag.PRESENT
 
-        self.assertTrue(pdu_header.is_large_file())
+        self.assertTrue(pdu_header.large_file_flag_set)
         pdu_header_packed = pdu_header.pack()
         self.check_fields_case_two(pdu_header_packed=pdu_header_packed)
         set_entity_ids(source_entity_id=bytes(), dest_entity_id=bytes())

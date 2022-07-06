@@ -1,8 +1,14 @@
 from unittest import TestCase
 
-from spacepackets.cfdp import ChecksumTypes
+from spacepackets.cfdp import ChecksumTypes, ConditionCode
 from spacepackets.cfdp.conf import PduConfig
-from spacepackets.cfdp.pdu import MetadataPdu
+from spacepackets.cfdp.pdu import (
+    MetadataPdu,
+    AckPdu,
+    DirectiveType,
+    TransactionStatus,
+    NakPdu,
+)
 from spacepackets.cfdp.pdu.file_data import FileDataPdu
 from spacepackets.cfdp.pdu.wrapper import PduWrapper
 
@@ -65,3 +71,18 @@ class TestPduWrapper(TestCase):
             self.pdu_wrapper.to_metadata_pdu()
         exception = cm.exception
         self.assertTrue("Stored PDU is not 'MetadataPdu'" in str(exception))
+
+    def test_ack_cast(self):
+        ack_pdu = AckPdu(
+            directive_code_of_acked_pdu=DirectiveType.FINISHED_PDU,
+            condition_code_of_acked_pdu=ConditionCode.NO_ERROR,
+            transaction_status=TransactionStatus.TERMINATED,
+            pdu_conf=self.pdu_conf,
+        )
+        self.pdu_wrapper.base = ack_pdu
+        ack_pdu_converted = self.pdu_wrapper.to_ack_pdu()
+        self.assertEqual(ack_pdu_converted, ack_pdu)
+
+    def test_nak_cast(self):
+        nak_pdu = NakPdu(start_of_scope=0, end_of_scope=200, pdu_conf=self.pdu_conf)
+        self.pdu_wrapper.base = nak_pdu

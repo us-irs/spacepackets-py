@@ -1,5 +1,6 @@
 from __future__ import annotations
 import enum
+from typing import cast
 
 from spacepackets.cfdp.pdu import PduHeader
 from spacepackets.cfdp.pdu.file_directive import (
@@ -65,9 +66,14 @@ class AckPdu(AbstractFileDirectiveBase):
     def pdu_header(self) -> PduHeader:
         return self.pdu_file_directive.pdu_header
 
-    @property
-    def packet_len(self) -> int:
-        return self.pdu_file_directive.packet_len
+    def __eq__(self, other: AckPdu):
+        return (
+            self.pdu_file_directive == other.pdu_file_directive
+            and self.directive_code_of_acked_pdu == other.directive_code_of_acked_pdu
+            and self.directive_subtype_code == other.directive_subtype_code
+            and self.condition_code_of_acked_pdu == other.condition_code_of_acked_pdu
+            and self.transaction_status == other.transaction_status
+        )
 
     @classmethod
     def __empty(cls) -> AckPdu:

@@ -15,13 +15,13 @@ from spacepackets.cfdp.pdu import (
 from spacepackets.cfdp.pdu.file_data import FileDataPdu
 from spacepackets.cfdp.pdu.header import AbstractPduBase
 
+GenericPduPacket = Union[AbstractFileDirectiveBase, AbstractPduBase]
+
 
 class PduWrapper:
     """Helper type to store arbitrary PDU types and cast them to a concrete PDU type conveniently"""
 
-    def __init__(
-        self, base: Optional[Union[AbstractFileDirectiveBase, AbstractPduBase]]
-    ):
+    def __init__(self, base: Optional[GenericPduPacket]):
         self.base = base
 
     def _raise_not_target_exception(self, pdu_type: Type[any]):

@@ -22,8 +22,16 @@ from spacepackets.cfdp.conf import (
 
 class AbstractPduBase(abc.ABC):
     """Encapsulate common functions for PDU. PDU or Packet Data Units are the base data unit
-    which are exchanged for CFDP procedures. Each PDU has the common header.
+    which are exchanged for CFDP procedures. Each PDU has a common header and this class provides
+    abstract methods to access fields of that common header.
+    For more, information, refer to CCSDS 727.0-B-5 p.75.
+    The default implementation provided in this library for this abstract class is the
+    :py:class:`PduHeader` class.
     """
+
+    @abc.abstractmethod
+    def pack(self) -> bytes:
+        pass
 
     @property
     @abc.abstractmethod
@@ -42,6 +50,11 @@ class AbstractPduBase(abc.ABC):
 
     @property
     @abc.abstractmethod
+    def header_len(self) -> int:
+        pass
+
+    @property
+    @abc.abstractmethod
     def source_entity_id(self) -> bytes:
         pass
 
@@ -52,7 +65,12 @@ class AbstractPduBase(abc.ABC):
 
     @property
     @abc.abstractmethod
-    def packet_len(self) -> int:
+    def pdu_data_field_len(self) -> int:
+        pass
+
+    @pdu_data_field_len.setter
+    @abc.abstractmethod
+    def pdu_data_field_len(self, pdu_data_field_len: int) -> int:
         pass
 
     @property
@@ -64,6 +82,14 @@ class AbstractPduBase(abc.ABC):
     @abc.abstractmethod
     def crc_flag(self, crc_flag: CrcFlag):
         pass
+
+    @property
+    def packet_len(self) -> int:
+        return self.pdu_data_field_len + self.header_len
+
+    @property
+    def large_file_flag_set(self) -> bool:
+        return self.file_flag == LargeFileFlag.LARGE
 
     def __eq__(self, other: AbstractPduBase):
         return (
@@ -77,8 +103,7 @@ class AbstractPduBase(abc.ABC):
 
 
 class PduHeader(AbstractPduBase):
-    """This class encapsulates the fixed-format PDU header.
-    For more, information, refer to CCSDS 727.0-B-5 p.75"""
+    """Concrete implementation of the abstract :py:class:`AbstractPduBase` class"""
 
     VERSION_BITS = 0b0010_0000
     FIXED_LENGTH = 4
@@ -236,22 +261,6 @@ class PduHeader(AbstractPduBase):
     def header_len(self) -> int:
         """Get length of PDU header when packing it"""
         return self.FIXED_LENGTH + 2 * self.len_entity_id + self.len_transaction_seq_num
-
-    @property
-    def pdu_len(self) -> int:
-        """Get the length of the full PDU. This assumes that the length of the PDU data field
-        length was already set"""
-        return self.pdu_data_field_len + self.header_len
-
-    @property
-    def packet_len(self) -> int:
-        return self.pdu_len
-
-    def is_large_file(self) -> bool:
-        if self.pdu_conf.file_flag == LargeFileFlag.LARGE:
-            return True
-        else:
-            return False
 
     def pack(self) -> bytearray:
         header = bytearray()

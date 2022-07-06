@@ -85,7 +85,7 @@ class NakPdu(AbstractFileDirectiveBase):
         if self._segment_requests is None:
             self._segment_requests = []
             return
-        is_large_file = self.pdu_file_directive.pdu_header.is_large_file()
+        is_large_file = self.pdu_file_directive.pdu_header.large_file_flag_set
         if not is_large_file:
             directive_param_field_len = 8 + len(self._segment_requests) * 8
         else:
@@ -98,7 +98,7 @@ class NakPdu(AbstractFileDirectiveBase):
         :raises ValueError: File sizes too large for non-large files
         """
         nak_pdu = self.pdu_file_directive.pack()
-        if not self.pdu_file_directive.pdu_header.is_large_file():
+        if not self.pdu_file_directive.pdu_header.large_file_flag_set:
             if (
                 self.start_of_scope > pow(2, 32) - 1
                 or self.end_of_scope > pow(2, 32) - 1
@@ -110,7 +110,7 @@ class NakPdu(AbstractFileDirectiveBase):
             nak_pdu.extend(struct.pack("!Q", self.start_of_scope))
             nak_pdu.extend(struct.pack("!Q", self.end_of_scope))
         for segment_request in self._segment_requests:
-            if not self.pdu_file_directive.pdu_header.is_large_file():
+            if not self.pdu_file_directive.pdu_header.large_file_flag_set:
                 if (
                     segment_request[0] > pow(2, 32) - 1
                     or segment_request[1] > pow(2, 32) - 1
@@ -128,7 +128,7 @@ class NakPdu(AbstractFileDirectiveBase):
         nak_pdu = cls.__empty()
         nak_pdu.pdu_file_directive = FileDirectivePduBase.unpack(raw_packet=raw_packet)
         current_idx = nak_pdu.pdu_file_directive.header_len
-        if not nak_pdu.pdu_file_directive.pdu_header.is_large_file():
+        if not nak_pdu.pdu_file_directive.pdu_header.large_file_flag_set:
             struct_arg_tuple = ("!I", 4)
         else:
             struct_arg_tuple = ("!Q", 8)
@@ -170,3 +170,6 @@ class NakPdu(AbstractFileDirectiveBase):
                 segment_requests.append(tuple_entry)
             nak_pdu.segment_requests = segment_requests
         return nak_pdu
+
+    def __eq__(self, other: NakPdu):
+        return self.pdu_file_directive == other.pdu_file_directive

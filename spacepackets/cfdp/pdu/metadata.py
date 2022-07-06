@@ -1,6 +1,6 @@
 from __future__ import annotations
 import struct
-from typing import List, Optional
+from typing import List, Optional, cast
 
 from spacepackets.cfdp.pdu import PduHeader
 from spacepackets.cfdp.pdu.file_directive import (
@@ -89,7 +89,10 @@ class MetadataPdu(AbstractFileDirectiveBase):
 
     def _calculate_directive_field_len(self):
         directive_param_field_len = 5
-        if self.pdu_file_directive.pdu_header.is_large_file() == LargeFileFlag.LARGE:
+        if (
+            self.pdu_file_directive.pdu_header.large_file_flag_set
+            == LargeFileFlag.LARGE
+        ):
             directive_param_field_len = 9
         directive_param_field_len += self._source_file_name_lv.packet_len
         directive_param_field_len += self._dest_file_name_lv.packet_len
@@ -128,11 +131,11 @@ class MetadataPdu(AbstractFileDirectiveBase):
         return self.pdu_file_directive.packet_len
 
     def pack(self) -> bytearray:
-        if not self.pdu_file_directive._verify_file_len(self.file_size):
+        if not self.pdu_file_directive.verify_file_len(self.file_size):
             raise ValueError
         packet = self.pdu_file_directive.pack()
         packet.append((self.closure_requested << 6) | self.checksum_type)
-        if self.pdu_file_directive.pdu_header.is_large_file():
+        if self.pdu_file_directive.pdu_header.large_file_flag_set:
             packet.extend(struct.pack("!Q", self.file_size))
         else:
             packet.extend(struct.pack("!I", self.file_size))

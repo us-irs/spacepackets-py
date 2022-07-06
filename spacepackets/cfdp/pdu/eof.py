@@ -70,7 +70,7 @@ class EofPdu(AbstractFileDirectiveBase):
 
     def _calculate_directive_param_field_len(self):
         directive_param_field_len = 9
-        if self.pdu_file_directive.pdu_header.is_large_file():
+        if self.pdu_file_directive.pdu_header.large_file_flag_set:
             directive_param_field_len = 13
         if self._fault_location is not None:
             directive_param_field_len += self._fault_location.packet_len
@@ -89,7 +89,7 @@ class EofPdu(AbstractFileDirectiveBase):
         eof_pdu = self.pdu_file_directive.pack()
         eof_pdu.append(self.condition_code << 4)
         eof_pdu.extend(self.file_checksum)
-        if self.pdu_file_directive.pdu_header.is_large_file():
+        if self.pdu_file_directive.pdu_header.large_file_flag_set:
             eof_pdu.extend(struct.pack("!Q", self.file_size))
         else:
             eof_pdu.extend(struct.pack("!I", self.file_size))

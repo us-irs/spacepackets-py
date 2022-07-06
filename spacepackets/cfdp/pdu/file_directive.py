@@ -27,7 +27,7 @@ class DirectiveType(enum.IntEnum):
 
 
 class AbstractFileDirectiveBase(AbstractPduBase):
-    """Encapsulate common functions for classes which are FileDirectives"""
+    """Encapsulate common functions for classes which are PDU file directives"""
 
     @property
     @abc.abstractmethod
@@ -37,6 +37,8 @@ class AbstractFileDirectiveBase(AbstractPduBase):
     @property
     @abc.abstractmethod
     def pdu_header(self) -> PduHeader:
+        # Could return abstract class here but I think returning the concrete implementation
+        # provided here is ok..
         pass
 
     @property
@@ -85,7 +87,7 @@ class AbstractFileDirectiveBase(AbstractPduBase):
         """Get length of the packet when packing it
         :return:
         """
-        return self.pdu_header.pdu_len
+        return self.pdu_header.packet_len
 
     def __eq__(self, other: AbstractFileDirectiveBase):
         return (
@@ -140,9 +142,6 @@ class FileDirectivePduBase(AbstractFileDirectiveBase):
     def directive_param_field_len(self, directive_param_field_len: int):
         self.pdu_header.pdu_data_field_len = directive_param_field_len + 1
 
-    def is_large_file(self):
-        return self.pdu_header.is_large_file()
-
     @classmethod
     def __empty(cls) -> FileDirectivePduBase:
         empty_conf = PduConfig.empty()
@@ -175,18 +174,14 @@ class FileDirectivePduBase(AbstractFileDirectiveBase):
         file_directive._directive_type = raw_packet[header_len - 1]
         return file_directive
 
-    def _verify_file_len(self, file_size: int) -> bool:
+    def verify_file_len(self, file_size: int) -> bool:
         """Can be used by subclasses to verify a given file size"""
-        if (
-            self.pdu_header.pdu_conf.file_flag == LargeFileFlag.LARGE
-            and file_size > pow(2, 64)
-        ):
+        if self.pdu_header.file_flag == LargeFileFlag.LARGE and file_size > pow(2, 64):
             logger = get_console_logger()
             logger.warning(f"File size {file_size} larger than 64 bit field")
             return False
-        elif (
-            self.pdu_header.pdu_conf.file_flag == LargeFileFlag.NORMAL
-            and file_size > pow(2, 32)
+        elif self.pdu_header.file_flag == LargeFileFlag.NORMAL and file_size > pow(
+            2, 32
         ):
             logger = get_console_logger()
             logger.warning(f"File size {file_size} larger than 32 bit field")
@@ -199,7 +194,7 @@ class FileDirectivePduBase(AbstractFileDirectiveBase):
 
         :raise ValueError: Packet not large enough
         """
-        if self.pdu_header.pdu_conf.file_flag == LargeFileFlag.LARGE:
+        if self.pdu_header.file_flag == LargeFileFlag.LARGE:
             if not check_packet_length(len(raw_packet), current_idx + 8):
                 raise ValueError
             file_size = struct.unpack("!Q", raw_packet[current_idx : current_idx + 8])[
@@ -214,3 +209,6 @@ class FileDirectivePduBase(AbstractFileDirectiveBase):
             ]
             current_idx += 4
         return current_idx, file_size
+
+    def __eq__(self, other: FileDirectivePduBase):
+        return AbstractFileDirectiveBase.__eq__(self, other)
