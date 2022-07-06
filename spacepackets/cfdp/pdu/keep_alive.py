@@ -7,7 +7,7 @@ from spacepackets.cfdp.conf import PduConfig, LargeFileFlag
 from spacepackets.log import get_console_logger
 
 
-class KeepAlivePdu:
+class KeepAlivePdu(FileDirectivePduBase):
     """Encapsulates the Keep Alive file directive PDU, see CCSDS 727.0-B-5 p.85"""
 
     def __init__(self, progress: int, pdu_conf: PduConfig):

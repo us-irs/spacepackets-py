@@ -21,7 +21,9 @@ from spacepackets.cfdp.conf import (
 
 
 class AbstractPduBase(abc.ABC):
-    """Encapsulate common functions for classes which have a PDU header"""
+    """Encapsulate common functions for PDU. PDU or Packet Data Units are the base data unit
+    which are exchanged for CFDP procedures. Each PDU has the common header.
+    """
 
     @property
     @abc.abstractmethod

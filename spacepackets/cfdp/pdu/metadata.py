@@ -2,7 +2,12 @@ from __future__ import annotations
 import struct
 from typing import List, Optional
 
-from spacepackets.cfdp.pdu.file_directive import FileDirectivePduBase, DirectiveType
+from spacepackets.cfdp.pdu import PduHeader
+from spacepackets.cfdp.pdu.file_directive import (
+    FileDirectivePduBase,
+    DirectiveType,
+    AbstractFileDirectiveBase,
+)
 from spacepackets.cfdp.conf import PduConfig, LargeFileFlag
 from spacepackets.cfdp.tlv import CfdpTlv, TlvList
 from spacepackets.cfdp.lv import CfdpLv
@@ -10,7 +15,7 @@ from spacepackets.cfdp.defs import ChecksumTypes
 from spacepackets.cfdp.conf import check_packet_length
 
 
-class MetadataPdu:
+class MetadataPdu(AbstractFileDirectiveBase):
     """Encapsulates the Metadata file directive PDU, see CCSDS 727.0-B-5 p.83"""
 
     def __init__(
@@ -46,6 +51,14 @@ class MetadataPdu:
             directive_param_field_len=5,
         )
         self._calculate_directive_field_len()
+
+    @property
+    def directive_type(self) -> DirectiveType:
+        return DirectiveType.METADATA_PDU
+
+    @property
+    def pdu_header(self) -> PduHeader:
+        return self.pdu_file_directive.pdu_header
 
     @classmethod
     def __empty(cls) -> MetadataPdu:

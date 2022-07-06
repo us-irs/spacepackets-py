@@ -2,7 +2,12 @@ from __future__ import annotations
 import enum
 from typing import List, Optional
 
-from spacepackets.cfdp.pdu.file_directive import FileDirectivePduBase, DirectiveType
+from spacepackets.cfdp.pdu import PduHeader
+from spacepackets.cfdp.pdu.file_directive import (
+    FileDirectivePduBase,
+    DirectiveType,
+    AbstractFileDirectiveBase,
+)
 from spacepackets.cfdp.defs import ConditionCode
 from spacepackets.cfdp.conf import check_packet_length, PduConfig
 from spacepackets.cfdp.tlv import TlvTypes, FileStoreResponseTlv, EntityIdTlv
@@ -21,7 +26,7 @@ class FileDeliveryStatus(enum.IntEnum):
     FILE_STATUS_UNREPORTED = 3
 
 
-class FinishedPdu:
+class FinishedPdu(AbstractFileDirectiveBase):
     """Encapsulates the Finished file directive PDU, see CCSDS 727.0-B-5 p.80"""
 
     def __init__(
@@ -46,6 +51,14 @@ class FinishedPdu:
         self.fault_location = fault_location
         self.file_store_responses = file_store_responses
         self.file_delivery_status = file_delivery_status
+
+    @property
+    def directive_type(self) -> DirectiveType:
+        return DirectiveType.FINISHED_PDU
+
+    @property
+    def pdu_header(self) -> PduHeader:
+        return self.pdu_file_directive.pdu_header
 
     @property
     def condition_code(self) -> ConditionCode:

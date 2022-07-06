@@ -1,5 +1,5 @@
 # noinspection PyUnresolvedReferences
-from ..defs import SegmentMetadataFlag, PduType
+from spacepackets.cfdp.defs import SegmentMetadataFlag, PduType
 
 # noinspection PyUnresolvedReferences
 from .header import PduHeader, PduConfig

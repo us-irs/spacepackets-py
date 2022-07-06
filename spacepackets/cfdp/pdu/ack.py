@@ -1,7 +1,12 @@
 from __future__ import annotations
 import enum
 
-from spacepackets.cfdp.pdu.file_directive import FileDirectivePduBase, DirectiveType
+from spacepackets.cfdp.pdu import PduHeader
+from spacepackets.cfdp.pdu.file_directive import (
+    FileDirectivePduBase,
+    DirectiveType,
+    AbstractFileDirectiveBase,
+)
 from spacepackets.cfdp.defs import ConditionCode
 from spacepackets.cfdp.conf import PduConfig
 
@@ -15,7 +20,7 @@ class TransactionStatus(enum.IntEnum):
     UNRECOGNIZED = 0b11
 
 
-class AckPdu:
+class AckPdu(AbstractFileDirectiveBase):
     """Encapsulates the ACK file directive PDU, see CCSDS 727.0-B-5 p.81"""
 
     def __init__(
@@ -51,6 +56,14 @@ class AckPdu:
             self.directive_subtype_code = 0b0000
         self.condition_code_of_acked_pdu = condition_code_of_acked_pdu
         self.transaction_status = transaction_status
+
+    @property
+    def directive_type(self) -> DirectiveType:
+        return DirectiveType.ACK_PDU
+
+    @property
+    def pdu_header(self) -> PduHeader:
+        return self.pdu_file_directive.pdu_header
 
     @property
     def packet_len(self) -> int:
