@@ -2,7 +2,7 @@ from .defs import (
     PduType,
     ChecksumTypes,
     CrcFlag,
-    FileSize,
+    LargeFileFlag,
     SegmentationControl,
     SegmentMetadataFlag,
     TransmissionModes,

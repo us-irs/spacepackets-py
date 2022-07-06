@@ -4,7 +4,7 @@ from spacepackets.cfdp.pdu.file_data import (
     SegmentMetadataFlag,
     RecordContinuationState,
 )
-from spacepackets.cfdp.conf import PduConfig, FileSize
+from spacepackets.cfdp.conf import PduConfig, LargeFileFlag
 
 
 class TestFileDataPdu(TestCase):
@@ -67,7 +67,7 @@ class TestFileDataPdu(TestCase):
             )
             invalid_pdu.pack()
 
-        pdu_conf.file_size = FileSize.LARGE
+        pdu_conf.file_flag = LargeFileFlag.LARGE
 
         fd_pdu_large_offset = FileDataPdu(
             pdu_conf=pdu_conf,

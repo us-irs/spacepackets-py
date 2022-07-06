@@ -3,7 +3,7 @@ import struct
 from typing import List, Optional
 
 from spacepackets.cfdp.pdu.file_directive import FileDirectivePduBase, DirectiveType
-from spacepackets.cfdp.conf import PduConfig, FileSize
+from spacepackets.cfdp.conf import PduConfig, LargeFileFlag
 from spacepackets.cfdp.tlv import CfdpTlv, TlvList
 from spacepackets.cfdp.lv import CfdpLv
 from spacepackets.cfdp.defs import ChecksumTypes
@@ -76,7 +76,7 @@ class MetadataPdu:
 
     def _calculate_directive_field_len(self):
         directive_param_field_len = 5
-        if self.pdu_file_directive.pdu_header.is_large_file() == FileSize.LARGE:
+        if self.pdu_file_directive.pdu_header.is_large_file() == LargeFileFlag.LARGE:
             directive_param_field_len = 9
         directive_param_field_len += self._source_file_name_lv.packet_len
         directive_param_field_len += self._dest_file_name_lv.packet_len

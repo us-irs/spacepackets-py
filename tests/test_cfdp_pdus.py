@@ -6,7 +6,12 @@ from spacepackets.cfdp.pdu.ack import (
     DirectiveType,
     TransactionStatus,
 )
-from spacepackets.cfdp.conf import PduConfig, TransmissionModes, Direction, FileSize
+from spacepackets.cfdp.conf import (
+    PduConfig,
+    TransmissionModes,
+    Direction,
+    LargeFileFlag,
+)
 from spacepackets.cfdp.pdu.nak import NakPdu
 from spacepackets.cfdp.pdu.finished import FinishedPdu, DeliveryCode, FileDeliveryStatus
 from spacepackets.cfdp.tlv import (
@@ -34,7 +39,7 @@ class TestPdus(TestCase):
             dest_entity_id=bytes([0x00, 0x01]),
             crc_flag=CrcFlag.NO_CRC,
             trans_mode=TransmissionModes.ACKNOWLEDGED,
-            file_size=FileSize.GLOBAL_CONFIG,
+            file_flag=LargeFileFlag.NORMAL,
         )
         ack_pdu = AckPdu(
             directive_code_of_acked_pdu=DirectiveType.FINISHED_PDU,
@@ -78,7 +83,7 @@ class TestPdus(TestCase):
             dest_entity_id=bytes([0x30, 0x00, 0x01, 0x03]),
             crc_flag=CrcFlag.WITH_CRC,
             trans_mode=TransmissionModes.UNACKNOWLEDGED,
-            file_size=FileSize.NORMAL,
+            file_flag=LargeFileFlag.NORMAL,
         )
         ack_pdu_2 = AckPdu(
             directive_code_of_acked_pdu=DirectiveType.EOF_PDU,
@@ -193,22 +198,22 @@ class TestPdus(TestCase):
         self.assertEqual(pdu_header.direction, Direction.TOWARDS_RECEIVER)
         # Start of scope (4) + end of scope (4) + directive code
         self.assertEqual(pdu_header.pdu_data_field_len, 8 + 1)
-        self.assertEqual(pdu_header.file_size, FileSize.NORMAL)
+        self.assertEqual(pdu_header.file_flag, LargeFileFlag.NORMAL)
         self.assertEqual(pdu_header.trans_mode, TransmissionModes.ACKNOWLEDGED)
-        self.assertEqual(nak_pdu.file_size, FileSize.NORMAL)
+        self.assertEqual(nak_pdu.file_flag, LargeFileFlag.NORMAL)
         self.assertEqual(nak_pdu.packet_len, 19)
         nak_packed = nak_pdu.pack()
         self.assertEqual(len(nak_packed), 19)
-        nak_pdu.file_size = FileSize.LARGE
-        self.assertEqual(pdu_header.file_size, FileSize.LARGE)
-        self.assertEqual(nak_pdu.file_size, FileSize.LARGE)
+        nak_pdu.file_flag = LargeFileFlag.LARGE
+        self.assertEqual(pdu_header.file_flag, LargeFileFlag.LARGE)
+        self.assertEqual(nak_pdu.file_flag, LargeFileFlag.LARGE)
         self.assertEqual(nak_pdu.packet_len, 27)
         nak_packed = nak_pdu.pack()
         self.assertEqual(len(nak_packed), 27)
 
-        nak_pdu.file_size = FileSize.NORMAL
-        self.assertEqual(pdu_header.file_size, FileSize.NORMAL)
-        self.assertEqual(nak_pdu.file_size, FileSize.NORMAL)
+        nak_pdu.file_flag = LargeFileFlag.NORMAL
+        self.assertEqual(pdu_header.file_flag, LargeFileFlag.NORMAL)
+        self.assertEqual(nak_pdu.file_flag, LargeFileFlag.NORMAL)
         self.assertEqual(nak_pdu.packet_len, 19)
         nak_packed = nak_pdu.pack()
         self.assertEqual(len(nak_packed), 19)
@@ -229,7 +234,7 @@ class TestPdus(TestCase):
         nak_unpacked = NakPdu.unpack(raw_packet=nak_packed)
         self.assertEqual(nak_unpacked.pack(), nak_packed)
 
-        nak_pdu.file_size = FileSize.LARGE
+        nak_pdu.file_flag = LargeFileFlag.LARGE
         # 2 segment requests with size 16 each plus 16 for start and end of scope
         self.assertEqual(nak_pdu.pdu_file_directive.pdu_header.header_len, 10)
         self.assertEqual(nak_pdu.pdu_file_directive.header_len, 11)
@@ -246,7 +251,7 @@ class TestPdus(TestCase):
         nak_packed = nak_pdu.pack()
         self.assertEqual(len(nak_packed), 59 - 32)
 
-        nak_pdu.file_size = FileSize.NORMAL
+        nak_pdu.file_flag = LargeFileFlag.NORMAL
         segment_requests = [(pow(2, 32) + 1, 40), (60, 80)]
         nak_pdu.segment_requests = segment_requests
         self.assertRaises(ValueError, nak_pdu.pack)
@@ -419,7 +424,7 @@ class TestPdus(TestCase):
         pdu_conf = PduConfig.empty()
         keep_alive_pdu = KeepAlivePdu(pdu_conf=pdu_conf, progress=0)
         self.assertEqual(keep_alive_pdu.progress, 0)
-        self.assertEqual(keep_alive_pdu.file_size, FileSize.NORMAL)
+        self.assertEqual(keep_alive_pdu.file_flag, LargeFileFlag.NORMAL)
         keep_alive_pdu_raw = keep_alive_pdu.pack()
         self.assertEqual(
             keep_alive_pdu_raw,
@@ -444,19 +449,19 @@ class TestPdus(TestCase):
         keep_alive_unpacked = KeepAlivePdu.unpack(raw_packet=keep_alive_pdu_raw)
         self.assertEqual(keep_alive_unpacked.packet_len, 12)
         self.assertEqual(keep_alive_unpacked.progress, 0)
-        keep_alive_pdu.file_size = FileSize.LARGE
+        keep_alive_pdu.file_flag = LargeFileFlag.LARGE
         self.assertEqual(keep_alive_pdu.packet_len, 16)
         keep_alive_pdu_large = keep_alive_pdu.pack()
         self.assertEqual(len(keep_alive_pdu_large), 16)
 
-        keep_alive_pdu.file_size = FileSize.GLOBAL_CONFIG
-        self.assertEqual(keep_alive_pdu.file_size, FileSize.NORMAL)
+        keep_alive_pdu.file_flag = LargeFileFlag.NORMAL
+        self.assertEqual(keep_alive_pdu.file_flag, LargeFileFlag.NORMAL)
 
         keep_alive_pdu.progress = pow(2, 32) + 1
         with self.assertRaises(ValueError):
             keep_alive_pdu.pack()
 
-        pdu_conf.file_size = FileSize.LARGE
+        pdu_conf.fss_field_len = LargeFileFlag.LARGE
         keep_alive_pdu_large = KeepAlivePdu(pdu_conf=pdu_conf, progress=0)
         keep_alive_pdu_invalid = keep_alive_pdu_large.pack()[:-1]
         with self.assertRaises(ValueError):
@@ -554,7 +559,7 @@ class TestPdus(TestCase):
         with self.assertRaises(ValueError):
             pdu_with_no_options.pack()
 
-        pdu_conf.file_size = FileSize.LARGE
+        pdu_conf.file_flag = LargeFileFlag.LARGE
         pdu_file_size_large = MetadataPdu(
             pdu_conf=pdu_conf,
             closure_requested=False,
@@ -618,7 +623,7 @@ class TestPdus(TestCase):
         with self.assertRaises(ValueError):
             EofPdu(file_checksum=bytes([0x00]), file_size=0, pdu_conf=pdu_conf)
 
-        pdu_conf.file_size = FileSize.LARGE
+        pdu_conf.file_flag = LargeFileFlag.LARGE
         eof_pdu_large_file = EofPdu(
             file_checksum=zero_checksum, file_size=0, pdu_conf=pdu_conf
         )

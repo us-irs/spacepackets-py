@@ -1,7 +1,7 @@
 import struct
 from unittest import TestCase
 
-from spacepackets.cfdp.defs import FileSize
+from spacepackets.cfdp.defs import LargeFileFlag
 from spacepackets.cfdp.pdu.file_directive import FileDirectivePduBase, DirectiveType
 from spacepackets.util import get_printable_data_string, PrintFormats
 from spacepackets.cfdp.pdu.prompt import PromptPdu, ResponseRequired
@@ -14,8 +14,6 @@ from spacepackets.cfdp.conf import (
     CrcFlag,
     SegmentationControl,
     set_default_pdu_crc_mode,
-    set_default_file_size,
-    get_default_file_size,
     get_default_pdu_crc_mode,
     set_entity_ids,
     get_entity_ids,
@@ -96,7 +94,7 @@ class TestTlvsLvsHeader(TestCase):
         pdu_header.trans_mode = TransmissionModes.UNACKNOWLEDGED
         pdu_header.direction = Direction.TOWARDS_SENDER
         pdu_header.crc_flag = CrcFlag.WITH_CRC
-        pdu_header.file_size = FileSize.LARGE
+        pdu_header.file_flag = LargeFileFlag.LARGE
         pdu_header.pdu_data_field_len = 300
         pdu_header.seg_ctrl = SegmentationControl.RECORD_BOUNDARIES_PRESERVATION
         pdu_header.segment_metadata_flag = SegmentMetadataFlag.PRESENT
@@ -139,15 +137,13 @@ class TestTlvsLvsHeader(TestCase):
         )
         self.assertEqual(prompt_pdu.pdu_file_directive.header_len, 9)
         self.assertEqual(prompt_pdu.packet_len, 10)
-        self.assertEqual(prompt_pdu.pdu_header.crc_flag, CrcFlag.WITH_CRC)
-        self.assertEqual(prompt_pdu.pdu_header.source_entity_id, bytes([0]))
-        self.assertEqual(prompt_pdu.pdu_header.dest_entity_id, bytes([0]))
-        self.assertEqual(prompt_pdu.pdu_header.file_size, FileSize.LARGE)
-        prompt_pdu.pdu_header.file_size = FileSize.NORMAL
-        self.assertEqual(prompt_pdu.pdu_header.file_size, FileSize.NORMAL)
-        self.assertEqual(
-            prompt_pdu.pdu_file_directive.pdu_header.file_size, FileSize.NORMAL
-        )
+        self.assertEqual(prompt_pdu.crc_flag, CrcFlag.WITH_CRC)
+        self.assertEqual(prompt_pdu.source_entity_id, bytes([0]))
+        self.assertEqual(prompt_pdu.dest_entity_id, bytes([0]))
+        self.assertEqual(prompt_pdu.file_flag, LargeFileFlag.LARGE)
+        prompt_pdu.file_flag = LargeFileFlag.NORMAL
+        self.assertEqual(prompt_pdu.file_flag, LargeFileFlag.NORMAL)
+        self.assertEqual(prompt_pdu.pdu_file_directive.file_flag, LargeFileFlag.NORMAL)
         prompt_pdu.crc_flag = CrcFlag.NO_CRC
         self.assertEqual(prompt_pdu.crc_flag, CrcFlag.NO_CRC)
         self.assertEqual(
@@ -239,7 +235,7 @@ class TestTlvsLvsHeader(TestCase):
             file_directive_header._parse_fss_field(
                 raw_packet=invalid_fss, current_idx=0
             )
-        file_directive_header.pdu_header.file_size = FileSize.LARGE
+        file_directive_header.pdu_header.file_size = LargeFileFlag.LARGE
         self.assertFalse(file_directive_header._verify_file_len(file_size=pow(2, 65)))
         with self.assertRaises(ValueError):
             file_directive_header._parse_fss_field(
@@ -251,9 +247,5 @@ class TestTlvsLvsHeader(TestCase):
         self.assertEqual(get_default_pdu_crc_mode(), CrcFlag.WITH_CRC)
         set_default_pdu_crc_mode(CrcFlag.NO_CRC)
         self.assertEqual(get_default_pdu_crc_mode(), CrcFlag.NO_CRC)
-        set_default_file_size(FileSize.LARGE)
-        self.assertEqual(get_default_file_size(), FileSize.LARGE)
-        set_default_file_size(FileSize.NORMAL)
-        self.assertEqual(get_default_file_size(), FileSize.NORMAL)
         set_entity_ids(bytes([0x00, 0x01]), bytes([0x02, 0x03]))
         self.assertEqual(get_entity_ids(), (bytes([0x00, 0x01]), bytes([0x02, 0x03])))

@@ -5,7 +5,7 @@ import abc
 from spacepackets.log import get_console_logger
 from spacepackets.cfdp.defs import (
     LenInBytes,
-    FileSize,
+    LargeFileFlag,
     PduType,
     SegmentMetadataFlag,
     CrcFlag,
@@ -30,12 +30,12 @@ class AbstractPduBase(abc.ABC):
 
     @property
     @abc.abstractmethod
-    def file_size(self) -> FileSize:
+    def file_flag(self) -> LargeFileFlag:
         pass
 
-    @file_size.setter
+    @file_flag.setter
     @abc.abstractmethod
-    def file_size(self, file_size: FileSize):
+    def file_flag(self, file_flag: LargeFileFlag):
         pass
 
     @property
@@ -163,12 +163,12 @@ class PduHeader(AbstractPduBase):
         self.pdu_conf.transaction_seq_num = transaction_seq_num
 
     @property
-    def file_size(self):
-        return self.pdu_conf.file_size
+    def file_flag(self):
+        return self.pdu_conf.file_flag
 
-    @file_size.setter
-    def file_size(self, file_size: FileSize):
-        self.pdu_conf.file_size = file_size
+    @file_flag.setter
+    def file_flag(self, file_flag: LargeFileFlag):
+        self.pdu_conf.file_flag = file_flag
 
     @property
     def crc_flag(self):
@@ -236,7 +236,7 @@ class PduHeader(AbstractPduBase):
         return self.pdu_len
 
     def is_large_file(self) -> bool:
-        if self.pdu_conf.file_size == FileSize.LARGE:
+        if self.pdu_conf.file_flag == LargeFileFlag.LARGE:
             return True
         else:
             return False
@@ -249,7 +249,7 @@ class PduHeader(AbstractPduBase):
             | (self.pdu_conf.direction << 3)
             | (self.pdu_conf.trans_mode << 2)
             | (self.pdu_conf.crc_flag << 1)
-            | self.pdu_conf.file_size
+            | self.pdu_conf.file_flag
         )
         header.append((self.pdu_data_field_len >> 8) & 0xFF)
         header.append(self.pdu_data_field_len & 0xFF)
@@ -291,7 +291,7 @@ class PduHeader(AbstractPduBase):
         pdu_header.direction = (raw_packet[0] & 0x08) >> 3
         pdu_header.trans_mode = (raw_packet[0] & 0x04) >> 2
         pdu_header.crc_flag = (raw_packet[0] & 0x02) >> 1
-        pdu_header.file_size = raw_packet[0] & 0x01
+        pdu_header.file_flag = LargeFileFlag(raw_packet[0] & 0x01)
         pdu_header.pdu_data_field_len = raw_packet[1] << 8 | raw_packet[2]
         pdu_header.segmentation_control = SegmentationControl(
             (raw_packet[3] & 0x80) >> 7

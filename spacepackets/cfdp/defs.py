@@ -91,12 +91,11 @@ def get_transaction_seq_num_as_bytes(
 
 
 # File sizes, determine the field sizes of FSS fields
-class FileSize(enum.IntEnum):
+class LargeFileFlag(enum.IntEnum):
     # 32 bit maximum file size and FSS size
     NORMAL = 0
     # 64 bit maximum file size and FSS size
     LARGE = 1
-    GLOBAL_CONFIG = 2
 
 
 # Checksum types according to the SANA Checksum Types registry

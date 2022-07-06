@@ -2,14 +2,19 @@ from __future__ import annotations
 import struct
 from typing import Optional
 
-from spacepackets.cfdp.pdu.file_directive import FileDirectivePduBase, DirectiveType
+from spacepackets.cfdp.pdu import PduHeader
+from spacepackets.cfdp.pdu.file_directive import (
+    FileDirectivePduBase,
+    DirectiveType,
+    AbstractFileDirectiveBase,
+)
 from spacepackets.cfdp.defs import ConditionCode
 from spacepackets.cfdp.conf import PduConfig
 from spacepackets.cfdp.tlv import EntityIdTlv
 from spacepackets.cfdp.conf import check_packet_length
 
 
-class EofPdu:
+class EofPdu(AbstractFileDirectiveBase):
     """Encapsulates the EOF file directive PDU, see CCSDS 727.0-B-5 p.79"""
 
     def __init__(
@@ -33,14 +38,22 @@ class EofPdu:
             raise ValueError
         self.condition_code = condition_code
         self.file_checksum = file_checksum
-        self.file_size = file_size
-        self._fault_location = fault_location
         self.pdu_file_directive = FileDirectivePduBase(
             directive_code=DirectiveType.EOF_PDU,
             pdu_conf=pdu_conf,
             directive_param_field_len=0,
         )
+        self.file_size = file_size
+        self._fault_location = fault_location
         self._calculate_directive_param_field_len()
+
+    @property
+    def directive_type(self) -> DirectiveType:
+        return self.pdu_file_directive.directive_type
+
+    @property
+    def pdu_header(self) -> PduHeader:
+        return self.pdu_file_directive.pdu_header
 
     @property
     def packet_len(self) -> int:
@@ -97,7 +110,7 @@ class EofPdu:
         if not check_packet_length(
             raw_packet_len=len(raw_packet), min_len=expected_min_len
         ):
-            raise ValueError
+            raise ValueError("Invalid packet length")
         current_idx = eof_pdu.pdu_file_directive.header_len
         eof_pdu.condition_code = raw_packet[current_idx] & 0xF0
         expected_min_len = current_idx + 5

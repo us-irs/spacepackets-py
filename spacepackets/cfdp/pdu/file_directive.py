@@ -10,7 +10,7 @@ from spacepackets.cfdp.pdu.header import (
     SegmentMetadataFlag,
     AbstractPduBase,
 )
-from spacepackets.cfdp.defs import FileSize, CrcFlag
+from spacepackets.cfdp.defs import LargeFileFlag, CrcFlag
 from spacepackets.cfdp.conf import check_packet_length, PduConfig
 from spacepackets.log import get_console_logger
 
@@ -44,12 +44,12 @@ class AbstractFileDirectiveBase(AbstractPduBase):
         return PduType.FILE_DIRECTIVE
 
     @property
-    def file_size(self) -> FileSize:
-        return self.pdu_header.file_size
+    def file_flag(self) -> LargeFileFlag:
+        return self.pdu_header.file_flag
 
-    @file_size.setter
-    def file_size(self, file_size: FileSize):
-        self.pdu_header.file_size = file_size
+    @file_flag.setter
+    def file_flag(self, field_len: LargeFileFlag):
+        self.pdu_header.file_flag = field_len
 
     @property
     def crc_flag(self):
@@ -116,8 +116,7 @@ class FileDirectivePduBase(AbstractFileDirectiveBase):
             # This flag is not relevant for file directive PDUs
             segment_metadata_flag=SegmentMetadataFlag.NOT_PRESENT,
         )
-        super().__init__()
-        self._directive_code = directive_code
+        self._directive_type = directive_code
 
     @property
     def pdu_header(self) -> PduHeader:
@@ -125,7 +124,7 @@ class FileDirectivePduBase(AbstractFileDirectiveBase):
 
     @property
     def directive_type(self) -> DirectiveType:
-        return self._directive_code
+        return self._directive_type
 
     @property
     def directive_param_field_len(self):
@@ -150,7 +149,7 @@ class FileDirectivePduBase(AbstractFileDirectiveBase):
     def pack(self) -> bytearray:
         data = bytearray()
         data.extend(self.pdu_header.pack())
-        data.append(self._directive_code)
+        data.append(self._directive_type)
         return data
 
     @classmethod
@@ -167,19 +166,21 @@ class FileDirectivePduBase(AbstractFileDirectiveBase):
         header_len = file_directive.pdu_header.header_len + 1
         if not check_packet_length(raw_packet_len=len(raw_packet), min_len=header_len):
             raise ValueError
-        file_directive.directive_code = raw_packet[header_len - 1]
+        file_directive._directive_type = raw_packet[header_len - 1]
         return file_directive
 
     def _verify_file_len(self, file_size: int) -> bool:
         """Can be used by subclasses to verify a given file size"""
-        if self.pdu_header.pdu_conf.file_size == FileSize.LARGE and file_size > pow(
-            2, 64
+        if (
+            self.pdu_header.pdu_conf.file_flag == LargeFileFlag.LARGE
+            and file_size > pow(2, 64)
         ):
             logger = get_console_logger()
             logger.warning(f"File size {file_size} larger than 64 bit field")
             return False
-        elif self.pdu_header.pdu_conf.file_size == FileSize.NORMAL and file_size > pow(
-            2, 32
+        elif (
+            self.pdu_header.pdu_conf.file_flag == LargeFileFlag.NORMAL
+            and file_size > pow(2, 32)
         ):
             logger = get_console_logger()
             logger.warning(f"File size {file_size} larger than 32 bit field")
@@ -192,7 +193,7 @@ class FileDirectivePduBase(AbstractFileDirectiveBase):
 
         :raise ValueError: Packet not large enough
         """
-        if self.pdu_header.pdu_conf.file_size == FileSize.LARGE:
+        if self.pdu_header.pdu_conf.file_flag == LargeFileFlag.LARGE:
             if not check_packet_length(len(raw_packet), current_idx + 8):
                 raise ValueError
             file_size = struct.unpack("!Q", raw_packet[current_idx : current_idx + 8])[

@@ -3,7 +3,7 @@ from __future__ import annotations
 import struct
 
 from spacepackets.cfdp.pdu.file_directive import FileDirectivePduBase, DirectiveType
-from spacepackets.cfdp.conf import PduConfig, FileSize, get_default_file_size
+from spacepackets.cfdp.conf import PduConfig, LargeFileFlag
 from spacepackets.log import get_console_logger
 
 
@@ -11,10 +11,9 @@ class KeepAlivePdu:
     """Encapsulates the Keep Alive file directive PDU, see CCSDS 727.0-B-5 p.85"""
 
     def __init__(self, progress: int, pdu_conf: PduConfig):
-        directive_param_field_len = 4
-        if pdu_conf.file_size == FileSize.NORMAL:
+        if pdu_conf.file_flag == LargeFileFlag.NORMAL:
             directive_param_field_len = 4
-        elif pdu_conf.file_size == FileSize.LARGE:
+        elif pdu_conf.file_flag == LargeFileFlag.LARGE:
             directive_param_field_len = 8
         # Directive param field length is minimum FSS size which is 4 bytes
         self.pdu_file_directive = FileDirectivePduBase(
@@ -25,19 +24,15 @@ class KeepAlivePdu:
         self.progress = progress
 
     @property
-    def file_size(self):
-        return self.pdu_file_directive.pdu_header.file_size
+    def file_flag(self):
+        return self.pdu_file_directive.pdu_header.file_flag
 
-    @file_size.setter
-    def file_size(self, file_size: FileSize):
-        if file_size == FileSize.GLOBAL_CONFIG:
-            file_size = get_default_file_size()
+    @file_flag.setter
+    def file_flag(self, file_size: LargeFileFlag):
         directive_param_field_len = 4
-        if file_size == FileSize.NORMAL:
-            directive_param_field_len = 4
-        elif file_size == FileSize.LARGE:
+        if file_size == LargeFileFlag.LARGE:
             directive_param_field_len = 8
-        self.pdu_file_directive.pdu_header.file_size = file_size
+        self.pdu_file_directive.pdu_header.file_flag = file_size
         self.pdu_file_directive.directive_param_field_len = directive_param_field_len
 
     @classmethod
