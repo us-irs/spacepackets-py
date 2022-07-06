@@ -1,4 +1,4 @@
-from typing import cast, Union, Type
+from typing import cast, Union, Type, Optional
 
 from spacepackets.cfdp import PduType
 from spacepackets.cfdp.pdu import (
@@ -19,13 +19,13 @@ from spacepackets.cfdp.pdu.header import AbstractPduBase
 class PduWrapper:
     """Helper type to store arbitrary PDU types and cast them to a concrete PDU type conveniently"""
 
-    def __init__(self, base: Union[AbstractFileDirectiveBase, AbstractPduBase]):
+    def __init__(
+        self, base: Optional[Union[AbstractFileDirectiveBase, AbstractPduBase]]
+    ):
         self.base = base
 
     def _raise_not_target_exception(self, pdu_type: Type[any]):
-        raise TypeError(
-            f"Stored PDU is not {pdu_type.__class__.__name__}: {self.base!r}"
-        )
+        raise TypeError(f"Stored PDU is not {pdu_type.__name__!r}: {self.base!r}")
 
     def _cast_to_concrete_file_directive(
         self, pdu_type: Type[any], dir_type: DirectiveType

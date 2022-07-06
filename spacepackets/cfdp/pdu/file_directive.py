@@ -87,6 +87,12 @@ class AbstractFileDirectiveBase(AbstractPduBase):
         """
         return self.pdu_header.pdu_len
 
+    def __eq__(self, other: AbstractFileDirectiveBase):
+        return (
+            self.pdu_header == other.pdu_header
+            and self.directive_type == other.directive_type
+        )
+
 
 class FileDirectivePduBase(AbstractFileDirectiveBase):
     FILE_DIRECTIVE_PDU_LEN = 5

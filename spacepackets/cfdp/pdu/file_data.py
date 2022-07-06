@@ -3,9 +3,10 @@ import enum
 from typing import Union
 import struct
 
+from spacepackets.cfdp import LargeFileFlag
 from spacepackets.cfdp.pdu.file_directive import SegmentMetadataFlag, PduType
 from spacepackets.cfdp.conf import PduConfig
-from spacepackets.cfdp.pdu.header import PduHeader
+from spacepackets.cfdp.pdu.header import PduHeader, AbstractPduBase
 from spacepackets.log import get_console_logger
 
 
@@ -23,7 +24,7 @@ class RecordContinuationState(enum.IntEnum):
     START_AND_END = 0b11
 
 
-class FileDataPdu:
+class FileDataPdu(AbstractPduBase):
     def __init__(
         self,
         pdu_conf: PduConfig,
@@ -61,6 +62,26 @@ class FileDataPdu:
             offset=0,
             pdu_conf=empty_conf,
         )
+
+    @property
+    def pdu_type(self) -> PduType:
+        return self.pdu_header.pdu_type
+
+    @property
+    def file_flag(self) -> LargeFileFlag:
+        return self.pdu_header.file_flag
+
+    @property
+    def source_entity_id(self) -> bytes:
+        return self.pdu_header.source_entity_id
+
+    @property
+    def dest_entity_id(self) -> bytes:
+        return self.pdu_header.dest_entity_id
+
+    @property
+    def crc_flag(self):
+        return self.pdu_header.crc_flag
 
     @property
     def segment_metadata(self):
@@ -152,3 +173,12 @@ class FileDataPdu:
     @property
     def packet_len(self):
         return self.pdu_header.pdu_len
+
+    def __eq__(self, other: FileDataPdu):
+        return (
+            self.pdu_header == other.pdu_header
+            and self.segment_metadata == other.segment_metadata
+            and self.record_continuation_state == other.record_continuation_state
+            and self.offset == other.offset
+            and self._file_data == other._file_data
+        )

@@ -187,3 +187,14 @@ class MetadataPdu(AbstractFileDirectiveBase):
                 raise ValueError
             elif current_idx == len(raw_packet):
                 break
+
+    def __eq__(self, other: MetadataPdu):
+        return (
+            self.pdu_file_directive == other.pdu_file_directive
+            and self.closure_requested == other.closure_requested
+            and self.checksum_type == other.checksum_type
+            and self.file_size == other.file_size
+            and self._source_file_name_lv == other._source_file_name_lv
+            and self._dest_file_name_lv == other._dest_file_name_lv
+            and self._options == other._options
+        )

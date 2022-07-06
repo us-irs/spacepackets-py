@@ -65,6 +65,16 @@ class AbstractPduBase(abc.ABC):
     def crc_flag(self, crc_flag: CrcFlag):
         pass
 
+    def __eq__(self, other: AbstractPduBase):
+        return (
+            self.pdu_type == other.pdu_type
+            and self.file_flag == other.file_flag
+            and self.crc_flag == other.crc_flag
+            and self.dest_entity_id == other.dest_entity_id
+            and self.source_entity_id == other.source_entity_id
+            and self.packet_len == other.packet_len
+        )
+
 
 class PduHeader(AbstractPduBase):
     """This class encapsulates the fixed-format PDU header.
