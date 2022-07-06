@@ -1,26 +1,25 @@
 import struct
 from unittest import TestCase
 
-from spacepackets.cfdp.defs import LargeFileFlag
-from spacepackets.cfdp.pdu.file_directive import FileDirectivePduBase, DirectiveType
-from spacepackets.util import get_printable_data_string, PrintFormats
-from spacepackets.cfdp.pdu.prompt import PromptPdu, ResponseRequired
-from spacepackets.cfdp.defs import LenInBytes, get_transaction_seq_num_as_bytes
-from spacepackets.cfdp.pdu import PduHeader, PduType, SegmentMetadataFlag
-from spacepackets.cfdp.conf import (
-    PduConfig,
+from spacepackets.cfdp.conf import PduConfig, set_entity_ids
+from spacepackets.cfdp.defs import (
+    get_transaction_seq_num_as_bytes,
+    LenInBytes,
     TransmissionModes,
     Direction,
     CrcFlag,
     SegmentationControl,
-    set_default_pdu_crc_mode,
-    get_default_pdu_crc_mode,
-    set_entity_ids,
-    get_entity_ids,
+    PduType,
+    SegmentMetadataFlag,
+    LargeFileFlag,
 )
+from spacepackets.cfdp.pdu import PduHeader, PromptPdu
+from spacepackets.cfdp.pdu.prompt import ResponseRequired
+from spacepackets.util import get_printable_data_string, PrintFormats
 
 
-class TestTlvsLvsHeader(TestCase):
+class TestHeader(TestCase):
+    # TODO: Split up in smaller test fixtures
     def test_pdu_header(self):
         len_in_bytes = get_transaction_seq_num_as_bytes(
             transaction_seq_num=22, byte_length=LenInBytes.ONE_BYTE
@@ -211,41 +210,3 @@ class TestTlvsLvsHeader(TestCase):
         self.assertEqual(pdu_header_packed[6] << 8 | pdu_header_packed[7], 300)
         # Destination ID
         self.assertEqual(pdu_header_packed[8:10], bytes([0, 1]))
-
-    def test_file_directive(self):
-        pdu_conf = PduConfig.empty()
-        file_directive_header = FileDirectivePduBase(
-            directive_code=DirectiveType.METADATA_PDU,
-            pdu_conf=pdu_conf,
-            directive_param_field_len=0,
-        )
-        self.assertEqual(file_directive_header.packet_len, 8)
-        self.assertEqual(file_directive_header.pdu_data_field_len, 1)
-        file_directive_header.pdu_data_field_len = 2
-        self.assertEqual(file_directive_header.packet_len, 9)
-        file_directive_header_raw = file_directive_header.pack()
-        file_directive_header.pdu_data_field_len = 1
-        self.assertEqual(len(file_directive_header_raw), 8)
-        file_directive_header_raw_invalid = file_directive_header_raw[:-1]
-        with self.assertRaises(ValueError):
-            FileDirectivePduBase.unpack(raw_packet=file_directive_header_raw_invalid)
-        self.assertFalse(file_directive_header._verify_file_len(file_size=pow(2, 33)))
-        invalid_fss = bytes([0x00, 0x01])
-        with self.assertRaises(ValueError):
-            file_directive_header._parse_fss_field(
-                raw_packet=invalid_fss, current_idx=0
-            )
-        file_directive_header.pdu_header.file_size = LargeFileFlag.LARGE
-        self.assertFalse(file_directive_header._verify_file_len(file_size=pow(2, 65)))
-        with self.assertRaises(ValueError):
-            file_directive_header._parse_fss_field(
-                raw_packet=invalid_fss, current_idx=0
-            )
-
-    def test_config(self):
-        set_default_pdu_crc_mode(CrcFlag.WITH_CRC)
-        self.assertEqual(get_default_pdu_crc_mode(), CrcFlag.WITH_CRC)
-        set_default_pdu_crc_mode(CrcFlag.NO_CRC)
-        self.assertEqual(get_default_pdu_crc_mode(), CrcFlag.NO_CRC)
-        set_entity_ids(bytes([0x00, 0x01]), bytes([0x02, 0x03]))
-        self.assertEqual(get_entity_ids(), (bytes([0x00, 0x01]), bytes([0x02, 0x03])))

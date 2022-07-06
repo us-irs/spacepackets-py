@@ -1,27 +1,24 @@
 from unittest import TestCase
 
-from spacepackets.cfdp.lv import CfdpLv
+from spacepackets.cfdp import TlvTypes, CfdpTlv, ConditionCode
+from spacepackets.cfdp.defs import FaultHandlerCodes
 from spacepackets.cfdp.tlv import (
-    CfdpTlv,
-    TlvTypes,
     map_enum_status_code_to_action_status_code,
     FilestoreResponseStatusCode,
     FilestoreActionCode,
     map_int_status_code_to_enum,
     EntityIdTlv,
-    FlowLabelTlv,
+    TlvWrapper,
     FileStoreRequestTlv,
     FileStoreResponseTlv,
-    MessageToUserTlv,
     FaultHandlerOverrideTlv,
-    ConditionCode,
-    FaultHandlerCodes,
+    MessageToUserTlv,
     create_cfdp_proxy_and_dir_op_message_marker,
-    TlvWrapper,
+    FlowLabelTlv,
 )
 
 
-class TestTlvsLvs(TestCase):
+class TestTlvs(TestCase):
     def test_tlvs(self):
         test_tlv = CfdpTlv(
             tlv_type=TlvTypes.FILESTORE_REQUEST, value=bytes([0, 1, 2, 3, 4])
@@ -74,32 +71,6 @@ class TestTlvsLvs(TestCase):
             action_code=FilestoreActionCode.APPEND_FILE_SNP, status_code=0b1100
         )
         self.assertEqual(invalid_code, FilestoreResponseStatusCode.INVALID)
-
-    def test_lvs(self):
-        test_values = bytes([0, 1, 2])
-        test_lv = CfdpLv(value=test_values)
-        self.assertEqual(test_lv.value, test_values)
-        self.assertEqual(test_lv.len, 3)
-        self.assertEqual(test_lv.packet_len, 4)
-        test_lv_packed = test_lv.pack()
-        self.assertEqual(len(test_lv_packed), 4)
-        self.assertEqual(test_lv_packed[0], 3)
-        self.assertEqual(test_lv_packed[1 : 1 + 3], test_values)
-
-        CfdpLv.unpack(raw_bytes=test_lv_packed)
-        self.assertEqual(test_lv.value, test_values)
-        self.assertEqual(test_lv.len, 3)
-        self.assertEqual(test_lv.packet_len, 4)
-
-        # Too much too pack
-        faulty_values = bytearray(300)
-        self.assertRaises(ValueError, CfdpLv, faulty_values)
-        # Too large to unpack
-        faulty_values[0] = 20
-        self.assertRaises(ValueError, CfdpLv.unpack, faulty_values[0:15])
-        # Too short to unpack
-        faulty_lv = bytes([0])
-        self.assertRaises(ValueError, CfdpTlv.unpack, faulty_lv)
 
     def test_entity_id_tlv(self):
         entity_id_tlv = EntityIdTlv(entity_id=bytes([0x00, 0x01, 0x02, 0x03]))
