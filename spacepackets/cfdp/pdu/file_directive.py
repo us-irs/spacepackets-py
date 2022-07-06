@@ -10,7 +10,7 @@ from spacepackets.cfdp.pdu.header import (
     SegmentMetadataFlag,
     AbstractPduBase,
 )
-from spacepackets.cfdp.defs import FileSize
+from spacepackets.cfdp.defs import FileSize, CrcFlag
 from spacepackets.cfdp.conf import check_packet_length, PduConfig
 from spacepackets.log import get_console_logger
 
@@ -30,10 +30,6 @@ class AbstractFileDirectiveBase(AbstractPduBase):
     """Encapsulate common functions for classes which are FileDirectives"""
 
     @property
-    def pdu_type(self) -> PduType:
-        return PduType.FILE_DIRECTIVE
-
-    @property
     @abc.abstractmethod
     def directive_type(self) -> DirectiveType:
         pass
@@ -42,6 +38,26 @@ class AbstractFileDirectiveBase(AbstractPduBase):
     @abc.abstractmethod
     def pdu_header(self) -> PduHeader:
         pass
+
+    @property
+    def pdu_type(self) -> PduType:
+        return PduType.FILE_DIRECTIVE
+
+    @property
+    def file_size(self) -> FileSize:
+        return self.pdu_header.file_size
+
+    @file_size.setter
+    def file_size(self, file_size: FileSize):
+        self.pdu_header.file_size = file_size
+
+    @property
+    def crc_flag(self):
+        return self.pdu_header.crc_flag
+
+    @crc_flag.setter
+    def crc_flag(self, crc_flag: CrcFlag):
+        self.pdu_header.crc_flag = crc_flag
 
     @property
     def pdu_data_field_len(self):
