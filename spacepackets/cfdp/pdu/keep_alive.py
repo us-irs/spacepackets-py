@@ -86,3 +86,9 @@ class KeepAlivePdu(AbstractFileDirectiveBase):
     @property
     def packet_len(self):
         return self.pdu_file_directive.packet_len
+
+    def __eq__(self, other: KeepAlivePdu):
+        return (
+            self.pdu_file_directive == other.pdu_file_directive
+            and self.progress == other.progress
+        )

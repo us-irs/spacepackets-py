@@ -11,6 +11,7 @@ from spacepackets.cfdp.pdu import (
     PromptPdu,
     EofPdu,
     FinishedPdu,
+    KeepAlivePdu,
 )
 from spacepackets.cfdp.pdu.file_data import FileDataPdu
 from spacepackets.cfdp.pdu.finished import DeliveryCode, FileDeliveryStatus
@@ -121,3 +122,9 @@ class TestPduWrapper(TestCase):
         self.pdu_wrapper.base = finish_pdu
         finish_pdu_converted = self.pdu_wrapper.to_finished_pdu()
         self.assertEqual(finish_pdu_converted, finish_pdu)
+
+    def test_keep_alive_cast(self):
+        keep_alive_pdu = KeepAlivePdu(progress=0, pdu_conf=self.pdu_conf)
+        self.pdu_wrapper.base = keep_alive_pdu
+        keep_alive_pdu_converted = self.pdu_wrapper.to_keep_alive_pdu()
+        self.assertEqual(keep_alive_pdu_converted, keep_alive_pdu)
