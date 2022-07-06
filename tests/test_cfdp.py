@@ -1,11 +1,11 @@
 import struct
 from unittest import TestCase
 
-from spacepackets.cfdp.definitions import FileSize
+from spacepackets.cfdp.defs import FileSize
 from spacepackets.cfdp.pdu.file_directive import FileDirectivePduBase, DirectiveCodes
 from spacepackets.util import get_printable_data_string, PrintFormats
 from spacepackets.cfdp.pdu.prompt import PromptPdu, ResponseRequired
-from spacepackets.cfdp.definitions import LenInBytes, get_transaction_seq_num_as_bytes
+from spacepackets.cfdp.defs import LenInBytes, get_transaction_seq_num_as_bytes
 from spacepackets.cfdp.pdu import PduHeader, PduType, SegmentMetadataFlag
 from spacepackets.cfdp.conf import (
     PduConfig,

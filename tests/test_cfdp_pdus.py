@@ -1,5 +1,5 @@
 from unittest import TestCase
-from spacepackets.cfdp.definitions import CrcFlag
+from spacepackets.cfdp.defs import CrcFlag
 from spacepackets.cfdp.pdu.ack import (
     AckPdu,
     ConditionCode,

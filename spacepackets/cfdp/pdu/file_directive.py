@@ -8,7 +8,7 @@ from spacepackets.cfdp.pdu.header import (
     SegmentMetadataFlag,
     HasPduHeader,
 )
-from spacepackets.cfdp.definitions import FileSize
+from spacepackets.cfdp.defs import FileSize
 from spacepackets.cfdp.conf import check_packet_length, PduConfig
 from spacepackets.log import get_console_logger
 

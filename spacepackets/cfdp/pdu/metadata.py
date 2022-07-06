@@ -6,7 +6,7 @@ from spacepackets.cfdp.pdu.file_directive import FileDirectivePduBase, Directive
 from spacepackets.cfdp.conf import PduConfig, FileSize
 from spacepackets.cfdp.tlv import CfdpTlv, TlvList
 from spacepackets.cfdp.lv import CfdpLv
-from spacepackets.cfdp.definitions import ChecksumTypes
+from spacepackets.cfdp.defs import ChecksumTypes
 from spacepackets.cfdp.conf import check_packet_length
 from spacepackets.log import get_console_logger
 

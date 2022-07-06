@@ -2,13 +2,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import TypedDict, Tuple
 
-from spacepackets.cfdp.definitions import (
-    FileSize,
-    TransmissionModes,
-    CrcFlag,
-    SegmentationControl,
-    Direction,
-)
+from spacepackets.cfdp.defs import TransmissionModes
 from spacepackets.log import get_console_logger
 
 

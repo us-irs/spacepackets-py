@@ -1,5 +1,5 @@
 # noinspection PyUnresolvedReferences
-from ..definitions import SegmentMetadataFlag, PduType
+from ..defs import SegmentMetadataFlag, PduType
 
 # noinspection PyUnresolvedReferences
 from .header import PduHeader, PduConfig

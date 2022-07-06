@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from spacepackets.log import get_console_logger
-from spacepackets.cfdp.definitions import (
+from spacepackets.cfdp.defs import (
     LenInBytes,
     FileSize,
     PduType,

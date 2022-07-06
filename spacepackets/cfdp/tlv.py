@@ -1,9 +1,11 @@
 from __future__ import annotations
+
+import abc
 from typing import Tuple, Optional, TypeVar, Type, Union, List
 import enum
 from spacepackets.log import get_console_logger
 from spacepackets.cfdp.lv import CfdpLv
-from spacepackets.cfdp.definitions import ConditionCode, FaultHandlerCodes
+from spacepackets.cfdp.defs import ConditionCode, FaultHandlerCodes
 
 
 class TlvTypes(enum.IntEnum):
@@ -194,7 +196,7 @@ class CfdpTlv:
         return self.MINIMAL_LEN + len(self.value)
 
 
-class ConcreteTlvBase:
+class ConcreteTlvBase(abc.ABC):
     def __init__(self, tlv: CfdpTlv):
         self.tlv = tlv
 
@@ -204,6 +206,10 @@ class ConcreteTlvBase:
     @property
     def packet_len(self):
         return self.tlv.packet_len
+
+    @property
+    def tlv_type(self) -> TlvTypes:
+        return self.tlv.tlv_type
 
     def _check_type(self, tlv_type: TlvTypes):
         if self.tlv.tlv_type != tlv_type:
@@ -529,6 +535,14 @@ class FileStoreResponseTlv(FileStoreRequestBase, ConcreteTlvBase):
 
 TlvBase = TypeVar("TlvBase", bound=ConcreteTlvBase)
 TlvList = List[Union[CfdpTlv, TlvBase]]
+
+
+class TlvWrapper:
+    def __init__(self, tlv_base: ConcreteTlvBase):
+        self.base = tlv_base
+
+    def to_fs_request(self) -> FileStoreRequestTlv:
+        pass
 
 
 def concrete_tlv_factory(
