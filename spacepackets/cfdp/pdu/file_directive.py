@@ -188,7 +188,7 @@ class FileDirectivePduBase(AbstractFileDirectiveBase):
             return False
         return True
 
-    def _parse_fss_field(self, raw_packet: bytes, current_idx: int) -> (int, int):
+    def parse_fss_field(self, raw_packet: bytes, current_idx: int) -> (int, int):
         """Parse the FSS field, which has different size depending on the large file flag being
         set or not. Returns the current index incremented and the parsed file size.
 

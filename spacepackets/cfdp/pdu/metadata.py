@@ -161,7 +161,7 @@ class MetadataPdu(AbstractFileDirectiveBase):
         (
             current_idx,
             metadata_pdu.file_size,
-        ) = metadata_pdu.pdu_file_directive._parse_fss_field(
+        ) = metadata_pdu.pdu_file_directive.parse_fss_field(
             raw_packet=raw_packet, current_idx=current_idx
         )
         metadata_pdu._source_file_name_lv = CfdpLv.unpack(

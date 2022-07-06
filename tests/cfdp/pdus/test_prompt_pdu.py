@@ -9,7 +9,7 @@ class TestPromptPdu(TestCase):
     def test_prompt_pdu(self):
         pdu_conf = PduConfig.empty()
         prompt_pdu = PromptPdu(
-            pdu_conf=pdu_conf, reponse_required=ResponseRequired.KEEP_ALIVE
+            pdu_conf=pdu_conf, response_required=ResponseRequired.KEEP_ALIVE
         )
         print(prompt_pdu.pack().hex(sep=","))
         prompt_pdu_raw = prompt_pdu.pack()

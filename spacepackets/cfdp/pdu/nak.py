@@ -172,4 +172,9 @@ class NakPdu(AbstractFileDirectiveBase):
         return nak_pdu
 
     def __eq__(self, other: NakPdu):
-        return self.pdu_file_directive == other.pdu_file_directive
+        return (
+            self.pdu_file_directive == other.pdu_file_directive
+            and self._segment_requests == other._segment_requests
+            and self.start_of_scope == other.start_of_scope
+            and self.end_of_scope == other.end_of_scope
+        )

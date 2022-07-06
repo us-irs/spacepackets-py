@@ -8,8 +8,13 @@ from spacepackets.cfdp.pdu import (
     DirectiveType,
     TransactionStatus,
     NakPdu,
+    PromptPdu,
+    EofPdu,
+    FinishedPdu,
 )
 from spacepackets.cfdp.pdu.file_data import FileDataPdu
+from spacepackets.cfdp.pdu.finished import DeliveryCode, FileDeliveryStatus
+from spacepackets.cfdp.pdu.prompt import ResponseRequired
 from spacepackets.cfdp.pdu.wrapper import PduWrapper
 
 
@@ -86,3 +91,33 @@ class TestPduWrapper(TestCase):
     def test_nak_cast(self):
         nak_pdu = NakPdu(start_of_scope=0, end_of_scope=200, pdu_conf=self.pdu_conf)
         self.pdu_wrapper.base = nak_pdu
+        nak_pdu_converted = self.pdu_wrapper.to_nak_pdu()
+        self.assertEqual(nak_pdu_converted, nak_pdu)
+
+    def test_prompt_cast(self):
+        prompt_pdu = PromptPdu(
+            pdu_conf=self.pdu_conf, response_required=ResponseRequired.KEEP_ALIVE
+        )
+        self.pdu_wrapper.base = prompt_pdu
+        prompt_pdu_converted = self.pdu_wrapper.to_prompt_pdu()
+        self.assertEqual(prompt_pdu_converted, prompt_pdu)
+
+    def test_eof_cast(self):
+        zero_checksum = bytes([0x00, 0x00, 0x00, 0x00])
+        eof_pdu = EofPdu(
+            file_checksum=zero_checksum, file_size=0, pdu_conf=self.pdu_conf
+        )
+        self.pdu_wrapper.base = eof_pdu
+        eof_pdu_converted = self.pdu_wrapper.to_eof_pdu()
+        self.assertEqual(eof_pdu_converted, eof_pdu)
+
+    def test_finished_cast(self):
+        finish_pdu = FinishedPdu(
+            delivery_code=DeliveryCode.DATA_COMPLETE,
+            file_delivery_status=FileDeliveryStatus.FILE_STATUS_UNREPORTED,
+            condition_code=ConditionCode.NO_ERROR,
+            pdu_conf=self.pdu_conf,
+        )
+        self.pdu_wrapper.base = finish_pdu
+        finish_pdu_converted = self.pdu_wrapper.to_finished_pdu()
+        self.assertEqual(finish_pdu_converted, finish_pdu)

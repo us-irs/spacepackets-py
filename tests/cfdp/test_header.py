@@ -132,7 +132,7 @@ class TestHeader(TestCase):
         pdu_conf.dest_entity_id = bytes([0])
         pdu_conf.transaction_seq_num = bytes([0x00, 0x2C])
         prompt_pdu = PromptPdu(
-            reponse_required=ResponseRequired.KEEP_ALIVE, pdu_conf=pdu_conf
+            response_required=ResponseRequired.KEEP_ALIVE, pdu_conf=pdu_conf
         )
         self.assertEqual(prompt_pdu.pdu_file_directive.header_len, 9)
         self.assertEqual(prompt_pdu.packet_len, 10)

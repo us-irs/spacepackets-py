@@ -117,7 +117,7 @@ class EofPdu(AbstractFileDirectiveBase):
         current_idx += 1
         eof_pdu.file_checksum = raw_packet[current_idx : current_idx + 4]
         current_idx += 4
-        current_idx, eof_pdu.file_size = eof_pdu.pdu_file_directive._parse_fss_field(
+        current_idx, eof_pdu.file_size = eof_pdu.pdu_file_directive.parse_fss_field(
             raw_packet=raw_packet, current_idx=current_idx
         )
         if len(raw_packet) > current_idx:
@@ -125,3 +125,12 @@ class EofPdu(AbstractFileDirectiveBase):
                 raw_bytes=raw_packet[current_idx:]
             )
         return eof_pdu
+
+    def __eq__(self, other: EofPdu):
+        return (
+            self.pdu_file_directive == other.pdu_file_directive
+            and self.condition_code == other.condition_code
+            and self.file_checksum == other.file_checksum
+            and self.file_size == other.file_size
+            and self._fault_location == other._fault_location
+        )
