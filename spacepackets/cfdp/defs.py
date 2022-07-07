@@ -107,5 +107,6 @@ class ChecksumTypes(enum.IntEnum):
     MODULAR = 0
     CRC_32_PROXIMITY_1 = 1
     CRC_32C = 2
+    # Polynomial: 0x4C11DB7. This is the preferred checksum for now.
     CRC_32 = 3
     NULL_CHECKSUM = 15
