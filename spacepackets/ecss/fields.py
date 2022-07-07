@@ -3,6 +3,8 @@ import enum
 import struct
 from dataclasses import dataclass
 
+from spacepackets.util import IntByteConversion
+
 
 class Ptc(enum.IntEnum):
     BOOLEAN = 1
@@ -88,9 +90,7 @@ class PacketFieldEnum(PacketFieldBase):
 
     def pack(self) -> bytearray:
         num_bytes = self.check_pfc(self.pfc)
-        return bytearray(
-            struct.pack(byte_num_to_unsigned_struct_specifier(num_bytes), self.val)
-        )
+        return bytearray(IntByteConversion.to_unsigned(num_bytes, self.val))
 
     def len(self):
         """Return the length in bytes. This will raise a ValueError for non-byte-aligned
@@ -103,7 +103,8 @@ class PacketFieldEnum(PacketFieldBase):
         return cls(
             pfc,
             struct.unpack(
-                byte_num_to_unsigned_struct_specifier(num_bytes), data[0:num_bytes]
+                IntByteConversion.unsigned_struct_specifier(num_bytes),
+                data[0:num_bytes],
             )[0],
         )
 
@@ -122,31 +123,3 @@ class PacketFieldEnum(PacketFieldBase):
 
     def __eq__(self, other: PacketFieldEnum):
         return self.pfc == other.pfc and self.val == other.val
-
-
-def byte_num_to_signed_struct_specifier(byte_num: int) -> str:
-    """Convert number of bytes in a field to the struct API signed format specifier,
-    assuming network endianness. Raises value error if number is not inside [1, 2, 4, 8]"""
-    if byte_num == 1:
-        return "!b"
-    elif byte_num == 2:
-        return "!h"
-    elif byte_num == 4:
-        return "!i"
-    elif byte_num == 8:
-        return "!q"
-    raise ValueError("Invalid number of bytes specified")
-
-
-def byte_num_to_unsigned_struct_specifier(byte_num: int) -> str:
-    """Convert number of bytes in a field to the struct API unsigned format specifier,
-    assuming network endianness. Raises value error if number is not inside [1, 2, 4, 8]"""
-    if byte_num == 1:
-        return "!B"
-    elif byte_num == 2:
-        return "!H"
-    elif byte_num == 4:
-        return "!I"
-    elif byte_num == 8:
-        return "!Q"
-    raise ValueError("Invalid number of bytes specified")

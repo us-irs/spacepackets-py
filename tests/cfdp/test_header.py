@@ -3,7 +3,6 @@ from unittest import TestCase
 
 from spacepackets.cfdp.conf import PduConfig, set_entity_ids
 from spacepackets.cfdp.defs import (
-    get_transaction_seq_num_as_bytes,
     LenInBytes,
     TransmissionModes,
     Direction,
@@ -12,6 +11,9 @@ from spacepackets.cfdp.defs import (
     PduType,
     SegmentMetadataFlag,
     LargeFileFlag,
+    ByteFieldU8,
+    ByteFieldU16,
+    ByteFieldU32,
 )
 from spacepackets.cfdp.pdu import PduHeader, PromptPdu
 from spacepackets.cfdp.pdu.prompt import ResponseRequired
@@ -21,33 +23,22 @@ from spacepackets.util import get_printable_data_string, PrintFormats
 class TestHeader(TestCase):
     # TODO: Split up in smaller test fixtures
     def test_pdu_header(self):
-        len_in_bytes = get_transaction_seq_num_as_bytes(
-            transaction_seq_num=22, byte_length=LenInBytes.ONE_BYTE
-        )
-        self.assertEqual(len_in_bytes[0], 22)
-        len_in_bytes = get_transaction_seq_num_as_bytes(
-            transaction_seq_num=5292, byte_length=LenInBytes.TWO_BYTES
-        )
-        self.assertEqual(len_in_bytes[0] << 8 | len_in_bytes[1], 5292)
-        len_in_bytes = get_transaction_seq_num_as_bytes(
-            transaction_seq_num=129302, byte_length=LenInBytes.FOUR_BYTES
-        )
-        self.assertEqual(struct.unpack("!I", len_in_bytes[:])[0], 129302)
-        len_in_bytes = get_transaction_seq_num_as_bytes(
-            transaction_seq_num=8292392392, byte_length=LenInBytes.EIGHT_BYTES
-        )
-        self.assertEqual(struct.unpack("!Q", len_in_bytes[:])[0], 8292392392)
-        self.assertRaises(
-            ValueError, get_transaction_seq_num_as_bytes, 900, LenInBytes.ONE_BYTE
-        )
+        byte_field = ByteFieldU8(22)
+        self.assertEqual(int(byte_field), 22)
+        byte_field = ByteFieldU16(5292)
+        self.assertEqual(int(byte_field), 5292)
+        byte_field = ByteFieldU32(129302)
+        self.assertEqual(struct.unpack("!I", byte_field.as_bytes())[0], 129302)
+        with self.assertRaises(ValueError):
+            ByteFieldU8(900)
         pdu_conf = PduConfig(
-            source_entity_id=bytes([0]),
-            dest_entity_id=bytes([0]),
+            source_entity_id=ByteFieldU8(0),
+            dest_entity_id=ByteFieldU8(0),
             trans_mode=TransmissionModes.ACKNOWLEDGED,
             direction=Direction.TOWARDS_RECEIVER,
             crc_flag=CrcFlag.NO_CRC,
             seg_ctrl=SegmentationControl.NO_RECORD_BOUNDARIES_PRESERVATION,
-            transaction_seq_num=bytes([0]),
+            transaction_seq_num=ByteFieldU8(0),
         )
         pdu_header = PduHeader(
             pdu_type=PduType.FILE_DIRECTIVE,
@@ -56,18 +47,16 @@ class TestHeader(TestCase):
             pdu_conf=pdu_conf,
         )
         self.assertEqual(pdu_header.pdu_type, PduType.FILE_DIRECTIVE)
-        self.assertEqual(pdu_header.source_entity_id, bytes([0]))
-        self.assertEqual(pdu_header.len_entity_id, 1)
+        self.assertEqual(pdu_header.source_entity_id, ByteFieldU8(0))
+        self.assertEqual(pdu_header.source_entity_id.byte_len, 1)
         self.assertEqual(pdu_header.trans_mode, TransmissionModes.ACKNOWLEDGED)
         self.assertEqual(pdu_header.direction, Direction.TOWARDS_RECEIVER)
         self.assertEqual(
             pdu_header.segment_metadata_flag, SegmentMetadataFlag.NOT_PRESENT
         )
         self.assertFalse(pdu_header.large_file_flag_set)
-        self.assertEqual(pdu_header.transaction_seq_num, bytes([0]))
-        self.assertEqual(pdu_header.len_transaction_seq_num, 1)
-        self.assertEqual(pdu_header.crc_flag, CrcFlag.NO_CRC)
-        pdu_header.crc_flag = CrcFlag.GLOBAL_CONFIG
+        self.assertEqual(pdu_header.transaction_seq_num, ByteFieldU8(0))
+        self.assertEqual(pdu_header.transaction_seq_num.byte_len, 1)
         self.assertEqual(pdu_header.crc_flag, CrcFlag.NO_CRC)
         self.assertEqual(
             pdu_header.seg_ctrl, SegmentationControl.NO_RECORD_BOUNDARIES_PRESERVATION
@@ -85,11 +74,9 @@ class TestHeader(TestCase):
 
         pdu_header.pdu_type = PduType.FILE_DATA
         pdu_header.set_entity_ids(
-            source_entity_id=bytes([0, 0]), dest_entity_id=bytes([0, 1])
+            source_entity_id=ByteFieldU16(0), dest_entity_id=ByteFieldU16(1)
         )
-        pdu_header.transaction_seq_num = get_transaction_seq_num_as_bytes(
-            300, byte_length=LenInBytes.TWO_BYTES
-        )
+        pdu_header.transaction_seq_num = ByteFieldU16(300)
         pdu_header.trans_mode = TransmissionModes.UNACKNOWLEDGED
         pdu_header.direction = Direction.TOWARDS_SENDER
         pdu_header.crc_flag = CrcFlag.WITH_CRC
@@ -102,43 +89,30 @@ class TestHeader(TestCase):
         pdu_header_packed = pdu_header.pack()
         self.check_fields_case_two(pdu_header_packed=pdu_header_packed)
         set_entity_ids(source_entity_id=bytes(), dest_entity_id=bytes())
-        self.assertRaises(ValueError, pdu_header.set_entity_ids, bytes(), bytes())
-        self.assertRaises(
-            ValueError, pdu_header.set_entity_ids, bytes([0, 1, 2]), bytes()
-        )
-        self.assertRaises(
-            ValueError, pdu_header.set_entity_ids, bytes([0, 1, 2]), bytes([2, 3, 4])
-        )
-        self.assertRaises(
-            ValueError, pdu_header.set_entity_ids, bytes([0, 1, 2, 8]), bytes([2, 3])
-        )
-        with self.assertRaises(ValueError):
-            pdu_header.transaction_seq_num = bytes([0, 1, 2])
         with self.assertRaises(ValueError):
             pdu_header.pdu_data_field_len = 78292
         invalid_pdu_header = bytearray([0, 1, 2])
         self.assertRaises(ValueError, PduHeader.unpack, invalid_pdu_header)
         self.assertRaises(ValueError, PduHeader.unpack, pdu_header_packed[0:6])
         pdu_header_unpacked = PduHeader.unpack(raw_packet=pdu_header_packed)
-        self.assertEqual(pdu_header_unpacked.source_entity_id, bytes([0, 0]))
-        self.assertEqual(pdu_header_unpacked.dest_entity_id, bytes([0, 1]))
+        self.assertEqual(pdu_header_unpacked.source_entity_id, ByteFieldU16(0))
+        self.assertEqual(pdu_header_unpacked.dest_entity_id, ByteFieldU16(1))
         self.assertEqual(
-            pdu_header_unpacked.transaction_seq_num[0] << 8
-            | pdu_header_unpacked.transaction_seq_num[1],
+            int(pdu_header_unpacked.transaction_seq_num),
             300,
         )
 
-        pdu_conf.source_entity_id = bytes([0])
-        pdu_conf.dest_entity_id = bytes([0])
-        pdu_conf.transaction_seq_num = bytes([0x00, 0x2C])
+        pdu_conf.source_entity_id = ByteFieldU8(0)
+        pdu_conf.dest_entity_id = ByteFieldU8(0)
+        pdu_conf.transaction_seq_num = ByteFieldU16.from_bytes(bytes([0x00, 0x2C]))
         prompt_pdu = PromptPdu(
             response_required=ResponseRequired.KEEP_ALIVE, pdu_conf=pdu_conf
         )
         self.assertEqual(prompt_pdu.pdu_file_directive.header_len, 9)
         self.assertEqual(prompt_pdu.packet_len, 10)
         self.assertEqual(prompt_pdu.crc_flag, CrcFlag.WITH_CRC)
-        self.assertEqual(prompt_pdu.source_entity_id, bytes([0]))
-        self.assertEqual(prompt_pdu.dest_entity_id, bytes([0]))
+        self.assertEqual(prompt_pdu.source_entity_id, ByteFieldU8(0))
+        self.assertEqual(prompt_pdu.dest_entity_id, ByteFieldU8(0))
         self.assertEqual(prompt_pdu.file_flag, LargeFileFlag.LARGE)
         prompt_pdu.file_flag = LargeFileFlag.NORMAL
         self.assertEqual(prompt_pdu.file_flag, LargeFileFlag.NORMAL)

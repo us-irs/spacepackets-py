@@ -8,6 +8,8 @@ from spacepackets.cfdp.defs import (
     CrcFlag,
     Direction,
     SegmentationControl,
+    UnsignedByteField,
+    ByteFieldU8,
 )
 from spacepackets.log import get_console_logger
 
@@ -21,52 +23,37 @@ class PduConfig:
     specifying parameter which rarely change repeatedly
     """
 
-    transaction_seq_num: bytes
+    source_entity_id: UnsignedByteField
+    dest_entity_id: UnsignedByteField
+    transaction_seq_num: UnsignedByteField
     trans_mode: TransmissionModes
     file_flag: LargeFileFlag = LargeFileFlag.NORMAL
-    crc_flag: CrcFlag = CrcFlag.GLOBAL_CONFIG
+    crc_flag: CrcFlag = CrcFlag.NO_CRC
     direction: Direction = Direction.TOWARDS_RECEIVER
     seg_ctrl: SegmentationControl = (
         SegmentationControl.NO_RECORD_BOUNDARIES_PRESERVATION
     )
-    source_entity_id: bytes = bytes()
-    dest_entity_id: bytes = bytes()
 
     @classmethod
     def empty(cls) -> PduConfig:
         return PduConfig(
-            transaction_seq_num=bytes([0]),
+            transaction_seq_num=ByteFieldU8(0),
             trans_mode=TransmissionModes.ACKNOWLEDGED,
-            source_entity_id=bytes([0]),
-            dest_entity_id=bytes([0]),
+            source_entity_id=ByteFieldU8(0),
+            dest_entity_id=ByteFieldU8(0),
             file_flag=LargeFileFlag.NORMAL,
-            crc_flag=CrcFlag.GLOBAL_CONFIG,
+            crc_flag=CrcFlag.NO_CRC,
         )
-
-    def __post_init__(self):
-        """Ensure that the global configuration is converted to the actual value immediately"""
-        if self.crc_flag == CrcFlag.GLOBAL_CONFIG:
-            self.crc_flag = get_default_pdu_crc_mode()
 
 
 class CfdpDict(TypedDict):
     source_dest_entity_ids: Tuple[bytes, bytes]
-    with_crc: CrcFlag
 
 
 # TODO: Protect dict access with a dedicated lock for thread-safety
 __CFDP_DICT: CfdpDict = {
     "source_dest_entity_ids": (bytes(), bytes()),
-    "with_crc": CrcFlag.NO_CRC,
 }
-
-
-def set_default_pdu_crc_mode(with_crc: CrcFlag):
-    __CFDP_DICT["with_crc"] = with_crc
-
-
-def get_default_pdu_crc_mode() -> CrcFlag:
-    return __CFDP_DICT["with_crc"]
 
 
 def set_entity_ids(source_entity_id: bytes, dest_entity_id: bytes):

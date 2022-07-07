@@ -3,10 +3,7 @@ import struct
 from unittest import TestCase
 
 from spacepackets.ecss import PacketFieldEnum
-from spacepackets.ecss.fields import (
-    byte_num_to_unsigned_struct_specifier,
-    byte_num_to_signed_struct_specifier,
-)
+from spacepackets.util import IntByteConversion
 
 
 class ExampleEnum(enum.IntEnum):
@@ -22,13 +19,13 @@ class TestEcss(TestCase):
         self._enum_serialize_deserialize_different_sizes(32)
         self._enum_serialize_deserialize_different_sizes(64)
         with self.assertRaises(ValueError):
-            byte_num_to_unsigned_struct_specifier(12)
+            IntByteConversion.unsigned_struct_specifier(12)
         with self.assertRaises(ValueError):
-            byte_num_to_unsigned_struct_specifier(0)
+            IntByteConversion.unsigned_struct_specifier(0)
         with self.assertRaises(ValueError):
-            byte_num_to_signed_struct_specifier(12)
+            IntByteConversion.signed_struct_specifier(12)
         with self.assertRaises(ValueError):
-            byte_num_to_signed_struct_specifier(0)
+            IntByteConversion.signed_struct_specifier(0)
 
     def _enum_serialize_deserialize_different_sizes(self, pfc: int):
         for val in ExampleEnum:

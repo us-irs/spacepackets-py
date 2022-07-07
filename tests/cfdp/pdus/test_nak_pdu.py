@@ -2,7 +2,7 @@ from unittest import TestCase
 
 from spacepackets.cfdp import TransmissionModes
 from spacepackets.cfdp.conf import PduConfig
-from spacepackets.cfdp.defs import Direction, LargeFileFlag
+from spacepackets.cfdp.defs import Direction, LargeFileFlag, ByteFieldU16
 from spacepackets.cfdp.pdu import NakPdu
 
 
@@ -10,9 +10,9 @@ class TestNakPdu(TestCase):
     def test_nak_pdu(self):
         pdu_conf = PduConfig(
             trans_mode=TransmissionModes.ACKNOWLEDGED,
-            transaction_seq_num=bytes([0x00, 0x01]),
-            source_entity_id=bytes([0x00, 0x00]),
-            dest_entity_id=bytes([0x00, 0x01]),
+            transaction_seq_num=ByteFieldU16(1),
+            source_entity_id=ByteFieldU16(0),
+            dest_entity_id=ByteFieldU16(1),
         )
         nak_pdu = NakPdu(start_of_scope=0, end_of_scope=200, pdu_conf=pdu_conf)
         self.assertEqual(nak_pdu.segment_requests, [])

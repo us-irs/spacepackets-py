@@ -4,6 +4,7 @@ from typing import Union
 import struct
 
 from spacepackets.cfdp import LargeFileFlag
+from spacepackets.cfdp.defs import UnsignedByteField
 from spacepackets.cfdp.pdu.file_directive import SegmentMetadataFlag, PduType
 from spacepackets.cfdp.conf import PduConfig
 from spacepackets.cfdp.pdu.header import PduHeader, AbstractPduBase
@@ -80,11 +81,11 @@ class FileDataPdu(AbstractPduBase):
         return self.pdu_header.file_flag
 
     @property
-    def source_entity_id(self) -> bytes:
+    def source_entity_id(self) -> UnsignedByteField:
         return self.pdu_header.source_entity_id
 
     @property
-    def dest_entity_id(self) -> bytes:
+    def dest_entity_id(self) -> UnsignedByteField:
         return self.pdu_header.dest_entity_id
 
     @property

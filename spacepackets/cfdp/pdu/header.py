@@ -4,7 +4,6 @@ import abc
 
 from spacepackets.log import get_console_logger
 from spacepackets.cfdp.defs import (
-    LenInBytes,
     LargeFileFlag,
     PduType,
     SegmentMetadataFlag,
@@ -12,11 +11,12 @@ from spacepackets.cfdp.defs import (
     TransmissionModes,
     Direction,
     SegmentationControl,
+    UnsignedByteField,
+    LenInBytes,
+    ByteFieldGenerator,
 )
 from spacepackets.cfdp.conf import (
     PduConfig,
-    get_default_pdu_crc_mode,
-    get_entity_ids,
 )
 
 
@@ -55,12 +55,12 @@ class AbstractPduBase(abc.ABC):
 
     @property
     @abc.abstractmethod
-    def source_entity_id(self) -> bytes:
+    def source_entity_id(self) -> UnsignedByteField:
         pass
 
     @property
     @abc.abstractmethod
-    def dest_entity_id(self) -> bytes:
+    def dest_entity_id(self) -> UnsignedByteField:
         pass
 
     @property
@@ -127,13 +127,10 @@ class PduHeader(AbstractPduBase):
         self.pdu_conf = pdu_conf
         self.pdu_data_field_len = pdu_data_field_len
 
-        self.len_entity_id = 0
         self.set_entity_ids(
             source_entity_id=pdu_conf.source_entity_id,
             dest_entity_id=pdu_conf.dest_entity_id,
         )
-
-        self.len_transaction_seq_num = 0
         self.transaction_seq_num = pdu_conf.transaction_seq_num
         self.segment_metadata_flag = segment_metadata_flag
 
@@ -153,50 +150,25 @@ class PduHeader(AbstractPduBase):
     def dest_entity_id(self):
         return self.pdu_conf.dest_entity_id
 
-    def set_entity_ids(self, source_entity_id: bytes, dest_entity_id: bytes):
+    def set_entity_ids(
+        self, source_entity_id: UnsignedByteField, dest_entity_id: UnsignedByteField
+    ):
         """Both IDs must be set at once because they must have the same length as well
         :param source_entity_id:
         :param dest_entity_id:
         :return:
         """
-        if source_entity_id == bytes() or dest_entity_id == bytes():
-            source_entity_id, dest_entity_id = get_entity_ids()
-            if source_entity_id == bytes() or dest_entity_id == bytes():
-                logger = get_console_logger()
-                logger.warning(
-                    "Can not set default value for source entity ID or destination entity ID "
-                    "because it has not been set yet"
-                )
-                raise ValueError
+        if source_entity_id.byte_len != dest_entity_id.byte_len:
+            raise ValueError("Length of destination ID and source ID are not the same")
         self.pdu_conf.source_entity_id = source_entity_id
         self.pdu_conf.dest_entity_id = dest_entity_id
-        try:
-            self.len_entity_id = self.check_len_in_bytes(len(source_entity_id))
-            dest_id_check = self.check_len_in_bytes(len(dest_entity_id))
-        except ValueError:
-            logger = get_console_logger()
-            logger.warning("Invalid length of entity IDs passed")
-            raise ValueError
-        if dest_id_check != self.len_entity_id:
-            logger = get_console_logger()
-            logger.warning("Length of destination ID and source ID are not the same")
-            raise ValueError
 
     @property
     def transaction_seq_num(self):
         return self.pdu_conf.transaction_seq_num
 
     @transaction_seq_num.setter
-    def transaction_seq_num(self, transaction_seq_num: bytes):
-        if transaction_seq_num is not None:
-            try:
-                self.len_transaction_seq_num = self.check_len_in_bytes(
-                    len(transaction_seq_num)
-                )
-            except ValueError:
-                logger = get_console_logger()
-                logger.warning("Invalid length of transaction sequence number passed")
-                raise ValueError
+    def transaction_seq_num(self, transaction_seq_num: UnsignedByteField):
         self.pdu_conf.transaction_seq_num = transaction_seq_num
 
     @property
@@ -213,10 +185,7 @@ class PduHeader(AbstractPduBase):
 
     @crc_flag.setter
     def crc_flag(self, crc_flag: CrcFlag):
-        if crc_flag == CrcFlag.GLOBAL_CONFIG:
-            self.pdu_conf.crc_flag = get_default_pdu_crc_mode()
-        else:
-            self.pdu_conf.crc_flag = crc_flag
+        self.pdu_conf.crc_flag = crc_flag
 
     @property
     def trans_mode(self):
@@ -260,7 +229,11 @@ class PduHeader(AbstractPduBase):
     @property
     def header_len(self) -> int:
         """Get length of PDU header when packing it"""
-        return self.FIXED_LENGTH + 2 * self.len_entity_id + self.len_transaction_seq_num
+        return (
+            self.FIXED_LENGTH
+            + 2 * self.source_entity_id.byte_len
+            + self.transaction_seq_num.byte_len
+        )
 
     def pack(self) -> bytearray:
         header = bytearray()
@@ -276,13 +249,13 @@ class PduHeader(AbstractPduBase):
         header.append(self.pdu_data_field_len & 0xFF)
         header.append(
             self.pdu_conf.seg_ctrl << 7
-            | self.len_entity_id << 4
+            | self.source_entity_id.byte_len << 4
             | self.segment_metadata_flag << 3
-            | self.len_transaction_seq_num
+            | self.transaction_seq_num.byte_len
         )
-        header.extend(self.pdu_conf.source_entity_id)
-        header.extend(self.pdu_conf.transaction_seq_num)
-        header.extend(self.pdu_conf.dest_entity_id)
+        header.extend(self.pdu_conf.source_entity_id.as_bytes())
+        header.extend(self.pdu_conf.transaction_seq_num.as_bytes())
+        header.extend(self.pdu_conf.dest_entity_id.as_bytes())
         return header
 
     @classmethod
@@ -317,32 +290,29 @@ class PduHeader(AbstractPduBase):
         pdu_header.segmentation_control = SegmentationControl(
             (raw_packet[3] & 0x80) >> 7
         )
-        pdu_header.len_entity_id = cls.check_len_in_bytes((raw_packet[3] & 0x70) >> 4)
+        expected_len_entity_ids = cls.check_len_in_bytes((raw_packet[3] & 0x70) >> 4)
         pdu_header.segment_metadata_flag = SegmentMetadataFlag(
             (raw_packet[3] & 0x08) >> 3
         )
-        pdu_header.len_transaction_seq_num = cls.check_len_in_bytes(
-            raw_packet[3] & 0x07
-        )
-        expected_remaining_len = (
-            2 * pdu_header.len_entity_id + pdu_header.len_transaction_seq_num
-        )
+        expected_len_seq_num = cls.check_len_in_bytes(raw_packet[3] & 0x07)
+        expected_remaining_len = 2 * expected_len_entity_ids + expected_len_seq_num
         if len(raw_packet) - cls.FIXED_LENGTH < expected_remaining_len:
-            logger = get_console_logger()
-            logger.warning("Raw packet too small for PDU header")
-            raise ValueError
+            raise ValueError("Raw packet too small for PDU header")
         current_idx = 4
-        source_entity_id = raw_packet[
-            current_idx : current_idx + pdu_header.len_entity_id
-        ]
-        current_idx += pdu_header.len_entity_id
-        pdu_header.transaction_seq_num = raw_packet[
-            current_idx : current_idx + pdu_header.len_transaction_seq_num
-        ]
-        current_idx += pdu_header.len_transaction_seq_num
-        dest_entity_id = raw_packet[
-            current_idx : current_idx + pdu_header.len_entity_id
-        ]
+        source_entity_id = ByteFieldGenerator.from_bytes(
+            expected_len_entity_ids,
+            raw_packet[current_idx : current_idx + expected_len_entity_ids],
+        )
+        current_idx += expected_len_entity_ids
+        pdu_header.transaction_seq_num = ByteFieldGenerator.from_bytes(
+            expected_len_seq_num,
+            raw_packet[current_idx : current_idx + expected_len_seq_num],
+        )
+        current_idx += expected_len_seq_num
+        dest_entity_id = ByteFieldGenerator.from_bytes(
+            expected_len_entity_ids,
+            raw_packet[current_idx : current_idx + expected_len_entity_ids],
+        )
         pdu_header.set_entity_ids(
             source_entity_id=source_entity_id, dest_entity_id=dest_entity_id
         )

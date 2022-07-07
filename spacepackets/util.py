@@ -1,4 +1,5 @@
 import enum
+import struct
 
 
 class PrintFormats(enum.IntEnum):
@@ -40,3 +41,53 @@ def get_printable_data_string(
                 string_to_print += f"{idx}:{data_to_print[idx]:08b}\n"
             string_to_print += f"]"
             return string_to_print
+
+
+class IntByteConversion:
+    @staticmethod
+    def signed_struct_specifier(byte_num: int) -> str:
+        if byte_num not in [1, 2, 4, 8]:
+            raise ValueError("Invalid byte number, must be one of [1, 2, 4, 8]")
+        if byte_num == 1:
+            return "!b"
+        elif byte_num == 2:
+            return "!h"
+        elif byte_num == 4:
+            return "!i"
+        elif byte_num == 8:
+            return "!q"
+
+    @staticmethod
+    def unsigned_struct_specifier(byte_num: int) -> str:
+        if byte_num not in [1, 2, 4, 8]:
+            raise ValueError("Invalid byte number, must be one of [1, 2, 4, 8]")
+        if byte_num == 1:
+            return "!B"
+        elif byte_num == 2:
+            return "!H"
+        elif byte_num == 4:
+            return "!I"
+        elif byte_num == 8:
+            return "!Q"
+
+    @staticmethod
+    def to_signed(byte_num: int, val: int) -> bytes:
+        """Convert number of bytes in a field to the struct API signed format specifier,
+        assuming network endianness. Raises value error if number is not inside [1, 2, 4, 8]"""
+        if byte_num not in [1, 2, 4, 8]:
+            raise ValueError("Invalid byte number, must be one of [1, 2, 4, 8]")
+        if abs(val) > pow(2, (byte_num * 8) - 1) - 1:
+            raise ValueError(
+                f"Passed value larger than allows {pow(2, (byte_num * 8) - 1) - 1}"
+            )
+        return struct.pack(IntByteConversion.signed_struct_specifier(byte_num), val)
+
+    @staticmethod
+    def to_unsigned(byte_num: int, val: int) -> bytes:
+        """Convert number of bytes in a field to the struct API unsigned format specifier,
+        assuming network endianness. Raises value error if number is not inside [1, 2, 4, 8]"""
+        if byte_num not in [1, 2, 4, 8]:
+            raise ValueError("Invalid byte number, must be one of [1, 2, 4, 8]")
+        if val > pow(2, byte_num * 8) - 1:
+            raise ValueError(f"Passed value larger than allows {pow(2, byte_num) - 1}")
+        return struct.pack(IntByteConversion.unsigned_struct_specifier(byte_num), val)

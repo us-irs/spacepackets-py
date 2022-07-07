@@ -10,7 +10,7 @@ from spacepackets.cfdp.pdu.header import (
     SegmentMetadataFlag,
     AbstractPduBase,
 )
-from spacepackets.cfdp.defs import LargeFileFlag, CrcFlag
+from spacepackets.cfdp.defs import LargeFileFlag, CrcFlag, UnsignedByteField
 from spacepackets.cfdp.conf import check_packet_length, PduConfig
 from spacepackets.log import get_console_logger
 
@@ -66,11 +66,11 @@ class AbstractFileDirectiveBase(AbstractPduBase):
         return self.pdu_header.pdu_data_field_len
 
     @property
-    def source_entity_id(self) -> bytes:
+    def source_entity_id(self) -> UnsignedByteField:
         return self.pdu_header.source_entity_id
 
     @property
-    def dest_entity_id(self) -> bytes:
+    def dest_entity_id(self) -> UnsignedByteField:
         return self.pdu_header.dest_entity_id
 
     @pdu_data_field_len.setter

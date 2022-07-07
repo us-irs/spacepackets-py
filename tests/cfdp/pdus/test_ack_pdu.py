@@ -2,15 +2,16 @@ from unittest import TestCase
 
 from spacepackets.cfdp import CrcFlag, TransmissionModes, LargeFileFlag, ConditionCode
 from spacepackets.cfdp.conf import PduConfig
+from spacepackets.cfdp.defs import ByteFieldU16, ByteFieldU32
 from spacepackets.cfdp.pdu import AckPdu, DirectiveType, TransactionStatus
 
 
 class TestAckPdu(TestCase):
     def test_ack_pdu(self):
         pdu_conf = PduConfig(
-            transaction_seq_num=bytes([0x00, 0x01]),
-            source_entity_id=bytes([0x00, 0x00]),
-            dest_entity_id=bytes([0x00, 0x01]),
+            transaction_seq_num=ByteFieldU16(1),
+            source_entity_id=ByteFieldU16(2),
+            dest_entity_id=ByteFieldU16(3),
             crc_flag=CrcFlag.NO_CRC,
             trans_mode=TransmissionModes.ACKNOWLEDGED,
             file_flag=LargeFileFlag.NORMAL,
@@ -36,12 +37,12 @@ class TestAckPdu(TestCase):
                     0x00,
                     0x03,
                     0x22,
-                    0x00,
-                    0x00,
-                    0x00,
+                    0x00,  # This and following byte in source ID
+                    0x02,
+                    0x00,  # This and following byte is seq number
                     0x01,
-                    0x00,
-                    0x01,
+                    0x00,  # This and following byte in dest ID
+                    0x03,
                     0x06,
                     0x51,
                     0x02,
@@ -52,9 +53,11 @@ class TestAckPdu(TestCase):
         self.check_fields_packet_0(ack_pdu=ack_pdu_unpacked)
 
         pdu_conf = PduConfig(
-            transaction_seq_num=bytes([0x50, 0x00, 0x10, 0x01]),
-            source_entity_id=bytes([0x10, 0x00, 0x01, 0x02]),
-            dest_entity_id=bytes([0x30, 0x00, 0x01, 0x03]),
+            transaction_seq_num=ByteFieldU32.from_bytes(
+                bytes([0x50, 0x00, 0x10, 0x01])
+            ),
+            source_entity_id=ByteFieldU32.from_bytes(bytes([0x10, 0x00, 0x01, 0x02])),
+            dest_entity_id=ByteFieldU32.from_bytes(bytes([0x30, 0x00, 0x01, 0x03])),
             crc_flag=CrcFlag.WITH_CRC,
             trans_mode=TransmissionModes.UNACKNOWLEDGED,
             file_flag=LargeFileFlag.NORMAL,
@@ -118,15 +121,15 @@ class TestAckPdu(TestCase):
         self.assertEqual(ack_pdu.transaction_status, TransactionStatus.TERMINATED)
         self.assertEqual(
             ack_pdu.pdu_file_directive.pdu_header.pdu_conf.transaction_seq_num,
-            bytes([0x00, 0x01]),
+            ByteFieldU16(1),
         )
         self.assertEqual(
             ack_pdu.pdu_file_directive.pdu_header.pdu_conf.source_entity_id,
-            bytes([0x00, 0x00]),
+            ByteFieldU16(2),
         )
         self.assertEqual(
             ack_pdu.pdu_file_directive.pdu_header.pdu_conf.dest_entity_id,
-            bytes([0x00, 0x01]),
+            ByteFieldU16(3),
         )
         self.assertEqual(
             ack_pdu.pdu_file_directive.pdu_header.pdu_conf.trans_mode,
@@ -143,15 +146,15 @@ class TestAckPdu(TestCase):
         self.assertEqual(ack_pdu.transaction_status, TransactionStatus.ACTIVE)
         self.assertEqual(
             ack_pdu.pdu_file_directive.pdu_header.transaction_seq_num,
-            bytes([0x50, 0x00, 0x10, 0x01]),
+            ByteFieldU32.from_bytes(bytes([0x50, 0x00, 0x10, 0x01])),
         )
         self.assertEqual(
             ack_pdu.pdu_file_directive.pdu_header.pdu_conf.source_entity_id,
-            bytes([0x10, 0x00, 0x01, 0x02]),
+            ByteFieldU32.from_bytes(bytes([0x10, 0x00, 0x01, 0x02])),
         )
         self.assertEqual(
             ack_pdu.pdu_file_directive.pdu_header.pdu_conf.dest_entity_id,
-            bytes([0x30, 0x00, 0x01, 0x03]),
+            ByteFieldU32.from_bytes(bytes([0x30, 0x00, 0x01, 0x03])),
         )
         self.assertEqual(
             ack_pdu.pdu_file_directive.pdu_header.pdu_conf.trans_mode,
