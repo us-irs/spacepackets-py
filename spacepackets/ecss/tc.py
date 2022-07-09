@@ -100,9 +100,17 @@ class PusTcDataFieldHeader:
 
 
 class PusTelecommand:
-    """Class representation of a PUS telecommand. It can be used to pack a raw telecommand from
-    input parameters. The structure of a PUS telecommand is specified in ECSS-E-70-41A on p.42
-    and is also shown below (bottom)
+    """Class representation of a PUS telecommand. Can be converted to the raw byte representation
+    but also unpacked from a raw byte stream. Only PUS C telecommands are supported.
+
+    >>> ping_tc = PusTelecommand(service=17, subservice=1, seq_count=22, apid=0x01)
+    >>> ping_tc.service
+    17
+    >>> ping_tc.subservice
+    1
+    >>> ping_tc.pack().hex(sep=',')
+    '18,01,c0,16,00,06,2f,11,01,00,00,ab,62'
+
     """
 
     def __init__(
