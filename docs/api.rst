@@ -4,7 +4,7 @@ API Documentation
 This package is split into three subpackages:
 
 - :py:mod:`spacepackets.ccsds`: Contains CCSDS specific code. This includes the space packet
-  implementation inside the :py:mod:`spacepacket.ccsds.spacepackets` module and time related
+  implementation inside the :py:mod:`spacepackets.ccsds.spacepacket` module and time related
   implementations in the :py:mod:`spacepackets.ccsds.time` module
 
 - :py:mod:`spacepackets.cfdp`: Contains packet implementations related to the CCSDS File Delivery Protocol

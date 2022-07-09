@@ -120,7 +120,21 @@ class SpacePacketHeader:
         seq_flags: SequenceFlags = SequenceFlags.UNSEGMENTED,
         ccsds_version: int = 0b000,
     ):
-        """Create a space packet header with the given field parameters
+        """Create a space packet header with the given field parameters.
+
+        >>> sph = SpacePacketHeader(packet_type=PacketTypes.TC, apid=0x42, seq_count=0, data_len=12)
+        >>> hex(sph.apid)
+        '0x42'
+        >>> sph.packet_type
+        <PacketTypes.TC: 1>
+        >>> sph.data_len
+        12
+        >>> sph.packet_len
+        19
+        >>> sph.packet_id
+        PacketId(ptype=<PacketTypes.TC: 1>, sec_header_flag=True, apid=66)
+        >>> sph.psc
+        PacketSeqCtrl(seq_flags=<SequenceFlags.UNSEGMENTED: 3>, seq_count=0)
 
         :param packet_type: 0 for Telemetery, 1 for Telecommands
         :param apid: Application Process ID, should not be larger
@@ -215,16 +229,18 @@ class SpacePacketHeader:
 
     @property
     def packet_len(self) -> int:
-        """Retrieve the full space packet size when packed
+        """Retrieve the full space packet size when packed.
+
         :return: Size of the TM packet based on the space packet header data length field.
-        The space packet data field is the full length of data field minus one without
-        the space packet header.
+            The space packet data field is the full length of data field minus one without
+            the space packet header.
         """
         return SPACE_PACKET_HEADER_SIZE + self.data_len + 1
 
     @classmethod
     def unpack(cls, space_packet_raw: bytes) -> SpacePacketHeader:
-        """Unpack a raw space packet into the space packet header instance
+        """Unpack a raw space packet into the space packet header instance.
+
         :raise ValueError: Raw packet length invalid
         """
         if len(space_packet_raw) < SPACE_PACKET_HEADER_SIZE:
