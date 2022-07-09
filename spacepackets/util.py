@@ -96,6 +96,24 @@ class IntByteConversion:
 
 
 class UnsignedByteField:
+    """Generic base class for byte fields containing unsigned values. These are a common
+    component for packet protocols or packed identifier fields. Each unsigned byte field
+    has an unsigned value and a corresponding byte length. This base class implements
+    commonly required boilerplate code to easily work with fields like that and convert
+    them to the byte and integer representation accordingly.
+
+    >>> field = UnsignedByteField(2, 1)
+    >>> int(field)
+    2
+    >>> field.as_bytes.hex(sep=',')
+    '02'
+    >>> field = UnsignedByteField(42, 2)
+    >>> int(field)
+    42
+    >>> field.as_bytes.hex(sep=',')
+    '00,2a'
+    """
+
     def __init__(self, val: int, byte_len: int):
         self.byte_len = byte_len
         self.value = val
@@ -168,11 +186,12 @@ class UnsignedByteField:
         return self.value == other.value and self.byte_len == other.byte_len
 
     def __hash__(self):
+        """Makes all unsigned byte fields usable as dictionary keys"""
         return hash((self.value, self.byte_len))
 
 
 class ByteFieldU8(UnsignedByteField):
-    """Concrete variant of a variable length byte field which has 1 byte"""
+    """Concrete variant of a variable length byte field which has a length of 1 byte"""
 
     def __init__(self, val: int):
         super().__init__(val, 1)
@@ -187,7 +206,7 @@ class ByteFieldU8(UnsignedByteField):
 
 
 class ByteFieldU16(UnsignedByteField):
-    """Concrete variant of a variable length byte field which has 2 bytes"""
+    """Concrete variant of a variable length byte field which has a length of 2 bytes"""
 
     def __init__(self, val: int):
         super().__init__(val, 2)
@@ -206,7 +225,7 @@ class ByteFieldU16(UnsignedByteField):
 
 
 class ByteFieldU32(UnsignedByteField):
-    """Concrete variant of a variable length byte field which has 4 bytes"""
+    """Concrete variant of a variable length byte field which has a length of 4 bytes"""
 
     def __init__(self, val: int):
         super().__init__(val, 4)
@@ -225,6 +244,8 @@ class ByteFieldU32(UnsignedByteField):
 
 
 class ByteFieldGenerator:
+    """Static helpers to create the U8, U16 and U32 byte field variants of unsigned byte fields"""
+
     @staticmethod
     def from_int(byte_len: int, val: int) -> UnsignedByteField:
         if byte_len == 1:
