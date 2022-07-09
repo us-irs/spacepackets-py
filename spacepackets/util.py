@@ -133,14 +133,14 @@ class UnsignedByteField:
         return self._val
 
     @value.setter
-    def value(self, val: Union[int, bytes]):
+    def value(self, val: Union[int, bytes, bytearray]):
         if isinstance(val, int):
             self._verify_int_value(val)
             self._val = val
             self._val_as_bytes = IntByteConversion.to_unsigned(
                 self.byte_len, self.value
             )
-        elif isinstance(val, bytes):
+        elif isinstance(val, bytes) or isinstance(val, bytearray):
             self._val, self._val_as_bytes = self._verify_bytes_value(val)
 
     @property
