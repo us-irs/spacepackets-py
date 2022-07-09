@@ -21,8 +21,9 @@ function from the `crcmod package`_  can be used to calculate this checksum.
 Telecommands
 ^^^^^^^^^^^^^^^^^^
 
-Extended information can be found in `ECSS-E-70-41A`_  on p.42 or in `ECSS-ST-E-70-41C`_ starting at
-page 442.
+This chapter contains some high level information about the
+:py:class:`spacepackets.ecss.tc.PusTelecommand` class. Extended information can be found
+in `ECSS-E-70-41A`_  on p.42 or in `ECSS-ST-E-70-41C`_ starting at page 442.
 
 The structure is shown as follows for a ping telecommand using the PUS service 17 with the
 subervice ID 1. This can also be denoted more briefly as TC[17,1]. The first part
@@ -80,8 +81,9 @@ PUS A is not supported anymore starting at version ``v0.12.0``.
 Telemetry
 ^^^^^^^^^^^^
 
-Extended information can be found in `ECSS-E-70-41A`_  on p.42 or in `ECSS-ST-E-70-41C`_ starting at
-page 442.
+This chapter contains some high level information about the
+:py:class:`spacepackets.ecss.tm.PusTelemetry` class. Extended information can be found
+in `ECSS-E-70-41A`_  on p.42 or in `ECSS-ST-E-70-41C`_ starting at page 442.
 
 The structure is shown as follows for a ping reply using the PUS service 17 with the
 subervice ID 2. This can also be denoted more briefly as TM[17,2]. The first part
