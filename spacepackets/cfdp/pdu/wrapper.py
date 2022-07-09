@@ -24,6 +24,20 @@ class PduWrapper:
     def __init__(self, base: Optional[GenericPduPacket]):
         self.base = base
 
+    @property
+    def file_directive(self) -> bool:
+        return self.base.pdu_header.pdu_type == PduType.FILE_DIRECTIVE
+
+    @property
+    def pdu_directive_type(self) -> Optional[DirectiveType]:
+        """If the contained type is not a PDU file directive, returns None. Otherwise, returns
+        the directive type
+        """
+        if not self.file_directive:
+            return None
+        directive_base = cast(AbstractFileDirectiveBase, self.base)
+        return directive_base.directive_type
+
     def __repr__(self):
         return f"{self.__class__.__name__}(base={self.base!r}"
 

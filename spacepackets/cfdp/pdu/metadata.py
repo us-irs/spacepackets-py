@@ -66,6 +66,14 @@ class MetadataPdu(AbstractFileDirectiveBase):
     def pdu_header(self) -> PduHeader:
         return self.pdu_file_directive.pdu_header
 
+    @property
+    def closure_requested(self) -> bool:
+        return self.params.closure_requested
+
+    @property
+    def checksum_type(self) -> ChecksumTypes:
+        return self.params.checksum_type
+
     @classmethod
     def __empty(cls) -> MetadataPdu:
         empty_conf = PduConfig.empty()
