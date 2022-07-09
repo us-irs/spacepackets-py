@@ -11,13 +11,16 @@ from spacepackets.cfdp.defs import (
     PduType,
     SegmentMetadataFlag,
     LargeFileFlag,
-    ByteFieldU8,
-    ByteFieldU16,
-    ByteFieldU32,
 )
 from spacepackets.cfdp.pdu import PduHeader, PromptPdu
 from spacepackets.cfdp.pdu.prompt import ResponseRequired
-from spacepackets.util import get_printable_data_string, PrintFormats
+from spacepackets.util import (
+    get_printable_data_string,
+    PrintFormats,
+    ByteFieldU8,
+    ByteFieldU32,
+    ByteFieldU16,
+)
 
 
 class TestHeader(TestCase):
@@ -28,7 +31,7 @@ class TestHeader(TestCase):
         byte_field = ByteFieldU16(5292)
         self.assertEqual(int(byte_field), 5292)
         byte_field = ByteFieldU32(129302)
-        self.assertEqual(struct.unpack("!I", byte_field.as_bytes())[0], 129302)
+        self.assertEqual(struct.unpack("!I", byte_field.as_bytes)[0], 129302)
         with self.assertRaises(ValueError):
             ByteFieldU8(900)
         pdu_conf = PduConfig(

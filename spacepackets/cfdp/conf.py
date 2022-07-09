@@ -8,10 +8,9 @@ from spacepackets.cfdp.defs import (
     CrcFlag,
     Direction,
     SegmentationControl,
-    UnsignedByteField,
-    ByteFieldU8,
 )
 from spacepackets.log import get_console_logger
+from spacepackets.util import UnsignedByteField, ByteFieldU8
 
 
 @dataclass

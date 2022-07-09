@@ -4,11 +4,11 @@ from typing import Union
 import struct
 
 from spacepackets.cfdp import LargeFileFlag
-from spacepackets.cfdp.defs import UnsignedByteField
 from spacepackets.cfdp.pdu.file_directive import SegmentMetadataFlag, PduType
 from spacepackets.cfdp.conf import PduConfig
 from spacepackets.cfdp.pdu.header import PduHeader, AbstractPduBase
 from spacepackets.log import get_console_logger
+from spacepackets.util import UnsignedByteField
 
 
 class RecordContinuationState(enum.IntEnum):

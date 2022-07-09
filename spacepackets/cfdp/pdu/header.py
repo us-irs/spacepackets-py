@@ -11,13 +11,12 @@ from spacepackets.cfdp.defs import (
     TransmissionModes,
     Direction,
     SegmentationControl,
-    UnsignedByteField,
     LenInBytes,
-    ByteFieldGenerator,
 )
 from spacepackets.cfdp.conf import (
     PduConfig,
 )
+from spacepackets.util import UnsignedByteField, ByteFieldGenerator
 
 
 class AbstractPduBase(abc.ABC):
@@ -253,9 +252,9 @@ class PduHeader(AbstractPduBase):
             | self.segment_metadata_flag << 3
             | self.transaction_seq_num.byte_len
         )
-        header.extend(self.pdu_conf.source_entity_id.as_bytes())
-        header.extend(self.pdu_conf.transaction_seq_num.as_bytes())
-        header.extend(self.pdu_conf.dest_entity_id.as_bytes())
+        header.extend(self.pdu_conf.source_entity_id.as_bytes)
+        header.extend(self.pdu_conf.transaction_seq_num.as_bytes)
+        header.extend(self.pdu_conf.dest_entity_id.as_bytes)
         return header
 
     @classmethod

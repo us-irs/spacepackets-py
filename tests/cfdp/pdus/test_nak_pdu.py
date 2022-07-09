@@ -2,8 +2,9 @@ from unittest import TestCase
 
 from spacepackets.cfdp import TransmissionModes
 from spacepackets.cfdp.conf import PduConfig
-from spacepackets.cfdp.defs import Direction, LargeFileFlag, ByteFieldU16
+from spacepackets.cfdp.defs import Direction, LargeFileFlag
 from spacepackets.cfdp.pdu import NakPdu
+from spacepackets.util import ByteFieldU16
 
 
 class TestNakPdu(TestCase):

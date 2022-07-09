@@ -10,9 +10,10 @@ from spacepackets.cfdp.pdu.header import (
     SegmentMetadataFlag,
     AbstractPduBase,
 )
-from spacepackets.cfdp.defs import LargeFileFlag, CrcFlag, UnsignedByteField
+from spacepackets.cfdp.defs import LargeFileFlag, CrcFlag
 from spacepackets.cfdp.conf import check_packet_length, PduConfig
 from spacepackets.log import get_console_logger
+from spacepackets.util import UnsignedByteField
 
 
 class DirectiveType(enum.IntEnum):

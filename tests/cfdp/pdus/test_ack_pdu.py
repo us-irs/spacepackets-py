@@ -2,8 +2,8 @@ from unittest import TestCase
 
 from spacepackets.cfdp import CrcFlag, TransmissionModes, LargeFileFlag, ConditionCode
 from spacepackets.cfdp.conf import PduConfig
-from spacepackets.cfdp.defs import ByteFieldU16, ByteFieldU32
 from spacepackets.cfdp.pdu import AckPdu, DirectiveType, TransactionStatus
+from spacepackets.util import ByteFieldU16, ByteFieldU32
 
 
 class TestAckPdu(TestCase):
