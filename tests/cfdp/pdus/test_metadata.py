@@ -9,20 +9,21 @@ from spacepackets.cfdp import (
 from spacepackets.cfdp.conf import PduConfig
 from spacepackets.cfdp.defs import FaultHandlerCodes, LargeFileFlag
 from spacepackets.cfdp.pdu import MetadataPdu
+from spacepackets.cfdp.pdu.metadata import MetadataParams
 from spacepackets.cfdp.tlv import TlvWrapper, FaultHandlerOverrideTlv
 
 
 class TestMetadata(TestCase):
     def test_metadata_pdu(self):
         pdu_conf = PduConfig.empty()
-        metadata_pdu = MetadataPdu(
-            pdu_conf=pdu_conf,
+        metadata_params = MetadataParams(
             closure_requested=False,
             file_size=2,
             source_file_name="test.txt",
             dest_file_name="test2.txt",
             checksum_type=ChecksumTypes.MODULAR,
         )
+        metadata_pdu = MetadataPdu(pdu_conf=pdu_conf, params=metadata_params)
         self.check_metadata_fields_0(metadata_pdu=metadata_pdu)
         header_len = metadata_pdu.pdu_file_directive.header_len
         self.assertEqual(header_len, 8)
@@ -47,11 +48,7 @@ class TestMetadata(TestCase):
         # Create completey new packet
         pdu_with_option = MetadataPdu(
             pdu_conf=pdu_conf,
-            closure_requested=False,
-            file_size=2,
-            source_file_name="test.txt",
-            dest_file_name="test2.txt",
-            checksum_type=ChecksumTypes.MODULAR,
+            params=metadata_params,
             options=[option_0],
         )
         self.assertEqual(pdu_with_option.options, [option_0])
@@ -76,13 +73,16 @@ class TestMetadata(TestCase):
             handler_code=FaultHandlerCodes.ABANDON_TRANSACTION,
         )
         self.assertEqual(option_1.packet_len, 3)
-        pdu_with_two_options = MetadataPdu(
-            pdu_conf=pdu_conf,
+        metadata_params = MetadataParams(
             closure_requested=False,
             file_size=2,
             source_file_name=None,
             dest_file_name=None,
             checksum_type=ChecksumTypes.MODULAR,
+        )
+        pdu_with_two_options = MetadataPdu(
+            pdu_conf=pdu_conf,
+            params=metadata_params,
             options=[option_0, option_1],
         )
         pdu_with_two_options_raw = pdu_with_two_options.pack()
@@ -101,18 +101,14 @@ class TestMetadata(TestCase):
         self.assertEqual(pdu_with_two_options.packet_len, expected_len)
         pdu_with_no_options = pdu_with_two_options
         pdu_with_no_options.options = None
-        pdu_with_no_options.file_size = pow(2, 32) + 1
+        pdu_with_no_options.params.file_size = pow(2, 32) + 1
         with self.assertRaises(ValueError):
             pdu_with_no_options.pack()
 
         pdu_conf.file_flag = LargeFileFlag.LARGE
         pdu_file_size_large = MetadataPdu(
             pdu_conf=pdu_conf,
-            closure_requested=False,
-            file_size=2,
-            source_file_name=None,
-            dest_file_name=None,
-            checksum_type=ChecksumTypes.MODULAR,
+            params=metadata_params,
             options=None,
         )
         self.assertEqual(pdu_file_size_large.pdu_file_directive.header_len, header_len)
@@ -124,8 +120,8 @@ class TestMetadata(TestCase):
             MetadataPdu.unpack(raw_packet=pdu_file_size_large_raw)
 
     def check_metadata_fields_0(self, metadata_pdu: MetadataPdu):
-        self.assertEqual(metadata_pdu.closure_requested, False)
-        self.assertEqual(metadata_pdu.file_size, 2)
+        self.assertEqual(metadata_pdu.params.closure_requested, False)
+        self.assertEqual(metadata_pdu.params.file_size, 2)
         self.assertEqual(metadata_pdu.source_file_name, "test.txt")
         self.assertEqual(metadata_pdu.dest_file_name, "test2.txt")
         self.assertEqual(metadata_pdu.pdu_file_directive.header_len, 8)

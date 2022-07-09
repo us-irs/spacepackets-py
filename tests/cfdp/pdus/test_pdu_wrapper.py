@@ -15,6 +15,7 @@ from spacepackets.cfdp.pdu import (
 )
 from spacepackets.cfdp.pdu.file_data import FileDataPdu
 from spacepackets.cfdp.pdu.finished import DeliveryCode, FileDeliveryStatus
+from spacepackets.cfdp.pdu.metadata import MetadataParams
 from spacepackets.cfdp.pdu.prompt import ResponseRequired
 from spacepackets.cfdp.pdu.wrapper import PduWrapper
 
@@ -38,14 +39,14 @@ class TestPduWrapper(TestCase):
         self.assertEqual(pdu_casted_back, file_data_pdu)
 
     def test_invalid_to_file_data(self):
-        metadata_pdu = MetadataPdu(
-            pdu_conf=self.pdu_conf,
+        params = MetadataParams(
             closure_requested=False,
             file_size=2,
             source_file_name="test.txt",
             dest_file_name="test2.txt",
             checksum_type=ChecksumTypes.MODULAR,
         )
+        metadata_pdu = MetadataPdu(pdu_conf=self.pdu_conf, params=params)
         self.pdu_wrapper.base = metadata_pdu
         with self.assertRaises(TypeError) as cm:
             self.pdu_wrapper.to_file_data_pdu()
@@ -53,14 +54,14 @@ class TestPduWrapper(TestCase):
         self.assertIn("Stored PDU is not 'FileDataPdu'", str(exception))
 
     def test_metadata(self):
-        metadata_pdu = MetadataPdu(
-            pdu_conf=self.pdu_conf,
+        params = MetadataParams(
             closure_requested=False,
             file_size=2,
             source_file_name="test.txt",
             dest_file_name="test2.txt",
             checksum_type=ChecksumTypes.MODULAR,
         )
+        metadata_pdu = MetadataPdu(pdu_conf=self.pdu_conf, params=params)
         self.pdu_wrapper.base = metadata_pdu
         metadata_casted_back = self.pdu_wrapper.to_metadata_pdu()
         self.assertEqual(metadata_casted_back, metadata_pdu)

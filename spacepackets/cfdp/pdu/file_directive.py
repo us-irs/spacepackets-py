@@ -127,6 +127,10 @@ class FileDirectivePduBase(AbstractFileDirectiveBase):
         self._directive_type = directive_code
 
     @property
+    def pdu_conf(self) -> PduConfig:
+        return self.pdu_header.pdu_conf
+
+    @property
     def pdu_header(self) -> PduHeader:
         return self._pdu_header
 

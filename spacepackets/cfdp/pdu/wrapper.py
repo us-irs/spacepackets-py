@@ -24,6 +24,9 @@ class PduWrapper:
     def __init__(self, base: Optional[GenericPduPacket]):
         self.base = base
 
+    def __repr__(self):
+        return f"{self.__class__.__name__}(base={self.base!r}"
+
     def _raise_not_target_exception(self, pdu_type: Type[any]):
         raise TypeError(f"Stored PDU is not {pdu_type.__name__!r}: {self.base!r}")
 

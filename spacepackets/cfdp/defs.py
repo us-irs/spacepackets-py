@@ -128,7 +128,7 @@ class UnsignedByteField:
 
     def __repr__(self):
         return (
-            f"{self.__class__.__name__}(entity_id={self.value!r}, "
+            f"{self.__class__.__name__}(val={self.value!r}, "
             f"byte_len={self.byte_len!r})"
         )
 
