@@ -17,7 +17,7 @@ from spacepackets.cfdp.pdu.file_data import FileDataPdu
 from spacepackets.cfdp.pdu.finished import DeliveryCode, FileDeliveryStatus
 from spacepackets.cfdp.pdu.metadata import MetadataParams
 from spacepackets.cfdp.pdu.prompt import ResponseRequired
-from spacepackets.cfdp.pdu.wrapper import PduWrapper
+from spacepackets.cfdp.pdu.helper import PduWrapper
 
 
 class TestPduWrapper(TestCase):

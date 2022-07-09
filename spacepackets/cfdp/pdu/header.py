@@ -20,6 +20,8 @@ from spacepackets.util import UnsignedByteField, ByteFieldGenerator
 
 
 class AbstractPduBase(abc.ABC):
+    VERSION_BITS = 0b0010_0000
+    FIXED_LENGTH = 4
     """Encapsulate common functions for PDU. PDU or Packet Data Units are the base data unit
     which are exchanged for CFDP procedures. Each PDU has a common header and this class provides
     abstract methods to access fields of that common header.
@@ -100,12 +102,15 @@ class AbstractPduBase(abc.ABC):
             and self.packet_len == other.packet_len
         )
 
+    @staticmethod
+    def header_len_from_raw(data: bytes):
+        entity_id_len = (data[3] >> 4) & 0b111
+        seq_num_len = data[3] & 0b111
+        return AbstractPduBase.FIXED_LENGTH + 2 * entity_id_len + seq_num_len
+
 
 class PduHeader(AbstractPduBase):
     """Concrete implementation of the abstract :py:class:`AbstractPduBase` class"""
-
-    VERSION_BITS = 0b0010_0000
-    FIXED_LENGTH = 4
 
     def __init__(
         self,

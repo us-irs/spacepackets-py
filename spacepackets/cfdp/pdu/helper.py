@@ -1,3 +1,4 @@
+from __future__ import annotations
 from typing import cast, Union, Type, Optional
 
 from spacepackets.cfdp import PduType
@@ -25,15 +26,19 @@ class PduWrapper:
         self.base = base
 
     @property
-    def file_directive(self) -> bool:
-        return self.base.pdu_header.pdu_type == PduType.FILE_DIRECTIVE
+    def pdu_type(self) -> PduType:
+        return self.base.pdu_header.pdu_type
+
+    @property
+    def is_file_directive(self):
+        return self.pdu_type == PduType.FILE_DIRECTIVE
 
     @property
     def pdu_directive_type(self) -> Optional[DirectiveType]:
         """If the contained type is not a PDU file directive, returns None. Otherwise, returns
         the directive type
         """
-        if not self.file_directive:
+        if not self.is_file_directive:
             return None
         directive_base = cast(AbstractFileDirectiveBase, self.base)
         return directive_base.directive_type
@@ -93,3 +98,33 @@ class PduWrapper:
         return self._cast_to_concrete_file_directive(
             PromptPdu, DirectiveType.PROMPT_PDU
         )
+
+
+class PduFactory:
+    """Helper class to generate PDUs and retrieve PDU information from a raw bytestream"""
+
+    @staticmethod
+    def from_raw(data: bytes):
+        pass
+
+    @staticmethod
+    def pdu_type(data: bytes) -> PduType:
+        return PduType((data[0] >> 4) & 0x01)
+
+    @staticmethod
+    def is_file_directive(data: bytes):
+        return PduFactory.pdu_type(data) == PduType.FILE_DIRECTIVE
+
+    @staticmethod
+    def pdu_directive_type(data: bytes) -> Optional[DirectiveType]:
+        """Retrieve the PDU directive type from a raw bytestream.
+
+        :raises ValueError: Invalid directive type
+        :return None if the PDU in the given bytestream is not a file directive, otherwise the
+            directive
+        """
+        if not PduFactory.is_file_directive(data):
+            return None
+        else:
+            header_len = AbstractPduBase.header_len_from_raw(data)
+            return DirectiveType(data[header_len])
