@@ -134,3 +134,11 @@ class EofPdu(AbstractFileDirectiveBase):
             and self.file_size == other.file_size
             and self._fault_location == other._fault_location
         )
+
+    def __repr__(self):
+        return (
+            f"{self.__class__.__name__}(file_checksum={self.file_checksum!r},"
+            f"file_size={self.file_size!r}, pdu_conf={self.pdu_file_directive.pdu_conf},"
+            f"fault_location={self.fault_location!r},"
+            f"condition_code={self.condition_code})"
+        )

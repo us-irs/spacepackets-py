@@ -88,3 +88,6 @@ class ChecksumTypes(enum.IntEnum):
     # Polynomial: 0x4C11DB7. This is the preferred checksum for now.
     CRC_32 = 3
     NULL_CHECKSUM = 15
+
+
+NULL_CHECKSUM_U32 = bytes([0x00, 0x00, 0x00, 0x00])
