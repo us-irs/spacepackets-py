@@ -17,7 +17,7 @@ from spacepackets.cfdp.pdu.file_data import FileDataPdu
 from spacepackets.cfdp.pdu.finished import DeliveryCode, FileDeliveryStatus
 from spacepackets.cfdp.pdu.metadata import MetadataParams
 from spacepackets.cfdp.pdu.prompt import ResponseRequired
-from spacepackets.cfdp.pdu.helper import PduWrapper
+from spacepackets.cfdp.pdu.helper import PduHolder
 
 
 class TestPduWrapper(TestCase):
@@ -25,7 +25,7 @@ class TestPduWrapper(TestCase):
         self.pdu_conf = PduConfig.empty()
         self.file_data = "hello world"
         self.file_data_bytes = self.file_data.encode()
-        self.pdu_wrapper = PduWrapper(None)
+        self.pdu_wrapper = PduHolder(None)
 
     def test_file_data(self):
         file_data_pdu = FileDataPdu(

@@ -19,7 +19,7 @@ from spacepackets.cfdp.pdu.header import AbstractPduBase
 GenericPduPacket = Union[AbstractFileDirectiveBase, AbstractPduBase]
 
 
-class PduWrapper:
+class PduHolder:
     """Helper type to store arbitrary PDU types and cast them to a concrete PDU type conveniently"""
 
     def __init__(self, base: Optional[GenericPduPacket]):
