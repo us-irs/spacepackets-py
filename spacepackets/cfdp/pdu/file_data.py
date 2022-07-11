@@ -1,6 +1,6 @@
 from __future__ import annotations
 import enum
-from typing import Union
+from typing import Union, Optional
 import struct
 
 from spacepackets.cfdp import LargeFileFlag
@@ -31,16 +31,23 @@ class FileDataPdu(AbstractPduBase):
         pdu_conf: PduConfig,
         file_data: bytes,
         offset: int,
-        segment_metadata_flag: Union[SegmentMetadataFlag, bool],
+        segment_metadata_flag: Union[
+            SegmentMetadataFlag, bool
+        ] = SegmentMetadataFlag.NOT_PRESENT,
         # These fields will only be present if the segment metadata flag is set
-        record_continuation_state: RecordContinuationState = RecordContinuationState.START_AND_END,
-        segment_metadata: bytes = bytes(),
+        record_continuation_state: Optional[RecordContinuationState] = None,
+        segment_metadata: Optional[bytes] = None,
     ):
-        self.record_continuation_state = record_continuation_state
         if isinstance(segment_metadata_flag, bool):
             self.segment_metadata_flag = SegmentMetadataFlag(segment_metadata_flag)
         else:
             self.segment_metadata_flag = segment_metadata_flag
+        if (
+            self.segment_metadata_flag == SegmentMetadataFlag.PRESENT
+            and record_continuation_state is None
+        ):
+            raise ValueError("Record continuation state must be specified")
+        self.record_continuation_state = record_continuation_state
         self._segment_metadata = segment_metadata
         self.offset = offset
         self._file_data = file_data
@@ -91,6 +98,10 @@ class FileDataPdu(AbstractPduBase):
     @property
     def crc_flag(self):
         return self.pdu_header.crc_flag
+
+    @property
+    def has_segment_metadata(self) -> bool:
+        return self.segment_metadata_flag == SegmentMetadataFlag.PRESENT
 
     @property
     def segment_metadata(self):
