@@ -10,7 +10,7 @@ from .file_directive import (
     DirectiveType,
     AbstractFileDirectiveBase,
 )
-from .finished import FinishedPdu
+from .finished import FinishedPdu, FileDeliveryStatus, DeliveryCode
 from .keep_alive import KeepAlivePdu
 from .metadata import MetadataPdu
 from .nak import NakPdu
