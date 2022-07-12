@@ -98,10 +98,10 @@ class AbstractFileDirectiveBase(AbstractPduBase):
 
 
 class FileDirectivePduBase(AbstractFileDirectiveBase):
-    FILE_DIRECTIVE_PDU_LEN = 5
     """Base class for file directive PDUs encapsulating all its common components.
     All other file directive PDU classes implement this class
     """
+    FILE_DIRECTIVE_PDU_LEN = 5
 
     def __init__(
         self,
@@ -214,6 +214,13 @@ class FileDirectivePduBase(AbstractFileDirectiveBase):
             ]
             current_idx += 4
         return current_idx, file_size
+
+    def __repr__(self):
+        return (
+            f"{self.__class__.__name__}(directive_code={self.directive_type!r}, "
+            f"directive_param_field_len={self.directive_param_field_len!r}, "
+            f"pdu_conf={self.pdu_conf!r})"
+        )
 
     def __eq__(self, other: FileDirectivePduBase):
         return AbstractFileDirectiveBase.__eq__(self, other)

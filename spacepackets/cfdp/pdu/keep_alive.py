@@ -92,3 +92,9 @@ class KeepAlivePdu(AbstractFileDirectiveBase):
             self.pdu_file_directive == other.pdu_file_directive
             and self.progress == other.progress
         )
+
+    def __repr__(self):
+        return (
+            f"{self.__class__.__name__}(progress={self.progress!r}, "
+            f"pdu_conf={self.pdu_file_directive.pdu_conf!r})"
+        )
