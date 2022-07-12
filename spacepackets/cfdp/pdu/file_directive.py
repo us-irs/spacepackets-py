@@ -101,6 +101,7 @@ class FileDirectivePduBase(AbstractFileDirectiveBase):
     """Base class for file directive PDUs encapsulating all its common components.
     All other file directive PDU classes implement this class
     """
+
     FILE_DIRECTIVE_PDU_LEN = 5
 
     def __init__(
