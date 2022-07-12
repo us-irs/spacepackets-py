@@ -72,10 +72,18 @@ class TestTlvs(TestCase):
         )
         self.assertEqual(invalid_code, FilestoreResponseStatusCode.INVALID)
 
+    def test_tlv_print(self):
+        test_tlv = CfdpTlv(
+            tlv_type=TlvTypes.FILESTORE_REQUEST, value=bytes([0, 1, 2, 3, 4])
+        )
+        print(test_tlv)
+        print(f"{test_tlv!r}")
+
     def test_entity_id_tlv(self):
         entity_id_tlv = EntityIdTlv(entity_id=bytes([0x00, 0x01, 0x02, 0x03]))
         entity_id_tlv_tlv = entity_id_tlv.tlv
         wrapper = TlvHolder(entity_id_tlv)
+        self.assertEqual(wrapper.tlv_type, TlvTypes.ENTITY_ID)
         entity_id_tlv_from_factory = wrapper.to_entity_id()
         self.assertEqual(entity_id_tlv_from_factory.pack(), entity_id_tlv.pack())
         entity_id_tlv_tlv.tlv_type = TlvTypes.FILESTORE_REQUEST

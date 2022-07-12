@@ -187,3 +187,21 @@ class TestHeader(TestCase):
         self.assertEqual(pdu_header_packed[6] << 8 | pdu_header_packed[7], 300)
         # Destination ID
         self.assertEqual(pdu_header_packed[8:10], bytes([0, 1]))
+
+    def test_printout(self):
+        pdu_conf = PduConfig(
+            source_entity_id=ByteFieldU8(0),
+            dest_entity_id=ByteFieldU8(0),
+            trans_mode=TransmissionModes.ACKNOWLEDGED,
+            direction=Direction.TOWARDS_RECEIVER,
+            crc_flag=CrcFlag.NO_CRC,
+            seg_ctrl=SegmentationControl.NO_RECORD_BOUNDARIES_PRESERVATION,
+            transaction_seq_num=ByteFieldU8(0),
+        )
+        pdu_header = PduHeader(
+            pdu_type=PduType.FILE_DIRECTIVE,
+            segment_metadata_flag=SegmentMetadataFlag.NOT_PRESENT,
+            pdu_data_field_len=0,
+            pdu_conf=pdu_conf,
+        )
+        print(pdu_header)

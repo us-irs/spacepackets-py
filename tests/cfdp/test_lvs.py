@@ -30,3 +30,10 @@ class TestLvs(TestCase):
         # Too short to unpack
         faulty_lv = bytes([0])
         self.assertRaises(ValueError, CfdpTlv.unpack, faulty_lv)
+
+    def test_lv_print(self):
+        test_lv = CfdpLv(
+            value=bytes([0, 1, 2, 3, 4])
+        )
+        print(test_lv)
+        print(f"{test_lv!r}")
