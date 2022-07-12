@@ -6,12 +6,15 @@ from spacepackets.cfdp.pdu import KeepAlivePdu, DirectiveType
 
 
 class TestKeepAlivePdu(TestCase):
+    def setUp(self) -> None:
+        self.pdu_conf = PduConfig.default()
+        self.keep_alive_pdu =  KeepAlivePdu(pdu_conf=self.pdu_conf, progress=0)
+
+    # TODO: Split into smaller fixtures
     def test_keep_alive_pdu(self):
-        pdu_conf = PduConfig.default()
-        keep_alive_pdu = KeepAlivePdu(pdu_conf=pdu_conf, progress=0)
-        self.assertEqual(keep_alive_pdu.progress, 0)
-        self.assertEqual(keep_alive_pdu.file_flag, LargeFileFlag.NORMAL)
-        keep_alive_pdu_raw = keep_alive_pdu.pack()
+        self.assertEqual(self.keep_alive_pdu.progress, 0)
+        self.assertEqual(self.keep_alive_pdu.file_flag, LargeFileFlag.NORMAL)
+        keep_alive_pdu_raw = self.keep_alive_pdu.pack()
         self.assertEqual(
             keep_alive_pdu_raw,
             bytes(
@@ -31,24 +34,27 @@ class TestKeepAlivePdu(TestCase):
                 ]
             ),
         )
-        self.assertEqual(keep_alive_pdu.packet_len, 12)
+        self.assertEqual(self.keep_alive_pdu.packet_len, 12)
         keep_alive_unpacked = KeepAlivePdu.unpack(raw_packet=keep_alive_pdu_raw)
         self.assertEqual(keep_alive_unpacked.packet_len, 12)
         self.assertEqual(keep_alive_unpacked.progress, 0)
-        keep_alive_pdu.file_flag = LargeFileFlag.LARGE
-        self.assertEqual(keep_alive_pdu.packet_len, 16)
-        keep_alive_pdu_large = keep_alive_pdu.pack()
+        self.keep_alive_pdu.file_flag = LargeFileFlag.LARGE
+        self.assertEqual(self.keep_alive_pdu.packet_len, 16)
+        keep_alive_pdu_large = self.keep_alive_pdu.pack()
         self.assertEqual(len(keep_alive_pdu_large), 16)
 
-        keep_alive_pdu.file_flag = LargeFileFlag.NORMAL
-        self.assertEqual(keep_alive_pdu.file_flag, LargeFileFlag.NORMAL)
+        self.keep_alive_pdu.file_flag = LargeFileFlag.NORMAL
+        self.assertEqual(self.keep_alive_pdu.file_flag, LargeFileFlag.NORMAL)
 
-        keep_alive_pdu.progress = pow(2, 32) + 1
+        self.keep_alive_pdu.progress = pow(2, 32) + 1
         with self.assertRaises(ValueError):
-            keep_alive_pdu.pack()
+            self.keep_alive_pdu.pack()
 
-        pdu_conf.fss_field_len = LargeFileFlag.LARGE
-        keep_alive_pdu_large = KeepAlivePdu(pdu_conf=pdu_conf, progress=0)
+        self.pdu_conf.fss_field_len = LargeFileFlag.LARGE
+        keep_alive_pdu_large = KeepAlivePdu(pdu_conf=self.pdu_conf, progress=0)
         keep_alive_pdu_invalid = keep_alive_pdu_large.pack()[:-1]
         with self.assertRaises(ValueError):
             KeepAlivePdu.unpack(raw_packet=keep_alive_pdu_invalid)
+
+    def test_print(self):
+        print(self.keep_alive_pdu)
