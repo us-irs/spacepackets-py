@@ -178,3 +178,10 @@ class NakPdu(AbstractFileDirectiveBase):
             and self.start_of_scope == other.start_of_scope
             and self.end_of_scope == other.end_of_scope
         )
+
+    def __repr__(self):
+        return (
+            f"{self.__class__.__name__}(start_of_scope={self.start_of_scope!r}, "
+            f"end_of_scope={self.end_of_scope!r}, pdu_conf={self.pdu_file_directive.pdu_conf!r}"
+            f"segment_requests={self.segment_requests!r})"
+        )

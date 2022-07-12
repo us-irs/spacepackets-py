@@ -41,6 +41,12 @@ class TestPduWrapper(TestCase):
         self.pdu_wrapper.base = file_data_pdu
         pdu_casted_back = self.pdu_wrapper.to_file_data_pdu()
         self.assertEqual(pdu_casted_back, file_data_pdu)
+        self.assertEqual(self.pdu_wrapper.pdu_directive_type, None)
+
+    def test_holder_print(self):
+        nak_pdu = NakPdu(start_of_scope=0, end_of_scope=200, pdu_conf=self.pdu_conf)
+        self.pdu_wrapper.base = nak_pdu
+        print(self.pdu_wrapper)
 
     def test_invalid_to_file_data(self):
         params = MetadataParams(
