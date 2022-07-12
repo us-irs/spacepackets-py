@@ -334,3 +334,11 @@ class PduHeader(AbstractPduBase):
             )
             raise ValueError
         return len_in_bytes
+
+    def __repr__(self):
+        return (
+            f"{self.__class__.__name__}(pdu_type={self.pdu_type!r},"
+            f"segment_metadata_flag={self.segment_metadata_flag!r},"
+            f"pdu_data_field_len={self.pdu_data_field_len!r},"
+            f"pdu_conf={self.pdu_conf!r})"
+        )
