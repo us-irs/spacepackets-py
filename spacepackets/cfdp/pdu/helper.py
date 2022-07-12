@@ -105,7 +105,8 @@ class PduFactory:
 
     @staticmethod
     def from_raw(data: bytes):
-        pass
+        # TODO: Implement
+        raise NotImplementedError()
 
     @staticmethod
     def pdu_type(data: bytes) -> PduType:

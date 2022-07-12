@@ -24,7 +24,7 @@ from spacepackets.cfdp.pdu.prompt import ResponseRequired
 from spacepackets.cfdp.pdu.helper import PduHolder
 
 
-class TestPduWrapper(TestCase):
+class TestPduHolder(TestCase):
     def setUp(self) -> None:
         self.pdu_conf = PduConfig.empty()
         self.file_data = "hello world"

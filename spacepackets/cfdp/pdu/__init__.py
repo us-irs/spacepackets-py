@@ -15,5 +15,5 @@ from .keep_alive import KeepAlivePdu
 from .metadata import MetadataPdu, MetadataParams
 from .nak import NakPdu
 from .prompt import PromptPdu
-from .helper import PduHolder
+from .helper import PduHolder, PduFactory
 from .file_data import FileDataPdu
