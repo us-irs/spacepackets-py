@@ -24,17 +24,8 @@ from spacepackets.util import (
 
 
 class TestHeader(TestCase):
-    # TODO: Split up in smaller test fixtures
-    def test_pdu_header(self):
-        byte_field = ByteFieldU8(22)
-        self.assertEqual(int(byte_field), 22)
-        byte_field = ByteFieldU16(5292)
-        self.assertEqual(int(byte_field), 5292)
-        byte_field = ByteFieldU32(129302)
-        self.assertEqual(struct.unpack("!I", byte_field.as_bytes)[0], 129302)
-        with self.assertRaises(ValueError):
-            ByteFieldU8(900)
-        pdu_conf = PduConfig(
+    def setUp(self) -> None:
+        self.pdu_conf = PduConfig(
             source_entity_id=ByteFieldU8(0),
             dest_entity_id=ByteFieldU8(0),
             trans_mode=TransmissionModes.ACKNOWLEDGED,
@@ -43,29 +34,33 @@ class TestHeader(TestCase):
             seg_ctrl=SegmentationControl.NO_RECORD_BOUNDARIES_PRESERVATION,
             transaction_seq_num=ByteFieldU8(0),
         )
-        pdu_header = PduHeader(
+        self.pdu_header = PduHeader(
             pdu_type=PduType.FILE_DIRECTIVE,
             segment_metadata_flag=SegmentMetadataFlag.NOT_PRESENT,
             pdu_data_field_len=0,
-            pdu_conf=pdu_conf,
+            pdu_conf=self.pdu_conf,
         )
-        self.assertEqual(pdu_header.pdu_type, PduType.FILE_DIRECTIVE)
-        self.assertEqual(pdu_header.source_entity_id, ByteFieldU8(0))
-        self.assertEqual(pdu_header.source_entity_id.byte_len, 1)
-        self.assertEqual(pdu_header.trans_mode, TransmissionModes.ACKNOWLEDGED)
-        self.assertEqual(pdu_header.direction, Direction.TOWARDS_RECEIVER)
+
+    # TODO: Split up in smaller test fixtures
+    def test_pdu_header(self):
+        self.assertEqual(self.pdu_header.pdu_type, PduType.FILE_DIRECTIVE)
+        self.assertEqual(self.pdu_header.source_entity_id, ByteFieldU8(0))
+        self.assertEqual(self.pdu_header.source_entity_id.byte_len, 1)
+        self.assertEqual(self.pdu_header.trans_mode, TransmissionModes.ACKNOWLEDGED)
+        self.assertEqual(self.pdu_header.direction, Direction.TOWARDS_RECEIVER)
         self.assertEqual(
-            pdu_header.segment_metadata_flag, SegmentMetadataFlag.NOT_PRESENT
+            self.pdu_header.segment_metadata_flag, SegmentMetadataFlag.NOT_PRESENT
         )
-        self.assertFalse(pdu_header.large_file_flag_set)
-        self.assertEqual(pdu_header.transaction_seq_num, ByteFieldU8(0))
-        self.assertEqual(pdu_header.transaction_seq_num.byte_len, 1)
-        self.assertEqual(pdu_header.crc_flag, CrcFlag.NO_CRC)
+        self.assertFalse(self.pdu_header.large_file_flag_set)
+        self.assertEqual(self.pdu_header.transaction_seq_num, ByteFieldU8(0))
+        self.assertEqual(self.pdu_header.transaction_seq_num.byte_len, 1)
+        self.assertEqual(self.pdu_header.crc_flag, CrcFlag.NO_CRC)
         self.assertEqual(
-            pdu_header.seg_ctrl, SegmentationControl.NO_RECORD_BOUNDARIES_PRESERVATION
+            self.pdu_header.seg_ctrl,
+            SegmentationControl.NO_RECORD_BOUNDARIES_PRESERVATION,
         )
-        self.assertEqual(pdu_header.header_len, 7)
-        pdu_header_packed = pdu_header.pack()
+        self.assertEqual(self.pdu_header.header_len, 7)
+        pdu_header_packed = self.pdu_header.pack()
         string = get_printable_data_string(
             print_format=PrintFormats.HEX, data=pdu_header_packed
         )
@@ -75,25 +70,25 @@ class TestHeader(TestCase):
         pdu_header_repacked = pdu_header_unpacked.pack()
         self.check_fields_case_one(pdu_header_packed=pdu_header_repacked)
 
-        pdu_header.pdu_type = PduType.FILE_DATA
-        pdu_header.set_entity_ids(
+        self.pdu_header.pdu_type = PduType.FILE_DATA
+        self.pdu_header.set_entity_ids(
             source_entity_id=ByteFieldU16(0), dest_entity_id=ByteFieldU16(1)
         )
-        pdu_header.transaction_seq_num = ByteFieldU16(300)
-        pdu_header.trans_mode = TransmissionModes.UNACKNOWLEDGED
-        pdu_header.direction = Direction.TOWARDS_SENDER
-        pdu_header.crc_flag = CrcFlag.WITH_CRC
-        pdu_header.file_flag = LargeFileFlag.LARGE
-        pdu_header.pdu_data_field_len = 300
-        pdu_header.seg_ctrl = SegmentationControl.RECORD_BOUNDARIES_PRESERVATION
-        pdu_header.segment_metadata_flag = SegmentMetadataFlag.PRESENT
+        self.pdu_header.transaction_seq_num = ByteFieldU16(300)
+        self.pdu_header.trans_mode = TransmissionModes.UNACKNOWLEDGED
+        self.pdu_header.direction = Direction.TOWARDS_SENDER
+        self.pdu_header.crc_flag = CrcFlag.WITH_CRC
+        self.pdu_header.file_flag = LargeFileFlag.LARGE
+        self.pdu_header.pdu_data_field_len = 300
+        self.pdu_header.seg_ctrl = SegmentationControl.RECORD_BOUNDARIES_PRESERVATION
+        self.pdu_header.segment_metadata_flag = SegmentMetadataFlag.PRESENT
 
-        self.assertTrue(pdu_header.large_file_flag_set)
-        pdu_header_packed = pdu_header.pack()
+        self.assertTrue(self.pdu_header.large_file_flag_set)
+        pdu_header_packed = self.pdu_header.pack()
         self.check_fields_case_two(pdu_header_packed=pdu_header_packed)
         set_entity_ids(source_entity_id=bytes(), dest_entity_id=bytes())
         with self.assertRaises(ValueError):
-            pdu_header.pdu_data_field_len = 78292
+            self.pdu_header.pdu_data_field_len = 78292
         invalid_pdu_header = bytearray([0, 1, 2])
         self.assertRaises(ValueError, PduHeader.unpack, invalid_pdu_header)
         self.assertRaises(ValueError, PduHeader.unpack, pdu_header_packed[0:6])
@@ -105,11 +100,11 @@ class TestHeader(TestCase):
             300,
         )
 
-        pdu_conf.source_entity_id = ByteFieldU8(0)
-        pdu_conf.dest_entity_id = ByteFieldU8(0)
-        pdu_conf.transaction_seq_num = ByteFieldU16.from_bytes(bytes([0x00, 0x2C]))
+        self.pdu_conf.source_entity_id = ByteFieldU8(0)
+        self.pdu_conf.dest_entity_id = ByteFieldU8(0)
+        self.pdu_conf.transaction_seq_num = ByteFieldU16.from_bytes(bytes([0x00, 0x2C]))
         prompt_pdu = PromptPdu(
-            response_required=ResponseRequired.KEEP_ALIVE, pdu_conf=pdu_conf
+            response_required=ResponseRequired.KEEP_ALIVE, pdu_conf=self.pdu_conf
         )
         self.assertEqual(prompt_pdu.pdu_file_directive.header_len, 9)
         self.assertEqual(prompt_pdu.packet_len, 10)
@@ -188,20 +183,9 @@ class TestHeader(TestCase):
         # Destination ID
         self.assertEqual(pdu_header_packed[8:10], bytes([0, 1]))
 
+    def test_header_len_raw_func(self):
+        self.assertEqual(self.pdu_header.header_len, 7)
+        self.assertEqual(PduHeader.header_len_from_raw(self.pdu_header.pack()), 7)
+
     def test_printout(self):
-        pdu_conf = PduConfig(
-            source_entity_id=ByteFieldU8(0),
-            dest_entity_id=ByteFieldU8(0),
-            trans_mode=TransmissionModes.ACKNOWLEDGED,
-            direction=Direction.TOWARDS_RECEIVER,
-            crc_flag=CrcFlag.NO_CRC,
-            seg_ctrl=SegmentationControl.NO_RECORD_BOUNDARIES_PRESERVATION,
-            transaction_seq_num=ByteFieldU8(0),
-        )
-        pdu_header = PduHeader(
-            pdu_type=PduType.FILE_DIRECTIVE,
-            segment_metadata_flag=SegmentMetadataFlag.NOT_PRESENT,
-            pdu_data_field_len=0,
-            pdu_conf=pdu_conf,
-        )
-        print(pdu_header)
+        print(self.pdu_header)

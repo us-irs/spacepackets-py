@@ -12,6 +12,16 @@ from spacepackets.util import (
 
 
 class TestUtility(TestCase):
+    def test_basic_bytefields(self):
+        byte_field = ByteFieldU8(22)
+        self.assertEqual(int(byte_field), 22)
+        byte_field = ByteFieldU16(5292)
+        self.assertEqual(int(byte_field), 5292)
+        byte_field = ByteFieldU32(129302)
+        self.assertEqual(struct.unpack("!I", byte_field.as_bytes)[0], 129302)
+        with self.assertRaises(ValueError):
+            ByteFieldU8(900)
+
     def test_one_byte_field_gen(self):
         one_byte_test = ByteFieldGenerator.from_int(byte_len=1, val=0x42)
         self.assertEqual(ByteFieldU8(0x42), one_byte_test)
