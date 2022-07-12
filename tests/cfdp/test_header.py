@@ -187,5 +187,11 @@ class TestHeader(TestCase):
         self.assertEqual(self.pdu_header.header_len, 7)
         self.assertEqual(PduHeader.header_len_from_raw(self.pdu_header.pack()), 7)
 
+    def test_length_field_check(self):
+        with self.assertRaises(ValueError):
+            PduHeader.check_len_in_bytes(0)
+        with self.assertRaises(ValueError):
+            PduHeader.check_len_in_bytes(5)
+
     def test_printout(self):
         print(self.pdu_header)

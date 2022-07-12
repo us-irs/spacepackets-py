@@ -323,14 +323,11 @@ class PduHeader(AbstractPduBase):
 
     @staticmethod
     def check_len_in_bytes(detected_len: int) -> LenInBytes:
-        try:
-            len_in_bytes = LenInBytes(detected_len)
-        except ValueError:
+        if detected_len not in [1, 2, 4, 8]:
             raise ValueError(
-                "Unsupported length field detected. "
-                "Only 1, 2, 4 and 8 bytes are supported"
+                "Unsupported length field detected. Must be in [1, 2, 4, 8]"
             )
-        return len_in_bytes
+        return LenInBytes(detected_len)
 
     def __repr__(self):
         return (
