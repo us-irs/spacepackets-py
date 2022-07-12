@@ -7,8 +7,9 @@ from spacepackets.ecss.tc import PusTelecommand
 
 
 class RequestId:
-    """The request ID which is used to identify PUS telecommands. It is primarily used
-    to verify the execution of sent telecommands
+    """The request ID which is used to identify PUS telecommands. The request ID consists of
+    the first two bytes of the CCSDS primary header. It is primarily used to verify the execution
+    of sent telecommands.
 
     >>> from spacepackets.ccsds import PacketTypes, SequenceFlags
     >>> packet_id = PacketId(ptype=PacketTypes.TC, sec_header_flag=False, apid=0x22)
