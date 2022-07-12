@@ -120,9 +120,9 @@ class PduFactory:
     def pdu_directive_type(data: bytes) -> Optional[DirectiveType]:
         """Retrieve the PDU directive type from a raw bytestream.
 
-        :raises ValueError: Invalid directive type
-        :return None if the PDU in the given bytestream is not a file directive, otherwise the
-            directive
+        :raises ValueError: Invalid directive type.
+        :returns: None, if the PDU in the given bytestream is not a file directive, otherwise the
+            directive.
         """
         if not PduFactory.is_file_directive(data):
             return None
