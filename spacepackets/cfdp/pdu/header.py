@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import abc
 
-from spacepackets.log import get_console_logger
 from spacepackets.cfdp.defs import (
     LargeFileFlag,
     PduType,
@@ -281,9 +280,7 @@ class PduHeader(AbstractPduBase):
         :return:
         """
         if len(raw_packet) < cls.FIXED_LENGTH:
-            logger = get_console_logger()
-            logger.warning("Can not unpack less than four bytes into PDU header")
-            raise ValueError
+            raise ValueError("Can not unpack less than four bytes into PDU header")
         pdu_header = cls.__empty()
         pdu_header._pdu_type = (raw_packet[0] & 0x10) >> 4
         pdu_header.direction = (raw_packet[0] & 0x08) >> 3
@@ -327,12 +324,10 @@ class PduHeader(AbstractPduBase):
         try:
             len_in_bytes = LenInBytes(detected_len)
         except ValueError:
-            logger = get_console_logger()
-            logger.warning(
+            raise ValueError(
                 "Unsupported length field detected. "
                 "Only 1, 2, 4 and 8 bytes are supported"
             )
-            raise ValueError
         return len_in_bytes
 
     def __repr__(self):
