@@ -43,3 +43,9 @@ class CfdpLv:
         if detected_len == 0:
             return cls(value=bytes())
         return cls(value=raw_bytes[1 : 1 + detected_len])
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}(value={self.value!r})"
+
+    def __str__(self):
+        return f"CFDP LV with data 0x[{self.value.hex(sep=',')} of length {len(self.value)}"

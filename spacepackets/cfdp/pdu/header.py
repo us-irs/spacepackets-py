@@ -19,8 +19,6 @@ from spacepackets.util import UnsignedByteField, ByteFieldGenerator
 
 
 class AbstractPduBase(abc.ABC):
-    VERSION_BITS = 0b0010_0000
-    FIXED_LENGTH = 4
     """Encapsulate common functions for PDU. PDU or Packet Data Units are the base data unit
     which are exchanged for CFDP procedures. Each PDU has a common header and this class provides
     abstract methods to access fields of that common header.
@@ -28,6 +26,9 @@ class AbstractPduBase(abc.ABC):
     The default implementation provided in this library for this abstract class is the
     :py:class:`PduHeader` class.
     """
+
+    VERSION_BITS = 0b0010_0000
+    FIXED_LENGTH = 4
 
     @abc.abstractmethod
     def pack(self) -> bytes:
@@ -220,7 +221,8 @@ class PduHeader(AbstractPduBase):
 
     @pdu_data_field_len.setter
     def pdu_data_field_len(self, new_len: int):
-        """Set the PDU data field length
+        """Set the PDU data field length.
+
         :param new_len:
         :raises ValueError: Value too large
         :return:
@@ -273,7 +275,7 @@ class PduHeader(AbstractPduBase):
 
     @classmethod
     def unpack(cls, raw_packet: bytes) -> PduHeader:
-        """Unpack a raw bytearray into the PDU header object representation
+        """Unpack a raw bytearray into the PDU header object representation.
 
         :param raw_packet:
         :raise ValueError: Passed bytearray is too short.

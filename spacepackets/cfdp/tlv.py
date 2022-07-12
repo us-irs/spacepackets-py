@@ -189,6 +189,15 @@ class CfdpTlv:
     def packet_len(self) -> int:
         return self.MINIMAL_LEN + len(self.value)
 
+    def __repr__(self):
+        return f"{self.__class__.__name__}(tlv_type={self.tlv_type!r}, value={self.value!r})"
+
+    def __str__(self):
+        return (
+            f"CFDP TLV with type {self.tlv_type} and data 0x[{self.value.hex(sep=',')}] with "
+            f"length {len(self.value)}"
+        )
+
 
 class ConcreteTlvBase(abc.ABC):
     def __init__(self, tlv: CfdpTlv):
@@ -530,7 +539,7 @@ class FileStoreResponseTlv(FileStoreRequestBase, ConcreteTlvBase):
 TlvList = List[Union[CfdpTlv, ConcreteTlvBase]]
 
 
-class TlvWrapper:
+class TlvHolder:
     def __init__(self, tlv_base: Optional[ConcreteTlvBase]):
         self.base = tlv_base
 

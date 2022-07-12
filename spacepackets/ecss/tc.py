@@ -22,7 +22,6 @@ from spacepackets.util import get_printable_data_string, PrintFormats
 from spacepackets.ecss.conf import (
     get_default_tc_apid,
     PusVersion,
-    get_max_tc_packet_size,
     FETCH_GLOBAL_APID,
 )
 
@@ -141,10 +140,6 @@ class PusTelecommand:
             apid = get_default_tc_apid()
         secondary_header_flag = 1
         logger = get_console_logger()
-        if len(app_data) > get_max_tc_packet_size():
-            logger.warning(
-                "Application data of PUS packet exceeds maximum allowed size"
-            )
         self.pus_tc_sec_header = PusTcDataFieldHeader(
             service=service,
             subservice=subservice,

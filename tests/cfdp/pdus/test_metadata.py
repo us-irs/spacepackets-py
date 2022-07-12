@@ -10,7 +10,7 @@ from spacepackets.cfdp.conf import PduConfig
 from spacepackets.cfdp.defs import FaultHandlerCodes, LargeFileFlag
 from spacepackets.cfdp.pdu import MetadataPdu
 from spacepackets.cfdp.pdu.metadata import MetadataParams
-from spacepackets.cfdp.tlv import TlvWrapper, FaultHandlerOverrideTlv
+from spacepackets.cfdp.tlv import TlvHolder, FaultHandlerOverrideTlv
 
 
 class TestMetadata(TestCase):
@@ -57,7 +57,7 @@ class TestMetadata(TestCase):
         pdu_with_option_raw = pdu_with_option.pack()
         self.assertEqual(len(pdu_with_option_raw), expected_len)
         pdu_with_option_unpacked = MetadataPdu.unpack(raw_packet=pdu_with_option_raw)
-        tlv_wrapper = TlvWrapper(pdu_with_option_unpacked.options[0])
+        tlv_wrapper = TlvHolder(pdu_with_option_unpacked.options[0])
         tlv_typed = tlv_wrapper.to_fs_request()
         self.assertIsNotNone(tlv_typed)
         self.assertEqual(tlv_typed.pack(), option_0.pack())
