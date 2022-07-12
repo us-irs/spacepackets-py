@@ -7,7 +7,7 @@ from spacepackets.cfdp.pdu import KeepAlivePdu, DirectiveType
 
 class TestKeepAlivePdu(TestCase):
     def test_keep_alive_pdu(self):
-        pdu_conf = PduConfig.empty()
+        pdu_conf = PduConfig.default()
         keep_alive_pdu = KeepAlivePdu(pdu_conf=pdu_conf, progress=0)
         self.assertEqual(keep_alive_pdu.progress, 0)
         self.assertEqual(keep_alive_pdu.file_flag, LargeFileFlag.NORMAL)

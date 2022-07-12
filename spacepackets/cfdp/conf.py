@@ -10,7 +10,7 @@ from spacepackets.cfdp.defs import (
     SegmentationControl,
 )
 from spacepackets.log import get_console_logger
-from spacepackets.util import UnsignedByteField, ByteFieldU8
+from spacepackets.util import UnsignedByteField, ByteFieldU8, ByteFieldEmpty
 
 
 @dataclass
@@ -35,6 +35,21 @@ class PduConfig:
 
     @classmethod
     def empty(cls) -> PduConfig:
+        """Empty PDU configuration which is not valid for usage because the contained unsigned
+        byte fields are empty (sequence number and both entity IDs)
+        """
+        return PduConfig(
+            transaction_seq_num=ByteFieldEmpty(),
+            trans_mode=TransmissionModes.ACKNOWLEDGED,
+            source_entity_id=ByteFieldEmpty(),
+            dest_entity_id=ByteFieldEmpty(),
+            file_flag=LargeFileFlag.NORMAL,
+            crc_flag=CrcFlag.NO_CRC,
+        )
+
+    @classmethod
+    def default(cls):
+        """Valid PDU configuration"""
         return PduConfig(
             transaction_seq_num=ByteFieldU8(0),
             trans_mode=TransmissionModes.ACKNOWLEDGED,

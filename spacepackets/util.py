@@ -76,8 +76,10 @@ class IntByteConversion:
     def to_signed(byte_num: int, val: int) -> bytes:
         """Convert number of bytes in a field to the struct API signed format specifier,
         assuming network endianness. Raises value error if number is not inside [1, 2, 4, 8]"""
-        if byte_num not in [1, 2, 4, 8]:
-            raise ValueError("Invalid byte number, must be one of [1, 2, 4, 8]")
+        if byte_num not in [0, 1, 2, 4, 8]:
+            raise ValueError("Invalid byte number, must be one of [0, 1, 2, 4, 8]")
+        if byte_num == 0:
+            return bytes()
         if abs(val) > pow(2, (byte_num * 8) - 1) - 1:
             raise ValueError(
                 f"Passed value larger than allows {pow(2, (byte_num * 8) - 1) - 1}"
@@ -88,8 +90,10 @@ class IntByteConversion:
     def to_unsigned(byte_num: int, val: int) -> bytes:
         """Convert number of bytes in a field to the struct API unsigned format specifier,
         assuming network endianness. Raises value error if number is not inside [1, 2, 4, 8]"""
-        if byte_num not in [1, 2, 4, 8]:
+        if byte_num not in [0, 1, 2, 4, 8]:
             raise ValueError("Invalid byte number, must be one of [1, 2, 4, 8]")
+        if byte_num == 0:
+            return bytes()
         if val > pow(2, byte_num * 8) - 1:
             raise ValueError(f"Passed value larger than allows {pow(2, byte_num) - 1}")
         return struct.pack(IntByteConversion.unsigned_struct_specifier(byte_num), val)
@@ -149,10 +153,10 @@ class UnsignedByteField:
 
     @staticmethod
     def verify_byte_len(byte_len: int):
-        if byte_len not in [1, 2, 4, 8]:
+        if byte_len not in [0, 1, 2, 4, 8]:
             # I really have no idea why anyone would use other values than these
             raise ValueError(
-                "Only 1, 2, 4 and 8 bytes are allowed as an entity ID length"
+                "Only 0, 1, 2, 4 and 8 bytes are allowed as an entity ID length"
             )
 
     def _verify_int_value(self, val: int):
@@ -188,6 +192,11 @@ class UnsignedByteField:
     def __hash__(self):
         """Makes all unsigned byte fields usable as dictionary keys"""
         return hash((self.value, self.byte_len))
+
+
+class ByteFieldEmpty(UnsignedByteField):
+    def __init__(self, val: int = 0):
+        super().__init__(0, val)
 
 
 class ByteFieldU8(UnsignedByteField):

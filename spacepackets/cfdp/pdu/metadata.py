@@ -71,6 +71,10 @@ class MetadataPdu(AbstractFileDirectiveBase):
         return self.params.closure_requested
 
     @property
+    def file_size(self) -> int:
+        return self.params.file_size
+
+    @property
     def checksum_type(self) -> ChecksumTypes:
         return self.params.checksum_type
 

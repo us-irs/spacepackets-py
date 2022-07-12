@@ -15,7 +15,7 @@ from spacepackets.cfdp.tlv import TlvWrapper, FaultHandlerOverrideTlv
 
 class TestMetadata(TestCase):
     def test_metadata_pdu(self):
-        pdu_conf = PduConfig.empty()
+        pdu_conf = PduConfig.default()
         metadata_params = MetadataParams(
             closure_requested=False,
             file_size=2,

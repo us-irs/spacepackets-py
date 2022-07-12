@@ -1,22 +1,23 @@
 from unittest import TestCase
 
-from spacepackets.cfdp import LargeFileFlag, EntityIdTlv
+from spacepackets.cfdp import LargeFileFlag, EntityIdTlv, NULL_CHECKSUM_U32
 from spacepackets.cfdp.conf import PduConfig
 from spacepackets.cfdp.pdu import EofPdu
 
 
 class TestEofPdu(TestCase):
     def test_eof_pdu(self):
-        pdu_conf = PduConfig.empty()
-        zero_checksum = bytes([0x00, 0x00, 0x00, 0x00])
-        eof_pdu = EofPdu(file_checksum=zero_checksum, file_size=0, pdu_conf=pdu_conf)
+        pdu_conf = PduConfig.default()
+        eof_pdu = EofPdu(
+            file_checksum=NULL_CHECKSUM_U32, file_size=0, pdu_conf=pdu_conf
+        )
         self.assertEqual(eof_pdu.pdu_file_directive.header_len, 8)
         expected_packet_len = 8 + 1 + 4 + 4
         self.assertEqual(eof_pdu.packet_len, expected_packet_len)
         eof_pdu_raw = eof_pdu.pack()
         expected_header = bytearray([0x20, 0x00, 0x0A, 0x11, 0x00, 0x00, 0x00, 0x04])
         expected_header.append(0)
-        expected_header.extend(zero_checksum)
+        expected_header.extend(NULL_CHECKSUM_U32)
         # File size is 0 as 4 bytes
         expected_header.extend(bytes([0x00, 0x00, 0x00, 0x00]))
         self.assertEqual(eof_pdu_raw, expected_header)
@@ -45,7 +46,7 @@ class TestEofPdu(TestCase):
 
         pdu_conf.file_flag = LargeFileFlag.LARGE
         eof_pdu_large_file = EofPdu(
-            file_checksum=zero_checksum, file_size=0, pdu_conf=pdu_conf
+            file_checksum=NULL_CHECKSUM_U32, file_size=0, pdu_conf=pdu_conf
         )
         self.assertEqual(eof_pdu_large_file.packet_len, expected_packet_len + 4)
         eof_pdu_large_file_raw = eof_pdu_large_file.pack()

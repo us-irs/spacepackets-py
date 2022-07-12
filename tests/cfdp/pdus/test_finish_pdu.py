@@ -19,7 +19,7 @@ from spacepackets.cfdp.pdu.finished import (
 
 class TestFinishPdu(TestCase):
     def setUp(self) -> None:
-        self.pdu_conf = PduConfig.empty()
+        self.pdu_conf = PduConfig.default()
         self.params = FinishedParams(
             delivery_code=DeliveryCode.DATA_COMPLETE,
             delivery_status=FileDeliveryStatus.FILE_STATUS_UNREPORTED,

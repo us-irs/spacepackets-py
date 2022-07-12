@@ -9,7 +9,7 @@ from spacepackets.cfdp.conf import PduConfig, LargeFileFlag
 
 class TestFileDataPdu(TestCase):
     def test_file_data_pdu(self):
-        pdu_conf = PduConfig.empty()
+        pdu_conf = PduConfig.default()
         file_data = "hello world"
         file_data_bytes = file_data.encode()
         file_data_pdu = FileDataPdu(

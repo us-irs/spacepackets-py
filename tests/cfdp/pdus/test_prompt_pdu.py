@@ -7,7 +7,7 @@ from spacepackets.cfdp.pdu.prompt import ResponseRequired
 
 class TestPromptPdu(TestCase):
     def test_prompt_pdu(self):
-        pdu_conf = PduConfig.empty()
+        pdu_conf = PduConfig.default()
         prompt_pdu = PromptPdu(
             pdu_conf=pdu_conf, response_required=ResponseRequired.KEEP_ALIVE
         )
