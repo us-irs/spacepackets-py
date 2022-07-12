@@ -172,7 +172,18 @@ class PusTelemetry:
 
     Can be used to generate TM packets using a high level interface with the default constructor,
     or to deserialize TM packets from a raw byte stream using the :py:meth:`unpack` method.
-    This implementation only supports PUS C
+    This implementation only supports PUS C.
+
+    The following doc example cuts off the timestamp (7 byte CDS Short) and the CRC16 from the ping
+    packet because those change regularly.
+
+    >>> ping_tm = PusTelemetry(service=17, subservice=2, seq_count=5, apid=0x01)
+    >>> ping_tm.service
+    17
+    >>> ping_tm.subservice
+    2
+    >>> ping_tm.pack()[:-9].hex(sep=',')
+    '08,01,c0,05,00,0f,20,11,02,00,00,00,00'
     """
 
     CDS_SHORT_SIZE = 7
