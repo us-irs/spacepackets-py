@@ -14,7 +14,11 @@ from spacepackets.cfdp.pdu import (
     KeepAlivePdu,
 )
 from spacepackets.cfdp.pdu.file_data import FileDataPdu
-from spacepackets.cfdp.pdu.finished import DeliveryCode, FileDeliveryStatus
+from spacepackets.cfdp.pdu.finished import (
+    DeliveryCode,
+    FileDeliveryStatus,
+    FinishedParams,
+)
 from spacepackets.cfdp.pdu.metadata import MetadataParams
 from spacepackets.cfdp.pdu.prompt import ResponseRequired
 from spacepackets.cfdp.pdu.helper import PduHolder
@@ -114,10 +118,13 @@ class TestPduWrapper(TestCase):
         self.assertEqual(eof_pdu_converted, eof_pdu)
 
     def test_finished_cast(self):
-        finish_pdu = FinishedPdu(
+        params = FinishedParams(
             delivery_code=DeliveryCode.DATA_COMPLETE,
-            file_delivery_status=FileDeliveryStatus.FILE_STATUS_UNREPORTED,
+            delivery_status=FileDeliveryStatus.FILE_STATUS_UNREPORTED,
             condition_code=ConditionCode.NO_ERROR,
+        )
+        finish_pdu = FinishedPdu(
+            params=params,
             pdu_conf=self.pdu_conf,
         )
         self.pdu_wrapper.base = finish_pdu

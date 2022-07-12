@@ -10,21 +10,28 @@ from spacepackets.cfdp import (
 )
 from spacepackets.cfdp.conf import PduConfig
 from spacepackets.cfdp.pdu import FinishedPdu
-from spacepackets.cfdp.pdu.finished import DeliveryCode, FileDeliveryStatus
+from spacepackets.cfdp.pdu.finished import (
+    DeliveryCode,
+    FileDeliveryStatus,
+    FinishedParams,
+)
 
 
 class TestFinishPdu(TestCase):
     def test_finished_pdu(self):
         pdu_conf = PduConfig.empty()
-        finish_pdu = FinishedPdu(
+        params = FinishedParams(
             delivery_code=DeliveryCode.DATA_COMPLETE,
-            file_delivery_status=FileDeliveryStatus.FILE_STATUS_UNREPORTED,
+            delivery_status=FileDeliveryStatus.FILE_STATUS_UNREPORTED,
             condition_code=ConditionCode.NO_ERROR,
+        )
+        finish_pdu = FinishedPdu(
+            params=params,
             pdu_conf=pdu_conf,
         )
         self.assertEqual(finish_pdu.delivery_code, DeliveryCode.DATA_COMPLETE)
         self.assertEqual(
-            finish_pdu.file_delivery_status, FileDeliveryStatus.FILE_STATUS_UNREPORTED
+            finish_pdu.delivery_status, FileDeliveryStatus.FILE_STATUS_UNREPORTED
         )
         self.assertEqual(finish_pdu.pdu_file_directive.packet_len, 9)
         finish_pdu_raw = finish_pdu.pack()
@@ -38,7 +45,7 @@ class TestFinishPdu(TestCase):
         finish_pdu_unpacked = FinishedPdu.unpack(raw_packet=finish_pdu_raw)
         self.assertEqual(finish_pdu_unpacked.delivery_code, DeliveryCode.DATA_COMPLETE)
         self.assertEqual(
-            finish_pdu_unpacked.file_delivery_status,
+            finish_pdu_unpacked.delivery_status,
             FileDeliveryStatus.FILE_STATUS_UNREPORTED,
         )
         self.assertEqual(finish_pdu_unpacked.pdu_file_directive.packet_len, 9)
@@ -62,18 +69,21 @@ class TestFinishPdu(TestCase):
         # Now generate a packet with a fault location
         fault_location_tlv = EntityIdTlv(entity_id=bytes([0x00, 0x02]))
         self.assertEqual(fault_location_tlv.packet_len, 4)
-        finish_pdu_with_fault_loc = FinishedPdu(
+        params = FinishedParams(
             delivery_code=DeliveryCode.DATA_INCOMPLETE,
-            file_delivery_status=FileDeliveryStatus.DISCARDED_DELIBERATELY,
+            delivery_status=FileDeliveryStatus.DISCARDED_DELIBERATELY,
             condition_code=ConditionCode.POSITIVE_ACK_LIMIT_REACHED,
             fault_location=fault_location_tlv,
+        )
+        finish_pdu_with_fault_loc = FinishedPdu(
+            params=params,
             pdu_conf=pdu_conf,
         )
         self.assertEqual(
             finish_pdu_with_fault_loc.delivery_code, DeliveryCode.DATA_INCOMPLETE
         )
         self.assertEqual(
-            finish_pdu_with_fault_loc.file_delivery_status,
+            finish_pdu_with_fault_loc.delivery_status,
             FileDeliveryStatus.DISCARDED_DELIBERATELY,
         )
         self.assertEqual(
@@ -114,13 +124,13 @@ class TestFinishPdu(TestCase):
             ),
         )
         self.assertEqual(filestore_reponse_1.packet_len, 13)
-        pdu_with_response = FinishedPdu(
+        params = FinishedParams(
             delivery_code=DeliveryCode.DATA_INCOMPLETE,
-            file_delivery_status=FileDeliveryStatus.DISCARDED_DELIBERATELY,
+            delivery_status=FileDeliveryStatus.DISCARDED_DELIBERATELY,
             condition_code=ConditionCode.FILESTORE_REJECTION,
-            pdu_conf=pdu_conf,
             file_store_responses=[filestore_reponse_1],
         )
+        pdu_with_response = FinishedPdu(params=params, pdu_conf=pdu_conf)
         self.assertEqual(pdu_with_response.packet_len, 22)
         pdu_with_response_raw = pdu_with_response.pack()
         expected_array = bytearray(
@@ -153,13 +163,15 @@ class TestFinishPdu(TestCase):
         expected_reply.append(0)
         self.assertEqual(filestore_reponse_2.packet_len, 23)
         self.assertEqual(fs_response_2_raw, expected_reply)
-        finish_pdu_two_responses_one_fault_loc = FinishedPdu(
+        params = FinishedParams(
             delivery_code=DeliveryCode.DATA_COMPLETE,
-            file_delivery_status=FileDeliveryStatus.FILE_RETAINED,
+            delivery_status=FileDeliveryStatus.FILE_RETAINED,
             condition_code=ConditionCode.CHECK_LIMIT_REACHED,
-            pdu_conf=pdu_conf,
             file_store_responses=[filestore_reponse_1, filestore_reponse_2],
             fault_location=fault_location_tlv,
+        )
+        finish_pdu_two_responses_one_fault_loc = FinishedPdu(
+            params=params, pdu_conf=pdu_conf
         )
         # length should be 13 (response 1) + 23 (response 2)  + 4 (fault loc) + 9 (base)
         self.assertEqual(finish_pdu_two_responses_one_fault_loc.packet_len, 49)

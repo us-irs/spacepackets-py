@@ -1,7 +1,7 @@
 from __future__ import annotations
 import enum
 from dataclasses import dataclass
-from typing import List, Optional, cast
+from typing import List, Optional
 
 from spacepackets.cfdp.pdu import PduHeader
 from spacepackets.cfdp.pdu.file_directive import (
@@ -12,7 +12,6 @@ from spacepackets.cfdp.pdu.file_directive import (
 from spacepackets.cfdp.defs import ConditionCode
 from spacepackets.cfdp.conf import check_packet_length, PduConfig
 from spacepackets.cfdp.tlv import TlvTypes, FileStoreResponseTlv, EntityIdTlv
-from spacepackets.log import get_console_logger
 
 
 class DeliveryCode(enum.IntEnum):
@@ -57,10 +56,11 @@ class FinishedPdu(AbstractFileDirectiveBase):
             pdu_conf=pdu_conf,
             directive_param_field_len=1,
         )
-        self._fault_location = None
-        self._file_store_responses = []
-        self._might_have_fault_location = False
         self._params = params
+        if params.fault_location is not None:
+            self.fault_location = self._params.fault_location
+        if params.file_store_responses is not None:
+            self.file_store_responses = self._params.file_store_responses
 
     @property
     def directive_type(self) -> DirectiveType:
@@ -76,14 +76,15 @@ class FinishedPdu(AbstractFileDirectiveBase):
 
     @condition_code.setter
     def condition_code(self, condition_code: ConditionCode):
-        if condition_code in [
-            ConditionCode.NO_ERROR,
-            ConditionCode.UNSUPPORTED_CHECKSUM_TYPE,
-        ]:
-            self._might_have_fault_location = False
-        else:
-            self._might_have_fault_location = True
         self._params.condition_code = condition_code
+
+    @property
+    def delivery_code(self) -> DeliveryCode:
+        return self._params.delivery_code
+
+    @property
+    def delivery_status(self) -> FileDeliveryStatus:
+        return self._params.delivery_status
 
     @property
     def packet_len(self) -> int:
@@ -92,6 +93,15 @@ class FinishedPdu(AbstractFileDirectiveBase):
     @property
     def file_store_responses(self) -> List[FileStoreResponseTlv]:
         return self._params.file_store_responses
+
+    @property
+    def might_have_fault_location(self):
+        if self._params.condition_code in [
+            ConditionCode.NO_ERROR,
+            ConditionCode.UNSUPPORTED_CHECKSUM_TYPE,
+        ]:
+            return False
+        return True
 
     @file_store_responses.setter
     def file_store_responses(
@@ -163,9 +173,10 @@ class FinishedPdu(AbstractFileDirectiveBase):
             | (self._params.delivery_code << 2)
             | self._params.delivery_status
         )
-        for file_store_reponse in self.file_store_responses:
-            packet.extend(file_store_reponse.pack())
-        if self.fault_location is not None and self._might_have_fault_location:
+        if self.file_store_responses is not None:
+            for file_store_reponse in self.file_store_responses:
+                packet.extend(file_store_reponse.pack())
+        if self.fault_location is not None and self.might_have_fault_location:
             packet.extend(self.fault_location.pack())
         return packet
 
@@ -188,9 +199,13 @@ class FinishedPdu(AbstractFileDirectiveBase):
             raise ValueError
         current_idx = finished_pdu.pdu_file_directive.header_len
         first_param_byte = raw_packet[current_idx]
-        finished_pdu._params.condition_code = (first_param_byte & 0xF0) >> 4
-        finished_pdu._params.delivery_code = (first_param_byte & 0x04) >> 2
-        finished_pdu._params.file_delivery_status = first_param_byte & 0b11
+        params = FinishedParams(
+            condition_code=ConditionCode((first_param_byte & 0xF0) >> 4),
+            delivery_code=DeliveryCode((first_param_byte & 0x04) >> 2),
+            delivery_status=FileDeliveryStatus(first_param_byte & 0b11),
+        )
+        finished_pdu.condition_code = params.condition_code
+        finished_pdu._params = params
         current_idx += 1
         if len(raw_packet) > current_idx:
             finished_pdu._unpack_tlvs(
@@ -200,6 +215,8 @@ class FinishedPdu(AbstractFileDirectiveBase):
 
     def _unpack_tlvs(self, rest_of_packet: bytearray) -> int:
         current_idx = 0
+        fs_responses_list = []
+        fault_loc = None
         while True:
             next_tlv_code = rest_of_packet[current_idx]
             if next_tlv_code == TlvTypes.FILESTORE_RESPONSE:
@@ -207,28 +224,32 @@ class FinishedPdu(AbstractFileDirectiveBase):
                     raw_bytes=rest_of_packet[current_idx:]
                 )
                 current_idx += next_fs_response.packet_len
-                self._file_store_responses.append(next_fs_response)
+                fs_responses_list.append(next_fs_response)
             elif next_tlv_code == TlvTypes.ENTITY_ID:
-                if not self._might_have_fault_location:
-                    logger = get_console_logger()
-                    logger.warning(
+                if not self.might_have_fault_location:
+                    raise ValueError(
                         "Entity ID found in Finished PDU but wrong condition code"
                     )
-                    raise ValueError
-                self._fault_location = EntityIdTlv.unpack(
-                    raw_bytes=rest_of_packet[current_idx:]
-                )
-                current_idx += self._fault_location.packet_len
-                return current_idx
+                fault_loc = EntityIdTlv.unpack(raw_bytes=rest_of_packet[current_idx:])
+                current_idx += fault_loc.packet_len
             else:
-                logger = get_console_logger()
-                logger.warning("Invalid TLV ID in Finished PDU detected")
-                raise ValueError
+                raise ValueError("Invalid TLV ID in Finished PDU detected")
             if current_idx >= len(rest_of_packet):
                 break
+        if fs_responses_list is not None:
+            self.file_store_responses = fs_responses_list
+        if fault_loc is not None:
+            self.fault_location = fault_loc
+        return current_idx
 
     def __eq__(self, other: FinishedPdu):
-        pass
+        return (
+            self._params == other._params
+            and self.pdu_file_directive == other.pdu_file_directive
+        )
 
     def __repr__(self):
-        pass
+        return (
+            f"{self.__class__.__name__}(params={self._params!r}, "
+            f"pdu_conf={self.pdu_file_directive.pdu_conf!r})"
+        )
