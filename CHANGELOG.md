@@ -8,6 +8,20 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [unreleased]
 
+## [v0.13.0rc2] 12.07.2022
+
+- Improved documentation, first docstrings
+- Added more re-exports, for example for the `ccsds` module
+- Added several dunder method implementations, especially `__repr__`, `__str__` and `__eq__`
+- Improved CFDP packet stack API, several improvements derived from the implementation
+  of a CFDP handler using it
+- Added generic abstraction for CFDP File Data and File Directive PDUs in form of the
+  `AbstractPduBase` and `AbstractFileDirectiveBase`
+- Generic `UnsignedByteField` implementation. This is a data structure which is regularly
+  used for something like variable sized identifier fields. It provides a lot of boilerplate
+  code like common dunder implementations
+- Split up and improve test structure a bit
+
 ## [v0.13.0rc1] 01.07.2022
 
 - Update `pyproject.toml` file for full support, but still keep `setup.cfg` for now

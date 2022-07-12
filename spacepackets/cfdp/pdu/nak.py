@@ -2,17 +2,18 @@ from __future__ import annotations
 import struct
 from typing import List, Tuple, Optional
 
+from spacepackets.cfdp.pdu import PduHeader
 from spacepackets.cfdp.pdu.file_directive import (
-    IsFileDirective,
+    AbstractFileDirectiveBase,
     FileDirectivePduBase,
-    DirectiveCodes,
-    FileSize,
+    DirectiveType,
+    LargeFileFlag,
 )
 from spacepackets.cfdp.conf import PduConfig
 from spacepackets.log import get_console_logger
 
 
-class NakPdu(IsFileDirective):
+class NakPdu(AbstractFileDirectiveBase):
     """Encapsulates the NAK file directive PDU, see CCSDS 727.0-B-5 p.84"""
 
     def __init__(
@@ -31,13 +32,12 @@ class NakPdu(IsFileDirective):
             list element is the start offset and the second entry is the end offset
         """
         self.pdu_file_directive = FileDirectivePduBase(
-            directive_code=DirectiveCodes.ACK_PDU,
+            directive_code=DirectiveType.ACK_PDU,
             directive_param_field_len=8,
             pdu_conf=pdu_conf,
         )
         # Calling this will also update the directive parameter field length
         self.segment_requests = segment_requests
-        IsFileDirective.__init__(self, pdu_file_directive=self.pdu_file_directive)
         self.start_of_scope = start_of_scope
         self.end_of_scope = end_of_scope
 
@@ -49,20 +49,28 @@ class NakPdu(IsFileDirective):
         )
 
     @property
-    def file_size(self):
-        return self.pdu_file_directive.pdu_header.file_size
+    def directive_type(self) -> DirectiveType:
+        return DirectiveType.NAK_PDU
 
-    @file_size.setter
-    def file_size(self, file_size: FileSize):
+    @property
+    def pdu_header(self) -> PduHeader:
+        return self.pdu_file_directive.pdu_header
+
+    @property
+    def file_flag(self):
+        return self.pdu_file_directive.file_flag
+
+    @file_flag.setter
+    def file_flag(self, file_flag: LargeFileFlag):
         """Set the file size. This changes the length of the packet when packed as well
         which is handled by this function"""
-        self.pdu_file_directive.pdu_header.file_size = file_size
-        # GLOBAL_CONFIG might get converted to file size, so the value is updated here
-        updated_file_size = self.pdu_file_directive.pdu_header.file_size
-        if updated_file_size == FileSize.LARGE:
+        self.pdu_file_directive.file_flag = file_flag
+        if file_flag == LargeFileFlag.NORMAL:
+            directive_param_field_len = 8 + len(self._segment_requests) * 8
+        elif file_flag == LargeFileFlag.LARGE:
             directive_param_field_len = 16 + len(self._segment_requests) * 16
         else:
-            directive_param_field_len = 8 + len(self._segment_requests) * 8
+            raise ValueError("Invalid large file flag argument")
         self.pdu_file_directive.directive_param_field_len = directive_param_field_len
 
     @property
@@ -77,7 +85,7 @@ class NakPdu(IsFileDirective):
         if self._segment_requests is None:
             self._segment_requests = []
             return
-        is_large_file = self.pdu_file_directive.pdu_header.is_large_file()
+        is_large_file = self.pdu_file_directive.pdu_header.large_file_flag_set
         if not is_large_file:
             directive_param_field_len = 8 + len(self._segment_requests) * 8
         else:
@@ -90,7 +98,7 @@ class NakPdu(IsFileDirective):
         :raises ValueError: File sizes too large for non-large files
         """
         nak_pdu = self.pdu_file_directive.pack()
-        if not self.pdu_file_directive.pdu_header.is_large_file():
+        if not self.pdu_file_directive.pdu_header.large_file_flag_set:
             if (
                 self.start_of_scope > pow(2, 32) - 1
                 or self.end_of_scope > pow(2, 32) - 1
@@ -102,7 +110,7 @@ class NakPdu(IsFileDirective):
             nak_pdu.extend(struct.pack("!Q", self.start_of_scope))
             nak_pdu.extend(struct.pack("!Q", self.end_of_scope))
         for segment_request in self._segment_requests:
-            if not self.pdu_file_directive.pdu_header.is_large_file():
+            if not self.pdu_file_directive.pdu_header.large_file_flag_set:
                 if (
                     segment_request[0] > pow(2, 32) - 1
                     or segment_request[1] > pow(2, 32) - 1
@@ -120,7 +128,7 @@ class NakPdu(IsFileDirective):
         nak_pdu = cls.__empty()
         nak_pdu.pdu_file_directive = FileDirectivePduBase.unpack(raw_packet=raw_packet)
         current_idx = nak_pdu.pdu_file_directive.header_len
-        if not nak_pdu.pdu_file_directive.pdu_header.file_size:
+        if not nak_pdu.pdu_file_directive.pdu_header.large_file_flag_set:
             struct_arg_tuple = ("!I", 4)
         else:
             struct_arg_tuple = ("!Q", 8)
@@ -162,3 +170,18 @@ class NakPdu(IsFileDirective):
                 segment_requests.append(tuple_entry)
             nak_pdu.segment_requests = segment_requests
         return nak_pdu
+
+    def __eq__(self, other: NakPdu):
+        return (
+            self.pdu_file_directive == other.pdu_file_directive
+            and self._segment_requests == other._segment_requests
+            and self.start_of_scope == other.start_of_scope
+            and self.end_of_scope == other.end_of_scope
+        )
+
+    def __repr__(self):
+        return (
+            f"{self.__class__.__name__}(start_of_scope={self.start_of_scope!r}, "
+            f"end_of_scope={self.end_of_scope!r}, pdu_conf={self.pdu_file_directive.pdu_conf!r}"
+            f"segment_requests={self.segment_requests!r})"
+        )

@@ -2,14 +2,19 @@ from __future__ import annotations
 import struct
 from typing import Optional
 
-from spacepackets.cfdp.pdu.file_directive import FileDirectivePduBase, DirectiveCodes
+from spacepackets.cfdp.pdu import PduHeader
+from spacepackets.cfdp.pdu.file_directive import (
+    FileDirectivePduBase,
+    DirectiveType,
+    AbstractFileDirectiveBase,
+)
 from spacepackets.cfdp.defs import ConditionCode
 from spacepackets.cfdp.conf import PduConfig
 from spacepackets.cfdp.tlv import EntityIdTlv
 from spacepackets.cfdp.conf import check_packet_length
 
 
-class EofPdu:
+class EofPdu(AbstractFileDirectiveBase):
     """Encapsulates the EOF file directive PDU, see CCSDS 727.0-B-5 p.79"""
 
     def __init__(
@@ -33,14 +38,22 @@ class EofPdu:
             raise ValueError
         self.condition_code = condition_code
         self.file_checksum = file_checksum
-        self.file_size = file_size
-        self._fault_location = fault_location
         self.pdu_file_directive = FileDirectivePduBase(
-            directive_code=DirectiveCodes.EOF_PDU,
+            directive_code=DirectiveType.EOF_PDU,
             pdu_conf=pdu_conf,
             directive_param_field_len=0,
         )
+        self.file_size = file_size
+        self._fault_location = fault_location
         self._calculate_directive_param_field_len()
+
+    @property
+    def directive_type(self) -> DirectiveType:
+        return self.pdu_file_directive.directive_type
+
+    @property
+    def pdu_header(self) -> PduHeader:
+        return self.pdu_file_directive.pdu_header
 
     @property
     def packet_len(self) -> int:
@@ -57,7 +70,7 @@ class EofPdu:
 
     def _calculate_directive_param_field_len(self):
         directive_param_field_len = 9
-        if self.pdu_file_directive.pdu_header.is_large_file():
+        if self.pdu_file_directive.pdu_header.large_file_flag_set:
             directive_param_field_len = 13
         if self._fault_location is not None:
             directive_param_field_len += self._fault_location.packet_len
@@ -76,7 +89,7 @@ class EofPdu:
         eof_pdu = self.pdu_file_directive.pack()
         eof_pdu.append(self.condition_code << 4)
         eof_pdu.extend(self.file_checksum)
-        if self.pdu_file_directive.pdu_header.is_large_file():
+        if self.pdu_file_directive.pdu_header.large_file_flag_set:
             eof_pdu.extend(struct.pack("!Q", self.file_size))
         else:
             eof_pdu.extend(struct.pack("!I", self.file_size))
@@ -97,14 +110,14 @@ class EofPdu:
         if not check_packet_length(
             raw_packet_len=len(raw_packet), min_len=expected_min_len
         ):
-            raise ValueError
+            raise ValueError("Invalid packet length")
         current_idx = eof_pdu.pdu_file_directive.header_len
         eof_pdu.condition_code = raw_packet[current_idx] & 0xF0
         expected_min_len = current_idx + 5
         current_idx += 1
         eof_pdu.file_checksum = raw_packet[current_idx : current_idx + 4]
         current_idx += 4
-        current_idx, eof_pdu.file_size = eof_pdu.pdu_file_directive._parse_fss_field(
+        current_idx, eof_pdu.file_size = eof_pdu.pdu_file_directive.parse_fss_field(
             raw_packet=raw_packet, current_idx=current_idx
         )
         if len(raw_packet) > current_idx:
@@ -112,3 +125,20 @@ class EofPdu:
                 raw_bytes=raw_packet[current_idx:]
             )
         return eof_pdu
+
+    def __eq__(self, other: EofPdu):
+        return (
+            self.pdu_file_directive == other.pdu_file_directive
+            and self.condition_code == other.condition_code
+            and self.file_checksum == other.file_checksum
+            and self.file_size == other.file_size
+            and self._fault_location == other._fault_location
+        )
+
+    def __repr__(self):
+        return (
+            f"{self.__class__.__name__}(file_checksum={self.file_checksum!r},"
+            f"file_size={self.file_size!r}, pdu_conf={self.pdu_file_directive.pdu_conf},"
+            f"fault_location={self.fault_location!r},"
+            f"condition_code={self.condition_code})"
+        )

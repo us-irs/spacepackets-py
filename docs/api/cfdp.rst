@@ -17,10 +17,10 @@ spacepackets.cfdp.conf module
    :undoc-members:
    :show-inheritance:
 
-spacepackets.cfdp.defintions module
+spacepackets.cfdp.defs module
 -------------------------------------
 
-.. automodule:: spacepackets.cfdp.definitions
+.. automodule:: spacepackets.cfdp.defs
    :members:
    :undoc-members:
    :show-inheritance:

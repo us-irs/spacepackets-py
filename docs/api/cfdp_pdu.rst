@@ -23,11 +23,22 @@ Following File Data PDUs are available in the subpackage
 - File Data: :py:mod:`spacepackets.cfdp.pdu.file_data`
  
 Every PDU type has a common PDU header which can be found inside the
-:py:mod:`spacepackets.cfdp.pdu.header` module
+:py:mod:`spacepackets.cfdp.pdu.header` module.
+
+The helper module :py:mod:`spacepackets.cfdp.pdu.helper` contains components like the
+:py:class:`spacepackets.cfdp.pdu.helper.PduWrapper` class which stores PDUs as a generic base type
+and allows typed conversion in to the concrete PDU type
+
+spacepackets.cfdp.pdu.helper module
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. automodule:: spacepackets.cfdp.pdu.helper
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
 File Data Submodules
 ---------------------------
-
 
 spacepackets.cfdp.pdu.file_data module
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

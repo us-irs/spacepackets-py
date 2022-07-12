@@ -22,7 +22,6 @@ from spacepackets.util import get_printable_data_string, PrintFormats
 from spacepackets.ecss.conf import (
     get_default_tc_apid,
     PusVersion,
-    get_max_tc_packet_size,
     FETCH_GLOBAL_APID,
 )
 
@@ -100,9 +99,17 @@ class PusTcDataFieldHeader:
 
 
 class PusTelecommand:
-    """Class representation of a PUS telecommand. It can be used to pack a raw telecommand from
-    input parameters. The structure of a PUS telecommand is specified in ECSS-E-70-41A on p.42
-    and is also shown below (bottom)
+    """Class representation of a PUS telecommand. Can be converted to the raw byte representation
+    but also unpacked from a raw byte stream. Only PUS C telecommands are supported.
+
+    >>> ping_tc = PusTelecommand(service=17, subservice=1, seq_count=22, apid=0x01)
+    >>> ping_tc.service
+    17
+    >>> ping_tc.subservice
+    1
+    >>> ping_tc.pack().hex(sep=',')
+    '18,01,c0,16,00,06,2f,11,01,00,00,ab,62'
+
     """
 
     def __init__(
@@ -133,10 +140,6 @@ class PusTelecommand:
             apid = get_default_tc_apid()
         secondary_header_flag = 1
         logger = get_console_logger()
-        if len(app_data) > get_max_tc_packet_size():
-            logger.warning(
-                "Application data of PUS packet exceeds maximum allowed size"
-            )
         self.pus_tc_sec_header = PusTcDataFieldHeader(
             service=service,
             subservice=subservice,

@@ -112,20 +112,16 @@ class PusTmSecondaryHeader:
         current_idx = 0
         secondary_header.pus_version = (header_start[current_idx] & 0xF0) >> 4
         if secondary_header.pus_version != PusVersion.PUS_C:
-            logger = get_console_logger()
-            logger.warning(
+            raise ValueError(
                 f"PUS version field value {secondary_header.pus_version} "
-                f"found where PUS C {PusVersion.PUS_C} was expected!"
+                f"found where PUS C {PusVersion.PUS_C} was expected"
             )
-            raise ValueError
         secondary_header.spacecraft_time_ref = header_start[current_idx] & 0x0F
         if len(header_start) < secondary_header.header_size:
-            logger = get_console_logger()
-            logger.warning(
+            raise ValueError(
                 f"Invalid PUS data field header size, "
                 f"less than expected {secondary_header.header_size} bytes"
             )
-            raise ValueError
         current_idx += 1
         secondary_header.service = header_start[current_idx]
         current_idx += 1
@@ -172,7 +168,18 @@ class PusTelemetry:
 
     Can be used to generate TM packets using a high level interface with the default constructor,
     or to deserialize TM packets from a raw byte stream using the :py:meth:`unpack` method.
-    This implementation only supports PUS C
+    This implementation only supports PUS C.
+
+    The following doc example cuts off the timestamp (7 byte CDS Short) and the CRC16 from the ping
+    packet because those change regularly.
+
+    >>> ping_tm = PusTelemetry(service=17, subservice=2, seq_count=5, apid=0x01)
+    >>> ping_tm.service
+    17
+    >>> ping_tm.subservice
+    2
+    >>> ping_tm.pack()[:-9].hex(sep=',')
+    '08,01,c0,05,00,0f,20,11,02,00,00,00,00'
     """
 
     CDS_SHORT_SIZE = 7
@@ -260,13 +267,9 @@ class PusTelemetry:
         :param raw_telemetry:
         """
         if raw_telemetry is None:
-            logger = get_console_logger()
-            logger.warning("Given byte stream invalid!")
-            raise ValueError
+            raise ValueError("Given byte stream invalid")
         elif len(raw_telemetry) == 0:
-            logger = get_console_logger()
-            logger.warning("Given byte stream is empty")
-            raise ValueError
+            raise ValueError("Given byte stream is empty")
         pus_tm = cls.__empty()
         pus_tm._valid = False
         pus_tm.sp_header = SpacePacketHeader.unpack(space_packet_raw=raw_telemetry)
@@ -287,9 +290,7 @@ class PusTelemetry:
             expected_packet_len
             < pus_tm.pus_tm_sec_header.header_size + SPACE_PACKET_HEADER_SIZE
         ):
-            logger = get_console_logger()
-            logger.warning("Passed packet too short!")
-            raise ValueError
+            raise ValueError("Passed packet too short")
         if pus_tm.packet_len != len(raw_telemetry):
             logger = get_console_logger()
             logger.warning(

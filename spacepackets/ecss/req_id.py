@@ -7,6 +7,21 @@ from spacepackets.ecss.tc import PusTelecommand
 
 
 class RequestId:
+    """The request ID which is used to identify PUS telecommands. The request ID consists of
+    the first two bytes of the CCSDS primary header. It is primarily used to verify the execution
+    of sent telecommands.
+
+    >>> from spacepackets.ccsds import PacketTypes, SequenceFlags
+    >>> packet_id = PacketId(ptype=PacketTypes.TC, sec_header_flag=False, apid=0x22)
+    >>> psc = PacketSeqCtrl(seq_flags=SequenceFlags.UNSEGMENTED, seq_count=17)
+    >>> req_id = RequestId(packet_id, psc)
+    >>> req_id
+    RequestId(tc_packet_id=PacketId(ptype=<PacketTypes.TC: 1>, sec_header_flag=False, apid=34), \
+tc_psc=PacketSeqCtrl(seq_flags=<SequenceFlags.UNSEGMENTED: 3>, seq_count=17), ccsds_version=0)
+    >>> struct.pack("!I", req_id.as_u32()).hex(sep=",")
+    '10,22,c0,11'
+    """
+
     def __init__(
         self, tc_packet_id: PacketId, tc_psc: PacketSeqCtrl, ccsds_version: int = 0b000
     ):

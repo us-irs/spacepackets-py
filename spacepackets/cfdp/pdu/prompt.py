@@ -1,9 +1,9 @@
 from __future__ import annotations
 import enum
 
-from spacepackets.cfdp.pdu.file_directive import FileDirectivePduBase, DirectiveCodes
+from spacepackets.cfdp.pdu.file_directive import FileDirectivePduBase, DirectiveType
 from spacepackets.cfdp.conf import PduConfig
-from spacepackets.cfdp.pdu import IsFileDirective
+from spacepackets.cfdp.pdu import AbstractFileDirectiveBase, PduHeader
 from spacepackets.log import get_console_logger
 
 
@@ -12,22 +12,29 @@ class ResponseRequired(enum.IntEnum):
     KEEP_ALIVE = 1
 
 
-class PromptPdu(IsFileDirective):
+class PromptPdu(AbstractFileDirectiveBase):
     """Encapsulates the Prompt file directive PDU, see CCSDS 727.0-B-5 p.84"""
 
-    def __init__(self, reponse_required: ResponseRequired, pdu_conf: PduConfig):
+    def __init__(self, response_required: ResponseRequired, pdu_conf: PduConfig):
         self.pdu_file_directive = FileDirectivePduBase(
-            directive_code=DirectiveCodes.PROMPT_PDU,
+            directive_code=DirectiveType.PROMPT_PDU,
             pdu_conf=pdu_conf,
             directive_param_field_len=1,
         )
-        IsFileDirective.__init__(self, pdu_file_directive=self.pdu_file_directive)
-        self.response_required = reponse_required
+        self.response_required = response_required
+
+    @property
+    def directive_type(self) -> DirectiveType:
+        return self.pdu_file_directive.directive_type
+
+    @property
+    def pdu_header(self) -> PduHeader:
+        return self.pdu_file_directive.pdu_header
 
     @classmethod
     def __empty(cls) -> PromptPdu:
         empty_conf = PduConfig.empty()
-        return cls(reponse_required=ResponseRequired.NAK, pdu_conf=empty_conf)
+        return cls(response_required=ResponseRequired.NAK, pdu_conf=empty_conf)
 
     def pack(self) -> bytearray:
         prompt_pdu = self.pdu_file_directive.pack()
@@ -49,3 +56,9 @@ class PromptPdu(IsFileDirective):
             (raw_packet[current_idx] & 0x80) >> 7
         )
         return prompt_pdu
+
+    def __eq__(self, other: PromptPdu):
+        return (
+            self.pdu_file_directive == other.pdu_file_directive
+            and self.response_required == other.response_required
+        )

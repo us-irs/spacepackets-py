@@ -1,7 +1,12 @@
 from __future__ import annotations
 import enum
 
-from spacepackets.cfdp.pdu.file_directive import FileDirectivePduBase, DirectiveCodes
+from spacepackets.cfdp.pdu import PduHeader
+from spacepackets.cfdp.pdu.file_directive import (
+    FileDirectivePduBase,
+    DirectiveType,
+    AbstractFileDirectiveBase,
+)
 from spacepackets.cfdp.defs import ConditionCode
 from spacepackets.cfdp.conf import PduConfig
 
@@ -15,12 +20,12 @@ class TransactionStatus(enum.IntEnum):
     UNRECOGNIZED = 0b11
 
 
-class AckPdu:
+class AckPdu(AbstractFileDirectiveBase):
     """Encapsulates the ACK file directive PDU, see CCSDS 727.0-B-5 p.81"""
 
     def __init__(
         self,
-        directive_code_of_acked_pdu: DirectiveCodes,
+        directive_code_of_acked_pdu: DirectiveType,
         condition_code_of_acked_pdu: ConditionCode,
         transaction_status: TransactionStatus,
         pdu_conf: PduConfig,
@@ -34,18 +39,18 @@ class AckPdu:
         :raises ValueError: Directive code invalid. Only EOF and Finished PDUs can be acknowledged
         """
         self.pdu_file_directive = FileDirectivePduBase(
-            directive_code=DirectiveCodes.ACK_PDU,
+            directive_code=DirectiveType.ACK_PDU,
             directive_param_field_len=2,
             pdu_conf=pdu_conf,
         )
         if directive_code_of_acked_pdu not in [
-            DirectiveCodes.FINISHED_PDU,
-            DirectiveCodes.EOF_PDU,
+            DirectiveType.FINISHED_PDU,
+            DirectiveType.EOF_PDU,
         ]:
             raise ValueError
         self.directive_code_of_acked_pdu = directive_code_of_acked_pdu
         self.directive_subtype_code = 0
-        if self.directive_code_of_acked_pdu == DirectiveCodes.FINISHED_PDU:
+        if self.directive_code_of_acked_pdu == DirectiveType.FINISHED_PDU:
             self.directive_subtype_code = 0b0001
         else:
             self.directive_subtype_code = 0b0000
@@ -53,15 +58,28 @@ class AckPdu:
         self.transaction_status = transaction_status
 
     @property
-    def packet_len(self) -> int:
-        return self.pdu_file_directive.packet_len
+    def directive_type(self) -> DirectiveType:
+        return DirectiveType.ACK_PDU
+
+    @property
+    def pdu_header(self) -> PduHeader:
+        return self.pdu_file_directive.pdu_header
+
+    def __eq__(self, other: AckPdu):
+        return (
+            self.pdu_file_directive == other.pdu_file_directive
+            and self.directive_code_of_acked_pdu == other.directive_code_of_acked_pdu
+            and self.directive_subtype_code == other.directive_subtype_code
+            and self.condition_code_of_acked_pdu == other.condition_code_of_acked_pdu
+            and self.transaction_status == other.transaction_status
+        )
 
     @classmethod
     def __empty(cls) -> AckPdu:
         empty_conf = PduConfig.empty()
         return cls(
             # Still set valid directive code, otherwise ctor will explode
-            directive_code_of_acked_pdu=DirectiveCodes.FINISHED_PDU,
+            directive_code_of_acked_pdu=DirectiveType.FINISHED_PDU,
             condition_code_of_acked_pdu=ConditionCode.NO_ERROR,
             transaction_status=TransactionStatus.UNDEFINED,
             pdu_conf=empty_conf,

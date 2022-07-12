@@ -4,12 +4,12 @@ from spacepackets.cfdp.pdu.file_data import (
     SegmentMetadataFlag,
     RecordContinuationState,
 )
-from spacepackets.cfdp.conf import PduConfig, FileSize
+from spacepackets.cfdp.conf import PduConfig, LargeFileFlag
 
 
 class TestFileDataPdu(TestCase):
     def test_file_data_pdu(self):
-        pdu_conf = PduConfig.empty()
+        pdu_conf = PduConfig.default()
         file_data = "hello world"
         file_data_bytes = file_data.encode()
         file_data_pdu = FileDataPdu(
@@ -67,7 +67,7 @@ class TestFileDataPdu(TestCase):
             )
             invalid_pdu.pack()
 
-        pdu_conf.file_size = FileSize.LARGE
+        pdu_conf.file_flag = LargeFileFlag.LARGE
 
         fd_pdu_large_offset = FileDataPdu(
             pdu_conf=pdu_conf,

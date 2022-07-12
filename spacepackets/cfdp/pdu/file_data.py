@@ -1,12 +1,14 @@
 from __future__ import annotations
 import enum
-from typing import Union
+from typing import Union, Optional
 import struct
 
+from spacepackets.cfdp import LargeFileFlag
 from spacepackets.cfdp.pdu.file_directive import SegmentMetadataFlag, PduType
 from spacepackets.cfdp.conf import PduConfig
-from spacepackets.cfdp.pdu.header import PduHeader
+from spacepackets.cfdp.pdu.header import PduHeader, AbstractPduBase
 from spacepackets.log import get_console_logger
+from spacepackets.util import UnsignedByteField
 
 
 class RecordContinuationState(enum.IntEnum):
@@ -23,22 +25,29 @@ class RecordContinuationState(enum.IntEnum):
     START_AND_END = 0b11
 
 
-class FileDataPdu:
+class FileDataPdu(AbstractPduBase):
     def __init__(
         self,
         pdu_conf: PduConfig,
         file_data: bytes,
         offset: int,
-        segment_metadata_flag: Union[SegmentMetadataFlag, bool],
+        segment_metadata_flag: Union[
+            SegmentMetadataFlag, bool
+        ] = SegmentMetadataFlag.NOT_PRESENT,
         # These fields will only be present if the segment metadata flag is set
-        record_continuation_state: RecordContinuationState = RecordContinuationState.START_AND_END,
-        segment_metadata: bytes = bytes(),
+        record_continuation_state: Optional[RecordContinuationState] = None,
+        segment_metadata: Optional[bytes] = None,
     ):
-        self.record_continuation_state = record_continuation_state
         if isinstance(segment_metadata_flag, bool):
             self.segment_metadata_flag = SegmentMetadataFlag(segment_metadata_flag)
         else:
             self.segment_metadata_flag = segment_metadata_flag
+        if (
+            self.segment_metadata_flag == SegmentMetadataFlag.PRESENT
+            and record_continuation_state is None
+        ):
+            raise ValueError("Record continuation state must be specified")
+        self.record_continuation_state = record_continuation_state
         self._segment_metadata = segment_metadata
         self.offset = offset
         self._file_data = file_data
@@ -63,6 +72,38 @@ class FileDataPdu:
         )
 
     @property
+    def header_len(self) -> int:
+        return self.pdu_header.header_len
+
+    @property
+    def pdu_data_field_len(self) -> int:
+        return self.pdu_header.pdu_data_field_len
+
+    @property
+    def pdu_type(self) -> PduType:
+        return self.pdu_header.pdu_type
+
+    @property
+    def file_flag(self) -> LargeFileFlag:
+        return self.pdu_header.file_flag
+
+    @property
+    def source_entity_id(self) -> UnsignedByteField:
+        return self.pdu_header.source_entity_id
+
+    @property
+    def dest_entity_id(self) -> UnsignedByteField:
+        return self.pdu_header.dest_entity_id
+
+    @property
+    def crc_flag(self):
+        return self.pdu_header.crc_flag
+
+    @property
+    def has_segment_metadata(self) -> bool:
+        return self.segment_metadata_flag == SegmentMetadataFlag.PRESENT
+
+    @property
     def segment_metadata(self):
         return self._segment_metadata
 
@@ -84,7 +125,7 @@ class FileDataPdu:
         pdu_data_field_len = 0
         if self.segment_metadata_flag:
             pdu_data_field_len = 1 + len(self._segment_metadata)
-        if self.pdu_header.is_large_file():
+        if self.pdu_header.large_file_flag_set:
             pdu_data_field_len += 8
         else:
             pdu_data_field_len += 4
@@ -104,7 +145,7 @@ class FileDataPdu:
             file_data_pdu.append(self.record_continuation_state << 6 | len_metadata)
             if len_metadata > 0:
                 file_data_pdu.extend(self._segment_metadata)
-        if not self.pdu_header.is_large_file():
+        if not self.pdu_header.large_file_flag_set:
             file_data_pdu.extend(struct.pack("!I", self.offset))
         else:
             file_data_pdu.extend(struct.pack("!Q", self.offset))
@@ -132,7 +173,7 @@ class FileDataPdu:
                 current_idx : current_idx + file_data_packet.segment_metadata_length
             ]
             current_idx += file_data_packet.segment_metadata_length
-        if not file_data_packet.pdu_header.is_large_file():
+        if not file_data_packet.pdu_header.large_file_flag_set:
             struct_arg_tuple = ("!I", 4)
         else:
             struct_arg_tuple = ("!Q", 8)
@@ -151,4 +192,13 @@ class FileDataPdu:
 
     @property
     def packet_len(self):
-        return self.pdu_header.pdu_len
+        return self.pdu_header.packet_len
+
+    def __eq__(self, other: FileDataPdu):
+        return (
+            self.pdu_header == other.pdu_header
+            and self.segment_metadata == other.segment_metadata
+            and self.record_continuation_state == other.record_continuation_state
+            and self.offset == other.offset
+            and self._file_data == other._file_data
+        )
