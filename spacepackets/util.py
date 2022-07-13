@@ -145,7 +145,7 @@ class UnsignedByteField:
                 self.byte_len, self.value
             )
         elif isinstance(val, bytes) or isinstance(val, bytearray):
-            self._val, self._val_as_bytes = self._verify_bytes_value(val)
+            self._val, self._val_as_bytes = self._verify_bytes_value(bytes(val))
 
     @property
     def as_bytes(self) -> bytes:
