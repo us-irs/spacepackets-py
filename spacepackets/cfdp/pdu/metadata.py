@@ -46,10 +46,7 @@ class MetadataPdu(AbstractFileDirectiveBase):
         else:
             dest_file_name_as_bytes = params.dest_file_name.encode("utf-8")
             self._dest_file_name_lv = CfdpLv(value=dest_file_name_as_bytes)
-        if options is None:
-            self._options = []
-        else:
-            self._options = options
+        self._options = options
         self.pdu_conf = pdu_conf
         self.pdu_file_directive = FileDirectivePduBase(
             directive_code=DirectiveType.METADATA_PDU,
@@ -87,13 +84,11 @@ class MetadataPdu(AbstractFileDirectiveBase):
         )
 
     @property
-    def options(self):
+    def options(self) -> Optional[TlvList]:
         return self._options
 
     @options.setter
     def options(self, options: Optional[List[CfdpTlv]]):
-        if options is None:
-            options = []
         self._options = options
         self._calculate_directive_field_len()
 
@@ -110,8 +105,9 @@ class MetadataPdu(AbstractFileDirectiveBase):
             directive_param_field_len = 9
         directive_param_field_len += self._source_file_name_lv.packet_len
         directive_param_field_len += self._dest_file_name_lv.packet_len
-        for option in self._options:
-            directive_param_field_len += option.packet_len
+        if self._options is not None:
+            for option in self._options:
+                directive_param_field_len += option.packet_len
         self.pdu_file_directive.directive_param_field_len = directive_param_field_len
 
     @property
@@ -155,8 +151,9 @@ class MetadataPdu(AbstractFileDirectiveBase):
             packet.extend(struct.pack("!I", self.params.file_size))
         packet.extend(self._source_file_name_lv.pack())
         packet.extend(self._dest_file_name_lv.pack())
-        for option in self.options:
-            packet.extend(option.pack())
+        if self._options is not None:
+            for option in self.options:
+                packet.extend(option.pack())
         return packet
 
     @classmethod

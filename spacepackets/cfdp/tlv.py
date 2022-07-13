@@ -144,7 +144,7 @@ class CfdpTlv:
         :raise ValueError: Length invalid or value length not equal to specified length
         """
         self.length = len(value)
-        if self.length > 255:
+        if self.length > pow(2, 8) - 1:
             raise ValueError("Length larger than allowed 255 bytes")
         self.tlv_type = tlv_type
         self.value = value
@@ -276,7 +276,7 @@ class FaultHandlerOverrideTlv(ConcreteTlvBase):
     def from_tlv(cls, cfdp_tlv: CfdpTlv) -> FaultHandlerOverrideTlv:
         if cfdp_tlv.tlv_type != TlvTypes.FAULT_HANDLER:
             raise ValueError
-        # This ensures that all fields are set properly
+        # TODO: Not most efficient, but ensures that all fields are set properly
         fault_handler_tlv = FaultHandlerOverrideTlv.unpack(raw_bytes=cfdp_tlv.pack())
         return fault_handler_tlv
 
@@ -460,7 +460,8 @@ class FileStoreRequestTlv(FileStoreRequestBase, ConcreteTlvBase):
     def from_tlv(cls, cfdp_tlv: CfdpTlv) -> FileStoreRequestTlv:
         if cfdp_tlv.tlv_type != TlvTypes.FILESTORE_REQUEST:
             raise ValueError
-        # This ensures that all fields are set properly, although its not the most efficient way
+        # TODO: This ensures that all fields are set properly, although its not the most efficient
+        #       way
         fault_handler_tlv = FileStoreRequestTlv.unpack(raw_bytes=cfdp_tlv.pack())
         return fault_handler_tlv
 
@@ -529,7 +530,8 @@ class FileStoreResponseTlv(FileStoreRequestBase, ConcreteTlvBase):
     def from_tlv(cls, cfdp_tlv: CfdpTlv) -> FileStoreResponseTlv:
         if cfdp_tlv.tlv_type != TlvTypes.FILESTORE_RESPONSE:
             raise ValueError
-        # This ensures that all fields are set properly, although its not the most efficient way
+        # TODO: This ensures that all fields are set properly, although its not the most efficient
+        #       way
         file_store_response_tlv = FileStoreResponseTlv.unpack(raw_bytes=cfdp_tlv.pack())
         return file_store_response_tlv
 
@@ -538,7 +540,7 @@ TlvList = List[Union[CfdpTlv, ConcreteTlvBase]]
 
 
 class TlvHolder:
-    def __init__(self, tlv_base: Optional[ConcreteTlvBase]):
+    def __init__(self, tlv_base: Optional[Union[CfdpTlv, ConcreteTlvBase]]):
         self.base = tlv_base
 
     @property
@@ -555,19 +557,43 @@ class TlvHolder:
         return cast(obj_type, self.base)
 
     def to_fs_request(self) -> FileStoreRequestTlv:
-        return self.__cast_internally(FileStoreRequestTlv, TlvTypes.FILESTORE_REQUEST)
+        if isinstance(self.base, ConcreteTlvBase):
+            return self.__cast_internally(
+                FileStoreRequestTlv, TlvTypes.FILESTORE_REQUEST
+            )
+        elif isinstance(self.base, CfdpTlv):
+            return FileStoreRequestTlv.from_tlv(self.base)
 
     def to_fs_response(self) -> FileStoreResponseTlv:
-        return self.__cast_internally(FileStoreResponseTlv, TlvTypes.FILESTORE_RESPONSE)
+        if isinstance(self.base, ConcreteTlvBase):
+            return self.__cast_internally(
+                FileStoreResponseTlv, TlvTypes.FILESTORE_RESPONSE
+            )
+        elif isinstance(self.base, CfdpTlv):
+            return FileStoreResponseTlv.from_tlv(self.base)
 
     def to_msg_to_user(self) -> MessageToUserTlv:
-        return self.__cast_internally(MessageToUserTlv, TlvTypes.MESSAGE_TO_USER)
+        if isinstance(self.base, ConcreteTlvBase):
+            return self.__cast_internally(MessageToUserTlv, TlvTypes.MESSAGE_TO_USER)
+        elif isinstance(self.base, CfdpTlv):
+            return MessageToUserTlv.from_tlv(self.base)
 
     def to_fault_handler_override(self) -> FaultHandlerOverrideTlv:
-        return self.__cast_internally(FaultHandlerOverrideTlv, TlvTypes.FAULT_HANDLER)
+        if isinstance(self.base, ConcreteTlvBase):
+            return self.__cast_internally(
+                FaultHandlerOverrideTlv, TlvTypes.FAULT_HANDLER
+            )
+        elif isinstance(self.base, CfdpTlv):
+            return FaultHandlerOverrideTlv.from_tlv(self.base)
 
     def to_flow_label(self) -> FlowLabelTlv:
-        return self.__cast_internally(FlowLabelTlv, TlvTypes.FLOW_LABEL)
+        if isinstance(self.base, ConcreteTlvBase):
+            return self.__cast_internally(FlowLabelTlv, TlvTypes.FLOW_LABEL)
+        elif isinstance(self.base, CfdpTlv):
+            return FlowLabelTlv.from_tlv(self.base)
 
     def to_entity_id(self) -> EntityIdTlv:
-        return self.__cast_internally(EntityIdTlv, TlvTypes.ENTITY_ID)
+        if isinstance(self.base, ConcreteTlvBase):
+            return self.__cast_internally(EntityIdTlv, TlvTypes.ENTITY_ID)
+        elif isinstance(self.base, CfdpTlv):
+            return EntityIdTlv.from_tlv(self.base)
