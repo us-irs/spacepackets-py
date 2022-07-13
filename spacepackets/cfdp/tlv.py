@@ -138,7 +138,6 @@ class TlvTypeMissmatch(Exception):
 
 
 class AbstractTlvBase(ABC):
-
     @abstractmethod
     def pack(self) -> bytearray:
         pass
@@ -153,6 +152,14 @@ class AbstractTlvBase(ABC):
     def tlv_type(self) -> TlvTypes:
         pass
 
+    @property
+    @abstractmethod
+    def value(self) -> bytes:
+        pass
+
+    def __eq__(self, other: AbstractTlvBase):
+        return self.tlv_type == other.tlv_type and self.value == other.value
+
     def check_type(self, tlv_type: TlvTypes):
         if self.tlv_type != tlv_type:
             raise TlvTypeMissmatch(found=tlv_type, expected=self.tlv_type)
@@ -162,6 +169,7 @@ class CfdpTlv(AbstractTlvBase):
     """Encapsulates the CFDP TLV (type-length-value) format.
     For more information, refer to CCSDS 727.0-B-5 p.77
     """
+
     MINIMAL_LEN = 2
 
     def __init__(self, tlv_type: TlvTypes, value: bytes):
@@ -175,7 +183,7 @@ class CfdpTlv(AbstractTlvBase):
         if self.length > pow(2, 8) - 1:
             raise ValueError("Length larger than allowed 255 bytes")
         self._tlv_type = tlv_type
-        self.value = value
+        self._value = value
 
     @property
     def tlv_type(self):
@@ -185,11 +193,15 @@ class CfdpTlv(AbstractTlvBase):
     def tlv_type(self, tlv_type: TlvTypes):
         self._tlv_type = tlv_type
 
+    @property
+    def value(self) -> bytes:
+        return self._value
+
     def pack(self) -> bytearray:
         tlv_data = bytearray()
         tlv_data.append(self.tlv_type)
         tlv_data.append(self.length)
-        tlv_data.extend(self.value)
+        tlv_data.extend(self._value)
         return tlv_data
 
     @classmethod
@@ -219,15 +231,15 @@ class CfdpTlv(AbstractTlvBase):
 
     @property
     def packet_len(self) -> int:
-        return self.MINIMAL_LEN + len(self.value)
+        return self.MINIMAL_LEN + len(self._value)
 
     def __repr__(self):
         return f"{self.__class__.__name__}(tlv_type={self.tlv_type!r}, value={self.value!r})"
 
     def __str__(self):
         return (
-            f"CFDP TLV with type {self.tlv_type} and data 0x[{self.value.hex(sep=',')}] with "
-            f"length {len(self.value)}"
+            f"CFDP TLV with type {self.tlv_type} and data 0x[{self._value.hex(sep=',')}] with "
+            f"length {len(self._value)}"
         )
 
 
@@ -247,6 +259,10 @@ class EntityIdTlv(AbstractTlvBase):
     @property
     def tlv_type(self) -> TlvTypes:
         return EntityIdTlv.TLV_TYPE
+
+    @property
+    def value(self) -> bytes:
+        return self.tlv.value
 
     @classmethod
     def __empty(cls) -> EntityIdTlv:
@@ -280,7 +296,7 @@ class FaultHandlerOverrideTlv(AbstractTlvBase):
         self.handler_code = handler_code
         self.tlv = CfdpTlv(
             tlv_type=self.tlv_type,
-            value=bytes([self.condition_code << 4 | self.handler_code])
+            value=bytes([self.condition_code << 4 | self.handler_code]),
         )
 
     def pack(self) -> bytearray:
@@ -289,6 +305,10 @@ class FaultHandlerOverrideTlv(AbstractTlvBase):
     @property
     def packet_len(self):
         return self.tlv.packet_len
+
+    @property
+    def value(self) -> bytes:
+        return self.tlv.value
 
     @property
     def tlv_type(self) -> TlvTypes:
@@ -316,7 +336,7 @@ class FaultHandlerOverrideTlv(AbstractTlvBase):
     def from_tlv(cls, cfdp_tlv: CfdpTlv) -> FaultHandlerOverrideTlv:
         if cfdp_tlv.tlv_type != cls.TLV_TYPE:
             raise TlvTypeMissmatch(cfdp_tlv.tlv_type, cls.TLV_TYPE)
-        fault_handler_tlv = FaultHandlerOverrideTlv.__empty()
+        fault_handler_tlv = cls.__empty()
         fault_handler_tlv.tlv = cfdp_tlv
         fault_handler_tlv.condition_code = (cfdp_tlv.value[0] >> 4) & 0x0F
         fault_handler_tlv.handler_code = cfdp_tlv.value[0] & 0x0F
@@ -341,6 +361,10 @@ class MessageToUserTlv(AbstractTlvBase):
     @property
     def packet_len(self):
         return self.tlv.packet_len
+
+    @property
+    def value(self) -> bytes:
+        return self.tlv.value
 
     @property
     def tlv_type(self) -> TlvTypes:
@@ -387,6 +411,10 @@ class FlowLabelTlv(AbstractTlvBase):
     @property
     def packet_len(self):
         return self.tlv.packet_len
+
+    @property
+    def value(self) -> bytes:
+        return self.tlv.value
 
     @property
     def tlv_type(self) -> TlvTypes:
@@ -458,7 +486,7 @@ class FileStoreRequestBase:
 
     @staticmethod
     def _common_unpacker(
-            raw_bytes: bytes
+        raw_bytes: bytes,
     ) -> Tuple[FilestoreActionCode, str, int, int, Optional[str]]:
         """Does only unpack common fields, does not unpack the filestore message of a Filestore
         Response package
@@ -525,6 +553,11 @@ class FileStoreRequestTlv(FileStoreRequestBase, AbstractTlvBase):
     @property
     def packet_len(self):
         return self.common_packet_len()
+
+    @property
+    def value(self) -> bytes:
+        self.generate_tlv()
+        return self.tlv.value
 
     @property
     def tlv_type(self) -> TlvTypes:
@@ -595,6 +628,11 @@ class FileStoreResponseTlv(FileStoreRequestBase, AbstractTlvBase):
     def pack(self) -> bytearray:
         self.generate_tlv()
         return self.tlv.pack()
+
+    @property
+    def value(self) -> bytes:
+        self.generate_tlv()
+        return self.tlv.value
 
     @property
     def packet_len(self):
@@ -681,16 +719,12 @@ class TlvHolder:
         # Check this type first. It's a concrete type where we can not just use a simple cast
         if isinstance(self.base, CfdpTlv):
             return FileStoreRequestTlv.from_tlv(self.base)
-        return self.__cast_internally(
-            FileStoreRequestTlv, TlvTypes.FILESTORE_REQUEST
-        )
+        return self.__cast_internally(FileStoreRequestTlv, TlvTypes.FILESTORE_REQUEST)
 
     def to_fs_response(self) -> FileStoreResponseTlv:
         if isinstance(self.base, CfdpTlv):
             return FileStoreResponseTlv.from_tlv(self.base)
-        return self.__cast_internally(
-            FileStoreResponseTlv, TlvTypes.FILESTORE_RESPONSE
-        )
+        return self.__cast_internally(FileStoreResponseTlv, TlvTypes.FILESTORE_RESPONSE)
 
     def to_msg_to_user(self) -> MessageToUserTlv:
         if isinstance(self.base, CfdpTlv):
@@ -700,9 +734,7 @@ class TlvHolder:
     def to_fault_handler_override(self) -> FaultHandlerOverrideTlv:
         if isinstance(self.base, CfdpTlv):
             return FaultHandlerOverrideTlv.from_tlv(self.base)
-        return self.__cast_internally(
-            FaultHandlerOverrideTlv, TlvTypes.FAULT_HANDLER
-        )
+        return self.__cast_internally(FaultHandlerOverrideTlv, TlvTypes.FAULT_HANDLER)
 
     def to_flow_label(self) -> FlowLabelTlv:
         if isinstance(self.base, CfdpTlv):
