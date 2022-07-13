@@ -193,6 +193,9 @@ class UnsignedByteField:
         """Makes all unsigned byte fields usable as dictionary keys"""
         return hash((self.value, self.byte_len))
 
+    def default_string(self, prefix):
+        return f"{prefix}({self.value}, 0x[{self.as_bytes.hex(sep=',')}])"
+
 
 class ByteFieldEmpty(UnsignedByteField):
     def __init__(self, val: int = 0):
@@ -213,6 +216,9 @@ class ByteFieldU8(UnsignedByteField):
             )
         return cls(stream[0])
 
+    def __str__(self):
+        return self.default_string("U8")
+
 
 class ByteFieldU16(UnsignedByteField):
     """Concrete variant of a variable length byte field which has a length of 2 bytes"""
@@ -232,6 +238,9 @@ class ByteFieldU16(UnsignedByteField):
             ]
         )
 
+    def __str__(self):
+        return self.default_string("U16")
+
 
 class ByteFieldU32(UnsignedByteField):
     """Concrete variant of a variable length byte field which has a length of 4 bytes"""
@@ -250,6 +259,9 @@ class ByteFieldU32(UnsignedByteField):
                 0
             ]
         )
+
+    def __str__(self):
+        return self.default_string("U32")
 
 
 class ByteFieldGenerator:

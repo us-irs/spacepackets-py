@@ -40,8 +40,6 @@ class FilestoreResponseStatusCode(enum.IntEnum):
 
     SUCCESS = 0b0000
     NOT_PERFORMED = 0b1111
-    # Offsets past the size of the file are not supported for the copy procedure for now
-    APPEND_FROM_DATA_INVALID_OFFSET = 0b0001
     APPEND_FROM_DATA_FILE_NOT_EXISTS = 0b0010
 
     CREATE_SUCCESS = FilestoreActionCode.CREATE_FILE_SNM << 4 | SUCCESS

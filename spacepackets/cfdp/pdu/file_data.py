@@ -35,7 +35,7 @@ class FileDataPdu(AbstractPduBase):
             SegmentMetadataFlag, bool
         ] = SegmentMetadataFlag.NOT_PRESENT,
         # These fields will only be present if the segment metadata flag is set
-        record_continuation_state: Optional[RecordContinuationState] = None,
+        record_cont_state: Optional[RecordContinuationState] = None,
         segment_metadata: Optional[bytes] = None,
     ):
         if isinstance(segment_metadata_flag, bool):
@@ -44,10 +44,10 @@ class FileDataPdu(AbstractPduBase):
             self.segment_metadata_flag = segment_metadata_flag
         if (
             self.segment_metadata_flag == SegmentMetadataFlag.PRESENT
-            and record_continuation_state is None
+            and record_cont_state is None
         ):
             raise ValueError("Record continuation state must be specified")
-        self.record_continuation_state = record_continuation_state
+        self.record_continuation_state = record_cont_state
         self._segment_metadata = segment_metadata
         self.offset = offset
         self._file_data = file_data
@@ -66,7 +66,7 @@ class FileDataPdu(AbstractPduBase):
             file_data=bytes(),
             segment_metadata_flag=SegmentMetadataFlag.NOT_PRESENT,
             segment_metadata=bytes(),
-            record_continuation_state=RecordContinuationState.START_AND_END,
+            record_cont_state=RecordContinuationState.START_AND_END,
             offset=0,
             pdu_conf=empty_conf,
         )

@@ -38,7 +38,7 @@ class TestFileDataPdu(TestCase):
             file_data=file_data_bytes,
             offset=0,
             segment_metadata_flag=SegmentMetadataFlag.PRESENT,
-            record_continuation_state=RecordContinuationState.START_AND_END,
+            record_cont_state=RecordContinuationState.START_AND_END,
             segment_metadata=bytes([0xAA, 0xBB]),
         )
         expected_packet_len = 7 + 15 + 1 + 2
@@ -62,7 +62,7 @@ class TestFileDataPdu(TestCase):
                 file_data=file_data_bytes,
                 offset=0,
                 segment_metadata_flag=SegmentMetadataFlag.PRESENT,
-                record_continuation_state=RecordContinuationState.START_AND_END,
+                record_cont_state=RecordContinuationState.START_AND_END,
                 segment_metadata=invalid_metadata,
             )
             invalid_pdu.pack()
@@ -74,7 +74,7 @@ class TestFileDataPdu(TestCase):
             file_data=file_data_bytes,
             offset=0,
             segment_metadata_flag=SegmentMetadataFlag.PRESENT,
-            record_continuation_state=RecordContinuationState.START_AND_END,
+            record_cont_state=RecordContinuationState.START_AND_END,
             segment_metadata=bytes([0xAA, 0xBB]),
         )
         expected_packet_len = 7 + 19 + 1 + 2
