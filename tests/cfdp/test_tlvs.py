@@ -14,7 +14,7 @@ from spacepackets.cfdp.tlv import (
     FaultHandlerOverrideTlv,
     MessageToUserTlv,
     create_cfdp_proxy_and_dir_op_message_marker,
-    FlowLabelTlv,
+    FlowLabelTlv, TlvTypeMissmatch,
 )
 
 
@@ -87,7 +87,7 @@ class TestTlvs(TestCase):
         entity_id_tlv_from_factory = wrapper.to_entity_id()
         self.assertEqual(entity_id_tlv_from_factory.pack(), entity_id_tlv.pack())
         entity_id_tlv_tlv.tlv_type = TlvTypes.FILESTORE_REQUEST
-        with self.assertRaises(ValueError):
+        with self.assertRaises(TlvTypeMissmatch):
             EntityIdTlv.from_tlv(cfdp_tlv=entity_id_tlv_tlv)
 
     def test_fs_req_tlv(self):
@@ -152,11 +152,11 @@ class TestTlvs(TestCase):
             fault_handler_ovvrd_tlv_from_fac.pack(), fault_handler_ovvrd_tlv.pack()
         )
         fault_handler_ovvrd_tlv_tlv.tlv_type = TlvTypes.ENTITY_ID
-        with self.assertRaises(ValueError):
+        with self.assertRaises(TlvTypeMissmatch):
             FaultHandlerOverrideTlv.from_tlv(cfdp_tlv=fault_handler_ovvrd_tlv_tlv)
 
     def test_msg_to_user_tlv(self):
-        msg_to_usr_tlv = MessageToUserTlv(value=bytes([0x00]))
+        msg_to_usr_tlv = MessageToUserTlv(msg=bytes([0x00]))
         msg_to_usr_tlv_tlv = msg_to_usr_tlv.tlv
         wrapper = TlvHolder(msg_to_usr_tlv)
         msg_to_usr_tlv_from_fac = wrapper.to_msg_to_user()
@@ -170,11 +170,11 @@ class TestTlvs(TestCase):
         self.assertEqual(msg_to_usr_tlv_unpacked.tlv.value, bytes([0x00]))
         self.assertFalse(msg_to_usr_tlv_unpacked.is_standard_proxy_dir_ops_msg())
         proxy_val = create_cfdp_proxy_and_dir_op_message_marker()
-        msg_to_usr_tlv = MessageToUserTlv(value=proxy_val)
+        msg_to_usr_tlv = MessageToUserTlv(msg=proxy_val)
         self.assertTrue(msg_to_usr_tlv.is_standard_proxy_dir_ops_msg())
 
     def test_flow_label_tlv(self):
-        flow_label_tlv = FlowLabelTlv(value=bytes([0x00]))
+        flow_label_tlv = FlowLabelTlv(flow_label=bytes([0x00]))
         flow_label_tlv_tlv = flow_label_tlv.tlv
         wrapper = TlvHolder(flow_label_tlv)
         flow_label_tlv_from_fac = wrapper.to_flow_label()
@@ -183,8 +183,8 @@ class TestTlvs(TestCase):
         flow_label_tlv_unpacked = FlowLabelTlv.unpack(raw_bytes=flow_label_tlv_raw)
         self.assertEqual(flow_label_tlv_unpacked.tlv.value, bytes([0x00]))
         flow_label_tlv_tlv.tlv_type = TlvTypes.FILESTORE_REQUEST
-        with self.assertRaises(ValueError):
+        with self.assertRaises(TlvTypeMissmatch):
             FlowLabelTlv.from_tlv(cfdp_tlv=flow_label_tlv_tlv)
         flow_label_tlv_raw[0] = TlvTypes.FILESTORE_REQUEST
-        with self.assertRaises(ValueError):
+        with self.assertRaises(TlvTypeMissmatch):
             FlowLabelTlv.unpack(raw_bytes=flow_label_tlv_raw)
