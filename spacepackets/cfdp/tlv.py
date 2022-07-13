@@ -513,9 +513,11 @@ class FileStoreRequestTlv(FileStoreRequestBase, AbstractTlvBase):
             self.tlv = self._build_tlv()
         return self.tlv.pack()
 
+    @property
     def packet_len(self):
         return self.common_packet_len()
 
+    @property
     def tlv_type(self) -> TlvTypes:
         return FileStoreRequestTlv.TLV_TYPE
 
@@ -578,9 +580,11 @@ class FileStoreResponseTlv(FileStoreRequestBase, AbstractTlvBase):
             self.tlv = self._build_tlv()
         return self.tlv.pack()
 
+    @property
     def packet_len(self):
         return self.common_packet_len() + self.filestore_msg.packet_len
 
+    @property
     def tlv_type(self) -> TlvTypes:
         return FileStoreResponseTlv.TLV_TYPE
 
@@ -655,43 +659,44 @@ class TlvHolder:
         return cast(obj_type, self.base)
 
     def to_fs_request(self) -> FileStoreRequestTlv:
+        # Check this type first. It's a concrete type where we can not just use a simple cast
+        if isinstance(self.base, CfdpTlv):
+            return FileStoreRequestTlv.from_tlv(self.base)
         if isinstance(self.base, AbstractTlvBase):
             return self.__cast_internally(
                 FileStoreRequestTlv, TlvTypes.FILESTORE_REQUEST
             )
-        elif isinstance(self.base, CfdpTlv):
-            return FileStoreRequestTlv.from_tlv(self.base)
 
     def to_fs_response(self) -> FileStoreResponseTlv:
+        if isinstance(self.base, CfdpTlv):
+            return FileStoreResponseTlv.from_tlv(self.base)
         if isinstance(self.base, AbstractTlvBase):
             return self.__cast_internally(
                 FileStoreResponseTlv, TlvTypes.FILESTORE_RESPONSE
             )
-        elif isinstance(self.base, CfdpTlv):
-            return FileStoreResponseTlv.from_tlv(self.base)
 
     def to_msg_to_user(self) -> MessageToUserTlv:
+        if isinstance(self.base, CfdpTlv):
+            return MessageToUserTlv.from_tlv(self.base)
         if isinstance(self.base, AbstractTlvBase):
             return self.__cast_internally(MessageToUserTlv, TlvTypes.MESSAGE_TO_USER)
-        elif isinstance(self.base, CfdpTlv):
-            return MessageToUserTlv.from_tlv(self.base)
 
     def to_fault_handler_override(self) -> FaultHandlerOverrideTlv:
+        if isinstance(self.base, CfdpTlv):
+            return FaultHandlerOverrideTlv.from_tlv(self.base)
         if isinstance(self.base, AbstractTlvBase):
             return self.__cast_internally(
                 FaultHandlerOverrideTlv, TlvTypes.FAULT_HANDLER
             )
-        elif isinstance(self.base, CfdpTlv):
-            return FaultHandlerOverrideTlv.from_tlv(self.base)
 
     def to_flow_label(self) -> FlowLabelTlv:
+        if isinstance(self.base, CfdpTlv):
+            return FlowLabelTlv.from_tlv(self.base)
         if isinstance(self.base, AbstractTlvBase):
             return self.__cast_internally(FlowLabelTlv, TlvTypes.FLOW_LABEL)
-        elif isinstance(self.base, CfdpTlv):
-            return FlowLabelTlv.from_tlv(self.base)
 
     def to_entity_id(self) -> EntityIdTlv:
+        if isinstance(self.base, CfdpTlv):
+            return EntityIdTlv.from_tlv(self.base)
         if isinstance(self.base, AbstractTlvBase):
             return self.__cast_internally(EntityIdTlv, TlvTypes.ENTITY_ID)
-        elif isinstance(self.base, CfdpTlv):
-            return EntityIdTlv.from_tlv(self.base)

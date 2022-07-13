@@ -162,7 +162,7 @@ class TestTlvs(TestCase):
         msg_to_usr_tlv_from_fac = wrapper.to_msg_to_user()
         self.assertEqual(msg_to_usr_tlv_from_fac.pack(), msg_to_usr_tlv.pack())
         msg_to_usr_tlv_tlv.tlv_type = TlvTypes.FILESTORE_REQUEST
-        with self.assertRaises(ValueError):
+        with self.assertRaises(TlvTypeMissmatch):
             MessageToUserTlv.from_tlv(cfdp_tlv=msg_to_usr_tlv_tlv)
         msg_to_usr_tlv_tlv.tlv_type = TlvTypes.MESSAGE_TO_USER
         msg_to_usr_tlv_raw = msg_to_usr_tlv.pack()
