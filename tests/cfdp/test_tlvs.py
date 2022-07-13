@@ -94,6 +94,7 @@ class TestTlvs(TestCase):
         fs_reqeust_tlv = FileStoreRequestTlv(
             action_code=FilestoreActionCode.APPEND_FILE_SNP, first_file_name="test.txt"
         )
+        fs_reqeust_tlv.generate_tlv()
         fs_reqeust_tlv_tlv = fs_reqeust_tlv.tlv
         wrapper = TlvHolder(fs_reqeust_tlv)
         fs_req_tlv_from_fac = wrapper.to_fs_request()
@@ -108,7 +109,7 @@ class TestTlvs(TestCase):
         )
 
         fs_reqeust_tlv_tlv.tlv_type = TlvTypes.ENTITY_ID
-        with self.assertRaises(ValueError):
+        with self.assertRaises(TlvTypeMissmatch):
             FileStoreRequestTlv.from_tlv(cfdp_tlv=fs_reqeust_tlv_tlv)
 
     def test_fs_response_tlv(self):
@@ -117,13 +118,14 @@ class TestTlvs(TestCase):
             first_file_name="test.txt",
             status_code=FilestoreResponseStatusCode.APPEND_NOT_PERFORMED,
         )
+        fs_response_tlv.generate_tlv()
         fs_response_tlv_tlv = fs_response_tlv.tlv
         wrapper = TlvHolder(fs_response_tlv)
         fs_reply_tlv_from_fac = wrapper.to_fs_response()
 
         self.assertEqual(fs_reply_tlv_from_fac.pack(), fs_response_tlv.pack())
         fs_response_tlv_tlv.tlv_type = TlvTypes.ENTITY_ID
-        with self.assertRaises(ValueError):
+        with self.assertRaises(TlvTypeMissmatch):
             FileStoreResponseTlv.from_tlv(cfdp_tlv=fs_response_tlv_tlv)
         fs_response_tlv_tlv.tlv_type = TlvTypes.FILESTORE_RESPONSE
         fs_response_tlv_raw = fs_response_tlv.pack()
@@ -133,7 +135,7 @@ class TestTlvs(TestCase):
             FileStoreResponseTlv.unpack(raw_bytes=fs_response_tlv_raw)
         # Wrong ID
         fs_response_tlv_raw[0] = TlvTypes.ENTITY_ID
-        with self.assertRaises(ValueError):
+        with self.assertRaises(TlvTypeMissmatch):
             FileStoreResponseTlv.unpack(raw_bytes=fs_response_tlv_raw)
         fs_response_tlv_raw[0] = TlvTypes.FILESTORE_RESPONSE
         fs_response_tlv_raw[2] = 0b11110000

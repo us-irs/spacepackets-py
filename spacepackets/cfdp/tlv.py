@@ -420,6 +420,7 @@ class FileStoreRequestBase:
         self.action_code = action_code
         self.first_file_name = first_file_name
         self.second_file_name = second_file_name
+        self.tlv: Optional[CfdpTlv] = None
 
     def _common_packer(self, status_code: int) -> bytearray:
         tlv_value = bytearray()
@@ -447,8 +448,17 @@ class FileStoreRequestBase:
         return expected_len
 
     @staticmethod
+    def _check_raw_tlv_field(first_byte: int, expected: TlvTypes):
+        try:
+            raw_tlv_type = TlvTypes(first_byte)
+            if raw_tlv_type != expected:
+                raise TlvTypeMissmatch(raw_tlv_type, expected)
+        except IndexError:
+            raise ValueError(f"No TLV type for raw field {first_byte}")
+
+    @staticmethod
     def _common_unpacker(
-        raw_bytes: bytes, expected_tlv_type: TlvTypes
+            raw_bytes: bytes
     ) -> Tuple[FilestoreActionCode, str, int, int, Optional[str]]:
         """Does only unpack common fields, does not unpack the filestore message of a Filestore
         Response package
@@ -457,20 +467,17 @@ class FileStoreRequestBase:
             is the first file name, the second value is the status code as an integer,
             the third value is the length of the full TLV packet
         """
-        tlv = CfdpTlv.unpack(raw_bytes=raw_bytes)
-        if tlv.tlv_type != expected_tlv_type:
-            raise ValueError("Invalid TLV type detected")
         value_idx = 0
-        action_code_as_int = (tlv.value[value_idx] & 0xF0) >> 4
+        action_code_as_int = (raw_bytes[value_idx] >> 4) & 0x0F
         try:
             action_code = FilestoreActionCode(action_code_as_int)
         except ValueError:
             raise ValueError(
                 f"Invalid action code in file store response with value {action_code_as_int}"
             )
-        status_code_as_int = tlv.value[value_idx] & 0x0F
+        status_code_as_int = raw_bytes[value_idx] & 0x0F
         value_idx += 1
-        first_lv = CfdpLv.unpack(raw_bytes=tlv.value[value_idx:])
+        first_lv = CfdpLv.unpack(raw_bytes=raw_bytes[value_idx:])
         value_idx += first_lv.packet_len
         first_file_name = first_lv.value.decode()
         if action_code in [
@@ -478,7 +485,7 @@ class FileStoreRequestBase:
             FilestoreActionCode.RENAME_FILE_SNP,
             FilestoreActionCode.APPEND_FILE_SNP,
         ]:
-            second_lv = CfdpLv.unpack(raw_bytes=tlv.value[value_idx:])
+            second_lv = CfdpLv.unpack(raw_bytes=raw_bytes[value_idx:])
             value_idx += second_lv.packet_len
             second_file_name = second_lv.value.decode()
         else:
@@ -487,7 +494,7 @@ class FileStoreRequestBase:
             action_code,
             first_file_name,
             status_code_as_int,
-            tlv.packet_len,
+            value_idx,
             second_file_name,
         )
 
@@ -506,11 +513,13 @@ class FileStoreRequestTlv(FileStoreRequestBase, AbstractTlvBase):
             first_file_name=first_file_name,
             second_file_name=second_file_name,
         )
-        self.tlv: Optional[CfdpTlv] = None
 
-    def pack(self) -> bytearray:
+    def generate_tlv(self):
         if self.tlv is None:
             self.tlv = self._build_tlv()
+
+    def pack(self) -> bytearray:
+        self.generate_tlv()
         return self.tlv.pack()
 
     @property
@@ -534,25 +543,30 @@ class FileStoreRequestTlv(FileStoreRequestBase, AbstractTlvBase):
         return CfdpTlv(tlv_type=TlvTypes.FILESTORE_REQUEST, value=tlv_value)
 
     @classmethod
-    def unpack(cls, raw_bytes: bytearray) -> FileStoreRequestTlv:
+    def unpack(cls, raw_bytes: bytes) -> FileStoreRequestTlv:
+        cls._check_raw_tlv_field(raw_bytes[0], FileStoreRequestTlv.TLV_TYPE)
         filestore_req = cls.__empty()
-        action_code, first_name, status_code, _, second_name = cls._common_unpacker(
-            raw_bytes=raw_bytes, expected_tlv_type=TlvTypes.FILESTORE_REQUEST
-        )
-        filestore_req.action_code = action_code
-        filestore_req.first_file_name = first_name
-        if second_name is not None:
-            filestore_req.second_file_name = second_name
+        cls._set_fields(filestore_req, raw_bytes[2:])
         return filestore_req
 
     @classmethod
     def from_tlv(cls, cfdp_tlv: CfdpTlv) -> FileStoreRequestTlv:
         if cfdp_tlv.tlv_type != cls.TLV_TYPE:
             raise TlvTypeMissmatch(cfdp_tlv.tlv_type, cls.TLV_TYPE)
-        # TODO: This ensures that all fields are set properly, although its not the most efficient
-        #       way
-        fault_handler_tlv = FileStoreRequestTlv.unpack(raw_bytes=cfdp_tlv.pack())
-        return fault_handler_tlv
+        fs_response = cls.__empty()
+        cls._set_fields(fs_response, cfdp_tlv.value)
+        return fs_response
+
+    @classmethod
+    def _set_fields(cls, instance: FileStoreRequestTlv, raw_data: bytes):
+        action_code, first_name, status_code, _, second_name = cls._common_unpacker(
+            raw_bytes=raw_data
+        )
+        instance.action_code = action_code
+        instance.first_file_name = first_name
+        if second_name is not None:
+            instance.second_file_name = second_name
+        return instance
 
 
 class FileStoreResponseTlv(FileStoreRequestBase, AbstractTlvBase):
@@ -573,11 +587,13 @@ class FileStoreResponseTlv(FileStoreRequestBase, AbstractTlvBase):
         )
         self.status_code = status_code
         self.filestore_msg = filestore_msg
-        self.tlv: Optional[CfdpTlv] = None
 
-    def pack(self) -> bytearray:
+    def generate_tlv(self):
         if self.tlv is None:
             self.tlv = self._build_tlv()
+
+    def pack(self) -> bytearray:
+        self.generate_tlv()
         return self.tlv.pack()
 
     @property
@@ -604,13 +620,27 @@ class FileStoreResponseTlv(FileStoreRequestBase, AbstractTlvBase):
         return CfdpTlv(tlv_type=TlvTypes.FILESTORE_RESPONSE, value=tlv_value)
 
     @classmethod
-    def unpack(cls, raw_bytes: bytearray) -> FileStoreResponseTlv:
+    def unpack(cls, raw_bytes: bytes) -> FileStoreResponseTlv:
+        cls._check_raw_tlv_field(raw_bytes[0], FileStoreResponseTlv.TLV_TYPE)
         filestore_reply = cls.__empty()
+        cls._set_fields(filestore_reply, raw_bytes[2:])
+        return filestore_reply
+
+    @classmethod
+    def from_tlv(cls, cfdp_tlv: CfdpTlv) -> FileStoreResponseTlv:
+        if cfdp_tlv.tlv_type != cls.TLV_TYPE:
+            raise TlvTypeMissmatch(cfdp_tlv.tlv_type, cls.TLV_TYPE)
+        fs_response = FileStoreResponseTlv.__empty()
+        cls._set_fields(fs_response, cfdp_tlv.value)
+        return fs_response
+
+    @classmethod
+    def _set_fields(cls, instance: FileStoreResponseTlv, data: bytes):
         action_code, first_name, status_code, idx, second_name = cls._common_unpacker(
-            raw_bytes=raw_bytes, expected_tlv_type=TlvTypes.FILESTORE_RESPONSE
+            raw_bytes=data
         )
-        filestore_reply.action_code = action_code
-        filestore_reply.first_file_name = first_name
+        instance.action_code = action_code
+        instance.first_file_name = first_name
         try:
             status_code_named = FilestoreResponseStatusCode(
                 action_code << 4 | status_code
@@ -620,28 +650,17 @@ class FileStoreResponseTlv(FileStoreRequestBase, AbstractTlvBase):
                 f"Invalid status code in file store response with value {status_code} for "
                 f"action code {action_code}"
             )
-        filestore_reply.status_code = status_code_named
+        instance.status_code = status_code_named
         if second_name is not None:
-            filestore_reply.second_file_name = second_name
-        filestore_reply.filestore_msg = CfdpLv.unpack(raw_bytes=raw_bytes[idx - 1 :])
-        filestore_reply.tlv = filestore_reply._build_tlv()
-        return filestore_reply
-
-    @classmethod
-    def from_tlv(cls, cfdp_tlv: CfdpTlv) -> FileStoreResponseTlv:
-        if cfdp_tlv.tlv_type != cls.TLV_TYPE:
-            raise TlvTypeMissmatch(cfdp_tlv.tlv_type, cls.TLV_TYPE)
-        # TODO: This ensures that all fields are set properly, although its not the most efficient
-        #       way
-        file_store_response_tlv = FileStoreResponseTlv.unpack(raw_bytes=cfdp_tlv.pack())
-        return file_store_response_tlv
+            instance.second_file_name = second_name
+        instance.filestore_msg = CfdpLv.unpack(data[idx:])
 
 
-TlvList = List[Union[CfdpTlv, AbstractTlvBase]]
+TlvList = List[Union[AbstractTlvBase]]
 
 
 class TlvHolder:
-    def __init__(self, tlv_base: Optional[Union[CfdpTlv, AbstractTlvBase]]):
+    def __init__(self, tlv_base: Optional[AbstractTlvBase]):
         self.base = tlv_base
 
     @property
@@ -662,41 +681,35 @@ class TlvHolder:
         # Check this type first. It's a concrete type where we can not just use a simple cast
         if isinstance(self.base, CfdpTlv):
             return FileStoreRequestTlv.from_tlv(self.base)
-        if isinstance(self.base, AbstractTlvBase):
-            return self.__cast_internally(
-                FileStoreRequestTlv, TlvTypes.FILESTORE_REQUEST
-            )
+        return self.__cast_internally(
+            FileStoreRequestTlv, TlvTypes.FILESTORE_REQUEST
+        )
 
     def to_fs_response(self) -> FileStoreResponseTlv:
         if isinstance(self.base, CfdpTlv):
             return FileStoreResponseTlv.from_tlv(self.base)
-        if isinstance(self.base, AbstractTlvBase):
-            return self.__cast_internally(
-                FileStoreResponseTlv, TlvTypes.FILESTORE_RESPONSE
-            )
+        return self.__cast_internally(
+            FileStoreResponseTlv, TlvTypes.FILESTORE_RESPONSE
+        )
 
     def to_msg_to_user(self) -> MessageToUserTlv:
         if isinstance(self.base, CfdpTlv):
             return MessageToUserTlv.from_tlv(self.base)
-        if isinstance(self.base, AbstractTlvBase):
-            return self.__cast_internally(MessageToUserTlv, TlvTypes.MESSAGE_TO_USER)
+        return self.__cast_internally(MessageToUserTlv, TlvTypes.MESSAGE_TO_USER)
 
     def to_fault_handler_override(self) -> FaultHandlerOverrideTlv:
         if isinstance(self.base, CfdpTlv):
             return FaultHandlerOverrideTlv.from_tlv(self.base)
-        if isinstance(self.base, AbstractTlvBase):
-            return self.__cast_internally(
-                FaultHandlerOverrideTlv, TlvTypes.FAULT_HANDLER
-            )
+        return self.__cast_internally(
+            FaultHandlerOverrideTlv, TlvTypes.FAULT_HANDLER
+        )
 
     def to_flow_label(self) -> FlowLabelTlv:
         if isinstance(self.base, CfdpTlv):
             return FlowLabelTlv.from_tlv(self.base)
-        if isinstance(self.base, AbstractTlvBase):
-            return self.__cast_internally(FlowLabelTlv, TlvTypes.FLOW_LABEL)
+        return self.__cast_internally(FlowLabelTlv, TlvTypes.FLOW_LABEL)
 
     def to_entity_id(self) -> EntityIdTlv:
         if isinstance(self.base, CfdpTlv):
             return EntityIdTlv.from_tlv(self.base)
-        if isinstance(self.base, AbstractTlvBase):
-            return self.__cast_internally(EntityIdTlv, TlvTypes.ENTITY_ID)
+        return self.__cast_internally(EntityIdTlv, TlvTypes.ENTITY_ID)
