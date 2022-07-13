@@ -88,6 +88,10 @@ class FileDataPdu(AbstractPduBase):
         return self.pdu_header.file_flag
 
     @property
+    def transaction_seq_num(self) -> UnsignedByteField:
+        return self.pdu_header.transaction_seq_num
+
+    @property
     def source_entity_id(self) -> UnsignedByteField:
         return self.pdu_header.source_entity_id
 

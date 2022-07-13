@@ -66,6 +66,11 @@ class AbstractPduBase(abc.ABC):
 
     @property
     @abc.abstractmethod
+    def transaction_seq_num(self) -> UnsignedByteField:
+        pass
+
+    @property
+    @abc.abstractmethod
     def pdu_data_field_len(self) -> int:
         pass
 
