@@ -11,6 +11,8 @@ from spacepackets.cfdp.defs import (
     Direction,
     SegmentationControl,
     LenInBytes,
+    CFDP_VERSION_2,
+    UnsupportedCfdpVersion,
 )
 from spacepackets.cfdp.conf import (
     PduConfig,
@@ -248,7 +250,7 @@ class PduHeader(AbstractPduBase):
     def pack(self) -> bytearray:
         header = bytearray()
         header.append(
-            self.VERSION_BITS
+            CFDP_VERSION_2 << 5
             | (self.pdu_type << 4)
             | (self.pdu_conf.direction << 3)
             | (self.pdu_conf.trans_mode << 2)
@@ -283,12 +285,17 @@ class PduHeader(AbstractPduBase):
         """Unpack a raw bytearray into the PDU header object representation.
 
         :param raw_packet:
-        :raise ValueError: Passed bytearray is too short.
-        :return:
+        :raises ValueError: Passed bytearray is too short.
+        :raises UnsupportedCfdpVersion: CFDP version not supported. Only version 2 related to
+            CFDP version CCSDS 727.0-B-5 is supported.
+        :return: Unpacked object representation of a PDU header
         """
         if len(raw_packet) < cls.FIXED_LENGTH:
             raise ValueError("Can not unpack less than four bytes into PDU header")
         pdu_header = cls.__empty()
+        version_raw = (raw_packet[0] >> 5) & 0b111
+        if version_raw != CFDP_VERSION_2:
+            raise UnsupportedCfdpVersion(version_raw)
         pdu_header._pdu_type = (raw_packet[0] & 0x10) >> 4
         pdu_header.direction = (raw_packet[0] & 0x08) >> 3
         pdu_header.trans_mode = (raw_packet[0] & 0x04) >> 2

@@ -2,6 +2,19 @@ from __future__ import annotations
 import enum
 
 
+CFDP_VERSION_2_NAME = "CCSDS 727.0-B-5"
+# Second version of the protocol, only this one is supported here
+CFDP_VERSION_2 = 0b001
+
+
+class UnsupportedCfdpVersion(Exception):
+    def __init__(self, version: int):
+        self.version = version
+
+    def __str__(self):
+        return f"Unsupported CFDP version {self.version}"
+
+
 class PduType(enum.IntEnum):
     FILE_DIRECTIVE = 0
     FILE_DATA = 1
