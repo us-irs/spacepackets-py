@@ -42,6 +42,18 @@ class TmCheckResult:
 
 
 class PusVerificator:
+    """Generic verificator class for using PUS TMTC. PUS uses the service 1 exclusively for
+    verification telemetry. This class encapsulates tracking the progress of a telecommand using
+    Service 1 telemetry packets.
+
+    There are three steps involved in using this class
+     1. Pass all sent telecommands via the :py:meth:`add_tc` API. This will store
+        the telecommand to be tracked by the verificator.
+     2. Pass all received PUS Service 1 packets to the :py:meth:`add_tm` function.
+     3. Check the :py:class:`TmCheckResult` returned by the :py:meth:`add_tm` for verification
+        information
+    """
+
     def __init__(self):
         self._verif_dict: VerifDictT = dict()
         pass
