@@ -2,6 +2,7 @@ from unittest import TestCase
 
 from spacepackets.cfdp import NULL_CHECKSUM_U32, ConditionCode, PduConfig, DirectiveType
 from spacepackets.cfdp.pdu import EofPdu, PduFactory, FileDataPdu
+from spacepackets.cfdp.pdu.file_data import FileDataParams
 
 
 class TestPduHolder(TestCase):
@@ -22,6 +23,7 @@ class TestPduHolder(TestCase):
         )
 
     def test_factory_file_directive_on_file_data(self):
-        file_data_pdu = FileDataPdu(file_data=bytes(), offset=0, pdu_conf=self.pdu_conf)
+        fd_params = FileDataParams(file_data=bytes(), offset=0)
+        file_data_pdu = FileDataPdu(fd_params, self.pdu_conf)
         fd_pdu_raw = file_data_pdu.pack()
         self.assertEqual(self.pdu_factory.pdu_directive_type(fd_pdu_raw), None)

@@ -13,7 +13,7 @@ from spacepackets.cfdp.pdu import (
     FinishedPdu,
     KeepAlivePdu,
 )
-from spacepackets.cfdp.pdu.file_data import FileDataPdu
+from spacepackets.cfdp.pdu.file_data import FileDataPdu, FileDataParams
 from spacepackets.cfdp.pdu.finished import (
     DeliveryCode,
     FileDeliveryStatus,
@@ -32,12 +32,12 @@ class TestPduHolder(TestCase):
         self.pdu_wrapper = PduHolder(None)
 
     def test_file_data(self):
-        file_data_pdu = FileDataPdu(
-            pdu_conf=self.pdu_conf,
+        fd_params = FileDataParams(
             file_data=self.file_data_bytes,
             offset=0,
             segment_metadata_flag=False,
         )
+        file_data_pdu = FileDataPdu(pdu_conf=self.pdu_conf, params=fd_params)
         self.pdu_wrapper.base = file_data_pdu
         pdu_casted_back = self.pdu_wrapper.to_file_data_pdu()
         self.assertEqual(pdu_casted_back, file_data_pdu)
@@ -77,12 +77,12 @@ class TestPduHolder(TestCase):
         self.assertEqual(metadata_casted_back, metadata_pdu)
 
     def test_invalid_cast(self):
-        file_data_pdu = FileDataPdu(
-            pdu_conf=self.pdu_conf,
+        fd_params = FileDataParams(
             file_data=self.file_data_bytes,
             offset=0,
             segment_metadata_flag=False,
         )
+        file_data_pdu = FileDataPdu(pdu_conf=self.pdu_conf, params=fd_params)
         self.pdu_wrapper.base = file_data_pdu
         with self.assertRaises(TypeError) as cm:
             self.pdu_wrapper.to_metadata_pdu()
