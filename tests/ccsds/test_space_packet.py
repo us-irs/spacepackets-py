@@ -17,15 +17,57 @@ class TestSpacePacket(TestCase):
             apid=0x02,
             data_len=22,
             seq_count=52,
+            sec_header_flag=True,
             packet_type=PacketTypes.TC,
             seq_flags=SequenceFlags.FIRST_SEGMENT,
         )
 
     def test_basic(self):
         self.assertEqual(self.sp_header.apid, 0x02)
-        self.assertEqual(self.sp_header.seq_count, 52)
-        self.assertEqual(self.sp_header.data_len, 22)
+        self.assertEqual(self.sp_header.seq_flags, SequenceFlags.FIRST_SEGMENT)
+        self.assertEqual(self.sp_header.ccsds_version, 0b000)
+        self.assertEqual(self.sp_header.seq_count, 0x34)
+        self.assertEqual(self.sp_header.data_len, 0x16)
         self.assertEqual(self.sp_header.packet_type, PacketTypes.TC)
+
+    def test_raw_output(self):
+        raw_output = self.sp_header.pack()
+        self.assertEqual(
+            raw_output,
+            bytes(
+                [
+                    0x18,  # TC, and secondary header flag is set -> 0b0001100 -> 0x18
+                    0x02,  # APID 0x02
+                    0x40,  # Sequence count is one byte value, so the only set bit here is the bit from the
+                    # Sequence flag argument, which is the second bit for SequenceFlags.FIRST_SEGMENT
+                    0x34,  # Sequence Count specified above
+                    0x00,  # This byte and the next byte should be 22 big endian (packet length)
+                    0x16,
+                ]
+            ),
+        )
+
+    def test_more_complex_output(self):
+        # All ones, maximum value for APID
+        self.sp_header.apid = pow(2, 11) - 1
+        # All ones, maximum value for sequence count
+        self.sp_header.seq_count = pow(2, 14) - 1
+        self.sp_header.seq_flags = SequenceFlags.UNSEGMENTED
+        self.sp_header.data_len = pow(2, 16) - 1
+        raw_output = self.sp_header.pack()
+        self.assertEqual(
+            raw_output,
+            bytes(
+                [
+                    0x1F,  # APID part is all ones, TC, sec header flag set -> 0b00011111
+                    0xFF,
+                    0xFF,  # All-Ones PSC
+                    0xFF,
+                    0xFF,  # This byte and the next byte should be 22 big endian (packet length)
+                    0xFF,
+                ]
+            ),
+        )
 
     def test_apid_from_raw(self):
         sp_packed = self.sp_header.pack()

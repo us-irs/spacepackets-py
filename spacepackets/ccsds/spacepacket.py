@@ -219,6 +219,10 @@ class SpacePacketHeader:
     def seq_flags(self):
         return self.psc.seq_flags
 
+    @seq_flags.setter
+    def seq_flags(self, value):
+        self.psc.seq_flags = value
+
     @property
     def header_len(self) -> int:
         return SPACE_PACKET_HEADER_SIZE
