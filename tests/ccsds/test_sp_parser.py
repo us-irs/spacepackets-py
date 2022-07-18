@@ -1,23 +1,17 @@
 from unittest import TestCase
-from collections import deque
 
+from spacepackets import SequenceFlags, PacketTypes, SpacePacketHeader
+from spacepackets.ccsds import PacketSeqCtrl, PacketId
 from spacepackets.ccsds.spacepacket import (
-    get_sp_psc_raw,
-    SpacePacketHeader,
-    PacketTypes,
     get_space_packet_id_bytes,
+    get_sp_psc_raw,
     get_sp_packet_id_raw,
-    SequenceFlags,
-    get_apid_from_raw_space_packet,
-    parse_space_packets,
-    PacketId,
-    PacketSeqCtrl,
     SpacePacket,
+    get_apid_from_raw_space_packet,
 )
-from spacepackets.ecss.tm import PusTelemetry, PusVersion
 
 
-class TestCcsds(TestCase):
+class TestSpacePacket(TestCase):
     def test_utility(self):
         psc = PacketSeqCtrl(
             seq_flags=SequenceFlags.UNSEGMENTED, seq_count=pow(2, 14) - 1
@@ -43,6 +37,7 @@ class TestCcsds(TestCase):
         self.assertEqual(packet_id_from_raw.raw(), packet_id.raw())
         self.assertEqual(PacketId.empty().raw(), 0)
 
+    # TODO: Split into test fixtures
     def test_spacepacket(self):
         sp_header = SpacePacketHeader(
             apid=0x02,
@@ -169,60 +164,3 @@ class TestCcsds(TestCase):
         self.assertEqual(sph.packet_type, PacketTypes.TM)
         sp = SpacePacket(sp_header=sph, user_data=bytes([0, 1]), sec_header=None)
         print(sp)
-
-    def test_sp_parser(self):
-        tm_packet = PusTelemetry(service=17, subservice=2)
-        packet_ids = (tm_packet.packet_id.raw(),)
-        tm_packet_raw = tm_packet.pack()
-        packet_deque = deque()
-        packet_deque.appendleft(tm_packet_raw)
-        packet_deque.appendleft(tm_packet_raw)
-        sp_list = parse_space_packets(
-            analysis_queue=packet_deque, packet_ids=packet_ids
-        )
-        self.assertEqual(len(sp_list), 2)
-        self.assertEqual(sp_list[0], tm_packet_raw)
-        self.assertEqual(sp_list[1], tm_packet_raw)
-
-        other_larger_packet = PusTelemetry(
-            service=8,
-            subservice=128,
-            source_data=bytearray(64),
-        )
-        other_larger_packet_raw = other_larger_packet.pack()
-        packet_deque.appendleft(tm_packet_raw)
-        packet_deque.appendleft(bytearray(8))
-        packet_deque.appendleft(other_larger_packet_raw)
-        sp_list = parse_space_packets(
-            analysis_queue=packet_deque, packet_ids=packet_ids
-        )
-        self.assertEqual(len(sp_list), 2)
-        self.assertEqual(sp_list[0], tm_packet_raw)
-        self.assertEqual(sp_list[1], other_larger_packet_raw)
-
-        packet_deque.appendleft(bytearray(3))
-        sp_list = parse_space_packets(
-            analysis_queue=packet_deque, packet_ids=packet_ids
-        )
-        self.assertEqual(len(sp_list), 0)
-        sp_list = parse_space_packets(
-            analysis_queue=packet_deque, packet_ids=packet_ids
-        )
-        self.assertEqual(len(sp_list), 0)
-
-        # slice TM packet in half
-        tm_packet_first_half = tm_packet_raw[:10]
-        tm_packet_second_half = tm_packet_raw[10:]
-        packet_deque.appendleft(tm_packet_first_half)
-        sp_list = parse_space_packets(
-            analysis_queue=packet_deque, packet_ids=packet_ids
-        )
-        self.assertEqual(len(sp_list), 0)
-        self.assertEqual(len(packet_deque), 1)
-        packet_deque.appendleft(tm_packet_second_half)
-        sp_list = parse_space_packets(
-            analysis_queue=packet_deque, packet_ids=packet_ids
-        )
-        self.assertEqual(len(sp_list), 1)
-        self.assertEqual(len(packet_deque), 0)
-        self.assertEqual(sp_list[0], tm_packet_raw)
