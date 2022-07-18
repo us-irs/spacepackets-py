@@ -38,8 +38,9 @@ class TestSpacePacket(TestCase):
                 [
                     0x18,  # TC, and secondary header flag is set -> 0b0001100 -> 0x18
                     0x02,  # APID 0x02
-                    0x40,  # Sequence count is one byte value, so the only set bit here is the bit from the
-                    # Sequence flag argument, which is the second bit for SequenceFlags.FIRST_SEGMENT
+                    0x40,  # Sequence count is one byte value, so the only set bit here is the bit
+                    # from the Sequence flag argument, which is the second bit for
+                    # SequenceFlags.FIRST_SEGMENT
                     0x34,  # Sequence Count specified above
                     0x00,  # This byte and the next byte should be 22 big endian (packet length)
                     0x16,
