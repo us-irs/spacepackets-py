@@ -2,6 +2,19 @@ from __future__ import annotations
 import enum
 
 
+CFDP_VERSION_2_NAME = "CCSDS 727.0-B-5"
+# Second version of the protocol, only this one is supported here
+CFDP_VERSION_2 = 0b001
+
+
+class UnsupportedCfdpVersion(Exception):
+    def __init__(self, version: int):
+        self.version = version
+
+    def __str__(self):
+        return f"Unsupported CFDP version {self.version}"
+
+
 class PduType(enum.IntEnum):
     FILE_DIRECTIVE = 0
     FILE_DATA = 1
@@ -55,6 +68,8 @@ class LenInBytes(enum.IntEnum):
 
 class ConditionCode(enum.IntEnum):
     NO_CONDITION_FIELD = -1
+    # As expected, this is not an error condition for which a fault handler override can be
+    # specified
     NO_ERROR = 0b0000
     POSITIVE_ACK_LIMIT_REACHED = 0b0001
     KEEP_ALIVE_LIMIT_REACHED = 0b0010
@@ -66,6 +81,8 @@ class ConditionCode(enum.IntEnum):
     INACTIVITY_DETECTED = 0b1000
     CHECK_LIMIT_REACHED = 0b1010
     UNSUPPORTED_CHECKSUM_TYPE = 0b1011
+    # The following two are not actual fault conditions for which fault handler overrides
+    # can be specified
     SUSPEND_REQUEST_RECEIVED = 0b1110
     CANCEL_REQUEST_RECEIVED = 0b1111
 

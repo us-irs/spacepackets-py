@@ -8,7 +8,7 @@ from spacepackets.cfdp.pdu import KeepAlivePdu, DirectiveType
 class TestKeepAlivePdu(TestCase):
     def setUp(self) -> None:
         self.pdu_conf = PduConfig.default()
-        self.keep_alive_pdu =  KeepAlivePdu(pdu_conf=self.pdu_conf, progress=0)
+        self.keep_alive_pdu = KeepAlivePdu(pdu_conf=self.pdu_conf, progress=0)
 
     # TODO: Split into smaller fixtures
     def test_keep_alive_pdu(self):
