@@ -139,7 +139,6 @@ class PusTelecommand:
         if apid == -1:
             apid = get_default_tc_apid()
         secondary_header_flag = 1
-        logger = get_console_logger()
         self.pus_tc_sec_header = PusTcDataFieldHeader(
             service=service,
             subservice=subservice,

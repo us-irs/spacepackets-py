@@ -15,8 +15,8 @@ class TestSpacePacket(TestCase):
     def setUp(self) -> None:
         self.sp_header = SpacePacketHeader(
             apid=0x02,
-            data_len=22,
-            seq_count=52,
+            data_len=0x16,
+            seq_count=0x34,
             sec_header_flag=True,
             packet_type=PacketTypes.TC,
             seq_flags=SequenceFlags.FIRST_SEGMENT,
