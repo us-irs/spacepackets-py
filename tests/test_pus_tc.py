@@ -21,6 +21,10 @@ class TestTelecommand(TestCase):
         self.assertTrue(len(command_tuple[0]) == self.ping_tc.packet_len)
 
         self.assertTrue(self.ping_tc.valid)
+        # 6 bytes CCSDS header, 5 bytes secondary header, 2 bytes CRC
+        self.assertEqual(self.ping_tc.packet_len, 13)
+        # The data length field is the full packet length minus the primary header minus 1
+        self.assertEqual(self.ping_tc.sp_header.data_len, 6)
         self.assertEqual(self.ping_tc.packet_id.raw(), (0x18 << 8 | 0x02))
         self.assertEqual(self.ping_tc.app_data, bytearray())
         self.assertEqual(self.ping_tc.apid, 0x02)
@@ -35,13 +39,17 @@ class TestTelecommand(TestCase):
 
     def test_with_app_data(self):
         test_app_data = bytearray([1, 2, 3])
-        pus_17_telecommand_with_app_data = PusTelecommand(
+        ping_with_app_data = PusTelecommand(
             service=17, subservice=32, seq_count=52, app_data=test_app_data
         )
+        # 6 bytes CCSDS header, 5 bytes secondary header, 2 bytes CRC, 3 bytes app data
+        self.assertEqual(ping_with_app_data.packet_len, 16)
+        # The data length field is the full packet length minus the primary header minus 1
+        self.assertEqual(ping_with_app_data.sp_header.data_len, 9)
 
-        self.assertTrue(len(pus_17_telecommand_with_app_data.app_data) == 3)
+        self.assertTrue(len(ping_with_app_data.app_data) == 3)
         self.assertTrue(
-            pus_17_telecommand_with_app_data.app_data == bytearray([1, 2, 3])
+            ping_with_app_data.app_data == bytearray([1, 2, 3])
         )
 
     def test_invalid_seq_count(self):
