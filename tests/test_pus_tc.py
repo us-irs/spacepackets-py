@@ -3,7 +3,7 @@ from unittest import TestCase
 import crcmod
 
 from spacepackets.ecss import PusTelecommand, PusTcDataFieldHeader
-from spacepackets.ecss.conf import get_default_tc_apid, set_default_tc_apid
+from spacepackets.ecss.conf import get_default_tc_apid, set_default_tc_apid, PusVersion
 from spacepackets.ecss.tc import generate_crc, generate_packet_crc
 from spacepackets.util import PrintFormats
 
@@ -15,7 +15,7 @@ class TestTelecommand(TestCase):
         )
         self.ping_tc_raw = self.ping_tc.pack()
 
-    def test_basic(self):
+    def test_state(self):
         self.assertTrue(self.ping_tc.packet_len == len(self.ping_tc.pack()))
         command_tuple = self.ping_tc.pack_command_tuple()
         self.assertTrue(len(command_tuple[0]) == self.ping_tc.packet_len)
@@ -28,6 +28,33 @@ class TestTelecommand(TestCase):
         self.assertEqual(self.ping_tc.packet_id.raw(), (0x18 << 8 | 0x02))
         self.assertEqual(self.ping_tc.app_data, bytearray())
         self.assertEqual(self.ping_tc.apid, 0x02)
+
+    def test_packed(self):
+        self.assertEqual(self.ping_tc_raw[0], 0x18)
+        self.assertEqual(self.ping_tc_raw[1], 0x02)
+        # D
+        self.assertEqual(self.ping_tc_raw[2], 0xC0)
+        # Sequence count is only in lower byte, is small enough
+        self.assertEqual(self.ping_tc_raw[3], 0x34)
+        # Data length 6, packed big endian
+        self.assertEqual(self.ping_tc_raw[4], 0x00)
+        self.assertEqual(self.ping_tc_raw[5], 0x06)
+        # PUS Version C
+        self.assertEqual(self.ping_tc_raw[6] >> 4 & 0b1111, PusVersion.PUS_C)
+        # All ack fields is default
+        self.assertEqual(self.ping_tc_raw[6] & 0b1111, 0b1111)
+        # Service and subservice
+        self.assertEqual(self.ping_tc_raw[7], 17)
+        self.assertEqual(self.ping_tc_raw[8], 1)
+        # Source ID
+        self.assertEqual(self.ping_tc_raw[9] << 8 | self.ping_tc_raw[10], 0)
+        # CRC is checked separately
+
+    def test_custom_source_id(self):
+        source_id = 0x5FF
+        self.ping_tc.source_id = source_id
+        raw = self.ping_tc.pack()
+        self.assertEqual(raw[9] << 8 | raw[10], 0x5FF)
 
     def test_print(self):
         self.ping_tc.print(PrintFormats.HEX)
@@ -48,9 +75,7 @@ class TestTelecommand(TestCase):
         self.assertEqual(ping_with_app_data.sp_header.data_len, 9)
 
         self.assertTrue(len(ping_with_app_data.app_data) == 3)
-        self.assertTrue(
-            ping_with_app_data.app_data == bytearray([1, 2, 3])
-        )
+        self.assertTrue(ping_with_app_data.app_data == bytearray([1, 2, 3]))
 
     def test_invalid_seq_count(self):
         with self.assertRaises(ValueError):

@@ -338,6 +338,14 @@ class PusTelecommand:
         return self.pus_tc_sec_header.subservice
 
     @property
+    def source_id(self) -> int:
+        return self.pus_tc_sec_header.source_id
+
+    @source_id.setter
+    def source_id(self, source_id: int):
+        self.pus_tc_sec_header.source_id = source_id
+
+    @property
     def seq_count(self) -> int:
         return self.sp_header.seq_count
 
