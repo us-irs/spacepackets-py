@@ -76,6 +76,10 @@ class TestTelecommand(TestCase):
 
         self.assertTrue(len(ping_with_app_data.app_data) == 3)
         self.assertTrue(ping_with_app_data.app_data == bytearray([1, 2, 3]))
+        raw_with_app_data = ping_with_app_data.pack()
+        self.assertEqual(raw_with_app_data[11], 1)
+        self.assertEqual(raw_with_app_data[12], 2)
+        self.assertEqual(raw_with_app_data[13], 3)
 
     def test_invalid_seq_count(self):
         with self.assertRaises(ValueError):
