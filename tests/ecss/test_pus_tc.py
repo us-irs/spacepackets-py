@@ -49,7 +49,7 @@ class TestTelecommand(TestCase):
         # Source ID
         self.assertEqual(self.ping_tc_raw[9] << 8 | self.ping_tc_raw[10], 0)
         # CRC is checked separately, still check raw value
-        self.assertEqual(self.ping_tc_raw[11], 0xee)
+        self.assertEqual(self.ping_tc_raw[11], 0xEE)
         self.assertEqual(self.ping_tc_raw[12], 0x63)
 
     def test_custom_source_id(self):

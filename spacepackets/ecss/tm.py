@@ -25,18 +25,6 @@ from spacepackets.ecss.conf import (
 )
 
 
-def get_service_from_raw_pus_packet(raw_bytearray: bytearray) -> int:
-    """Determine the service ID from a raw packet, which can be used for packet deserialization.
-
-    It is assumed that the user already checked that the raw bytearray contains a PUS packet and
-    only basic sanity checks will be performed.
-    :raise ValueError: If raw bytearray is too short
-    """
-    if len(raw_bytearray) < 8:
-        raise ValueError
-    return raw_bytearray[7]
-
-
 class PusTmSecondaryHeader:
     """Unpacks the PUS telemetry packet secondary header.
     Currently only supports CDS short timestamps and PUS C"""
@@ -308,6 +296,18 @@ class PusTelemetry:
         pus_tm.__perform_crc_check(raw_telemetry=raw_telemetry[:expected_packet_len])
         return pus_tm
 
+    @staticmethod
+    def service_from_bytes(raw_bytearray: bytearray) -> int:
+        """Determine the service ID from a raw packet, which can be used for packet deserialization.
+
+        It is assumed that the user already checked that the raw bytearray contains a PUS packet and
+        only basic sanity checks will be performed.
+        :raise ValueError: If raw bytearray is too short
+        """
+        if len(raw_bytearray) < 8:
+            raise ValueError
+        return raw_bytearray[7]
+
     @classmethod
     def from_composite_fields(
         cls,
@@ -387,6 +387,14 @@ class PusTelemetry:
         )
 
     @property
+    def apid(self):
+        return self.sp_header.apid
+
+    @apid.setter
+    def apid(self, apid: int):
+        self.sp_header.apid = apid
+
+    @property
     def packet_id(self):
         return self.sp_header.packet_id
 
@@ -427,10 +435,6 @@ class PusTelemetry:
         the space packet header.
         """
         return self.sp_header.packet_len
-
-    @property
-    def apid(self) -> int:
-        return self.sp_header.apid
 
     @property
     def seq_count(self) -> int:
