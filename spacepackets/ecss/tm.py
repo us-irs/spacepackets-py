@@ -173,6 +173,9 @@ class PusTelemetry:
     CDS_SHORT_SIZE = 7
     PUS_TIMESTAMP_SIZE = CDS_SHORT_SIZE
 
+    # TODO: Better timestamp abstraction.
+    #       Use a better default constructor which takes a parameter aggregation
+    #       Supply this constructor as a classmethod in reduced form
     def __init__(
         self,
         service: int,
