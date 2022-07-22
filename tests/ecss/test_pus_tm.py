@@ -65,6 +65,7 @@ class TestTelemetry(TestCase):
         self.assertEqual(self.ping_reply.subservice, 2)
         self.assertEqual(self.ping_reply.service, 17)
         self.assertEqual(self.ping_reply.seq_count, 22)
+        self.assertEqual(self.ping_reply.sp_header.data_len, 15)
         self.assertEqual(self.ping_reply.packet_len, 22)
 
     def test_state_setting(self):
