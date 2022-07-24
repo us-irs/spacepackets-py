@@ -122,9 +122,6 @@ class CdsShortTimestamp(CcsdsTimeCode):
             ms_of_day=ms_of_day,
         )
 
-    def len(self):
-        return self.TIMESTAMP_SIZE
-
     @classmethod
     def __empty(cls):
         return cls(ccsds_days=0, ms_of_day=0)
