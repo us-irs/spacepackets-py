@@ -52,6 +52,11 @@ class CcsdsTimeCode(ABC):
     def pfield(self) -> bytes:
         pass
 
+    @property
+    @abstractmethod
+    def len(self) -> int:
+        pass
+
     @abstractmethod
     def pack(self) -> bytearray:
         pass
@@ -98,6 +103,10 @@ class CdsShortTimestamp(CcsdsTimeCode):
     @property
     def pfield(self) -> bytes:
         return self.p_field
+
+    @property
+    def len(self) -> int:
+        return CdsShortTimestamp.TIMESTAMP_SIZE
 
     def pack(self) -> bytearray:
         cds_packet = bytearray()
