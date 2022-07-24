@@ -398,6 +398,14 @@ class PusTelemetry:
         self.sp_header.apid = apid
 
     @property
+    def seq_flags(self):
+        return self.sp_header.seq_flags
+
+    @seq_flags.setter
+    def seq_flags(self, seq_flags):
+        self.sp_header.seq_flags = seq_flags
+
+    @property
     def packet_id(self):
         return self.sp_header.packet_id
 

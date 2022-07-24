@@ -68,6 +68,14 @@ class TestTelemetry(TestCase):
         self.assertEqual(self.ping_reply.sp_header.data_len, 15)
         self.assertEqual(self.ping_reply.packet_len, 22)
 
+    def test_raw(self):
+        print(self.ping_reply_raw.hex(sep=","))
+        # Secondary header is set -> 0b0000_1000 , APID only occupies lower byte
+        self.assertEqual(self.ping_reply_raw[0], 0b0000_1000)
+        self.assertEqual(self.ping_reply_raw[1], 0xEF)
+        # Unsegmented is the default
+        self.assertEqual(self.ping_reply_raw[2], 0xC0)
+
     def test_state_setting(self):
         self.ping_reply.sp_header.apid = 0x22
         source_data = bytearray([0x42, 0x38])
