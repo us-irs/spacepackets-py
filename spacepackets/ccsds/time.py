@@ -62,11 +62,11 @@ class CcsdsTimeCode(ABC):
         pass
 
     @abstractmethod
-    def return_unix_seconds(self) -> int:
+    def as_unix_seconds(self) -> int:
         pass
 
     @abstractmethod
-    def return_time_string(self) -> str:
+    def as_time_string(self) -> str:
         pass
 
     def ccsds_time_code(self) -> int:
@@ -165,8 +165,8 @@ class CdsShortTimestamp(CcsdsTimeCode):
         )
         return time_packet
 
-    def return_unix_seconds(self) -> int:
+    def as_unix_seconds(self) -> int:
         return self.unix_seconds
 
-    def return_time_string(self) -> str:
+    def as_time_string(self) -> str:
         return self.time_string
