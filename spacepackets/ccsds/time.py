@@ -150,17 +150,14 @@ class CdsShortTimestamp(CcsdsTimeCode):
     def __str__(self):
         return f"Date: {self.time_string} with representation {self!r}"
 
-    @staticmethod
-    def init_from_current_time() -> CdsShortTimestamp:
+    @classmethod
+    def from_current_time(cls) -> CdsShortTimestamp:
         """Returns a seven byte CDS short timestamp with the current time"""
         unix_days = (datetime.datetime.utcnow() - UNIX_EPOCH).days
         seconds = time.time()
         fraction_ms = seconds - math.floor(seconds)
         days_ms = int((seconds % SECONDS_PER_DAY) * 1000 + fraction_ms)
-        time_packet = CdsShortTimestamp.from_unix_days(
-            unix_days=unix_days, ms_of_day=days_ms
-        )
-        return time_packet
+        return cls.from_unix_days(unix_days=unix_days, ms_of_day=days_ms)
 
     def as_unix_seconds(self) -> int:
         return self.unix_seconds

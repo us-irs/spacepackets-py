@@ -70,7 +70,7 @@ class PusTmSecondaryHeader:
         return PusTmSecondaryHeader(
             service=0,
             subservice=0,
-            time=CdsShortTimestamp.init_from_current_time(),
+            time=CdsShortTimestamp.from_current_time(),
             message_counter=0,
         )
 
@@ -148,7 +148,7 @@ class PusTmSecondaryHeader:
 
     @property
     def header_size(self) -> int:
-        return self.time.len() + 7
+        return self.time.len + 7
 
 
 class PusTelemetry:
@@ -193,13 +193,13 @@ class PusTelemetry:
         if apid == FETCH_GLOBAL_APID:
             apid = get_default_tm_apid()
         if time is None:
-            time = CdsShortTimestamp.init_from_current_time()
+            time = CdsShortTimestamp.from_current_time()
         # packet type for telemetry is 0 as specified in standard
         # specified in standard
         packet_type = PacketTypes.TM
         self._source_data = source_data
         data_length = self.data_len_from_src_len_timestamp_len(
-            timestamp_len=time.len(), source_data_len=len(self._source_data)
+            timestamp_len=time.len, source_data_len=len(self._source_data)
         )
         self.sp_header = SpacePacketHeader(
             apid=apid,
@@ -223,7 +223,7 @@ class PusTelemetry:
     @classmethod
     def __empty(cls) -> PusTelemetry:
         return PusTelemetry(
-            service=0, subservice=0, time=CdsShortTimestamp.init_from_current_time()
+            service=0, subservice=0, time=CdsShortTimestamp.from_current_time()
         )
 
     def pack(self, calc_crc: bool = True) -> bytearray:
@@ -386,7 +386,7 @@ class PusTelemetry:
     def tm_data(self, data: bytes):
         self._source_data = data
         self.sp_header.data_len = self.data_len_from_src_len_timestamp_len(
-            self.pus_tm_sec_header.time.len(), len(data)
+            self.pus_tm_sec_header.time.len, len(data)
         )
 
     @property

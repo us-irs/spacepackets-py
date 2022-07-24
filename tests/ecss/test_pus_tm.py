@@ -48,7 +48,7 @@ class TestTelemetry(TestCase):
             apid=0xEF,
             seq_count=22,
             source_data=bytearray(),
-            time=CdsShortTimestamp.init_from_current_time(),
+            time=CdsShortTimestamp.from_current_time(),
         )
         self.ping_reply_raw = self.ping_reply.pack()
 
@@ -206,7 +206,7 @@ class TestTelemetry(TestCase):
             PusTmSecondaryHeader(
                 service=0,
                 subservice=0,
-                time=CdsShortTimestamp.init_from_current_time(),
+                time=CdsShortTimestamp.from_current_time(),
                 message_counter=129302,
             )
 
