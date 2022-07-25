@@ -5,6 +5,7 @@ import enum
 import struct
 import time
 from abc import abstractmethod, ABC
+from typing import Optional
 
 DAYS_CCSDS_TO_UNIX = -4383
 SECONDS_PER_DAY = 86400
@@ -84,25 +85,33 @@ class CdsShortTimestamp(CcsdsTimeCode):
     TIMESTAMP_SIZE = 7
 
     def __init__(self, ccsds_days: int, ms_of_day: int):
-        self.p_field = bytes([CdsShortTimestamp.CDS_SHORT_ID << 4])
+        self.__p_field = bytes([CdsShortTimestamp.CDS_SHORT_ID << 4])
         # CCSDS recommends a 1958 Januar 1 epoch, which is different from the Unix epoch
-        self.ccsds_days = ccsds_days
-        self.unix_days = convert_ccsds_days_to_unix_days(self.ccsds_days)
-        self.unix_seconds = self.unix_days * (24 * 60 * 60)
-        self.ms_of_day = ms_of_day
-        self.seconds_of_day = self.ms_of_day / 1000.0
-        self.unix_seconds += self.seconds_of_day
-        if self.unix_seconds < 0:
+        self._ccsds_days = ccsds_days
+        self._unix_seconds = 0
+        self._ms_of_day = ms_of_day
+        self._calculate_unix_seconds()
+        self._time_string = ""
+        self._calculate_time_string()
+
+    def _calculate_unix_seconds(self):
+        unix_days = convert_ccsds_days_to_unix_days(self._ccsds_days)
+        self._unix_seconds = unix_days * (24 * 60 * 60)
+        seconds_of_day = self._ms_of_day / 1000.0
+        self._unix_seconds += seconds_of_day
+
+    def _calculate_time_string(self):
+        if self._unix_seconds < 0:
             date = datetime.datetime(1970, 1, 1) + datetime.timedelta(
-                seconds=self.unix_seconds
+                seconds=self._unix_seconds
             )
         else:
-            date = datetime.datetime.utcfromtimestamp(self.unix_seconds)
-        self.time_string = date.strftime("%Y-%m-%d %H:%M:%S.%f")
+            date = datetime.datetime.utcfromtimestamp(self._unix_seconds)
+        self._time_string = date.strftime("%Y-%m-%d %H:%M:%S.%f")
 
     @property
     def pfield(self) -> bytes:
-        return self.p_field
+        return self.__p_field
 
     @property
     def len(self) -> int:
@@ -110,9 +119,9 @@ class CdsShortTimestamp(CcsdsTimeCode):
 
     def pack(self) -> bytearray:
         cds_packet = bytearray()
-        cds_packet.extend(self.p_field)
-        cds_packet.extend(struct.pack("!H", self.ccsds_days))
-        cds_packet.extend(struct.pack("!I", self.ms_of_day))
+        cds_packet.extend(self.__p_field)
+        cds_packet.extend(struct.pack("!H", self._ccsds_days))
+        cds_packet.extend(struct.pack("!I", self._ms_of_day))
         return cds_packet
 
     @classmethod
@@ -143,12 +152,12 @@ class CdsShortTimestamp(CcsdsTimeCode):
 
     def __repr__(self):
         return (
-            f"{self.__class__.__name__}(ccsds_days={self.ccsds_days!r}, "
-            f"ms_of_day={self.ms_of_day!r})"
+            f"{self.__class__.__name__}(ccsds_days={self._ccsds_days!r}, "
+            f"ms_of_day={self._ms_of_day!r})"
         )
 
     def __str__(self):
-        return f"Date: {self.time_string} with representation {self!r}"
+        return f"Date: {self._time_string} with representation {self!r}"
 
     @classmethod
     def from_current_time(cls) -> CdsShortTimestamp:
@@ -159,13 +168,14 @@ class CdsShortTimestamp(CcsdsTimeCode):
         )
 
     @staticmethod
-    def ms_of_day():
-        seconds = time.time()
-        fraction_ms = seconds - math.floor(seconds)
-        return int((seconds % SECONDS_PER_DAY) * 1000 + fraction_ms)
+    def ms_of_day(seconds_since_epoch: Optional[float] = None):
+        if seconds_since_epoch is None:
+            seconds_since_epoch = time.time()
+        fraction_ms = seconds_since_epoch - math.floor(seconds_since_epoch)
+        return int(math.floor((seconds_since_epoch % SECONDS_PER_DAY) * 1000 + fraction_ms))
 
     def as_unix_seconds(self) -> int:
-        return self.unix_seconds
+        return self._unix_seconds
 
     def as_time_string(self) -> str:
-        return self.time_string
+        return self._time_string
