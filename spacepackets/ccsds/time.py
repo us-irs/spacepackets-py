@@ -164,7 +164,7 @@ class CdsShortTimestamp(CcsdsTimeCode):
         """Returns a seven byte CDS short timestamp with the current time"""
         return cls.from_unix_days(
             unix_days=(datetime.datetime.utcnow() - UNIX_EPOCH).days,
-            ms_of_day=cls.ms_of_day()
+            ms_of_day=cls.ms_of_day(),
         )
 
     @staticmethod
@@ -172,7 +172,9 @@ class CdsShortTimestamp(CcsdsTimeCode):
         if seconds_since_epoch is None:
             seconds_since_epoch = time.time()
         fraction_ms = seconds_since_epoch - math.floor(seconds_since_epoch)
-        return int(math.floor((seconds_since_epoch % SECONDS_PER_DAY) * 1000 + fraction_ms))
+        return int(
+            math.floor((seconds_since_epoch % SECONDS_PER_DAY) * 1000 + fraction_ms)
+        )
 
     def as_unix_seconds(self) -> int:
         return self._unix_seconds
