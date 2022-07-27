@@ -67,8 +67,11 @@ class CcsdsTimeCode(ABC):
         pass
 
     @abstractmethod
-    def as_time_string(self) -> str:
+    def as_datetime(self) -> datetime:
         pass
+
+    def as_time_string(self) -> str:
+        return self.as_datetime().strftime("%Y-%m-%d %H:%M:%S.%f")
 
     def ccsds_time_code(self) -> int:
         if self.pfield == bytes():
@@ -91,8 +94,7 @@ class CdsShortTimestamp(CcsdsTimeCode):
         self._unix_seconds = 0
         self._ms_of_day = ms_of_day
         self._calculate_unix_seconds()
-        self._time_string = ""
-        self._calculate_time_string()
+        self._calculate_date_time()
 
     def _calculate_unix_seconds(self):
         unix_days = convert_ccsds_days_to_unix_days(self._ccsds_days)
@@ -100,14 +102,13 @@ class CdsShortTimestamp(CcsdsTimeCode):
         seconds_of_day = self._ms_of_day / 1000.0
         self._unix_seconds += seconds_of_day
 
-    def _calculate_time_string(self):
+    def _calculate_date_time(self):
         if self._unix_seconds < 0:
-            date = datetime.datetime(1970, 1, 1) + datetime.timedelta(
+            self._date_time = datetime.datetime(1970, 1, 1) + datetime.timedelta(
                 seconds=self._unix_seconds
             )
         else:
-            date = datetime.datetime.utcfromtimestamp(self._unix_seconds)
-        self._time_string = date.strftime("%Y-%m-%d %H:%M:%S.%f")
+            self._date_time = datetime.datetime.utcfromtimestamp(self._unix_seconds)
 
     @property
     def pfield(self) -> bytes:
@@ -157,7 +158,7 @@ class CdsShortTimestamp(CcsdsTimeCode):
         )
 
     def __str__(self):
-        return f"Date: {self._time_string} with representation {self!r}"
+        return f"Date {self._date_time!r} with representation {self!r}"
 
     @classmethod
     def from_current_time(cls) -> CdsShortTimestamp:
@@ -179,5 +180,6 @@ class CdsShortTimestamp(CcsdsTimeCode):
     def as_unix_seconds(self) -> int:
         return self._unix_seconds
 
-    def as_time_string(self) -> str:
-        return self._time_string
+    @abstractmethod
+    def as_datetime(self) -> datetime:
+        return self._date_time
