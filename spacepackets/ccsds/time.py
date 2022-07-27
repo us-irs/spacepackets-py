@@ -63,7 +63,7 @@ class CcsdsTimeCode(ABC):
         pass
 
     @abstractmethod
-    def as_unix_seconds(self) -> int:
+    def as_unix_seconds(self) -> float:
         pass
 
     @abstractmethod
@@ -100,7 +100,10 @@ class CdsShortTimestamp(CcsdsTimeCode):
         unix_days = convert_ccsds_days_to_unix_days(self._ccsds_days)
         self._unix_seconds = unix_days * (24 * 60 * 60)
         seconds_of_day = self._ms_of_day / 1000.0
-        self._unix_seconds += seconds_of_day
+        if self._unix_seconds < 0:
+            self._unix_seconds -= seconds_of_day
+        else:
+            self._unix_seconds += seconds_of_day
 
     def _calculate_date_time(self):
         if self._unix_seconds < 0:
@@ -108,7 +111,9 @@ class CdsShortTimestamp(CcsdsTimeCode):
                 seconds=self._unix_seconds
             )
         else:
-            self._date_time = datetime.datetime.utcfromtimestamp(self._unix_seconds)
+            self._date_time = datetime.datetime.utcfromtimestamp(
+                self._unix_seconds
+            )
 
     @property
     def pfield(self) -> bytes:
@@ -177,9 +182,8 @@ class CdsShortTimestamp(CcsdsTimeCode):
             math.floor((seconds_since_epoch % SECONDS_PER_DAY) * 1000 + fraction_ms)
         )
 
-    def as_unix_seconds(self) -> int:
+    def as_unix_seconds(self) -> float:
         return self._unix_seconds
 
-    @abstractmethod
     def as_datetime(self) -> datetime:
         return self._date_time
