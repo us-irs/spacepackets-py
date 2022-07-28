@@ -111,9 +111,7 @@ class CdsShortTimestamp(CcsdsTimeCode):
                 seconds=self._unix_seconds
             )
         else:
-            self._date_time = datetime.datetime.utcfromtimestamp(
-                self._unix_seconds
-            )
+            self._date_time = datetime.datetime.utcfromtimestamp(self._unix_seconds)
 
     @property
     def pfield(self) -> bytes:
