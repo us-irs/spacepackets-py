@@ -31,7 +31,6 @@ class Service17Tm:
             source_data=source_data,
             apid=apid,
             packet_version=packet_version,
-            secondary_header_flag=secondary_header_flag,
             space_time_ref=space_time_ref,
             destination_id=destination_id,
         )

@@ -138,7 +138,6 @@ class PusTelecommand:
         """
         if apid == -1:
             apid = get_default_tc_apid()
-        secondary_header_flag = 1
         self.pus_tc_sec_header = PusTcDataFieldHeader(
             service=service,
             subservice=subservice,
@@ -151,7 +150,7 @@ class PusTelecommand:
         )
         self.sp_header = SpacePacketHeader(
             apid=apid,
-            sec_header_flag=bool(secondary_header_flag),
+            sec_header_flag=True,
             packet_type=PacketTypes.TC,
             seq_flags=seq_flags,
             data_len=data_length,

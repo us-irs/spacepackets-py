@@ -188,7 +188,6 @@ class PusTelemetry:
         space_time_ref: int = 0b0000,
         destination_id: int = 0,
         packet_version: int = 0b000,
-        secondary_header_flag: bool = True,
     ):
         if apid == FETCH_GLOBAL_APID:
             apid = get_default_tm_apid()
@@ -204,7 +203,7 @@ class PusTelemetry:
         self.sp_header = SpacePacketHeader(
             apid=apid,
             packet_type=packet_type,
-            sec_header_flag=secondary_header_flag,
+            sec_header_flag=True,
             ccsds_version=packet_version,
             data_len=data_length,
             seq_count=seq_count,

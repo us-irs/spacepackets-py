@@ -116,7 +116,7 @@ class SpacePacketHeader:
         apid: int,
         seq_count: int,
         data_len: int,
-        sec_header_flag: bool = True,
+        sec_header_flag: bool = False,
         seq_flags: SequenceFlags = SequenceFlags.UNSEGMENTED,
         ccsds_version: int = 0b000,
     ):
@@ -132,7 +132,7 @@ class SpacePacketHeader:
         >>> sph.packet_len
         19
         >>> sph.packet_id
-        PacketId(ptype=<PacketTypes.TC: 1>, sec_header_flag=True, apid=66)
+        PacketId(ptype=<PacketTypes.TC: 1>, sec_header_flag=False, apid=66)
         >>> sph.psc
         PacketSeqCtrl(seq_flags=<SequenceFlags.UNSEGMENTED: 3>, seq_count=0)
 
