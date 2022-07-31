@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
+import struct
 from typing import Optional
 from unittest import TestCase
 from unittest.mock import MagicMock
+
+from crcmod.predefined import mkPredefinedCrcFun
 
 from spacepackets.ccsds.spacepacket import (
     PacketId,
@@ -75,7 +78,6 @@ class TestTelemetry(TestCase):
         self.assertEqual(self.ping_reply.packet_len, 22)
 
     def test_raw(self):
-        print(self.ping_reply_raw.hex(sep=","))
         # Secondary header is set -> 0b0000_1000 , APID only occupies lower byte
         self.assertEqual(self.ping_reply_raw[0], 0b0000_1000)
         self.assertEqual(self.ping_reply_raw[1], 0xEF)
@@ -85,6 +87,20 @@ class TestTelemetry(TestCase):
         self.assertEqual((self.ping_reply_raw[4] << 8) | self.ping_reply_raw[5], 15)
         # SC time ref status is 0
         self.assertEqual(self.ping_reply_raw[6], PusVersion.PUS_C << 4)
+        self.assertEqual(self.ping_reply_raw[7], 17)
+        self.assertEqual(self.ping_reply_raw[8], 2)
+        # MSG counter
+        self.assertEqual(self.ping_reply_raw[9], 0x00)
+        self.assertEqual(self.ping_reply_raw[10], 0x00)
+        # Destination ID
+        self.assertEqual(self.ping_reply_raw[11], 0x00)
+        self.assertEqual(self.ping_reply_raw[12], 0x00)
+        self.assertEqual(self.ping_reply_raw[13: 13 + 7], self.raw_stamp)
+        # CRC16-CCITT checksum
+        crc_func = mkPredefinedCrcFun(crc_name="crc-ccitt-false")
+        data_to_check = self.ping_reply_raw[0: 20]
+        crc16 = crc_func(data_to_check)
+        self.assertEqual(crc16, struct.unpack("!H", self.ping_reply_raw[20:22])[0])
 
     def test_state_setting(self):
         self.ping_reply.sp_header.apid = 0x22
