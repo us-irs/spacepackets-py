@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from typing import Optional
 from unittest import TestCase
+from unittest.mock import MagicMock
 
 from spacepackets.ccsds.spacepacket import (
     PacketId,
@@ -9,6 +10,7 @@ from spacepackets.ccsds.spacepacket import (
     SequenceFlags,
     SpacePacketHeader,
 )
+from spacepackets.ccsds.time import CcsdsTimeProvider
 from spacepackets.ecss import PacketFieldEnum
 from spacepackets.ecss.tc import PusTelecommand
 from spacepackets.ecss.conf import set_default_tm_apid
@@ -42,13 +44,17 @@ from spacepackets.ecss.pus_1_verification import (
 
 class TestTelemetry(TestCase):
     def setUp(self) -> None:
+        self.time_stamp_provider = MagicMock(spec=CcsdsTimeProvider)
+        self.time_stamp_provider.len = 7
+        self.raw_stamp = bytes([0, 1, 2, 3, 4, 5, 6])
+        self.time_stamp_provider.pack.return_value = self.raw_stamp
         self.ping_reply = PusTelemetry(
             service=17,
             subservice=2,
             apid=0xEF,
             seq_count=22,
             source_data=bytearray(),
-            time_provider=CdsShortTimestamp.from_current_time(),
+            time_provider=self.time_stamp_provider,
         )
         self.ping_reply_raw = self.ping_reply.pack()
 
@@ -150,13 +156,21 @@ class TestTelemetry(TestCase):
         self.ping_reply.tm_data = source_data
         self.ping_reply.sp_header.apid = 0x22
         self.ping_reply_raw = self.ping_reply.pack()
-        pus_17_tm_unpacked = PusTelemetry.unpack(raw_telemetry=self.ping_reply_raw)
+        self.time_stamp_provider.read_from_raw = MagicMock()
+        pus_17_tm_unpacked = PusTelemetry.unpack(
+            raw_telemetry=self.ping_reply_raw,
+            time_reader=self.time_stamp_provider
+        )
 
         self.assertEqual(pus_17_tm_unpacked.apid, 0x22)
         self.assertEqual(
             pus_17_tm_unpacked.pus_tm_sec_header.pus_version, PusVersion.PUS_C
         )
         self.assertTrue(pus_17_tm_unpacked.valid)
+        pus_17_tm_unpacked.pus_tm_sec_header.time_provider.read_from_raw.assert_called_once()
+        pus_17_tm_unpacked.pus_tm_sec_header.time_provider.read_from_raw.assert_called_with(
+            self.raw_stamp
+        )
         self.assertEqual(pus_17_tm_unpacked.tm_data, source_data)
         self.assertEqual(pus_17_tm_unpacked.packet_id.raw(), 0x0822)
 
@@ -173,13 +187,19 @@ class TestTelemetry(TestCase):
         self.ping_reply_raw[5] = correct_size & 0xFF
         self.ping_reply_raw.append(0)
         # Should work with a warning
-        pus_17_tm_unpacked = PusTelemetry.unpack(raw_telemetry=self.ping_reply_raw)
+        pus_17_tm_unpacked = PusTelemetry.unpack(
+            raw_telemetry=self.ping_reply_raw,
+            time_reader=self.time_stamp_provider
+        )
 
         # This should cause the CRC calculation to fail
         incorrect_size = correct_size + 1
         self.ping_reply_raw[4] = (incorrect_size & 0xFF00) >> 8
         self.ping_reply_raw[5] = incorrect_size & 0xFF
-        pus_17_tm_unpacked = PusTelemetry.unpack(raw_telemetry=self.ping_reply_raw)
+        pus_17_tm_unpacked = PusTelemetry.unpack(
+            raw_telemetry=self.ping_reply_raw,
+            time_reader=self.time_stamp_provider
+        )
 
     def test_faulty_unpack(self):
         self.assertRaises(ValueError, PusTelemetry.unpack, None, None)
