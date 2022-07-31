@@ -6,7 +6,7 @@ import enum
 from dataclasses import dataclass
 from typing import Optional
 
-from spacepackets.ccsds.time import CdsShortTimestamp
+from spacepackets.ccsds.time import CdsShortTimestamp, CcsdsTimeProvider
 from spacepackets.ecss import PusTelecommand
 from spacepackets.ecss.conf import FETCH_GLOBAL_APID
 from spacepackets.ecss.defs import PusServices
@@ -124,7 +124,7 @@ class Service1Tm:
         self,
         subservice: Subservices,
         verif_params: Optional[VerificationParams] = None,
-        time: CdsShortTimestamp = None,
+        time_provider: Optional[CcsdsTimeProvider] = None,
         seq_count: int = 0,
         apid: int = FETCH_GLOBAL_APID,
         packet_version: int = 0b000,
@@ -139,7 +139,7 @@ class Service1Tm:
         self.pus_tm = PusTelemetry(
             service=PusServices.S1_VERIFICATION,
             subservice=subservice,
-            time=time,
+            time_provider=time_provider,
             seq_count=seq_count,
             apid=apid,
             packet_version=packet_version,

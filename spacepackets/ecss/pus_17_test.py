@@ -1,5 +1,8 @@
 from __future__ import annotations
 import enum
+from typing import Optional
+
+from spacepackets.ccsds.time import CcsdsTimeProvider
 from spacepackets.ecss.defs import PusServices
 from spacepackets.ecss.tm import CdsShortTimestamp, PusVersion, PusTelemetry
 
@@ -13,7 +16,7 @@ class Service17Tm:
     def __init__(
         self,
         subservice: int,
-        time: CdsShortTimestamp = None,
+        time_provider: Optional[CcsdsTimeProvider] = None,
         ssc: int = 0,
         source_data: bytearray = bytearray([]),
         apid: int = -1,
@@ -26,7 +29,7 @@ class Service17Tm:
         self.pus_tm = PusTelemetry(
             service=PusServices.S17_TEST,
             subservice=subservice,
-            time=time,
+            time_provider=time_provider,
             seq_count=ssc,
             source_data=source_data,
             apid=apid,

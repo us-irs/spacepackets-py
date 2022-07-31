@@ -47,7 +47,7 @@ def read_p_field(p_field: int) -> CcsdsTimeCodeId:
     return CcsdsTimeCodeId((p_field & 0x70) >> 4)
 
 
-class CcsdsTimeCode(ABC):
+class CcsdsTimeProvider(ABC):
     @property
     @abstractmethod
     def pfield(self) -> bytes:
@@ -60,6 +60,10 @@ class CcsdsTimeCode(ABC):
 
     @abstractmethod
     def pack(self) -> bytearray:
+        pass
+
+    @abstractmethod
+    def read_from_raw(self, timestamp: bytes):
         pass
 
     @abstractmethod
@@ -79,7 +83,7 @@ class CcsdsTimeCode(ABC):
         return (self.pfield[0] >> 4) & 0b111
 
 
-class CdsShortTimestamp(CcsdsTimeCode):
+class CdsShortTimestamp(CcsdsTimeProvider):
     """Unpacks the time datafield of the TM packet. Right now, CDS Short timeformat is used,
     and the size of the time stamp is expected to be seven bytes.
     """
@@ -88,6 +92,9 @@ class CdsShortTimestamp(CcsdsTimeCode):
     TIMESTAMP_SIZE = 7
 
     def __init__(self, ccsds_days: int, ms_of_day: int):
+        self._setup(ccsds_days, ms_of_day)
+
+    def _setup(self, ccsds_days: int, ms_of_day: int):
         self.__p_field = bytes([CdsShortTimestamp.CDS_SHORT_ID << 4])
         # CCSDS recommends a 1958 Januar 1 epoch, which is different from the Unix epoch
         self._ccsds_days = ccsds_days
@@ -136,23 +143,28 @@ class CdsShortTimestamp(CcsdsTimeCode):
         )
 
     @classmethod
-    def __empty(cls):
+    def empty(cls):
         return cls(ccsds_days=0, ms_of_day=0)
 
     @classmethod
     def unpack(cls, time_field: bytes) -> CdsShortTimestamp:
-        if len(time_field) < cls.TIMESTAMP_SIZE:
-            raise ValueError
-        # TODO: check ID?
-        p_field = time_field[0]
-        ccsds_days = (time_field[1] << 8) | (time_field[2])
-        ms_of_day = (
-            (time_field[3] << 24)
-            | (time_field[4] << 16)
-            | (time_field[5]) << 8
-            | time_field[6]
-        )
+        ccsds_days, ms_of_day = CdsShortTimestamp.unpack_from_raw(time_field)
         return cls(ccsds_days=ccsds_days, ms_of_day=ms_of_day)
+
+    def read_from_raw(self, timestamp: bytes):
+        ccsds_days, ms_of_day = CdsShortTimestamp.unpack_from_raw(timestamp)
+        self._setup(ccsds_days, ms_of_day)
+
+    @staticmethod
+    def unpack_from_raw(raw: bytes) -> (int, int):
+        p_field = raw[0]
+        if (p_field >> 4) & 0b111 != CcsdsTimeCodeId.CDS:
+            raise ValueError(
+                f"Invalid CCSDS Time Code {p_field}, expected {CcsdsTimeCodeId.CDS}"
+            )
+        ccsds_days = (raw[1] << 8) | (raw[2])
+        ms_of_day = (raw[3] << 24) | (raw[4] << 16) | (raw[5]) << 8 | raw[6]
+        return ccsds_days, ms_of_day
 
     def __repr__(self):
         return (

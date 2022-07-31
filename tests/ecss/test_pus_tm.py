@@ -48,7 +48,7 @@ class TestTelemetry(TestCase):
             apid=0xEF,
             seq_count=22,
             source_data=bytearray(),
-            time=CdsShortTimestamp.from_current_time(),
+            time_provider=CdsShortTimestamp.from_current_time(),
         )
         self.ping_reply_raw = self.ping_reply.pack()
 
@@ -75,6 +75,10 @@ class TestTelemetry(TestCase):
         self.assertEqual(self.ping_reply_raw[1], 0xEF)
         # Unsegmented is the default
         self.assertEqual(self.ping_reply_raw[2], 0xC0)
+        self.assertEqual(self.ping_reply_raw[3], 22)
+        self.assertEqual((self.ping_reply_raw[4] << 8) | self.ping_reply_raw[5], 15)
+        # SC time ref status is 0
+        self.assertEqual(self.ping_reply_raw[6], PusVersion.PUS_C << 4)
 
     def test_state_setting(self):
         self.ping_reply.sp_header.apid = 0x22
@@ -126,7 +130,7 @@ class TestTelemetry(TestCase):
     def test_full_printout(self):
         crc16 = self.ping_reply.crc16
         crc_string = f"{(crc16 & 0xff00) >> 8:02x},{crc16 & 0xff:02x}"
-        raw_time = self.ping_reply.pus_tm_sec_header.time.pack()
+        raw_time = self.ping_reply.pus_tm_sec_header.time_provider.pack()
         raw_space_packet_header = self.ping_reply.sp_header.pack()
         sp_header_as_str = raw_space_packet_header.hex(sep=",", bytes_per_sep=1)
         raw_secondary_packet_header = self.ping_reply.pus_tm_sec_header.pack()
@@ -178,13 +182,13 @@ class TestTelemetry(TestCase):
         pus_17_tm_unpacked = PusTelemetry.unpack(raw_telemetry=self.ping_reply_raw)
 
     def test_faulty_unpack(self):
-        self.assertRaises(ValueError, PusTelemetry.unpack, None)
-        self.assertRaises(ValueError, PusTelemetry.unpack, bytearray())
+        self.assertRaises(ValueError, PusTelemetry.unpack, None, None)
+        self.assertRaises(ValueError, PusTelemetry.unpack, bytearray(), None)
 
     def test_invalid_sec_header_unpack(self):
         invalid_secondary_header = bytearray([0x20, 0x00, 0x01, 0x06])
         self.assertRaises(
-            ValueError, PusTmSecondaryHeader.unpack, invalid_secondary_header
+            ValueError, PusTmSecondaryHeader.unpack, invalid_secondary_header, None
         )
 
     def test_space_packet_conversion(self):
@@ -206,7 +210,7 @@ class TestTelemetry(TestCase):
             PusTmSecondaryHeader(
                 service=0,
                 subservice=0,
-                time=CdsShortTimestamp.from_current_time(),
+                time_provider=CdsShortTimestamp.from_current_time(),
                 message_counter=129302,
             )
 
@@ -214,7 +218,7 @@ class TestTelemetry(TestCase):
         # Set length field invalid
         self.ping_reply_raw[4] = 0x00
         self.ping_reply_raw[5] = 0x00
-        self.assertRaises(ValueError, PusTelemetry.unpack, self.ping_reply_raw)
+        self.assertRaises(ValueError, PusTelemetry.unpack, self.ping_reply_raw, None)
 
     def test_service_17_tm(self):
         srv_17_tm = Service17Tm(subservice=2)
