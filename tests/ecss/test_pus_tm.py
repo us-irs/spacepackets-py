@@ -54,8 +54,8 @@ class TestTelemetry(TestCase):
         self.ping_reply = PusTelemetry(
             service=17,
             subservice=2,
-            apid=0xEF,
-            seq_count=22,
+            apid=0x123,
+            seq_count=0x234,
             source_data=bytearray(),
             time_provider=self.time_stamp_provider,
         )
@@ -73,17 +73,19 @@ class TestTelemetry(TestCase):
         )
         self.assertEqual(self.ping_reply.subservice, 2)
         self.assertEqual(self.ping_reply.service, 17)
-        self.assertEqual(self.ping_reply.seq_count, 22)
+        self.assertEqual(self.ping_reply.apid, 0x123)
+        self.assertEqual(self.ping_reply.seq_count, 0x234)
         self.assertEqual(self.ping_reply.sp_header.data_len, 15)
         self.assertEqual(self.ping_reply.packet_len, 22)
 
     def test_raw(self):
-        # Secondary header is set -> 0b0000_1000 , APID only occupies lower byte
-        self.assertEqual(self.ping_reply_raw[0], 0b0000_1000)
-        self.assertEqual(self.ping_reply_raw[1], 0xEF)
-        # Unsegmented is the default
-        self.assertEqual(self.ping_reply_raw[2], 0xC0)
-        self.assertEqual(self.ping_reply_raw[3], 22)
+        # Secondary header is set -> 0b0000_1001 , APID occupies last bit of first byte
+        self.assertEqual(self.ping_reply_raw[0], 0x09)
+        # Rest of APID
+        self.assertEqual(self.ping_reply_raw[1], 0x23)
+        # Unsegmented is the default, and first byte of 0x234 occupies this byte as well
+        self.assertEqual(self.ping_reply_raw[2], 0xC2)
+        self.assertEqual(self.ping_reply_raw[3], 0x34)
         self.assertEqual((self.ping_reply_raw[4] << 8) | self.ping_reply_raw[5], 15)
         # SC time ref status is 0
         self.assertEqual(self.ping_reply_raw[6], PusVersion.PUS_C << 4)

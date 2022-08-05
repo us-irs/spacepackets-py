@@ -196,16 +196,13 @@ class PusTelemetry:
             apid = get_default_tm_apid()
         if time_provider is None:
             time_provider = CdsShortTimestamp.from_current_time()
-        # packet type for telemetry is 0 as specified in standard
-        # specified in standard
-        packet_type = PacketTypes.TM
         self._source_data = source_data
         data_length = self.data_len_from_src_len_timestamp_len(
             timestamp_len=time_provider.len, source_data_len=len(self._source_data)
         )
         self.sp_header = SpacePacketHeader(
             apid=apid,
-            packet_type=packet_type,
+            packet_type=PacketTypes.TM,
             sec_header_flag=True,
             ccsds_version=packet_version,
             data_len=data_length,
