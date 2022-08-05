@@ -97,10 +97,10 @@ class TestTelemetry(TestCase):
         # Destination ID
         self.assertEqual(self.ping_reply_raw[11], 0x00)
         self.assertEqual(self.ping_reply_raw[12], 0x00)
-        self.assertEqual(self.ping_reply_raw[13: 13 + 7], self.raw_stamp)
+        self.assertEqual(self.ping_reply_raw[13 : 13 + 7], self.raw_stamp)
         # CRC16-CCITT checksum
         crc_func = mkPredefinedCrcFun(crc_name="crc-ccitt-false")
-        data_to_check = self.ping_reply_raw[0: 20]
+        data_to_check = self.ping_reply_raw[0:20]
         crc16 = crc_func(data_to_check)
         self.assertEqual(crc16, struct.unpack("!H", self.ping_reply_raw[20:22])[0])
 
@@ -176,8 +176,7 @@ class TestTelemetry(TestCase):
         self.ping_reply_raw = self.ping_reply.pack()
         self.time_stamp_provider.read_from_raw = MagicMock()
         pus_17_tm_unpacked = PusTelemetry.unpack(
-            raw_telemetry=self.ping_reply_raw,
-            time_reader=self.time_stamp_provider
+            raw_telemetry=self.ping_reply_raw, time_reader=self.time_stamp_provider
         )
 
         self.assertEqual(pus_17_tm_unpacked.apid, 0x22)
@@ -206,8 +205,7 @@ class TestTelemetry(TestCase):
         self.ping_reply_raw.append(0)
         # Should work with a warning
         pus_17_tm_unpacked = PusTelemetry.unpack(
-            raw_telemetry=self.ping_reply_raw,
-            time_reader=self.time_stamp_provider
+            raw_telemetry=self.ping_reply_raw, time_reader=self.time_stamp_provider
         )
 
         # This should cause the CRC calculation to fail
@@ -215,8 +213,7 @@ class TestTelemetry(TestCase):
         self.ping_reply_raw[4] = (incorrect_size & 0xFF00) >> 8
         self.ping_reply_raw[5] = incorrect_size & 0xFF
         pus_17_tm_unpacked = PusTelemetry.unpack(
-            raw_telemetry=self.ping_reply_raw,
-            time_reader=self.time_stamp_provider
+            raw_telemetry=self.ping_reply_raw, time_reader=self.time_stamp_provider
         )
 
     def test_faulty_unpack(self):
