@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [unreleased]
 
+## [v0.13.0]
+
+- Improved Time Handling inside for the TM module, make it possible
+  to use different timestamps
+- Introduces `CcsdsTimeProvider` abstraction to allow this.
+- Improve implementation of `CdsShortTimestamp` class
+
 ## [v0.13.0rc2] 12.07.2022
 
 - Improved documentation, first docstrings
