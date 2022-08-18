@@ -172,6 +172,10 @@ class Service1Tm:
         return service_1_tm
 
     @property
+    def service(self):
+        return self.pus_tm.service
+
+    @property
     def subservice(self):
         return self.pus_tm.subservice
 
