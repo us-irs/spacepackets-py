@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   to use different timestamps
 - Introduces `CcsdsTimeProvider` abstraction to allow this.
 - Improve implementation of `CdsShortTimestamp` class
+- Basic `AbstractPusTm` class
 
 ## [v0.13.0rc2] 12.07.2022
 

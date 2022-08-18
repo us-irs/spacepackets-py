@@ -3,6 +3,7 @@
 """
 from __future__ import annotations
 
+from abc import abstractmethod, ABC
 import struct
 from typing import Optional
 
@@ -23,6 +24,25 @@ from spacepackets.ecss.conf import (
     get_default_tm_apid,
     FETCH_GLOBAL_APID,
 )
+
+
+class AbstractPusTm(ABC):
+    """Generic abstraction for PUS TM packets"""
+
+    @property
+    @abstractmethod
+    def service(self) -> int:
+        pass
+
+    @property
+    @abstractmethod
+    def subservice(self) -> int:
+        pass
+
+    @property
+    @abstractmethod
+    def source_data(self) -> bytes:
+        pass
 
 
 class PusTmSecondaryHeader:
@@ -154,7 +174,7 @@ class PusTmSecondaryHeader:
         return self.time_provider.len + 7
 
 
-class PusTelemetry:
+class PusTelemetry(AbstractPusTm):
     """Generic PUS telemetry class representation.
 
     Can be used to generate TM packets using a high level interface with the default constructor,
@@ -378,13 +398,17 @@ class PusTelemetry:
         return self.pus_tm_sec_header.subservice
 
     @property
+    def source_data(self) -> bytes:
+        return self.tm_data
+
+    @property
     def valid(self) -> bool:
         return self._valid
 
     @property
     def tm_data(self) -> bytearray:
         """
-        :return: TM application data (raw)
+        :return: TM source data (raw)
         """
         return self._source_data
 
