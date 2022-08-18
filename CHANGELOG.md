@@ -16,6 +16,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Improve implementation of `CdsShortTimestamp` class
 - Basic `AbstractPusTm` class
 
+## [v0.13.0rc3] 19.07.2022
+
+- Refactored and improved TLV API and handling. Implementation is also a bit more efficient
+- Basic CFDP version support: Sanity checks on version field. Only version 2 supported
+
 ## [v0.13.0rc2] 12.07.2022
 
 - Improved documentation, first docstrings
