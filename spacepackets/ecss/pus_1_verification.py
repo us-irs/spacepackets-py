@@ -6,7 +6,8 @@ import enum
 from dataclasses import dataclass
 from typing import Optional
 
-from spacepackets.ccsds.time import CdsShortTimestamp, CcsdsTimeProvider
+from spacepackets.ccsds import SpacePacketHeader
+from spacepackets.ccsds.time import CcsdsTimeProvider
 from spacepackets.ecss import PusTelecommand
 from spacepackets.ecss.conf import FETCH_GLOBAL_APID
 from spacepackets.ecss.defs import PusServices
@@ -169,6 +170,9 @@ class Service1Tm(AbstractPusTm):
         service_1_tm.pus_tm = PusTelemetry.unpack(raw_telemetry=data)
         cls._unpack_raw_tm(service_1_tm, params)
         return service_1_tm
+
+    def get_sp_header(self) -> SpacePacketHeader:
+        return self.pus_tm.sp_header
 
     @property
     def service(self):

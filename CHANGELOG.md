@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Introduces `CcsdsTimeProvider` abstraction to allow this.
 - Improve implementation of `CdsShortTimestamp` class
 - Basic `AbstractPusTm` class
+- Basic `AbstractSpacePacket` class
 
 ## [v0.13.0rc3] 19.07.2022
 

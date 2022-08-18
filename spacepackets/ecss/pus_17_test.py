@@ -2,6 +2,7 @@ from __future__ import annotations
 import enum
 from typing import Optional
 
+from spacepackets import SpacePacketHeader
 from spacepackets.ccsds.time import CcsdsTimeProvider
 from spacepackets.ecss.defs import PusServices
 from spacepackets.ecss.tm import PusVersion, PusTelemetry, AbstractPusTm
@@ -36,6 +37,9 @@ class Service17Tm(AbstractPusTm):
             destination_id=destination_id,
         )
 
+    def get_sp_header(self) -> SpacePacketHeader:
+        return self.pus_tm.get_sp_header()
+
     @property
     def service(self) -> int:
         return self.pus_tm.service
@@ -58,7 +62,7 @@ class Service17Tm(AbstractPusTm):
     @classmethod
     def unpack(
         cls,
-        raw_telemetry: bytearray,
+        raw_telemetry: bytes,
         pus_version: PusVersion = PusVersion.GLOBAL_CONFIG,
     ) -> Service17Tm:
         service_17_tm = cls.__empty()

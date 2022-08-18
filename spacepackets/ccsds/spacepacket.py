@@ -1,6 +1,8 @@
 """This module also includes the :py:class:`SpacePacketHeader` class, which is the header component
 of all CCSDS packets"""
 from __future__ import annotations
+
+from abc import abstractmethod, ABC
 import enum
 import struct
 
@@ -106,7 +108,19 @@ class PacketId:
         )
 
 
-class SpacePacketHeader:
+class AbstractSpacePacket(ABC):
+    @property
+    @abstractmethod
+    def apid(self) -> int:
+        pass
+
+    @property
+    @abstractmethod
+    def seq_count(self) -> int:
+        pass
+
+
+class SpacePacketHeader(AbstractSpacePacket):
     """This class encapsulates the space packet header.
     Packet reference: Blue Book CCSDS 133.0-B-2"""
 
