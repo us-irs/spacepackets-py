@@ -6,7 +6,8 @@ import enum
 from dataclasses import dataclass
 from typing import Optional
 
-from spacepackets.ccsds.time import CdsShortTimestamp, CcsdsTimeProvider
+from spacepackets.ccsds import SpacePacketHeader
+from spacepackets.ccsds.time import CcsdsTimeProvider
 from spacepackets.ecss import PusTelecommand
 from spacepackets.ecss.conf import FETCH_GLOBAL_APID
 from spacepackets.ecss.defs import PusServices
@@ -15,7 +16,6 @@ from spacepackets.ecss.tm import PusTelemetry, AbstractPusTm
 from spacepackets.log import get_console_logger
 
 from .req_id import RequestId
-from .. import SpacePacketHeader
 
 
 class Subservices(enum.IntEnum):
