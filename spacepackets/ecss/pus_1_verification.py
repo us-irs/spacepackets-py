@@ -11,7 +11,7 @@ from spacepackets.ecss import PusTelecommand
 from spacepackets.ecss.conf import FETCH_GLOBAL_APID
 from spacepackets.ecss.defs import PusServices
 from spacepackets.ecss.fields import PacketFieldEnum
-from spacepackets.ecss.tm import PusTelemetry
+from spacepackets.ecss.tm import PusTelemetry, AbstractPusTm
 from spacepackets.log import get_console_logger
 
 from .req_id import RequestId
@@ -117,7 +117,7 @@ class InvalidVerifParams(Exception):
     pass
 
 
-class Service1Tm:
+class Service1Tm(AbstractPusTm):
     """Service 1 TM class representation"""
 
     def __init__(
@@ -128,7 +128,6 @@ class Service1Tm:
         seq_count: int = 0,
         apid: int = FETCH_GLOBAL_APID,
         packet_version: int = 0b000,
-        secondary_header_flag: bool = True,
         space_time_ref: int = 0b0000,
         destination_id: int = 0,
     ):
@@ -178,6 +177,10 @@ class Service1Tm:
     @property
     def subservice(self):
         return self.pus_tm.subservice
+
+    @property
+    def source_data(self) -> bytes:
+        return self.pus_tm.source_data
 
     @classmethod
     def _unpack_raw_tm(cls, instance: Service1Tm, params: UnpackParams):
