@@ -6,12 +6,12 @@ import enum
 from dataclasses import dataclass
 from typing import Optional
 
-from spacepackets.ccsds.time import CdsShortTimestamp
+from spacepackets.ccsds.time import CdsShortTimestamp, CcsdsTimeProvider
 from spacepackets.ecss import PusTelecommand
 from spacepackets.ecss.conf import FETCH_GLOBAL_APID
 from spacepackets.ecss.defs import PusServices
 from spacepackets.ecss.fields import PacketFieldEnum
-from spacepackets.ecss.tm import PusTelemetry
+from spacepackets.ecss.tm import PusTelemetry, AbstractPusTm
 from spacepackets.log import get_console_logger
 
 from .req_id import RequestId
@@ -117,18 +117,17 @@ class InvalidVerifParams(Exception):
     pass
 
 
-class Service1Tm:
+class Service1Tm(AbstractPusTm):
     """Service 1 TM class representation"""
 
     def __init__(
         self,
         subservice: Subservices,
         verif_params: Optional[VerificationParams] = None,
-        time: CdsShortTimestamp = None,
+        time_provider: Optional[CcsdsTimeProvider] = None,
         seq_count: int = 0,
         apid: int = FETCH_GLOBAL_APID,
         packet_version: int = 0b000,
-        secondary_header_flag: bool = True,
         space_time_ref: int = 0b0000,
         destination_id: int = 0,
     ):
@@ -139,11 +138,10 @@ class Service1Tm:
         self.pus_tm = PusTelemetry(
             service=PusServices.S1_VERIFICATION,
             subservice=subservice,
-            time=time,
+            time_provider=time_provider,
             seq_count=seq_count,
             apid=apid,
             packet_version=packet_version,
-            secondary_header_flag=secondary_header_flag,
             space_time_ref=space_time_ref,
             destination_id=destination_id,
         )
@@ -173,8 +171,16 @@ class Service1Tm:
         return service_1_tm
 
     @property
+    def service(self):
+        return self.pus_tm.service
+
+    @property
     def subservice(self):
         return self.pus_tm.subservice
+
+    @property
+    def source_data(self) -> bytes:
+        return self.pus_tm.source_data
 
     @classmethod
     def _unpack_raw_tm(cls, instance: Service1Tm, params: UnpackParams):

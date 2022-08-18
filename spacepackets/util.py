@@ -186,8 +186,11 @@ class UnsignedByteField:
     def __int__(self):
         return self.value
 
-    def __eq__(self, other: UnsignedByteField):
-        return self.value == other.value and self.byte_len == other.byte_len
+    def __eq__(self, other: Union[UnsignedByteField, bytes]):
+        if isinstance(other, UnsignedByteField):
+            return self.value == other.value and self.byte_len == other.byte_len
+        elif isinstance(other, bytes):
+            return self._val_as_bytes == other
 
     def __hash__(self):
         """Makes all unsigned byte fields usable as dictionary keys"""

@@ -36,10 +36,10 @@ spacepackets.ecss.pus\_1\_verification
    :undoc-members:
    :show-inheritance:
 
-spacepackets.ecss.pus\_verificator
--------------------------------------
+spacepackets.ecss.pus\_3\_hk
+---------------------------------------
 
-.. automodule:: spacepackets.ecss.pus_verificator
+.. automodule:: spacepackets.ecss.pus_3_hk
    :members:
    :undoc-members:
    :show-inheritance:

@@ -8,6 +8,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [unreleased]
 
+## [v0.13.0]
+
+- Improved Time Handling inside for the TM module, make it possible
+  to use different timestamps
+- Introduces `CcsdsTimeProvider` abstraction to allow this.
+- Improve implementation of `CdsShortTimestamp` class
+- Basic `AbstractPusTm` class
+
 ## [v0.13.0rc3] 19.07.2022
 
 - Refactored and improved TLV API and handling. Implementation is also a bit more efficient

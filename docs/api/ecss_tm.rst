@@ -5,3 +5,11 @@ spacepackets.ecss.tm module
    :members:
    :undoc-members:
    :show-inheritance:
+
+spacepackets.ecss.pus\_verificator
+-------------------------------------
+
+.. automodule:: spacepackets.ecss.pus_verificator
+   :members:
+   :undoc-members:
+   :show-inheritance:
