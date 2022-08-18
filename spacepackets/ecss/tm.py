@@ -17,6 +17,7 @@ from spacepackets.ccsds.spacepacket import (
     get_total_space_packet_len_from_len_field,
     PacketTypes,
     SpacePacket,
+    AbstractSpacePacket,
 )
 from spacepackets.ccsds.time import CdsShortTimestamp, read_p_field, CcsdsTimeProvider
 from spacepackets.ecss.conf import (
@@ -26,8 +27,12 @@ from spacepackets.ecss.conf import (
 )
 
 
-class AbstractPusTm(ABC):
+class AbstractPusTm(AbstractSpacePacket):
     """Generic abstraction for PUS TM packets"""
+
+    @abstractmethod
+    def get_sp_header(self) -> SpacePacketHeader:
+        pass
 
     @property
     @abstractmethod
@@ -38,6 +43,14 @@ class AbstractPusTm(ABC):
     @abstractmethod
     def subservice(self) -> int:
         pass
+
+    @property
+    def apid(self) -> int:
+        return self.get_sp_header().apid
+
+    @property
+    def seq_count(self) -> int:
+        return self.get_sp_header().seq_count
 
     @property
     @abstractmethod
@@ -382,6 +395,9 @@ class PusTelemetry(AbstractPusTm):
             and self.pus_tm_sec_header == other.pus_tm_sec_header
             and self._source_data == other._source_data
         )
+
+    def get_sp_header(self) -> SpacePacketHeader:
+        return self.sp_header
 
     @property
     def service(self) -> int:

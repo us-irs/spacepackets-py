@@ -15,6 +15,7 @@ from spacepackets.ecss.tm import PusTelemetry, AbstractPusTm
 from spacepackets.log import get_console_logger
 
 from .req_id import RequestId
+from .. import SpacePacketHeader
 
 
 class Subservices(enum.IntEnum):
@@ -169,6 +170,9 @@ class Service1Tm(AbstractPusTm):
         service_1_tm.pus_tm = PusTelemetry.unpack(raw_telemetry=data)
         cls._unpack_raw_tm(service_1_tm, params)
         return service_1_tm
+
+    def get_sp_header(self) -> SpacePacketHeader:
+        return self.pus_tm.sp_header
 
     @property
     def service(self):
