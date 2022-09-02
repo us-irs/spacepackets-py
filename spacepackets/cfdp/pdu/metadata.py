@@ -69,6 +69,9 @@ class MetadataPdu(AbstractFileDirectiveBase):
 
     @property
     def file_size(self) -> int:
+        """A value of 0 means this is an unbounded file, as opposed to no file. To check
+        whether a Metadata PDU has no associated file, check :py:func:`source_file_name` against
+        None"""
         return self.params.file_size
 
     @property
@@ -111,11 +114,16 @@ class MetadataPdu(AbstractFileDirectiveBase):
         self.pdu_file_directive.directive_param_field_len = directive_param_field_len
 
     @property
-    def source_file_name(self) -> str:
+    def source_file_name(self) -> Optional[str]:
+        """If there is no associated source file, for example for messages used for Proxy
+        Operations, this function will return None
+        """
+        if self._source_file_name_lv.len == 0:
+            return None
         return self._source_file_name_lv.value.decode()
 
     @source_file_name.setter
-    def source_file_name(self, source_file_name: str):
+    def source_file_name(self, source_file_name: Optional[str]):
         if source_file_name is None:
             self._source_file_name_lv = CfdpLv(value=bytes())
         else:
@@ -124,11 +132,16 @@ class MetadataPdu(AbstractFileDirectiveBase):
         self._calculate_directive_field_len()
 
     @property
-    def dest_file_name(self) -> str:
+    def dest_file_name(self) -> Optional[str]:
+        """If there is no associated source file, for example for messages used for Proxy
+        Operations, this function will return None
+        """
+        if self._dest_file_name_lv.len == 0:
+            return None
         return self._dest_file_name_lv.value.decode()
 
     @dest_file_name.setter
-    def dest_file_name(self, dest_file_name: str):
+    def dest_file_name(self, dest_file_name: Optional[str]):
         if dest_file_name is None:
             self._dest_file_name_lv = CfdpLv(value=bytes())
         else:

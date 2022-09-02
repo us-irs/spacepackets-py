@@ -29,7 +29,8 @@ class NakPdu(AbstractFileDirectiveBase):
         :param end_of_scope:
         :param pdu_conf: Common PDU configuration
         :param segment_requests: A list of segment request pair tuples, where the first entry of
-            list element is the start offset and the second entry is the end offset
+            list element is the start offset and the second entry is the end offset. If the
+            start and end offset are both 0, the metadata is re-requested.
         """
         self.pdu_file_directive = FileDirectivePduBase(
             directive_code=DirectiveType.ACK_PDU,
@@ -75,6 +76,10 @@ class NakPdu(AbstractFileDirectiveBase):
 
     @property
     def segment_requests(self):
+        """An optional list of segment request pair tuples, where the first entry of
+        list element is the start offset and the second entry is the end offset. If the
+        start and end offset are both 0, the metadata is re-requested.
+        """
         return self._segment_requests
 
     @segment_requests.setter
