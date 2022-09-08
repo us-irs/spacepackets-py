@@ -11,7 +11,7 @@ from crcmod.predefined import mkPredefinedCrcFun, PredefinedCrc
 
 from spacepackets.util import PrintFormats, get_printable_data_string
 from spacepackets.log import get_console_logger
-from spacepackets.ccsds import (
+from spacepackets.ccsds.spacepacket import (
     SpacePacketHeader,
     SPACE_PACKET_HEADER_SIZE,
     get_total_space_packet_len_from_len_field,
