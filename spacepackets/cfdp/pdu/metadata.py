@@ -31,8 +31,8 @@ class MetadataPdu(AbstractFileDirectiveBase):
 
     def __init__(
         self,
-        params: MetadataParams,
         pdu_conf: PduConfig,
+        params: MetadataParams,
         options: Optional[TlvList] = None,
     ):
         self.params = params
@@ -181,8 +181,8 @@ class MetadataPdu(AbstractFileDirectiveBase):
         if not check_packet_length(len(raw_packet), current_idx + 7):
             raise ValueError
         params = MetadataParams(False, ChecksumTypes.MODULAR, 0, "", "")
-        params.closure_requested = raw_packet[current_idx] & 0x40
-        params.checksum_type = raw_packet[current_idx] & 0x0F
+        params.closure_requested = bool(raw_packet[current_idx] & 0x40)
+        params.checksum_type = ChecksumTypes(raw_packet[current_idx] & 0x0F)
         current_idx += 1
         (
             current_idx,

@@ -116,7 +116,7 @@ class PduFactory:
 
     @staticmethod
     def from_raw(data: bytes) -> Optional[GenericPduPacket]:
-        if PduFactory.is_file_directive(data):
+        if not PduFactory.is_file_directive(data):
             return FileDataPdu.unpack(data)
         else:
             directive = PduFactory.pdu_directive_type(data)
@@ -141,7 +141,7 @@ class PduFactory:
         return PduType((data[0] >> 4) & 0x01)
 
     @staticmethod
-    def is_file_directive(data: bytes):
+    def is_file_directive(data: bytes) -> bool:
         return PduFactory.pdu_type(data) == PduType.FILE_DIRECTIVE
 
     @staticmethod
