@@ -46,4 +46,4 @@ class CfdpLv:
         return f"CFDP LV with data 0x[{self.value.hex(sep=',')}] of length {len(self.value)}"
 
     def __eq__(self, other):
-        return self.len == other.len and self.value == other.value
+        return self.value == other.value
