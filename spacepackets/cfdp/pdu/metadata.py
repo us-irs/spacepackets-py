@@ -170,7 +170,7 @@ class MetadataPdu(AbstractFileDirectiveBase):
         return packet
 
     @classmethod
-    def unpack(cls, raw_packet: bytearray) -> MetadataPdu:
+    def unpack(cls, raw_packet: bytes) -> MetadataPdu:
         metadata_pdu = cls.__empty()
 
         metadata_pdu.pdu_file_directive = FileDirectivePduBase.unpack(
@@ -203,7 +203,7 @@ class MetadataPdu(AbstractFileDirectiveBase):
             metadata_pdu._parse_options(raw_packet=raw_packet, start_idx=current_idx)
         return metadata_pdu
 
-    def _parse_options(self, raw_packet: bytearray, start_idx: int):
+    def _parse_options(self, raw_packet: bytes, start_idx: int):
         self._options = []
         current_idx = start_idx
         while True:

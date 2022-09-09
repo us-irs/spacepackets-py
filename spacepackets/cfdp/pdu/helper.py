@@ -115,9 +115,26 @@ class PduFactory:
     """Helper class to generate PDUs and retrieve PDU information from a raw bytestream"""
 
     @staticmethod
-    def from_raw(data: bytes):
-        # TODO: Implement
-        raise NotImplementedError()
+    def from_raw(data: bytes) -> Optional[GenericPduPacket]:
+        if PduFactory.is_file_directive(data):
+            return FileDataPdu.unpack(data)
+        else:
+            directive = PduFactory.pdu_directive_type(data)
+            if directive == DirectiveType.EOF_PDU:
+                return EofPdu.unpack(data)
+            elif directive == DirectiveType.METADATA_PDU:
+                return MetadataPdu.unpack(data)
+            elif directive == DirectiveType.FINISHED_PDU:
+                return FinishedPdu.unpack(data)
+            elif directive == DirectiveType.ACK_PDU:
+                return AckPdu.unpack(data)
+            elif directive == DirectiveType.NAK_PDU:
+                return NakPdu.unpack(data)
+            elif directive == DirectiveType.KEEP_ALIVE_PDU:
+                return KeepAlivePdu.unpack(data)
+            elif directive == DirectiveType.PROMPT_PDU:
+                return PromptPdu.unpack(data)
+        return None
 
     @staticmethod
     def pdu_type(data: bytes) -> PduType:

@@ -181,7 +181,7 @@ class FinishedPdu(AbstractFileDirectiveBase):
         return packet
 
     @classmethod
-    def unpack(cls, raw_packet: bytearray) -> FinishedPdu:
+    def unpack(cls, raw_packet: bytes) -> FinishedPdu:
         """Unpack a raw packet into a PDU object.
 
         :param raw_packet:
@@ -213,7 +213,7 @@ class FinishedPdu(AbstractFileDirectiveBase):
             )
         return finished_pdu
 
-    def _unpack_tlvs(self, rest_of_packet: bytearray) -> int:
+    def _unpack_tlvs(self, rest_of_packet: bytes) -> int:
         current_idx = 0
         fs_responses_list = []
         fault_loc = None

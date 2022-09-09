@@ -94,7 +94,7 @@ class AckPdu(AbstractFileDirectiveBase):
         return packet
 
     @classmethod
-    def unpack(cls, raw_packet: bytearray) -> AckPdu:
+    def unpack(cls, raw_packet: bytes) -> AckPdu:
         ack_packet = cls.__empty()
         ack_packet.pdu_file_directive = FileDirectivePduBase.unpack(
             raw_packet=raw_packet
