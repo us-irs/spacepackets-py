@@ -25,6 +25,17 @@ class PduHolder:
     def __init__(self, base: Optional[GenericPduPacket]):
         self.base = base
 
+    def pack(self) -> bytearray:
+        if self.base is None:
+            return bytearray()
+        return self.base.pack()
+
+    @property
+    def packet_len(self) -> int:
+        if self.base is None:
+            return 0
+        return self.base.packet_len
+
     @property
     def pdu_type(self) -> PduType:
         return self.base.pdu_header.pdu_type

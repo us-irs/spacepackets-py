@@ -33,7 +33,7 @@ class AbstractPduBase(abc.ABC):
     FIXED_LENGTH = 4
 
     @abc.abstractmethod
-    def pack(self) -> bytes:
+    def pack(self) -> bytearray:
         pass
 
     @property
