@@ -177,6 +177,17 @@ class UnsignedByteField:
         self._verify_int_value(int_val)
         return int_val, val[0 : self.byte_len]
 
+    @property
+    def hex_str(self):
+        if self.byte_len == 1:
+            return f"{self.value:#04x}"
+        elif self.byte_len == 2:
+            return f"{self.value:#06x}"
+        elif self.byte_len == 4:
+            return f"{self.value:#08x}"
+        elif self.byte_len == 8:
+            return f"{self.value:#010x}"
+
     def __repr__(self):
         return (
             f"{self.__class__.__name__}(val={self.value!r}, "
@@ -184,7 +195,7 @@ class UnsignedByteField:
         )
 
     def __str__(self):
-        return f"{self.value} (width={self.byte_len})"
+        return f"dec={self.value}, hex={self.hex_str}, byte width={self.byte_len}"
 
     def __int__(self):
         return self.value
