@@ -183,6 +183,9 @@ class UnsignedByteField:
             f"byte_len={self.byte_len!r})"
         )
 
+    def __str__(self):
+        return f"{self.value} (width={self.byte_len})"
+
     def __int__(self):
         return self.value
 
