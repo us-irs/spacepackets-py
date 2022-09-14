@@ -195,7 +195,7 @@ class UnsignedByteField:
         )
 
     def __str__(self):
-        return f"dec={self.value}, hex={self.hex_str}, byte width={self.byte_len}"
+        return f"dec={self.value}, hex={self.hex_str}"
 
     def __int__(self):
         return self.value
