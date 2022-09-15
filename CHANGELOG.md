@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [unreleased]
 
-## [v0.13.0]
+## [v0.13.0] 15.09.2022
 
 - Improved Time Handling inside for the TM module, make it possible
   to use different timestamps
@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Improve implementation of `CdsShortTimestamp` class
 - Basic `AbstractPusTm` class
 - Basic `AbstractSpacePacket` class
+- Singular enum names for CFPD module
 
 ## [v0.13.0rc3] 19.07.2022
 
