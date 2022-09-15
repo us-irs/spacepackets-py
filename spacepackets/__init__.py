@@ -6,4 +6,4 @@ from spacepackets.ccsds import (
 )
 
 
-__version__ = "0.13.0rc3"
+__version__ = "0.13.0"
