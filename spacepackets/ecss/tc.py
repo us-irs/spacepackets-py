@@ -172,8 +172,9 @@ class PusTelecommand:
     ):
         pus_tc = cls.__empty()
         sp_header.packet_type = PacketType.TC
-        pus_tc.sp_header.data_len = pus_tc.get_data_length(
-            secondary_header_len=pus_tc.pus_tc_sec_header.get_header_size(),
+        sp_header.sec_header_flag = True
+        sp_header.data_len = PusTelecommand.get_data_length(
+            secondary_header_len=PusTcDataFieldHeader.get_header_size(),
             app_data_len=len(app_data),
         )
         pus_tc.sp_header = sp_header
@@ -183,7 +184,6 @@ class PusTelecommand:
             source_id=source_id,
             ack_flags=ack_flags,
         )
-
         pus_tc._app_data = app_data
         return pus_tc
 

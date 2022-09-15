@@ -62,7 +62,8 @@ class TestTelecommand(TestCase):
         sp = SpacePacketHeader(
             apid=0x02, packet_type=PacketType.TC, seq_count=0x34, data_len=0
         )
-        pus_tc = PusTelecommand.from_sp_header(sp_header=sp, service=17, subservice=1)
+        ping_tc_from_sph = PusTelecommand.from_sp_header(sp_header=sp, service=17, subservice=1)
+        self.assertEqual(self.ping_tc, ping_tc_from_sph)
 
     def test_custom_source_id(self):
         source_id = 0x5FF
