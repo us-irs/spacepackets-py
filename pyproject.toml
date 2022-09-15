@@ -35,7 +35,7 @@ dependencies = [
 ]
 
 [project.urls]
-"Homepage" = "https://github.com/us-irs/py-spacepackets"
+"Homepage" = "https://github.com/us-irs/spacepackets-py"
 
 [tool.setuptools.dynamic]
 version = {attr = "spacepackets.__version__"}
