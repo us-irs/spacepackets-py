@@ -2,7 +2,7 @@
 from .spacepacket import (
     SpacePacketHeader,
     SpacePacket,
-    PacketTypes,
+    PacketType,
     SequenceFlags,
     PacketId,
     PacketSeqCtrl,

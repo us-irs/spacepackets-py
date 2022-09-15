@@ -15,7 +15,7 @@ APID_MASK = 0x7FF
 PACKET_ID_MASK = 0x1FFF
 
 
-class PacketTypes(enum.IntEnum):
+class PacketType(enum.IntEnum):
     TM = 0
     TC = 1
 
@@ -70,7 +70,7 @@ class PacketSeqCtrl:
 
 
 class PacketId:
-    def __init__(self, ptype: PacketTypes, sec_header_flag: bool, apid: int):
+    def __init__(self, ptype: PacketType, sec_header_flag: bool, apid: int):
         if apid > pow(2, 11) - 1 or apid < 0:
             raise ValueError(
                 f"Invalid APID, exceeds maximum value {pow(2, 11) - 1} or negative"
@@ -81,7 +81,7 @@ class PacketId:
 
     @classmethod
     def empty(cls):
-        return cls(ptype=PacketTypes.TM, sec_header_flag=False, apid=0)
+        return cls(ptype=PacketType.TM, sec_header_flag=False, apid=0)
 
     def __repr__(self):
         return (
@@ -90,7 +90,7 @@ class PacketId:
         )
 
     def __str__(self):
-        pstr = "TM" if self.ptype == PacketTypes.TM else "TC"
+        pstr = "TM" if self.ptype == PacketType.TM else "TC"
         return (
             f"Packet ID: [Packet Type: {pstr}, Sec Header Flag: {self.sec_header_flag}, "
             f"APID: {self.apid:#05x}]"
@@ -102,7 +102,7 @@ class PacketId:
     @classmethod
     def from_raw(cls, raw: int) -> PacketId:
         return cls(
-            ptype=PacketTypes((raw >> 12) & 0b1),
+            ptype=PacketType((raw >> 12) & 0b1),
             sec_header_flag=bool(raw >> 11 & 0b1),
             apid=raw & APID_MASK,
         )
@@ -126,7 +126,7 @@ class SpacePacketHeader(AbstractSpacePacket):
 
     def __init__(
         self,
-        packet_type: PacketTypes,
+        packet_type: PacketType,
         apid: int,
         seq_count: int,
         data_len: int,
@@ -136,7 +136,7 @@ class SpacePacketHeader(AbstractSpacePacket):
     ):
         """Create a space packet header with the given field parameters.
 
-        >>> sph = SpacePacketHeader(packet_type=PacketTypes.TC, apid=0x42, seq_count=0, data_len=12)
+        >>> sph = SpacePacketHeader(packet_type=PacketType.TC, apid=0x42, seq_count=0, data_len=12)
         >>> hex(sph.apid)
         '0x42'
         >>> sph.packet_type
@@ -264,7 +264,7 @@ class SpacePacketHeader(AbstractSpacePacket):
             logger.warning("Packet size smaller than PUS header size!")
             raise ValueError
         packet_version = (space_packet_raw[0] >> 5) & 0b111
-        packet_type = PacketTypes((space_packet_raw[0] >> 4) & 0b1)
+        packet_type = PacketType((space_packet_raw[0] >> 4) & 0b1)
         secondary_header_flag = (space_packet_raw[0] >> 3) & 0b1
         apid = ((space_packet_raw[0] & 0b111) << 8) | space_packet_raw[1]
         psc = struct.unpack("!H", space_packet_raw[2:4])[0]
@@ -355,7 +355,7 @@ class SpacePacket:
 
 
 def get_space_packet_id_bytes(
-    packet_type: PacketTypes,
+    packet_type: PacketType,
     secondary_header_flag: True,
     apid: int,
     version: int = 0b000,
@@ -380,7 +380,7 @@ def get_space_packet_id_bytes(
 
 
 def get_sp_packet_id_raw(
-    packet_type: PacketTypes, secondary_header_flag: bool, apid: int
+    packet_type: PacketType, secondary_header_flag: bool, apid: int
 ) -> int:
     """Get packet identification segment of packet primary header in integer format"""
     return PacketId(packet_type, secondary_header_flag, apid).raw()

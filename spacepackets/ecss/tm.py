@@ -15,7 +15,7 @@ from spacepackets.ccsds.spacepacket import (
     SpacePacketHeader,
     SPACE_PACKET_HEADER_SIZE,
     get_total_space_packet_len_from_len_field,
-    PacketTypes,
+    PacketType,
     SpacePacket,
     AbstractSpacePacket,
 )
@@ -235,7 +235,7 @@ class PusTelemetry(AbstractPusTm):
         )
         self.sp_header = SpacePacketHeader(
             apid=apid,
-            packet_type=PacketTypes.TM,
+            packet_type=PacketType.TM,
             sec_header_flag=True,
             ccsds_version=packet_version,
             data_len=data_length,
@@ -358,7 +358,7 @@ class PusTelemetry(AbstractPusTm):
         tm_data: bytes,
     ) -> PusTelemetry:
         pus_tm = cls.__empty()
-        if sp_header.packet_type == PacketTypes.TC:
+        if sp_header.packet_type == PacketType.TC:
             raise ValueError(
                 f"Invalid Packet Type {sp_header.packet_type} in CCSDS primary header"
             )

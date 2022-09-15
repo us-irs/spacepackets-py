@@ -8,7 +8,7 @@ from crcmod.predefined import mkPredefinedCrcFun
 
 from spacepackets.ccsds.spacepacket import (
     PacketId,
-    PacketTypes,
+    PacketType,
     PacketSeqCtrl,
     SequenceFlags,
     SpacePacketHeader,
@@ -265,7 +265,7 @@ class TestTelemetry(TestCase):
         self.assertEqual(srv_17_tm_unpacked.pus_tm.subservice, 2)
 
     def test_req_id(self):
-        tc_packet_id = PacketId(ptype=PacketTypes.TC, sec_header_flag=True, apid=0x42)
+        tc_packet_id = PacketId(ptype=PacketType.TC, sec_header_flag=True, apid=0x42)
         tc_psc = PacketSeqCtrl(seq_flags=SequenceFlags.UNSEGMENTED, seq_count=22)
         req_id = RequestId(tc_packet_id, tc_psc)
         print(req_id)
@@ -334,7 +334,7 @@ class TestTelemetry(TestCase):
 
     def test_verif_params(self):
         sp_header = SpacePacketHeader(
-            packet_type=PacketTypes.TM,
+            packet_type=PacketType.TM,
             apid=0x22,
             sec_header_flag=False,
             seq_count=22,

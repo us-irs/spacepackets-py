@@ -184,9 +184,9 @@ class UnsignedByteField:
         elif self.byte_len == 2:
             return f"{self.value:#06x}"
         elif self.byte_len == 4:
-            return f"{self.value:#08x}"
-        elif self.byte_len == 8:
             return f"{self.value:#010x}"
+        elif self.byte_len == 8:
+            return f"{self.value:#018x}"
 
     def __repr__(self):
         return (

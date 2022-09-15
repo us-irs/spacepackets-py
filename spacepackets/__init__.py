@@ -1,7 +1,7 @@
 from spacepackets.ccsds import (
     SpacePacketHeader,
     SpacePacket,
-    PacketTypes,
+    PacketType,
     SequenceFlags,
 )
 

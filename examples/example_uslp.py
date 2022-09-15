@@ -10,7 +10,7 @@ from spacepackets.uslp.frame import (
     TfdzConstructionRules,
     UslpProtocolIdentifier,
 )
-from spacepackets.ccsds.spacepacket import SpacePacketHeader, PacketTypes, SequenceFlags
+from spacepackets.ccsds.spacepacket import SpacePacketHeader, PacketType, SequenceFlags
 
 SPACECRAFT_ID = 0x73
 
@@ -31,7 +31,7 @@ def main():
     data = bytearray([1, 2, 3, 4])
     # Wrap the data into a space packet
     space_packet_wrapper = SpacePacketHeader(
-        packet_type=PacketTypes.TC,
+        packet_type=PacketType.TC,
         seq_flags=SequenceFlags.UNSEGMENTED,
         apid=SPACECRAFT_ID,
         data_len=len(data) - 1,

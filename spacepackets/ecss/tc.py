@@ -11,7 +11,7 @@ from crcmod.predefined import mkPredefinedCrcFun, PredefinedCrc
 from spacepackets.log import get_console_logger
 from spacepackets.ccsds.spacepacket import (
     SpacePacketHeader,
-    PacketTypes,
+    PacketType,
     SPACE_PACKET_HEADER_SIZE,
     SpacePacket,
     PacketId,
@@ -151,7 +151,7 @@ class PusTelecommand:
         self.sp_header = SpacePacketHeader(
             apid=apid,
             sec_header_flag=True,
-            packet_type=PacketTypes.TC,
+            packet_type=PacketType.TC,
             seq_flags=seq_flags,
             data_len=data_length,
             seq_count=seq_count,
@@ -171,10 +171,11 @@ class PusTelecommand:
         ack_flags: int = 0b1111,
     ):
         pus_tc = cls.__empty()
-        if sp_header.packet_type == PacketTypes.TM:
-            raise ValueError(
-                f"Invalid Packet Type {sp_header.packet_type} in CCSDS primary header"
-            )
+        sp_header.packet_type = PacketType.TC
+        pus_tc.sp_header.data_len = pus_tc.get_data_length(
+            secondary_header_len=pus_tc.pus_tc_sec_header.get_header_size(),
+            app_data_len=len(app_data),
+        )
         pus_tc.sp_header = sp_header
         pus_tc.pus_tc_sec_header = PusTcDataFieldHeader(
             service=service,
@@ -182,6 +183,7 @@ class PusTelecommand:
             source_id=source_id,
             ack_flags=ack_flags,
         )
+
         pus_tc._app_data = app_data
         return pus_tc
 
@@ -193,7 +195,7 @@ class PusTelecommand:
         app_data: bytes = bytes([]),
     ) -> PusTelecommand:
         pus_tc = cls.__empty()
-        if sp_header.packet_type == PacketTypes.TM:
+        if sp_header.packet_type == PacketType.TM:
             raise ValueError(
                 f"Invalid Packet Type {sp_header.packet_type} in CCSDS primary header"
             )
