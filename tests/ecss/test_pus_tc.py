@@ -2,6 +2,7 @@ from unittest import TestCase
 
 import crcmod
 
+from spacepackets import SpacePacketHeader, PacketType
 from spacepackets.ecss import PusTelecommand, PusTcDataFieldHeader
 from spacepackets.ecss.conf import get_default_tc_apid, set_default_tc_apid, PusVersion
 from spacepackets.ecss.tc import generate_crc, generate_packet_crc
@@ -52,11 +53,32 @@ class TestTelecommand(TestCase):
         self.assertEqual(self.ping_tc_raw[11], 0xEE)
         self.assertEqual(self.ping_tc_raw[12], 0x63)
 
+    def test_source_id(self):
+        self.assertEqual(self.ping_tc.source_id, 0)
+        self.ping_tc.source_id = 12
+        self.assertEqual(self.ping_tc.source_id, 12)
+
+    def test_from_sph(self):
+        sp = SpacePacketHeader(
+            apid=0x02, packet_type=PacketType.TC, seq_count=0x34, data_len=0
+        )
+        ping_tc_from_sph = PusTelecommand.from_sp_header(sp_header=sp, service=17, subservice=1)
+        self.assertEqual(self.ping_tc, ping_tc_from_sph)
+
     def test_custom_source_id(self):
         source_id = 0x5FF
         self.ping_tc.source_id = source_id
         raw = self.ping_tc.pack()
         self.assertEqual(raw[9] << 8 | raw[10], 0x5FF)
+
+    def test_unpack_too_short(self):
+        too_short = bytearray([1, 2, 3])
+        with self.assertRaises(ValueError):
+            PusTelecommand.unpack(too_short)
+
+    def test_equality(self):
+        ping_raw_unpacked = PusTelecommand.unpack(self.ping_tc_raw)
+        self.assertEqual(ping_raw_unpacked, self.ping_tc)
 
     def test_print(self):
         self.ping_tc.print(PrintFormats.HEX)

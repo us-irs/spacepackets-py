@@ -31,6 +31,12 @@ class TestLvs(TestCase):
         faulty_lv = bytes([0])
         self.assertRaises(ValueError, CfdpTlv.unpack, faulty_lv)
 
+    def test_equal(self):
+        test_lv = CfdpLv(value=bytes([0, 1, 2, 3, 4]))
+        lv_raw = test_lv.pack()
+        lv_unpacked = CfdpLv.unpack(lv_raw)
+        self.assertEqual(test_lv, lv_unpacked)
+
     def test_lv_print(self):
         test_lv = CfdpLv(value=bytes([0, 1, 2, 3, 4]))
         print(test_lv)

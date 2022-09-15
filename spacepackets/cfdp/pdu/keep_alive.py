@@ -63,7 +63,7 @@ class KeepAlivePdu(AbstractFileDirectiveBase):
         return keep_alive_packet
 
     @classmethod
-    def unpack(cls, raw_packet: bytearray) -> KeepAlivePdu:
+    def unpack(cls, raw_packet: bytes) -> KeepAlivePdu:
         keep_alive_pdu = cls.__empty()
         keep_alive_pdu.pdu_file_directive = FileDirectivePduBase.unpack(
             raw_packet=raw_packet

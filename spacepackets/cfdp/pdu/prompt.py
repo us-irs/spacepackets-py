@@ -42,7 +42,7 @@ class PromptPdu(AbstractFileDirectiveBase):
         return prompt_pdu
 
     @classmethod
-    def unpack(cls, raw_packet: bytearray) -> PromptPdu:
+    def unpack(cls, raw_packet: bytes) -> PromptPdu:
         prompt_pdu = cls.__empty()
         prompt_pdu.pdu_file_directive = FileDirectivePduBase.unpack(
             raw_packet=raw_packet

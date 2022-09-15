@@ -27,7 +27,7 @@ class Direction(enum.IntEnum):
     TOWARDS_SENDER = 1
 
 
-class TransmissionModes(enum.IntEnum):
+class TransmissionMode(enum.IntEnum):
     ACKNOWLEDGED = 0
     UNACKNOWLEDGED = 1
 
@@ -51,7 +51,7 @@ class SegmentationControl(enum.IntEnum):
     RECORD_BOUNDARIES_PRESERVATION = 1
 
 
-class FaultHandlerCodes(enum.IntEnum):
+class FaultHandlerCode(enum.IntEnum):
     NOTICE_OF_CANCELLATION = 0b0001
     NOTICE_OF_SUSPENSION = 0b0010
     IGNORE_ERROR = 0b0011
@@ -97,7 +97,7 @@ class LargeFileFlag(enum.IntEnum):
 
 # Checksum types according to the SANA Checksum Types registry
 # https://sanaregistry.org/r/checksum_identifiers/
-class ChecksumTypes(enum.IntEnum):
+class ChecksumType(enum.IntEnum):
     # Modular legacy checksum
     MODULAR = 0
     CRC_32_PROXIMITY_1 = 1

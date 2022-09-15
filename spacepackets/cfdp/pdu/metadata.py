@@ -13,14 +13,14 @@ from spacepackets.cfdp.pdu.file_directive import (
 from spacepackets.cfdp.conf import PduConfig, LargeFileFlag
 from spacepackets.cfdp.tlv import CfdpTlv, TlvList
 from spacepackets.cfdp.lv import CfdpLv
-from spacepackets.cfdp.defs import ChecksumTypes
+from spacepackets.cfdp.defs import ChecksumType
 from spacepackets.cfdp.conf import check_packet_length
 
 
 @dataclasses.dataclass
 class MetadataParams:
     closure_requested: bool
-    checksum_type: ChecksumTypes
+    checksum_type: ChecksumType
     file_size: int
     source_file_name: Optional[str]
     dest_file_name: Optional[str]
@@ -31,8 +31,8 @@ class MetadataPdu(AbstractFileDirectiveBase):
 
     def __init__(
         self,
-        params: MetadataParams,
         pdu_conf: PduConfig,
+        params: MetadataParams,
         options: Optional[TlvList] = None,
     ):
         self.params = params
@@ -69,17 +69,20 @@ class MetadataPdu(AbstractFileDirectiveBase):
 
     @property
     def file_size(self) -> int:
+        """A value of 0 means this is an unbounded file, as opposed to no file. To check
+        whether a Metadata PDU has no associated file, check :py:func:`source_file_name` against
+        None"""
         return self.params.file_size
 
     @property
-    def checksum_type(self) -> ChecksumTypes:
+    def checksum_type(self) -> ChecksumType:
         return self.params.checksum_type
 
     @classmethod
     def __empty(cls) -> MetadataPdu:
         empty_conf = PduConfig.empty()
         return cls(
-            params=MetadataParams(False, ChecksumTypes.MODULAR, 0, "", ""),
+            params=MetadataParams(False, ChecksumType.MODULAR, 0, "", ""),
             pdu_conf=empty_conf,
         )
 
@@ -111,11 +114,16 @@ class MetadataPdu(AbstractFileDirectiveBase):
         self.pdu_file_directive.directive_param_field_len = directive_param_field_len
 
     @property
-    def source_file_name(self) -> str:
+    def source_file_name(self) -> Optional[str]:
+        """If there is no associated source file, for example for messages used for Proxy
+        Operations, this function will return None
+        """
+        if self._source_file_name_lv.len == 0:
+            return None
         return self._source_file_name_lv.value.decode()
 
     @source_file_name.setter
-    def source_file_name(self, source_file_name: str):
+    def source_file_name(self, source_file_name: Optional[str]):
         if source_file_name is None:
             self._source_file_name_lv = CfdpLv(value=bytes())
         else:
@@ -124,11 +132,16 @@ class MetadataPdu(AbstractFileDirectiveBase):
         self._calculate_directive_field_len()
 
     @property
-    def dest_file_name(self) -> str:
+    def dest_file_name(self) -> Optional[str]:
+        """If there is no associated source file, for example for messages used for Proxy
+        Operations, this function will return None
+        """
+        if self._dest_file_name_lv.len == 0:
+            return None
         return self._dest_file_name_lv.value.decode()
 
     @dest_file_name.setter
-    def dest_file_name(self, dest_file_name: str):
+    def dest_file_name(self, dest_file_name: Optional[str]):
         if dest_file_name is None:
             self._dest_file_name_lv = CfdpLv(value=bytes())
         else:
@@ -157,7 +170,7 @@ class MetadataPdu(AbstractFileDirectiveBase):
         return packet
 
     @classmethod
-    def unpack(cls, raw_packet: bytearray) -> MetadataPdu:
+    def unpack(cls, raw_packet: bytes) -> MetadataPdu:
         metadata_pdu = cls.__empty()
 
         metadata_pdu.pdu_file_directive = FileDirectivePduBase.unpack(
@@ -167,9 +180,9 @@ class MetadataPdu(AbstractFileDirectiveBase):
         # Minimal length: 1 byte + FSS (4 byte) + 2 empty LV (1 byte)
         if not check_packet_length(len(raw_packet), current_idx + 7):
             raise ValueError
-        params = MetadataParams(False, ChecksumTypes.MODULAR, 0, "", "")
-        params.closure_requested = raw_packet[current_idx] & 0x40
-        params.checksum_type = raw_packet[current_idx] & 0x0F
+        params = MetadataParams(False, ChecksumType.MODULAR, 0, "", "")
+        params.closure_requested = bool(raw_packet[current_idx] & 0x40)
+        params.checksum_type = ChecksumType(raw_packet[current_idx] & 0x0F)
         current_idx += 1
         (
             current_idx,
@@ -190,7 +203,7 @@ class MetadataPdu(AbstractFileDirectiveBase):
             metadata_pdu._parse_options(raw_packet=raw_packet, start_idx=current_idx)
         return metadata_pdu
 
-    def _parse_options(self, raw_packet: bytearray, start_idx: int):
+    def _parse_options(self, raw_packet: bytes, start_idx: int):
         self._options = []
         current_idx = start_idx
         while True:

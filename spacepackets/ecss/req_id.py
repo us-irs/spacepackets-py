@@ -11,8 +11,8 @@ class RequestId:
     the first two bytes of the CCSDS primary header. It is primarily used to verify the execution
     of sent telecommands.
 
-    >>> from spacepackets.ccsds import PacketTypes, SequenceFlags
-    >>> packet_id = PacketId(ptype=PacketTypes.TC, sec_header_flag=False, apid=0x22)
+    >>> from spacepackets.ccsds import PacketType, SequenceFlags
+    >>> packet_id = PacketId(ptype=PacketType.TC, sec_header_flag=False, apid=0x22)
     >>> psc = PacketSeqCtrl(seq_flags=SequenceFlags.UNSEGMENTED, seq_count=17)
     >>> req_id = RequestId(packet_id, psc)
     >>> req_id

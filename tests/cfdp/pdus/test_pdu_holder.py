@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from spacepackets.cfdp import ChecksumTypes, ConditionCode
+from spacepackets.cfdp import ChecksumType, ConditionCode
 from spacepackets.cfdp.conf import PduConfig
 from spacepackets.cfdp.pdu import (
     MetadataPdu,
@@ -54,7 +54,7 @@ class TestPduHolder(TestCase):
             file_size=2,
             source_file_name="test.txt",
             dest_file_name="test2.txt",
-            checksum_type=ChecksumTypes.MODULAR,
+            checksum_type=ChecksumType.MODULAR,
         )
         metadata_pdu = MetadataPdu(pdu_conf=self.pdu_conf, params=params)
         self.pdu_wrapper.base = metadata_pdu
@@ -69,7 +69,7 @@ class TestPduHolder(TestCase):
             file_size=2,
             source_file_name="test.txt",
             dest_file_name="test2.txt",
-            checksum_type=ChecksumTypes.MODULAR,
+            checksum_type=ChecksumType.MODULAR,
         )
         metadata_pdu = MetadataPdu(pdu_conf=self.pdu_conf, params=params)
         self.pdu_wrapper.base = metadata_pdu

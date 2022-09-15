@@ -3,7 +3,7 @@ from unittest import TestCase
 from spacepackets.cfdp import (
     FaultHandlerOverrideTlv,
     ConditionCode,
-    FaultHandlerCodes,
+    FaultHandlerCode,
     TlvHolder,
     TlvTypes,
     TlvTypeMissmatch,
@@ -15,7 +15,7 @@ class TestFaultHandlerOverrideTlv(TestCase):
     def setUp(self) -> None:
         self.fault_handler_ovvrd_tlv = FaultHandlerOverrideTlv(
             condition_code=ConditionCode.POSITIVE_ACK_LIMIT_REACHED,
-            handler_code=FaultHandlerCodes.IGNORE_ERROR,
+            handler_code=FaultHandlerCode.IGNORE_ERROR,
         )
         self.cfdp_tlv = CfdpTlv(
             self.fault_handler_ovvrd_tlv.tlv_type, self.fault_handler_ovvrd_tlv.value

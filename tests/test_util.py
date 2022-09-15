@@ -88,3 +88,36 @@ class TestUtility(TestCase):
     def test_byte_int_converter_signed_four_byte(self):
         raw = IntByteConversion.to_signed(byte_num=4, val=-7329093)
         self.assertEqual(struct.unpack("!i", raw)[0], -7329093)
+
+    def test_one_byte_str(self):
+        byte_field = ByteFieldU8(22)
+        self.assertEqual(
+            str(byte_field),
+            f"U8({byte_field.value}, 0x[{byte_field.as_bytes.hex(sep=',')}])",
+        )
+
+    def test_two_byte_str(self):
+        byte_field = ByteFieldU16(8555)
+        self.assertEqual(
+            str(byte_field),
+            f"U16({byte_field.value}, 0x[{byte_field.as_bytes.hex(sep=',')}])",
+        )
+
+    def test_four_byte_str(self):
+        byte_field = ByteFieldU32(85323255)
+        self.assertEqual(
+            str(byte_field),
+            f"U32({byte_field.value}, 0x[{byte_field.as_bytes.hex(sep=',')}])",
+        )
+
+    def test_one_byte_hex_str(self):
+        byte_field = ByteFieldU8(22)
+        self.assertEqual(byte_field.hex_str, f"{byte_field.value:#04x}")
+
+    def test_two_byte_hex_str(self):
+        byte_field = ByteFieldU16(2555)
+        self.assertEqual(byte_field.hex_str, f"{byte_field.value:#06x}")
+
+    def test_four_byte_hex_str(self):
+        byte_field = ByteFieldU32(255532)
+        self.assertEqual(byte_field.hex_str, f"{byte_field.value:#010x}")

@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from spacepackets.cfdp import CrcFlag, TransmissionModes, LargeFileFlag, ConditionCode
+from spacepackets.cfdp import CrcFlag, TransmissionMode, LargeFileFlag, ConditionCode
 from spacepackets.cfdp.conf import PduConfig
 from spacepackets.cfdp.pdu import AckPdu, DirectiveType, TransactionStatus
 from spacepackets.util import ByteFieldU16, ByteFieldU32
@@ -13,7 +13,7 @@ class TestAckPdu(TestCase):
             source_entity_id=ByteFieldU16(2),
             dest_entity_id=ByteFieldU16(3),
             crc_flag=CrcFlag.NO_CRC,
-            trans_mode=TransmissionModes.ACKNOWLEDGED,
+            trans_mode=TransmissionMode.ACKNOWLEDGED,
             file_flag=LargeFileFlag.NORMAL,
         )
         ack_pdu = AckPdu(
@@ -59,7 +59,7 @@ class TestAckPdu(TestCase):
             source_entity_id=ByteFieldU32.from_bytes(bytes([0x10, 0x00, 0x01, 0x02])),
             dest_entity_id=ByteFieldU32.from_bytes(bytes([0x30, 0x00, 0x01, 0x03])),
             crc_flag=CrcFlag.WITH_CRC,
-            trans_mode=TransmissionModes.UNACKNOWLEDGED,
+            trans_mode=TransmissionMode.UNACKNOWLEDGED,
             file_flag=LargeFileFlag.NORMAL,
         )
         ack_pdu_2 = AckPdu(
@@ -133,7 +133,7 @@ class TestAckPdu(TestCase):
         )
         self.assertEqual(
             ack_pdu.pdu_file_directive.pdu_header.pdu_conf.trans_mode,
-            TransmissionModes.ACKNOWLEDGED,
+            TransmissionMode.ACKNOWLEDGED,
         )
         self.assertEqual(ack_pdu.packet_len, 13)
 
@@ -158,6 +158,6 @@ class TestAckPdu(TestCase):
         )
         self.assertEqual(
             ack_pdu.pdu_file_directive.pdu_header.pdu_conf.trans_mode,
-            TransmissionModes.UNACKNOWLEDGED,
+            TransmissionMode.UNACKNOWLEDGED,
         )
         self.assertEqual(ack_pdu.packet_len, 19)

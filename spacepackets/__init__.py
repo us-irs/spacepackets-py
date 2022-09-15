@@ -1,9 +1,9 @@
 from spacepackets.ccsds import (
     SpacePacketHeader,
     SpacePacket,
-    PacketTypes,
+    PacketType,
     SequenceFlags,
 )
 
 
-__version__ = "0.13.0rc3"
+__version__ = "0.13.0"

@@ -7,7 +7,7 @@ from spacepackets.cfdp.defs import (
     PduType,
     SegmentMetadataFlag,
     CrcFlag,
-    TransmissionModes,
+    TransmissionMode,
     Direction,
     SegmentationControl,
     LenInBytes,
@@ -33,7 +33,7 @@ class AbstractPduBase(abc.ABC):
     FIXED_LENGTH = 4
 
     @abc.abstractmethod
-    def pack(self) -> bytes:
+    def pack(self) -> bytearray:
         pass
 
     @property
@@ -203,7 +203,7 @@ class PduHeader(AbstractPduBase):
         return self.pdu_conf.trans_mode
 
     @trans_mode.setter
-    def trans_mode(self, trans_mode: TransmissionModes):
+    def trans_mode(self, trans_mode: TransmissionMode):
         self.pdu_conf.trans_mode = trans_mode
 
     @property

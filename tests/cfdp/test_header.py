@@ -4,7 +4,7 @@ from unittest import TestCase
 from spacepackets.cfdp.conf import PduConfig, set_entity_ids
 from spacepackets.cfdp.defs import (
     LenInBytes,
-    TransmissionModes,
+    TransmissionMode,
     Direction,
     CrcFlag,
     SegmentationControl,
@@ -28,7 +28,7 @@ class TestHeader(TestCase):
         self.pdu_conf = PduConfig(
             source_entity_id=ByteFieldU8(0),
             dest_entity_id=ByteFieldU8(0),
-            trans_mode=TransmissionModes.ACKNOWLEDGED,
+            trans_mode=TransmissionMode.ACKNOWLEDGED,
             direction=Direction.TOWARDS_RECEIVER,
             crc_flag=CrcFlag.NO_CRC,
             seg_ctrl=SegmentationControl.NO_RECORD_BOUNDARIES_PRESERVATION,
@@ -46,7 +46,7 @@ class TestHeader(TestCase):
         self.assertEqual(self.pdu_header.pdu_type, PduType.FILE_DIRECTIVE)
         self.assertEqual(self.pdu_header.source_entity_id, ByteFieldU8(0))
         self.assertEqual(self.pdu_header.source_entity_id.byte_len, 1)
-        self.assertEqual(self.pdu_header.trans_mode, TransmissionModes.ACKNOWLEDGED)
+        self.assertEqual(self.pdu_header.trans_mode, TransmissionMode.ACKNOWLEDGED)
         self.assertEqual(self.pdu_header.direction, Direction.TOWARDS_RECEIVER)
         self.assertEqual(
             self.pdu_header.segment_metadata_flag, SegmentMetadataFlag.NOT_PRESENT
@@ -75,7 +75,7 @@ class TestHeader(TestCase):
             source_entity_id=ByteFieldU16(0), dest_entity_id=ByteFieldU16(1)
         )
         self.pdu_header.transaction_seq_num = ByteFieldU16(300)
-        self.pdu_header.trans_mode = TransmissionModes.UNACKNOWLEDGED
+        self.pdu_header.trans_mode = TransmissionMode.UNACKNOWLEDGED
         self.pdu_header.direction = Direction.TOWARDS_SENDER
         self.pdu_header.crc_flag = CrcFlag.WITH_CRC
         self.pdu_header.file_flag = LargeFileFlag.LARGE

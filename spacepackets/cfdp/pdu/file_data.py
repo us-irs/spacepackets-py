@@ -166,7 +166,7 @@ class FileDataPdu(AbstractPduBase):
         return file_data_pdu
 
     @classmethod
-    def unpack(cls, raw_packet: bytearray) -> FileDataPdu:
+    def unpack(cls, raw_packet: bytes) -> FileDataPdu:
         file_data_packet = cls.__empty()
         file_data_packet.pdu_header = PduHeader.unpack(raw_packet=raw_packet)
         current_idx = file_data_packet.pdu_header.header_len
