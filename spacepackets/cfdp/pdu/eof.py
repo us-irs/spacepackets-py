@@ -5,7 +5,7 @@ from typing import Optional
 from spacepackets.cfdp.pdu import PduHeader
 from spacepackets.cfdp.pdu.file_directive import (
     FileDirectivePduBase,
-    DirectiveTypes,
+    DirectiveType,
     AbstractFileDirectiveBase,
 )
 from spacepackets.cfdp.defs import ConditionCode
@@ -39,7 +39,7 @@ class EofPdu(AbstractFileDirectiveBase):
         self.condition_code = condition_code
         self.file_checksum = file_checksum
         self.pdu_file_directive = FileDirectivePduBase(
-            directive_code=DirectiveTypes.EOF_PDU,
+            directive_code=DirectiveType.EOF_PDU,
             pdu_conf=pdu_conf,
             directive_param_field_len=0,
         )
@@ -48,7 +48,7 @@ class EofPdu(AbstractFileDirectiveBase):
         self._calculate_directive_param_field_len()
 
     @property
-    def directive_type(self) -> DirectiveTypes:
+    def directive_type(self) -> DirectiveType:
         return self.pdu_file_directive.directive_type
 
     @property

@@ -1,8 +1,8 @@
 from unittest import TestCase
 
-from spacepackets.cfdp import CrcFlag, TransmissionModes, LargeFileFlag, ConditionCode
+from spacepackets.cfdp import CrcFlag, TransmissionMode, LargeFileFlag, ConditionCode
 from spacepackets.cfdp.conf import PduConfig
-from spacepackets.cfdp.pdu import AckPdu, DirectiveTypes, TransactionStatus
+from spacepackets.cfdp.pdu import AckPdu, DirectiveType, TransactionStatus
 from spacepackets.util import ByteFieldU16, ByteFieldU32
 
 
@@ -13,11 +13,11 @@ class TestAckPdu(TestCase):
             source_entity_id=ByteFieldU16(2),
             dest_entity_id=ByteFieldU16(3),
             crc_flag=CrcFlag.NO_CRC,
-            trans_mode=TransmissionModes.ACKNOWLEDGED,
+            trans_mode=TransmissionMode.ACKNOWLEDGED,
             file_flag=LargeFileFlag.NORMAL,
         )
         ack_pdu = AckPdu(
-            directive_code_of_acked_pdu=DirectiveTypes.FINISHED_PDU,
+            directive_code_of_acked_pdu=DirectiveType.FINISHED_PDU,
             condition_code_of_acked_pdu=ConditionCode.NO_ERROR,
             transaction_status=TransactionStatus.TERMINATED,
             pdu_conf=pdu_conf,
@@ -59,11 +59,11 @@ class TestAckPdu(TestCase):
             source_entity_id=ByteFieldU32.from_bytes(bytes([0x10, 0x00, 0x01, 0x02])),
             dest_entity_id=ByteFieldU32.from_bytes(bytes([0x30, 0x00, 0x01, 0x03])),
             crc_flag=CrcFlag.WITH_CRC,
-            trans_mode=TransmissionModes.UNACKNOWLEDGED,
+            trans_mode=TransmissionMode.UNACKNOWLEDGED,
             file_flag=LargeFileFlag.NORMAL,
         )
         ack_pdu_2 = AckPdu(
-            directive_code_of_acked_pdu=DirectiveTypes.EOF_PDU,
+            directive_code_of_acked_pdu=DirectiveType.EOF_PDU,
             condition_code_of_acked_pdu=ConditionCode.POSITIVE_ACK_LIMIT_REACHED,
             transaction_status=TransactionStatus.ACTIVE,
             pdu_conf=pdu_conf,
@@ -107,7 +107,7 @@ class TestAckPdu(TestCase):
         self.assertRaises(
             ValueError,
             AckPdu,
-            directive_code_of_acked_pdu=DirectiveTypes.NAK_PDU,
+            directive_code_of_acked_pdu=DirectiveType.NAK_PDU,
             condition_code_of_acked_pdu=ConditionCode.POSITIVE_ACK_LIMIT_REACHED,
             transaction_status=TransactionStatus.ACTIVE,
             pdu_conf=pdu_conf,
@@ -115,7 +115,7 @@ class TestAckPdu(TestCase):
 
     def check_fields_packet_0(self, ack_pdu: AckPdu):
         self.assertEqual(
-            ack_pdu.directive_code_of_acked_pdu, DirectiveTypes.FINISHED_PDU
+            ack_pdu.directive_code_of_acked_pdu, DirectiveType.FINISHED_PDU
         )
         self.assertEqual(ack_pdu.condition_code_of_acked_pdu, ConditionCode.NO_ERROR)
         self.assertEqual(ack_pdu.transaction_status, TransactionStatus.TERMINATED)
@@ -133,12 +133,12 @@ class TestAckPdu(TestCase):
         )
         self.assertEqual(
             ack_pdu.pdu_file_directive.pdu_header.pdu_conf.trans_mode,
-            TransmissionModes.ACKNOWLEDGED,
+            TransmissionMode.ACKNOWLEDGED,
         )
         self.assertEqual(ack_pdu.packet_len, 13)
 
     def check_fields_packet_1(self, ack_pdu: AckPdu):
-        self.assertEqual(ack_pdu.directive_code_of_acked_pdu, DirectiveTypes.EOF_PDU)
+        self.assertEqual(ack_pdu.directive_code_of_acked_pdu, DirectiveType.EOF_PDU)
         self.assertEqual(
             ack_pdu.condition_code_of_acked_pdu,
             ConditionCode.POSITIVE_ACK_LIMIT_REACHED,
@@ -158,6 +158,6 @@ class TestAckPdu(TestCase):
         )
         self.assertEqual(
             ack_pdu.pdu_file_directive.pdu_header.pdu_conf.trans_mode,
-            TransmissionModes.UNACKNOWLEDGED,
+            TransmissionMode.UNACKNOWLEDGED,
         )
         self.assertEqual(ack_pdu.packet_len, 19)

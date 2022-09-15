@@ -4,10 +4,10 @@ import abc
 
 from spacepackets.cfdp.defs import (
     LargeFileFlag,
-    PduTypes,
+    PduType,
     SegmentMetadataFlag,
     CrcFlag,
-    TransmissionModes,
+    TransmissionMode,
     Direction,
     SegmentationControl,
     LenInBytes,
@@ -38,7 +38,7 @@ class AbstractPduBase(abc.ABC):
 
     @property
     @abc.abstractmethod
-    def pdu_type(self) -> PduTypes:
+    def pdu_type(self) -> PduType:
         pass
 
     @property
@@ -121,7 +121,7 @@ class PduHeader(AbstractPduBase):
 
     def __init__(
         self,
-        pdu_type: PduTypes,
+        pdu_type: PduType,
         segment_metadata_flag: SegmentMetadataFlag,
         pdu_data_field_len: int,
         pdu_conf: PduConfig,
@@ -146,11 +146,11 @@ class PduHeader(AbstractPduBase):
         self.segment_metadata_flag = segment_metadata_flag
 
     @property
-    def pdu_type(self) -> PduTypes:
+    def pdu_type(self) -> PduType:
         return self._pdu_type
 
     @pdu_type.setter
-    def pdu_type(self, pdu_type: PduTypes):
+    def pdu_type(self, pdu_type: PduType):
         self._pdu_type = pdu_type
 
     @property
@@ -203,7 +203,7 @@ class PduHeader(AbstractPduBase):
         return self.pdu_conf.trans_mode
 
     @trans_mode.setter
-    def trans_mode(self, trans_mode: TransmissionModes):
+    def trans_mode(self, trans_mode: TransmissionMode):
         self.pdu_conf.trans_mode = trans_mode
 
     @property
@@ -274,7 +274,7 @@ class PduHeader(AbstractPduBase):
     def __empty(cls) -> PduHeader:
         empty_conf = PduConfig.empty()
         return cls(
-            pdu_type=PduTypes.FILE_DIRECTIVE,
+            pdu_type=PduType.FILE_DIRECTIVE,
             segment_metadata_flag=SegmentMetadataFlag.NOT_PRESENT,
             pdu_data_field_len=0,
             pdu_conf=empty_conf,

@@ -4,11 +4,11 @@ from unittest import TestCase
 from spacepackets.cfdp.conf import PduConfig, set_entity_ids
 from spacepackets.cfdp.defs import (
     LenInBytes,
-    TransmissionModes,
+    TransmissionMode,
     Direction,
     CrcFlag,
     SegmentationControl,
-    PduTypes,
+    PduType,
     SegmentMetadataFlag,
     LargeFileFlag,
 )
@@ -28,14 +28,14 @@ class TestHeader(TestCase):
         self.pdu_conf = PduConfig(
             source_entity_id=ByteFieldU8(0),
             dest_entity_id=ByteFieldU8(0),
-            trans_mode=TransmissionModes.ACKNOWLEDGED,
+            trans_mode=TransmissionMode.ACKNOWLEDGED,
             direction=Direction.TOWARDS_RECEIVER,
             crc_flag=CrcFlag.NO_CRC,
             seg_ctrl=SegmentationControl.NO_RECORD_BOUNDARIES_PRESERVATION,
             transaction_seq_num=ByteFieldU8(0),
         )
         self.pdu_header = PduHeader(
-            pdu_type=PduTypes.FILE_DIRECTIVE,
+            pdu_type=PduType.FILE_DIRECTIVE,
             segment_metadata_flag=SegmentMetadataFlag.NOT_PRESENT,
             pdu_data_field_len=0,
             pdu_conf=self.pdu_conf,
@@ -43,10 +43,10 @@ class TestHeader(TestCase):
 
     # TODO: Split up in smaller test fixtures
     def test_pdu_header(self):
-        self.assertEqual(self.pdu_header.pdu_type, PduTypes.FILE_DIRECTIVE)
+        self.assertEqual(self.pdu_header.pdu_type, PduType.FILE_DIRECTIVE)
         self.assertEqual(self.pdu_header.source_entity_id, ByteFieldU8(0))
         self.assertEqual(self.pdu_header.source_entity_id.byte_len, 1)
-        self.assertEqual(self.pdu_header.trans_mode, TransmissionModes.ACKNOWLEDGED)
+        self.assertEqual(self.pdu_header.trans_mode, TransmissionMode.ACKNOWLEDGED)
         self.assertEqual(self.pdu_header.direction, Direction.TOWARDS_RECEIVER)
         self.assertEqual(
             self.pdu_header.segment_metadata_flag, SegmentMetadataFlag.NOT_PRESENT
@@ -70,12 +70,12 @@ class TestHeader(TestCase):
         pdu_header_repacked = pdu_header_unpacked.pack()
         self.check_fields_case_one(pdu_header_packed=pdu_header_repacked)
 
-        self.pdu_header.pdu_type = PduTypes.FILE_DATA
+        self.pdu_header.pdu_type = PduType.FILE_DATA
         self.pdu_header.set_entity_ids(
             source_entity_id=ByteFieldU16(0), dest_entity_id=ByteFieldU16(1)
         )
         self.pdu_header.transaction_seq_num = ByteFieldU16(300)
-        self.pdu_header.trans_mode = TransmissionModes.UNACKNOWLEDGED
+        self.pdu_header.trans_mode = TransmissionMode.UNACKNOWLEDGED
         self.pdu_header.direction = Direction.TOWARDS_SENDER
         self.pdu_header.crc_flag = CrcFlag.WITH_CRC
         self.pdu_header.file_flag = LargeFileFlag.LARGE

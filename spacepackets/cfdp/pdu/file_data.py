@@ -5,7 +5,7 @@ from typing import Union, Optional
 import struct
 
 from spacepackets.cfdp import LargeFileFlag
-from spacepackets.cfdp.pdu.file_directive import SegmentMetadataFlag, PduTypes
+from spacepackets.cfdp.pdu.file_directive import SegmentMetadataFlag, PduType
 from spacepackets.cfdp.conf import PduConfig
 from spacepackets.cfdp.pdu.header import PduHeader, AbstractPduBase
 from spacepackets.log import get_console_logger
@@ -58,7 +58,7 @@ class FileDataPdu(AbstractPduBase):
             raise ValueError("Record continuation state must be specified")
         self.pdu_header = PduHeader(
             segment_metadata_flag=self._params.segment_metadata_flag,
-            pdu_type=PduTypes.FILE_DATA,
+            pdu_type=PduType.FILE_DATA,
             pdu_conf=pdu_conf,
             pdu_data_field_len=0,
         )
@@ -81,7 +81,7 @@ class FileDataPdu(AbstractPduBase):
         return self.pdu_header.pdu_data_field_len
 
     @property
-    def pdu_type(self) -> PduTypes:
+    def pdu_type(self) -> PduType:
         return self.pdu_header.pdu_type
 
     @property

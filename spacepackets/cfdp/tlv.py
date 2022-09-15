@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from typing import Tuple, Optional, Type, Union, List, Any, cast
 import enum
 from spacepackets.cfdp.lv import CfdpLv
-from spacepackets.cfdp.defs import ConditionCode, FaultHandlerCodes
+from spacepackets.cfdp.defs import ConditionCode, FaultHandlerCode
 
 
 class TlvTypes(enum.IntEnum):
@@ -290,7 +290,7 @@ class FaultHandlerOverrideTlv(AbstractTlvBase):
     def __init__(
         self,
         condition_code: ConditionCode,
-        handler_code: FaultHandlerCodes,
+        handler_code: FaultHandlerCode,
     ):
         self.condition_code = condition_code
         self.handler_code = handler_code
@@ -318,7 +318,7 @@ class FaultHandlerOverrideTlv(AbstractTlvBase):
     def __empty(cls) -> FaultHandlerOverrideTlv:
         return cls(
             condition_code=ConditionCode.NO_ERROR,
-            handler_code=FaultHandlerCodes.IGNORE_ERROR,
+            handler_code=FaultHandlerCode.IGNORE_ERROR,
         )
 
     @classmethod

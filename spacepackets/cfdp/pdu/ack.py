@@ -4,7 +4,7 @@ import enum
 from spacepackets.cfdp.pdu import PduHeader
 from spacepackets.cfdp.pdu.file_directive import (
     FileDirectivePduBase,
-    DirectiveTypes,
+    DirectiveType,
     AbstractFileDirectiveBase,
 )
 from spacepackets.cfdp.defs import ConditionCode
@@ -25,7 +25,7 @@ class AckPdu(AbstractFileDirectiveBase):
 
     def __init__(
         self,
-        directive_code_of_acked_pdu: DirectiveTypes,
+        directive_code_of_acked_pdu: DirectiveType,
         condition_code_of_acked_pdu: ConditionCode,
         transaction_status: TransactionStatus,
         pdu_conf: PduConfig,
@@ -39,18 +39,18 @@ class AckPdu(AbstractFileDirectiveBase):
         :raises ValueError: Directive code invalid. Only EOF and Finished PDUs can be acknowledged
         """
         self.pdu_file_directive = FileDirectivePduBase(
-            directive_code=DirectiveTypes.ACK_PDU,
+            directive_code=DirectiveType.ACK_PDU,
             directive_param_field_len=2,
             pdu_conf=pdu_conf,
         )
         if directive_code_of_acked_pdu not in [
-            DirectiveTypes.FINISHED_PDU,
-            DirectiveTypes.EOF_PDU,
+            DirectiveType.FINISHED_PDU,
+            DirectiveType.EOF_PDU,
         ]:
             raise ValueError
         self.directive_code_of_acked_pdu = directive_code_of_acked_pdu
         self.directive_subtype_code = 0
-        if self.directive_code_of_acked_pdu == DirectiveTypes.FINISHED_PDU:
+        if self.directive_code_of_acked_pdu == DirectiveType.FINISHED_PDU:
             self.directive_subtype_code = 0b0001
         else:
             self.directive_subtype_code = 0b0000
@@ -58,8 +58,8 @@ class AckPdu(AbstractFileDirectiveBase):
         self.transaction_status = transaction_status
 
     @property
-    def directive_type(self) -> DirectiveTypes:
-        return DirectiveTypes.ACK_PDU
+    def directive_type(self) -> DirectiveType:
+        return DirectiveType.ACK_PDU
 
     @property
     def pdu_header(self) -> PduHeader:
@@ -79,7 +79,7 @@ class AckPdu(AbstractFileDirectiveBase):
         empty_conf = PduConfig.empty()
         return cls(
             # Still set valid directive code, otherwise ctor will explode
-            directive_code_of_acked_pdu=DirectiveTypes.FINISHED_PDU,
+            directive_code_of_acked_pdu=DirectiveType.FINISHED_PDU,
             condition_code_of_acked_pdu=ConditionCode.NO_ERROR,
             transaction_status=TransactionStatus.UNDEFINED,
             pdu_conf=empty_conf,

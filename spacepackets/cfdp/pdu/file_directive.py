@@ -6,7 +6,7 @@ import struct
 
 from spacepackets.cfdp.pdu.header import (
     PduHeader,
-    PduTypes,
+    PduType,
     SegmentMetadataFlag,
     AbstractPduBase,
 )
@@ -16,7 +16,7 @@ from spacepackets.log import get_console_logger
 from spacepackets.util import UnsignedByteField
 
 
-class DirectiveTypes(enum.IntEnum):
+class DirectiveType(enum.IntEnum):
     EOF_PDU = 0x04
     FINISHED_PDU = 0x05
     ACK_PDU = 0x06
@@ -32,7 +32,7 @@ class AbstractFileDirectiveBase(AbstractPduBase):
 
     @property
     @abc.abstractmethod
-    def directive_type(self) -> DirectiveTypes:
+    def directive_type(self) -> DirectiveType:
         pass
 
     @property
@@ -43,8 +43,8 @@ class AbstractFileDirectiveBase(AbstractPduBase):
         pass
 
     @property
-    def pdu_type(self) -> PduTypes:
-        return PduTypes.FILE_DIRECTIVE
+    def pdu_type(self) -> PduType:
+        return PduType.FILE_DIRECTIVE
 
     @property
     def file_flag(self) -> LargeFileFlag:
@@ -110,7 +110,7 @@ class FileDirectivePduBase(AbstractFileDirectiveBase):
 
     def __init__(
         self,
-        directive_code: DirectiveTypes,
+        directive_code: DirectiveType,
         directive_param_field_len: int,
         pdu_conf: PduConfig,
     ):
@@ -124,7 +124,7 @@ class FileDirectivePduBase(AbstractFileDirectiveBase):
         """
 
         self._pdu_header = PduHeader(
-            pdu_type=PduTypes.FILE_DIRECTIVE,
+            pdu_type=PduType.FILE_DIRECTIVE,
             pdu_data_field_len=directive_param_field_len + 1,
             pdu_conf=pdu_conf,
             # This flag is not relevant for file directive PDUs
@@ -141,7 +141,7 @@ class FileDirectivePduBase(AbstractFileDirectiveBase):
         return self._pdu_header
 
     @property
-    def directive_type(self) -> DirectiveTypes:
+    def directive_type(self) -> DirectiveType:
         return self._directive_type
 
     @property
@@ -156,7 +156,7 @@ class FileDirectivePduBase(AbstractFileDirectiveBase):
     def __empty(cls) -> FileDirectivePduBase:
         empty_conf = PduConfig.empty()
         return cls(
-            directive_code=DirectiveTypes.NONE,
+            directive_code=DirectiveType.NONE,
             directive_param_field_len=0,
             pdu_conf=empty_conf,
         )

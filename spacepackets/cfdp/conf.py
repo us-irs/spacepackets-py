@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from typing import TypedDict, Tuple
 
 from spacepackets.cfdp.defs import (
-    TransmissionModes,
+    TransmissionMode,
     LargeFileFlag,
     CrcFlag,
     Direction,
@@ -25,7 +25,7 @@ class PduConfig:
     source_entity_id: UnsignedByteField
     dest_entity_id: UnsignedByteField
     transaction_seq_num: UnsignedByteField
-    trans_mode: TransmissionModes
+    trans_mode: TransmissionMode
     file_flag: LargeFileFlag = LargeFileFlag.NORMAL
     crc_flag: CrcFlag = CrcFlag.NO_CRC
     direction: Direction = Direction.TOWARDS_RECEIVER
@@ -40,7 +40,7 @@ class PduConfig:
         """
         return PduConfig(
             transaction_seq_num=ByteFieldEmpty(),
-            trans_mode=TransmissionModes.ACKNOWLEDGED,
+            trans_mode=TransmissionMode.ACKNOWLEDGED,
             source_entity_id=ByteFieldEmpty(),
             dest_entity_id=ByteFieldEmpty(),
             file_flag=LargeFileFlag.NORMAL,
@@ -52,7 +52,7 @@ class PduConfig:
         """Valid PDU configuration"""
         return PduConfig(
             transaction_seq_num=ByteFieldU8(0),
-            trans_mode=TransmissionModes.ACKNOWLEDGED,
+            trans_mode=TransmissionMode.ACKNOWLEDGED,
             source_entity_id=ByteFieldU8(0),
             dest_entity_id=ByteFieldU8(0),
             file_flag=LargeFileFlag.NORMAL,

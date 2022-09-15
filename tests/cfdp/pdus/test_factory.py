@@ -4,8 +4,8 @@ from spacepackets.cfdp import (
     NULL_CHECKSUM_U32,
     ConditionCode,
     PduConfig,
-    DirectiveTypes,
-    ChecksumTypes,
+    DirectiveType,
+    ChecksumType,
 )
 from spacepackets.cfdp.pdu import (
     EofPdu,
@@ -41,7 +41,7 @@ class TestPduHolder(TestCase):
         )
         eof_raw = eof_pdu.pack()
         self.assertEqual(
-            self.pdu_factory.pdu_directive_type(eof_raw), DirectiveTypes.EOF_PDU
+            self.pdu_factory.pdu_directive_type(eof_raw), DirectiveType.EOF_PDU
         )
 
     def test_factory_file_directive_on_file_data(self):
@@ -57,7 +57,7 @@ class TestPduHolder(TestCase):
             file_size=2,
             source_file_name="test.txt",
             dest_file_name="test2.txt",
-            checksum_type=ChecksumTypes.MODULAR,
+            checksum_type=ChecksumType.MODULAR,
         )
         metadata_pdu = MetadataPdu(pdu_conf, metadata_params)
         metadata_raw = metadata_pdu.pack()
@@ -100,7 +100,7 @@ class TestPduHolder(TestCase):
 
     def test_ack_pdu_creation(self):
         ack_pdu = AckPdu(
-            directive_code_of_acked_pdu=DirectiveTypes.FINISHED_PDU,
+            directive_code_of_acked_pdu=DirectiveType.FINISHED_PDU,
             condition_code_of_acked_pdu=ConditionCode.NO_ERROR,
             transaction_status=TransactionStatus.TERMINATED,
             pdu_conf=self.pdu_conf,

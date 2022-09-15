@@ -1,14 +1,14 @@
 from .defs import (
-    PduTypes,
-    ChecksumTypes,
+    PduType,
+    ChecksumType,
     Direction,
     CrcFlag,
     LargeFileFlag,
     SegmentationControl,
     SegmentMetadataFlag,
-    TransmissionModes,
+    TransmissionMode,
     ConditionCode,
-    FaultHandlerCodes,
+    FaultHandlerCode,
     NULL_CHECKSUM_U32,
 )
 from .tlv import (
@@ -27,4 +27,4 @@ from .tlv import (
 )
 from .lv import CfdpLv
 from .conf import PduConfig
-from .pdu import DirectiveTypes, PduHolder, PduFactory, GenericPduPacket
+from .pdu import DirectiveType, PduHolder, PduFactory, GenericPduPacket

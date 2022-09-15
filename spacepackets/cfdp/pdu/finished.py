@@ -6,7 +6,7 @@ from typing import List, Optional
 from spacepackets.cfdp.pdu import PduHeader
 from spacepackets.cfdp.pdu.file_directive import (
     FileDirectivePduBase,
-    DirectiveTypes,
+    DirectiveType,
     AbstractFileDirectiveBase,
 )
 from spacepackets.cfdp.defs import ConditionCode
@@ -52,7 +52,7 @@ class FinishedPdu(AbstractFileDirectiveBase):
         pdu_conf: PduConfig,
     ):
         self.pdu_file_directive = FileDirectivePduBase(
-            directive_code=DirectiveTypes.FINISHED_PDU,
+            directive_code=DirectiveType.FINISHED_PDU,
             pdu_conf=pdu_conf,
             directive_param_field_len=1,
         )
@@ -63,8 +63,8 @@ class FinishedPdu(AbstractFileDirectiveBase):
             self.file_store_responses = self._params.file_store_responses
 
     @property
-    def directive_type(self) -> DirectiveTypes:
-        return DirectiveTypes.FINISHED_PDU
+    def directive_type(self) -> DirectiveType:
+        return DirectiveType.FINISHED_PDU
 
     @property
     def pdu_header(self) -> PduHeader:

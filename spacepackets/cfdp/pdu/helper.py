@@ -1,11 +1,11 @@
 from __future__ import annotations
 from typing import cast, Union, Type, Optional
 
-from spacepackets.cfdp import PduTypes
+from spacepackets.cfdp import PduType
 from spacepackets.cfdp.pdu import (
     MetadataPdu,
     AbstractFileDirectiveBase,
-    DirectiveTypes,
+    DirectiveType,
     AckPdu,
     NakPdu,
     FinishedPdu,
@@ -37,15 +37,15 @@ class PduHolder:
         return self.base.packet_len
 
     @property
-    def pdu_type(self) -> PduTypes:
+    def pdu_type(self) -> PduType:
         return self.base.pdu_header.pdu_type
 
     @property
     def is_file_directive(self):
-        return self.pdu_type == PduTypes.FILE_DIRECTIVE
+        return self.pdu_type == PduType.FILE_DIRECTIVE
 
     @property
-    def pdu_directive_type(self) -> Optional[DirectiveTypes]:
+    def pdu_directive_type(self) -> Optional[DirectiveType]:
         """If the contained type is not a PDU file directive, returns None. Otherwise, returns
         the directive type
         """
@@ -61,11 +61,11 @@ class PduHolder:
         raise TypeError(f"Stored PDU is not {pdu_type.__name__!r}: {self.base!r}")
 
     def _cast_to_concrete_file_directive(
-        self, pdu_type: Type[any], dir_type: DirectiveTypes
+        self, pdu_type: Type[any], dir_type: DirectiveType
     ):
         if (
             isinstance(self.base, AbstractFileDirectiveBase)
-            and self.base.pdu_type == PduTypes.FILE_DIRECTIVE
+            and self.base.pdu_type == PduType.FILE_DIRECTIVE
         ):
             pdu_base = cast(AbstractFileDirectiveBase, self.base)
             if pdu_base.directive_type == dir_type:
@@ -75,7 +75,7 @@ class PduHolder:
     def to_file_data_pdu(self) -> FileDataPdu:
         if (
             isinstance(self.base, AbstractPduBase)
-            and self.base.pdu_type == PduTypes.FILE_DATA
+            and self.base.pdu_type == PduType.FILE_DATA
         ):
             return cast(FileDataPdu, self.base)
         else:
@@ -83,31 +83,31 @@ class PduHolder:
 
     def to_metadata_pdu(self) -> MetadataPdu:
         return self._cast_to_concrete_file_directive(
-            MetadataPdu, DirectiveTypes.METADATA_PDU
+            MetadataPdu, DirectiveType.METADATA_PDU
         )
 
     def to_ack_pdu(self) -> AckPdu:
-        return self._cast_to_concrete_file_directive(AckPdu, DirectiveTypes.ACK_PDU)
+        return self._cast_to_concrete_file_directive(AckPdu, DirectiveType.ACK_PDU)
 
     def to_nak_pdu(self) -> NakPdu:
-        return self._cast_to_concrete_file_directive(NakPdu, DirectiveTypes.NAK_PDU)
+        return self._cast_to_concrete_file_directive(NakPdu, DirectiveType.NAK_PDU)
 
     def to_finished_pdu(self) -> FinishedPdu:
         return self._cast_to_concrete_file_directive(
-            FinishedPdu, DirectiveTypes.FINISHED_PDU
+            FinishedPdu, DirectiveType.FINISHED_PDU
         )
 
     def to_eof_pdu(self) -> EofPdu:
-        return self._cast_to_concrete_file_directive(EofPdu, DirectiveTypes.EOF_PDU)
+        return self._cast_to_concrete_file_directive(EofPdu, DirectiveType.EOF_PDU)
 
     def to_keep_alive_pdu(self) -> KeepAlivePdu:
         return self._cast_to_concrete_file_directive(
-            KeepAlivePdu, DirectiveTypes.KEEP_ALIVE_PDU
+            KeepAlivePdu, DirectiveType.KEEP_ALIVE_PDU
         )
 
     def to_prompt_pdu(self) -> PromptPdu:
         return self._cast_to_concrete_file_directive(
-            PromptPdu, DirectiveTypes.PROMPT_PDU
+            PromptPdu, DirectiveType.PROMPT_PDU
         )
 
 
@@ -120,32 +120,32 @@ class PduFactory:
             return FileDataPdu.unpack(data)
         else:
             directive = PduFactory.pdu_directive_type(data)
-            if directive == DirectiveTypes.EOF_PDU:
+            if directive == DirectiveType.EOF_PDU:
                 return EofPdu.unpack(data)
-            elif directive == DirectiveTypes.METADATA_PDU:
+            elif directive == DirectiveType.METADATA_PDU:
                 return MetadataPdu.unpack(data)
-            elif directive == DirectiveTypes.FINISHED_PDU:
+            elif directive == DirectiveType.FINISHED_PDU:
                 return FinishedPdu.unpack(data)
-            elif directive == DirectiveTypes.ACK_PDU:
+            elif directive == DirectiveType.ACK_PDU:
                 return AckPdu.unpack(data)
-            elif directive == DirectiveTypes.NAK_PDU:
+            elif directive == DirectiveType.NAK_PDU:
                 return NakPdu.unpack(data)
-            elif directive == DirectiveTypes.KEEP_ALIVE_PDU:
+            elif directive == DirectiveType.KEEP_ALIVE_PDU:
                 return KeepAlivePdu.unpack(data)
-            elif directive == DirectiveTypes.PROMPT_PDU:
+            elif directive == DirectiveType.PROMPT_PDU:
                 return PromptPdu.unpack(data)
         return None
 
     @staticmethod
-    def pdu_type(data: bytes) -> PduTypes:
-        return PduTypes((data[0] >> 4) & 0x01)
+    def pdu_type(data: bytes) -> PduType:
+        return PduType((data[0] >> 4) & 0x01)
 
     @staticmethod
     def is_file_directive(data: bytes) -> bool:
-        return PduFactory.pdu_type(data) == PduTypes.FILE_DIRECTIVE
+        return PduFactory.pdu_type(data) == PduType.FILE_DIRECTIVE
 
     @staticmethod
-    def pdu_directive_type(data: bytes) -> Optional[DirectiveTypes]:
+    def pdu_directive_type(data: bytes) -> Optional[DirectiveType]:
         """Retrieve the PDU directive type from a raw bytestream.
 
         :raises ValueError: Invalid directive type.
@@ -156,4 +156,4 @@ class PduFactory:
             return None
         else:
             header_len = AbstractPduBase.header_len_from_raw(data)
-            return DirectiveTypes(data[header_len])
+            return DirectiveType(data[header_len])

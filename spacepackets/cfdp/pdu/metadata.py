@@ -7,20 +7,20 @@ from typing import List, Optional
 from spacepackets.cfdp.pdu import PduHeader
 from spacepackets.cfdp.pdu.file_directive import (
     FileDirectivePduBase,
-    DirectiveTypes,
+    DirectiveType,
     AbstractFileDirectiveBase,
 )
 from spacepackets.cfdp.conf import PduConfig, LargeFileFlag
 from spacepackets.cfdp.tlv import CfdpTlv, TlvList
 from spacepackets.cfdp.lv import CfdpLv
-from spacepackets.cfdp.defs import ChecksumTypes
+from spacepackets.cfdp.defs import ChecksumType
 from spacepackets.cfdp.conf import check_packet_length
 
 
 @dataclasses.dataclass
 class MetadataParams:
     closure_requested: bool
-    checksum_type: ChecksumTypes
+    checksum_type: ChecksumType
     file_size: int
     source_file_name: Optional[str]
     dest_file_name: Optional[str]
@@ -49,15 +49,15 @@ class MetadataPdu(AbstractFileDirectiveBase):
         self._options = options
         self.pdu_conf = pdu_conf
         self.pdu_file_directive = FileDirectivePduBase(
-            directive_code=DirectiveTypes.METADATA_PDU,
+            directive_code=DirectiveType.METADATA_PDU,
             pdu_conf=pdu_conf,
             directive_param_field_len=5,
         )
         self._calculate_directive_field_len()
 
     @property
-    def directive_type(self) -> DirectiveTypes:
-        return DirectiveTypes.METADATA_PDU
+    def directive_type(self) -> DirectiveType:
+        return DirectiveType.METADATA_PDU
 
     @property
     def pdu_header(self) -> PduHeader:
@@ -75,14 +75,14 @@ class MetadataPdu(AbstractFileDirectiveBase):
         return self.params.file_size
 
     @property
-    def checksum_type(self) -> ChecksumTypes:
+    def checksum_type(self) -> ChecksumType:
         return self.params.checksum_type
 
     @classmethod
     def __empty(cls) -> MetadataPdu:
         empty_conf = PduConfig.empty()
         return cls(
-            params=MetadataParams(False, ChecksumTypes.MODULAR, 0, "", ""),
+            params=MetadataParams(False, ChecksumType.MODULAR, 0, "", ""),
             pdu_conf=empty_conf,
         )
 
@@ -180,9 +180,9 @@ class MetadataPdu(AbstractFileDirectiveBase):
         # Minimal length: 1 byte + FSS (4 byte) + 2 empty LV (1 byte)
         if not check_packet_length(len(raw_packet), current_idx + 7):
             raise ValueError
-        params = MetadataParams(False, ChecksumTypes.MODULAR, 0, "", "")
+        params = MetadataParams(False, ChecksumType.MODULAR, 0, "", "")
         params.closure_requested = bool(raw_packet[current_idx] & 0x40)
-        params.checksum_type = ChecksumTypes(raw_packet[current_idx] & 0x0F)
+        params.checksum_type = ChecksumType(raw_packet[current_idx] & 0x0F)
         current_idx += 1
         (
             current_idx,

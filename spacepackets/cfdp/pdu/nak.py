@@ -6,7 +6,7 @@ from spacepackets.cfdp.pdu import PduHeader
 from spacepackets.cfdp.pdu.file_directive import (
     AbstractFileDirectiveBase,
     FileDirectivePduBase,
-    DirectiveTypes,
+    DirectiveType,
     LargeFileFlag,
 )
 from spacepackets.cfdp.conf import PduConfig
@@ -33,7 +33,7 @@ class NakPdu(AbstractFileDirectiveBase):
             start and end offset are both 0, the metadata is re-requested.
         """
         self.pdu_file_directive = FileDirectivePduBase(
-            directive_code=DirectiveTypes.ACK_PDU,
+            directive_code=DirectiveType.ACK_PDU,
             directive_param_field_len=8,
             pdu_conf=pdu_conf,
         )
@@ -50,8 +50,8 @@ class NakPdu(AbstractFileDirectiveBase):
         )
 
     @property
-    def directive_type(self) -> DirectiveTypes:
-        return DirectiveTypes.NAK_PDU
+    def directive_type(self) -> DirectiveType:
+        return DirectiveType.NAK_PDU
 
     @property
     def pdu_header(self) -> PduHeader:

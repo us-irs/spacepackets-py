@@ -1,13 +1,13 @@
 from unittest import TestCase
 
 from spacepackets.cfdp import (
-    ChecksumTypes,
+    ChecksumType,
     FileStoreRequestTlv,
     FilestoreActionCode,
     ConditionCode,
 )
 from spacepackets.cfdp.conf import PduConfig
-from spacepackets.cfdp.defs import FaultHandlerCodes, LargeFileFlag
+from spacepackets.cfdp.defs import FaultHandlerCode, LargeFileFlag
 from spacepackets.cfdp.pdu import MetadataPdu
 from spacepackets.cfdp.pdu.metadata import MetadataParams
 from spacepackets.cfdp.tlv import TlvHolder, FaultHandlerOverrideTlv
@@ -21,7 +21,7 @@ class TestMetadata(TestCase):
             file_size=2,
             source_file_name="test.txt",
             dest_file_name="test2.txt",
-            checksum_type=ChecksumTypes.MODULAR,
+            checksum_type=ChecksumType.MODULAR,
         )
 
     def test_metadata_simple(self):
@@ -81,7 +81,7 @@ class TestMetadata(TestCase):
 
         option_1 = FaultHandlerOverrideTlv(
             condition_code=ConditionCode.POSITIVE_ACK_LIMIT_REACHED,
-            handler_code=FaultHandlerCodes.ABANDON_TRANSACTION,
+            handler_code=FaultHandlerCode.ABANDON_TRANSACTION,
         )
         self.assertEqual(option_1.packet_len, 3)
         metadata_params = MetadataParams(
@@ -89,7 +89,7 @@ class TestMetadata(TestCase):
             file_size=2,
             source_file_name=None,
             dest_file_name=None,
-            checksum_type=ChecksumTypes.MODULAR,
+            checksum_type=ChecksumType.MODULAR,
         )
         pdu_with_two_options = MetadataPdu(
             pdu_conf=self.pdu_conf,
