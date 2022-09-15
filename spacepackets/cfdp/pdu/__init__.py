@@ -1,5 +1,5 @@
 # noinspection PyUnresolvedReferences
-from spacepackets.cfdp.defs import SegmentMetadataFlag, PduType
+from spacepackets.cfdp.defs import SegmentMetadataFlag, PduTypes
 
 # noinspection PyUnresolvedReferences
 from .header import PduHeader, PduConfig
@@ -7,7 +7,7 @@ from .ack import TransactionStatus, AckPdu
 from .eof import EofPdu
 from .file_directive import (
     FileDirectivePduBase,
-    DirectiveType,
+    DirectiveTypes,
     AbstractFileDirectiveBase,
 )
 from .finished import FinishedPdu, FileDeliveryStatus, DeliveryCode

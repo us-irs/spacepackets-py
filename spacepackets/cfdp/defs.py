@@ -15,7 +15,7 @@ class UnsupportedCfdpVersion(Exception):
         return f"Unsupported CFDP version {self.version}"
 
 
-class PduType(enum.IntEnum):
+class PduTypes(enum.IntEnum):
     FILE_DIRECTIVE = 0
     FILE_DATA = 1
 

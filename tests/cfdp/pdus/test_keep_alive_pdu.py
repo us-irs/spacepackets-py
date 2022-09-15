@@ -2,7 +2,7 @@ from unittest import TestCase
 
 from spacepackets.cfdp import LargeFileFlag
 from spacepackets.cfdp.conf import PduConfig
-from spacepackets.cfdp.pdu import KeepAlivePdu, DirectiveType
+from spacepackets.cfdp.pdu import KeepAlivePdu, DirectiveTypes
 
 
 class TestKeepAlivePdu(TestCase):
@@ -26,7 +26,7 @@ class TestKeepAlivePdu(TestCase):
                     0x00,
                     0x00,
                     0x00,
-                    DirectiveType.KEEP_ALIVE_PDU,
+                    DirectiveTypes.KEEP_ALIVE_PDU,
                     0x00,
                     0x00,
                     0x00,

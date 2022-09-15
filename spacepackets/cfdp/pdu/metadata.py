@@ -7,7 +7,7 @@ from typing import List, Optional
 from spacepackets.cfdp.pdu import PduHeader
 from spacepackets.cfdp.pdu.file_directive import (
     FileDirectivePduBase,
-    DirectiveType,
+    DirectiveTypes,
     AbstractFileDirectiveBase,
 )
 from spacepackets.cfdp.conf import PduConfig, LargeFileFlag
@@ -49,15 +49,15 @@ class MetadataPdu(AbstractFileDirectiveBase):
         self._options = options
         self.pdu_conf = pdu_conf
         self.pdu_file_directive = FileDirectivePduBase(
-            directive_code=DirectiveType.METADATA_PDU,
+            directive_code=DirectiveTypes.METADATA_PDU,
             pdu_conf=pdu_conf,
             directive_param_field_len=5,
         )
         self._calculate_directive_field_len()
 
     @property
-    def directive_type(self) -> DirectiveType:
-        return DirectiveType.METADATA_PDU
+    def directive_type(self) -> DirectiveTypes:
+        return DirectiveTypes.METADATA_PDU
 
     @property
     def pdu_header(self) -> PduHeader:

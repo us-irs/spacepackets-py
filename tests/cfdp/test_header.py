@@ -8,7 +8,7 @@ from spacepackets.cfdp.defs import (
     Direction,
     CrcFlag,
     SegmentationControl,
-    PduType,
+    PduTypes,
     SegmentMetadataFlag,
     LargeFileFlag,
 )
@@ -35,7 +35,7 @@ class TestHeader(TestCase):
             transaction_seq_num=ByteFieldU8(0),
         )
         self.pdu_header = PduHeader(
-            pdu_type=PduType.FILE_DIRECTIVE,
+            pdu_type=PduTypes.FILE_DIRECTIVE,
             segment_metadata_flag=SegmentMetadataFlag.NOT_PRESENT,
             pdu_data_field_len=0,
             pdu_conf=self.pdu_conf,
@@ -43,7 +43,7 @@ class TestHeader(TestCase):
 
     # TODO: Split up in smaller test fixtures
     def test_pdu_header(self):
-        self.assertEqual(self.pdu_header.pdu_type, PduType.FILE_DIRECTIVE)
+        self.assertEqual(self.pdu_header.pdu_type, PduTypes.FILE_DIRECTIVE)
         self.assertEqual(self.pdu_header.source_entity_id, ByteFieldU8(0))
         self.assertEqual(self.pdu_header.source_entity_id.byte_len, 1)
         self.assertEqual(self.pdu_header.trans_mode, TransmissionModes.ACKNOWLEDGED)
@@ -70,7 +70,7 @@ class TestHeader(TestCase):
         pdu_header_repacked = pdu_header_unpacked.pack()
         self.check_fields_case_one(pdu_header_packed=pdu_header_repacked)
 
-        self.pdu_header.pdu_type = PduType.FILE_DATA
+        self.pdu_header.pdu_type = PduTypes.FILE_DATA
         self.pdu_header.set_entity_ids(
             source_entity_id=ByteFieldU16(0), dest_entity_id=ByteFieldU16(1)
         )

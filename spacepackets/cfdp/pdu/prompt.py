@@ -1,7 +1,7 @@
 from __future__ import annotations
 import enum
 
-from spacepackets.cfdp.pdu.file_directive import FileDirectivePduBase, DirectiveType
+from spacepackets.cfdp.pdu.file_directive import FileDirectivePduBase, DirectiveTypes
 from spacepackets.cfdp.conf import PduConfig
 from spacepackets.cfdp.pdu import AbstractFileDirectiveBase, PduHeader
 from spacepackets.log import get_console_logger
@@ -17,14 +17,14 @@ class PromptPdu(AbstractFileDirectiveBase):
 
     def __init__(self, response_required: ResponseRequired, pdu_conf: PduConfig):
         self.pdu_file_directive = FileDirectivePduBase(
-            directive_code=DirectiveType.PROMPT_PDU,
+            directive_code=DirectiveTypes.PROMPT_PDU,
             pdu_conf=pdu_conf,
             directive_param_field_len=1,
         )
         self.response_required = response_required
 
     @property
-    def directive_type(self) -> DirectiveType:
+    def directive_type(self) -> DirectiveTypes:
         return self.pdu_file_directive.directive_type
 
     @property

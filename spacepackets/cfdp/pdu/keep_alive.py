@@ -5,7 +5,7 @@ import struct
 from spacepackets.cfdp.pdu import PduHeader
 from spacepackets.cfdp.pdu.file_directive import (
     FileDirectivePduBase,
-    DirectiveType,
+    DirectiveTypes,
     AbstractFileDirectiveBase,
 )
 from spacepackets.cfdp.conf import PduConfig, LargeFileFlag
@@ -21,15 +21,15 @@ class KeepAlivePdu(AbstractFileDirectiveBase):
             directive_param_field_len = 8
         # Directive param field length is minimum FSS size which is 4 bytes
         self.pdu_file_directive = FileDirectivePduBase(
-            directive_code=DirectiveType.KEEP_ALIVE_PDU,
+            directive_code=DirectiveTypes.KEEP_ALIVE_PDU,
             pdu_conf=pdu_conf,
             directive_param_field_len=directive_param_field_len,
         )
         self.progress = progress
 
     @property
-    def directive_type(self) -> DirectiveType:
-        return DirectiveType.KEEP_ALIVE_PDU
+    def directive_type(self) -> DirectiveTypes:
+        return DirectiveTypes.KEEP_ALIVE_PDU
 
     @property
     def pdu_header(self) -> PduHeader:

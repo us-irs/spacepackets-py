@@ -1,5 +1,5 @@
 from .defs import (
-    PduType,
+    PduTypes,
     ChecksumTypes,
     Direction,
     CrcFlag,
@@ -27,4 +27,4 @@ from .tlv import (
 )
 from .lv import CfdpLv
 from .conf import PduConfig
-from .pdu import DirectiveType, PduHolder, PduFactory, GenericPduPacket
+from .pdu import DirectiveTypes, PduHolder, PduFactory, GenericPduPacket

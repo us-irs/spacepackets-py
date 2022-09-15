@@ -2,7 +2,7 @@ from unittest import TestCase
 
 from spacepackets.cfdp import CrcFlag, TransmissionModes, LargeFileFlag, ConditionCode
 from spacepackets.cfdp.conf import PduConfig
-from spacepackets.cfdp.pdu import AckPdu, DirectiveType, TransactionStatus
+from spacepackets.cfdp.pdu import AckPdu, DirectiveTypes, TransactionStatus
 from spacepackets.util import ByteFieldU16, ByteFieldU32
 
 
@@ -17,7 +17,7 @@ class TestAckPdu(TestCase):
             file_flag=LargeFileFlag.NORMAL,
         )
         ack_pdu = AckPdu(
-            directive_code_of_acked_pdu=DirectiveType.FINISHED_PDU,
+            directive_code_of_acked_pdu=DirectiveTypes.FINISHED_PDU,
             condition_code_of_acked_pdu=ConditionCode.NO_ERROR,
             transaction_status=TransactionStatus.TERMINATED,
             pdu_conf=pdu_conf,
@@ -63,7 +63,7 @@ class TestAckPdu(TestCase):
             file_flag=LargeFileFlag.NORMAL,
         )
         ack_pdu_2 = AckPdu(
-            directive_code_of_acked_pdu=DirectiveType.EOF_PDU,
+            directive_code_of_acked_pdu=DirectiveTypes.EOF_PDU,
             condition_code_of_acked_pdu=ConditionCode.POSITIVE_ACK_LIMIT_REACHED,
             transaction_status=TransactionStatus.ACTIVE,
             pdu_conf=pdu_conf,
@@ -107,7 +107,7 @@ class TestAckPdu(TestCase):
         self.assertRaises(
             ValueError,
             AckPdu,
-            directive_code_of_acked_pdu=DirectiveType.NAK_PDU,
+            directive_code_of_acked_pdu=DirectiveTypes.NAK_PDU,
             condition_code_of_acked_pdu=ConditionCode.POSITIVE_ACK_LIMIT_REACHED,
             transaction_status=TransactionStatus.ACTIVE,
             pdu_conf=pdu_conf,
@@ -115,7 +115,7 @@ class TestAckPdu(TestCase):
 
     def check_fields_packet_0(self, ack_pdu: AckPdu):
         self.assertEqual(
-            ack_pdu.directive_code_of_acked_pdu, DirectiveType.FINISHED_PDU
+            ack_pdu.directive_code_of_acked_pdu, DirectiveTypes.FINISHED_PDU
         )
         self.assertEqual(ack_pdu.condition_code_of_acked_pdu, ConditionCode.NO_ERROR)
         self.assertEqual(ack_pdu.transaction_status, TransactionStatus.TERMINATED)
@@ -138,7 +138,7 @@ class TestAckPdu(TestCase):
         self.assertEqual(ack_pdu.packet_len, 13)
 
     def check_fields_packet_1(self, ack_pdu: AckPdu):
-        self.assertEqual(ack_pdu.directive_code_of_acked_pdu, DirectiveType.EOF_PDU)
+        self.assertEqual(ack_pdu.directive_code_of_acked_pdu, DirectiveTypes.EOF_PDU)
         self.assertEqual(
             ack_pdu.condition_code_of_acked_pdu,
             ConditionCode.POSITIVE_ACK_LIMIT_REACHED,

@@ -5,7 +5,7 @@ from spacepackets.cfdp.conf import PduConfig
 from spacepackets.cfdp.pdu import (
     MetadataPdu,
     AckPdu,
-    DirectiveType,
+    DirectiveTypes,
     TransactionStatus,
     NakPdu,
     PromptPdu,
@@ -91,7 +91,7 @@ class TestPduHolder(TestCase):
 
     def test_ack_cast(self):
         ack_pdu = AckPdu(
-            directive_code_of_acked_pdu=DirectiveType.FINISHED_PDU,
+            directive_code_of_acked_pdu=DirectiveTypes.FINISHED_PDU,
             condition_code_of_acked_pdu=ConditionCode.NO_ERROR,
             transaction_status=TransactionStatus.TERMINATED,
             pdu_conf=self.pdu_conf,

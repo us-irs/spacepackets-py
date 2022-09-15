@@ -2,14 +2,14 @@ from unittest import TestCase
 
 from spacepackets.cfdp import LargeFileFlag
 from spacepackets.cfdp.conf import PduConfig
-from spacepackets.cfdp.pdu import FileDirectivePduBase, DirectiveType
+from spacepackets.cfdp.pdu import FileDirectivePduBase, DirectiveTypes
 
 
 class TestDirective(TestCase):
     def test_file_directive(self):
         pdu_conf = PduConfig.default()
         file_directive_header = FileDirectivePduBase(
-            directive_code=DirectiveType.METADATA_PDU,
+            directive_code=DirectiveTypes.METADATA_PDU,
             pdu_conf=pdu_conf,
             directive_param_field_len=0,
         )
