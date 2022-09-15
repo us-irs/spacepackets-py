@@ -244,7 +244,15 @@ class TestSpacePacket(TestCase):
         self.assertEqual(packet_id_from_raw.raw(), packet_id.raw())
         self.assertEqual(PacketId.empty().raw(), 0)
 
-    def test_equality(self):
-        sp_raw = self.sp_header.pack()
-        sp_unpacked = SpacePacketHeader.unpack(sp_raw)
-        self.assertEqual(sp_unpacked, self.sp_header)
+    def test_equality_sp_packet(self):
+        sp = SpacePacket(
+            sp_header=self.sp_header,
+            sec_header=None,
+            user_data=bytes([0, 1, 2])
+        )
+        other_sp = SpacePacket(
+            sp_header=self.sp_header,
+            sec_header=None,
+            user_data=bytes([0, 1, 2])
+        )
+        self.assertEqual(sp, other_sp)
