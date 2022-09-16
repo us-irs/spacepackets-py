@@ -246,13 +246,9 @@ class TestSpacePacket(TestCase):
 
     def test_equality_sp_packet(self):
         sp = SpacePacket(
-            sp_header=self.sp_header,
-            sec_header=None,
-            user_data=bytes([0, 1, 2])
+            sp_header=self.sp_header, sec_header=None, user_data=bytes([0, 1, 2])
         )
         other_sp = SpacePacket(
-            sp_header=self.sp_header,
-            sec_header=None,
-            user_data=bytes([0, 1, 2])
+            sp_header=self.sp_header, sec_header=None, user_data=bytes([0, 1, 2])
         )
         self.assertEqual(sp, other_sp)
