@@ -1,7 +1,7 @@
 import enum
 
 
-class PusServices(enum.IntEnum):
+class PusService(enum.IntEnum):
     S1_VERIFICATION = 1
     S2_RAW_CMD = 2
     S3_HOUSEKEEPING = 3

@@ -8,6 +8,6 @@ from .fields import (
     PfcSigned,
     PfcUnsigned,
 )
-from .defs import PusServices
+from .defs import PusService
 from .req_id import RequestId
 from .pus_verificator import PusVerificator

@@ -10,7 +10,7 @@ from spacepackets.ccsds import SpacePacketHeader
 from spacepackets.ccsds.time import CcsdsTimeProvider
 from spacepackets.ecss import PusTelecommand
 from spacepackets.ecss.conf import FETCH_GLOBAL_APID
-from spacepackets.ecss.defs import PusServices
+from spacepackets.ecss.defs import PusService
 from spacepackets.ecss.fields import PacketFieldEnum
 from spacepackets.ecss.tm import PusTelemetry, AbstractPusTm
 from spacepackets.log import get_console_logger
@@ -137,7 +137,7 @@ class Service1Tm(AbstractPusTm):
         else:
             self._verif_params = verif_params
         self.pus_tm = PusTelemetry(
-            service=PusServices.S1_VERIFICATION,
+            service=PusService.S1_VERIFICATION,
             subservice=subservice,
             time_provider=time_provider,
             seq_count=seq_count,
