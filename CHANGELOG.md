@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   CDS timestamp with 16 bit days anymore if no time provider is passed. If this behaviour
   is still required, `CdsShortTimestamp.empty()` can be passed explicitely. If not time provider
   is passed, it is assumed the time field is empty.
+- (breaking): `PusServices` renamed to `PusService`, not a flag enum.
 
 # [v0.13.0] 15.09.2022
 
@@ -119,12 +120,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 # [v0.6.0]
 
-### Added
+## Added
 
 - Unified Space Data Link Protocol Packet implementations
 
-
-### Changed
+## Changed
 
 - Assign default print format in TM and TC implementation
 
