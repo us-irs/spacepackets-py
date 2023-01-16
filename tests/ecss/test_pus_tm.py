@@ -195,10 +195,20 @@ class TestTelemetry(TestCase):
         # Set length field invalid
         self.ping_reply_raw[4] = 0x00
         self.ping_reply_raw[5] = 0x00
-        self.assertRaises(ValueError, PusTelemetry.unpack, self.ping_reply_raw)
+        self.assertRaises(
+            ValueError,
+            PusTelemetry.unpack,
+            self.ping_reply_raw,
+            CdsShortTimestamp.empty(),
+        )
         self.ping_reply_raw[4] = 0xFF
         self.ping_reply_raw[5] = 0xFF
-        self.assertRaises(ValueError, PusTelemetry.unpack, self.ping_reply_raw)
+        self.assertRaises(
+            ValueError,
+            PusTelemetry.unpack,
+            self.ping_reply_raw,
+            CdsShortTimestamp.empty(),
+        )
 
         self.ping_reply_raw[4] = (correct_size & 0xFF00) >> 8
         self.ping_reply_raw[5] = correct_size & 0xFF
@@ -374,7 +384,9 @@ class TestTelemetry(TestCase):
         self.assertEqual(srv_1_tm.tc_req_id.tc_packet_id, pus_tc.packet_id)
         self.assertEqual(srv_1_tm.tc_req_id.tc_psc, pus_tc.packet_seq_ctrl)
         srv_1_tm_raw = srv_1_tm.pack()
-        srv_1_tm_unpacked = Service1Tm.unpack(srv_1_tm_raw, UnpackParams())
+        srv_1_tm_unpacked = Service1Tm.unpack(
+            srv_1_tm_raw, UnpackParams(CdsShortTimestamp.empty())
+        )
         self.assertEqual(
             srv_1_tm_unpacked.tc_req_id.tc_packet_id.raw(), pus_tc.packet_id.raw()
         )
@@ -437,7 +449,7 @@ class TestTelemetry(TestCase):
         self.assertEqual(srv_1_tm.tc_req_id.tc_packet_id, pus_tc.packet_id)
         self.assertEqual(srv_1_tm.tc_req_id.tc_psc, pus_tc.packet_seq_ctrl)
         srv_1_tm_raw = srv_1_tm.pack()
-        unpack_params = UnpackParams()
+        unpack_params = UnpackParams(CdsShortTimestamp.empty())
         if failure_notice is not None:
             unpack_params.bytes_err_code = failure_notice.code.len()
         if step_id is not None:

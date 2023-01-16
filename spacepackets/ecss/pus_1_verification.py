@@ -68,6 +68,7 @@ class FailureNotice:
 
 @dataclass
 class UnpackParams:
+    time_reader: CcsdsTimeProvider
     bytes_step_id: int = 1
     bytes_err_code: int = 1
 
@@ -167,7 +168,9 @@ class Service1Tm(AbstractPusTm):
         :return:
         """
         service_1_tm = cls.__empty()
-        service_1_tm.pus_tm = PusTelemetry.unpack(raw_telemetry=data)
+        service_1_tm.pus_tm = PusTelemetry.unpack(
+            raw_telemetry=data, time_reader=params.time_reader
+        )
         cls._unpack_raw_tm(service_1_tm, params)
         return service_1_tm
 

@@ -144,6 +144,9 @@ class CdsShortTimestamp(CcsdsTimeProvider):
 
     @classmethod
     def empty(cls):
+        """Empty instance containing only zero for all fields.
+        :return:
+        """
         return cls(ccsds_days=0, ms_of_day=0)
 
     @classmethod

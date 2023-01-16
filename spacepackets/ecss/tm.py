@@ -3,14 +3,14 @@
 """
 from __future__ import annotations
 
-from abc import abstractmethod, ABC
+from abc import abstractmethod
 import struct
 from typing import Optional
 
 from crcmod.predefined import mkPredefinedCrcFun, PredefinedCrc
 
-from spacepackets.util import PrintFormats, get_printable_data_string
 from spacepackets.log import get_console_logger
+from spacepackets.util import PrintFormats, get_printable_data_string
 from spacepackets.ccsds.spacepacket import (
     SpacePacketHeader,
     SPACE_PACKET_HEADER_SIZE,
@@ -119,7 +119,7 @@ class PusTmSecondaryHeader:
 
     @classmethod
     def unpack(
-        cls, header_start: bytes, time_reader: CcsdsTimeProvider
+        cls, header_start: bytes, time_reader: Optional[CcsdsTimeProvider]
     ) -> PusTmSecondaryHeader:
         """Unpack the PUS TM secondary header from the raw packet starting at the header index.
 
@@ -130,9 +130,7 @@ class PusTmSecondaryHeader:
         :return:
         """
         if len(header_start) < cls.HEADER_SIZE:
-            logger = get_console_logger()
-            logger.warning("Passed bytearray too short")
-            raise ValueError
+            raise ValueError("passed bytearray too short")
         secondary_header = cls.__empty()
         current_idx = 0
         secondary_header.pus_version = (header_start[current_idx] & 0xF0) >> 4
@@ -166,9 +164,10 @@ class PusTmSecondaryHeader:
         if time_code_id:
             pass
         secondary_header.time_provider = time_reader
-        time_reader.read_from_raw(
-            header_start[current_idx : current_idx + time_reader.len]
-        )
+        if time_reader:
+            time_reader.read_from_raw(
+                header_start[current_idx : current_idx + time_reader.len]
+            )
         return secondary_header
 
     def __repr__(self):
@@ -184,7 +183,10 @@ class PusTmSecondaryHeader:
 
     @property
     def header_size(self) -> int:
-        return self.time_provider.len + 7
+        base_len = 7
+        if self.time_provider:
+            base_len += self.time_provider.len
+        return base_len
 
 
 class PusTelemetry(AbstractPusTm):
@@ -285,20 +287,19 @@ class PusTelemetry(AbstractPusTm):
 
     @classmethod
     def unpack(
-        cls, raw_telemetry: bytes, time_reader: Optional[CcsdsTimeProvider] = None
+        cls, raw_telemetry: bytes, time_reader: Optional[CcsdsTimeProvider]
     ) -> PusTelemetry:
         """Attempts to construct a generic PusTelemetry class given a raw bytearray.
 
         :param raw_telemetry:
-        :param time_reader:
+        :param time_reader: Time provider to read the timestamp. If the timestamp field is empty,
+            you can supply None here.
         :raises ValueError: if the format of the raw bytearray is invalid, for example the length
         """
         if raw_telemetry is None:
             raise ValueError("Given byte stream invalid")
         elif len(raw_telemetry) == 0:
             raise ValueError("Given byte stream is empty")
-        if time_reader is None:
-            time_reader = CdsShortTimestamp.empty()
         pus_tm = cls.__empty()
         pus_tm._valid = False
         pus_tm.sp_header = SpacePacketHeader.unpack(space_packet_raw=raw_telemetry)
@@ -306,12 +307,10 @@ class PusTelemetry(AbstractPusTm):
             pus_tm.sp_header.data_len
         )
         if expected_packet_len > len(raw_telemetry):
-            logger = get_console_logger()
-            logger.warning(
+            raise ValueError(
                 f"PusTelemetry: Passed packet with length {len(raw_telemetry)} "
                 f"shorter than specified packet length in PUS header {expected_packet_len}"
             )
-            raise ValueError
         pus_tm.pus_tm_sec_header = PusTmSecondaryHeader.unpack(
             header_start=raw_telemetry[SPACE_PACKET_HEADER_SIZE:],
             time_reader=time_reader,

@@ -3,7 +3,7 @@ import enum
 from typing import Optional
 
 from spacepackets import SpacePacketHeader
-from spacepackets.ccsds.time import CcsdsTimeProvider
+from spacepackets.ccsds.time import CcsdsTimeProvider, CdsShortTimestamp
 from spacepackets.ecss.defs import PusServices
 from spacepackets.ecss.tm import PusVersion, PusTelemetry, AbstractPusTm
 
@@ -66,5 +66,7 @@ class Service17Tm(AbstractPusTm):
         pus_version: PusVersion = PusVersion.GLOBAL_CONFIG,
     ) -> Service17Tm:
         service_17_tm = cls.__empty()
-        service_17_tm.pus_tm = PusTelemetry.unpack(raw_telemetry=raw_telemetry)
+        service_17_tm.pus_tm = PusTelemetry.unpack(
+            raw_telemetry=raw_telemetry, time_reader=CdsShortTimestamp.empty()
+        )
         return service_17_tm
