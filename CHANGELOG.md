@@ -13,7 +13,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - (breaking): The `CcsdsTimeProvider` is now optional for the ECSS TM packet constructors, but
   needs to be supplied explicitely. There is no automatic construction of a specific version of the
   CDS timestamp with 16 bit days anymore if no time provider is passed. If this behaviour
-  is still required, `CdsShortTimestamp.empty()` can be passed explicitely.
+  is still required, `CdsShortTimestamp.empty()` can be passed explicitely. If not time provider
+  is passed, it is assumed the time field is empty.
 
 # [v0.13.0] 15.09.2022
 
