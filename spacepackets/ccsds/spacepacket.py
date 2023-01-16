@@ -7,7 +7,6 @@ import enum
 import struct
 
 from typing import Tuple, Deque, List, Final, Optional
-from spacepackets.log import get_console_logger
 
 SPACE_PACKET_HEADER_SIZE: Final = 6
 SEQ_FLAG_MASK = 0xC000
@@ -260,9 +259,7 @@ class SpacePacketHeader(AbstractSpacePacket):
         :raise ValueError: Raw packet length invalid
         """
         if len(space_packet_raw) < SPACE_PACKET_HEADER_SIZE:
-            logger = get_console_logger()
-            logger.warning("Packet size smaller than PUS header size!")
-            raise ValueError
+            raise ValueError("packet size smaller than PUS header size")
         packet_version = (space_packet_raw[0] >> 5) & 0b111
         packet_type = PacketType((space_packet_raw[0] >> 4) & 0b1)
         secondary_header_flag = (space_packet_raw[0] >> 3) & 0b1
