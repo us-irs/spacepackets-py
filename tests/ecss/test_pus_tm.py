@@ -28,7 +28,7 @@ from spacepackets.ecss.pus_17_test import Service17Tm
 from spacepackets.ecss.pus_1_verification import (
     Service1Tm,
     RequestId,
-    Subservices,
+    Subservice,
     VerificationParams,
     UnpackParams,
     FailureNotice,
@@ -306,29 +306,29 @@ class TestTelemetry(TestCase):
         self.assertEqual(notice_unpacked.data, bytes([0, 2, 4, 8]))
 
     def test_service_1_tm_acc_success(self):
-        self._generic_test_srv_1_success(Subservices.TM_ACCEPTANCE_SUCCESS)
+        self._generic_test_srv_1_success(Subservice.TM_ACCEPTANCE_SUCCESS)
 
     def test_service_1_tm_start_success(self):
-        self._generic_test_srv_1_success(Subservices.TM_START_SUCCESS)
+        self._generic_test_srv_1_success(Subservice.TM_START_SUCCESS)
 
     def test_service_1_tm_step_success(self):
-        self._generic_test_srv_1_success(Subservices.TM_STEP_SUCCESS)
+        self._generic_test_srv_1_success(Subservice.TM_STEP_SUCCESS)
 
     def test_service_1_tm_completion_success(self):
-        self._generic_test_srv_1_success(Subservices.TM_COMPLETION_SUCCESS)
+        self._generic_test_srv_1_success(Subservice.TM_COMPLETION_SUCCESS)
 
-    def _generic_test_srv_1_success(self, subservice: Subservices):
+    def _generic_test_srv_1_success(self, subservice: Subservice):
         pus_tc = PusTelecommand(service=17, subservice=1)
         helper_created = None
         step_id = None
-        if subservice == Subservices.TM_ACCEPTANCE_SUCCESS:
+        if subservice == Subservice.TM_ACCEPTANCE_SUCCESS:
             helper_created = create_acceptance_success_tm(pus_tc)
-        elif subservice == Subservices.TM_START_SUCCESS:
+        elif subservice == Subservice.TM_START_SUCCESS:
             helper_created = create_start_success_tm(pus_tc)
-        elif subservice == Subservices.TM_STEP_SUCCESS:
+        elif subservice == Subservice.TM_STEP_SUCCESS:
             step_id = PacketFieldEnum.with_byte_size(1, 4)
             helper_created = create_step_success_tm(pus_tc, step_id)
-        elif subservice == Subservices.TM_COMPLETION_SUCCESS:
+        elif subservice == Subservice.TM_COMPLETION_SUCCESS:
             helper_created = create_completion_success_tm(pus_tc)
         self._test_srv_1_success_tm(
             pus_tc,
@@ -364,22 +364,22 @@ class TestTelemetry(TestCase):
         self.assertEqual(verif_param.len(), 11)
 
     def test_service_1_tm_acceptance_failure(self):
-        self._generic_test_srv_1_failure(Subservices.TM_ACCEPTANCE_FAILURE)
+        self._generic_test_srv_1_failure(Subservice.TM_ACCEPTANCE_FAILURE)
 
     def test_service_1_tm_start_failure(self):
-        self._generic_test_srv_1_failure(Subservices.TM_START_FAILURE)
+        self._generic_test_srv_1_failure(Subservice.TM_START_FAILURE)
 
     def test_service_1_tm_step_failure(self):
-        self._generic_test_srv_1_failure(Subservices.TM_STEP_FAILURE)
+        self._generic_test_srv_1_failure(Subservice.TM_STEP_FAILURE)
 
     def test_service_1_tm_completion_failure(self):
-        self._generic_test_srv_1_failure(Subservices.TM_COMPLETION_FAILURE)
+        self._generic_test_srv_1_failure(Subservice.TM_COMPLETION_FAILURE)
 
     def _test_srv_1_success_tm(
         self,
         pus_tc: PusTelecommand,
         srv_1_tm: Service1Tm,
-        subservice: Subservices,
+        subservice: Subservice,
         step_id: Optional[PacketFieldEnum] = None,
     ):
         self.assertEqual(srv_1_tm.pus_tm.subservice, subservice)
@@ -395,26 +395,26 @@ class TestTelemetry(TestCase):
         self.assertEqual(
             srv_1_tm_unpacked.tc_req_id.tc_psc.raw(), pus_tc.packet_seq_ctrl.raw()
         )
-        if step_id is not None and subservice == Subservices.TM_STEP_SUCCESS:
+        if step_id is not None and subservice == Subservice.TM_STEP_SUCCESS:
             self.assertEqual(srv_1_tm_unpacked.step_id, step_id)
 
-    def _generic_test_srv_1_failure(self, subservice: Subservices):
+    def _generic_test_srv_1_failure(self, subservice: Subservice):
         pus_tc = PusTelecommand(service=17, subservice=1)
         failure_notice = FailureNotice(
             code=PacketFieldEnum.with_byte_size(1, 8), data=bytes([2, 4])
         )
         helper_created = None
         step_id = None
-        if subservice == Subservices.TM_ACCEPTANCE_FAILURE:
+        if subservice == Subservice.TM_ACCEPTANCE_FAILURE:
             helper_created = create_acceptance_failure_tm(pus_tc, failure_notice)
-        elif subservice == Subservices.TM_START_FAILURE:
+        elif subservice == Subservice.TM_START_FAILURE:
             helper_created = create_start_failure_tm(pus_tc, failure_notice)
-        elif subservice == Subservices.TM_STEP_FAILURE:
+        elif subservice == Subservice.TM_STEP_FAILURE:
             step_id = PacketFieldEnum.with_byte_size(2, 12)
             helper_created = create_step_failure_tm(
                 pus_tc, failure_notice=failure_notice, step_id=step_id
             )
-        elif subservice == Subservices.TM_COMPLETION_FAILURE:
+        elif subservice == Subservice.TM_COMPLETION_FAILURE:
             helper_created = create_completion_failure_tm(pus_tc, failure_notice)
         self._test_srv_1_failure_comparison_helper(
             pus_tc,
@@ -443,7 +443,7 @@ class TestTelemetry(TestCase):
         self,
         pus_tc: PusTelecommand,
         srv_1_tm: Service1Tm,
-        subservice: Subservices,
+        subservice: Subservice,
         failure_notice: Optional[FailureNotice],
         step_id: Optional[PacketFieldEnum] = None,
     ):

@@ -8,7 +8,7 @@ from spacepackets.ecss.defs import PusService
 from spacepackets.ecss.tm import PusVersion, PusTelemetry, AbstractPusTm
 
 
-class Subservices(enum.IntEnum):
+class Subservice(enum.IntEnum):
     TC_PING = 1
     TM_REPLY = 2
 

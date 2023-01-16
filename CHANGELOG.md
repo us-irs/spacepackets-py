@@ -17,6 +17,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   is passed, it is assumed the time field is empty.
 - (breaking): `PusServices` renamed to `PusService`, not a flag enum.
 - (breaking): `Service17Tm.unpack`: Time reader needs to be passed explicitely as second argument.
+- (breaking): Rename `pus_1_verification.Subservices` to `pus_1_verification.Subservice`
+- (breaking): Rename `pus_3_hk.Subservices` to `pus_3_hk.Subservice`
+- (breaking): Rename `pus_5_event.Subservices` to `pus_5_event.Subservice`
+- (breaking): Rename `pus_17_test.Subservices` to `pus_17_test.Subservice`
 
 # [v0.13.0] 15.09.2022
 

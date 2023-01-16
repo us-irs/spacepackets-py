@@ -8,7 +8,7 @@ class Severity(enum.IntEnum):
     HIGH = 4
 
 
-class Subservices(enum.IntEnum):
+class Subservice(enum.IntEnum):
     TM_INFO_EVENT = Severity.INFO
     TM_LOW_SEVERITY_EVENT = Severity.LOW
     TM_MEDIUM_SEVERITY_EVENT = Severity.MEDIUM

@@ -18,7 +18,7 @@ from spacepackets.log import get_console_logger
 from .req_id import RequestId
 
 
-class Subservices(enum.IntEnum):
+class Subservice(enum.IntEnum):
     INVALID = 0
     TM_ACCEPTANCE_SUCCESS = 1
     TM_ACCEPTANCE_FAILURE = 2
@@ -98,20 +98,20 @@ class VerificationParams:
             init_len += self.failure_notice.len()
         return init_len
 
-    def verify_against_subservice(self, subservice: Subservices):
+    def verify_against_subservice(self, subservice: Subservice):
         if subservice % 2 == 0:
             if self.failure_notice is None:
                 raise InvalidVerifParams("Failure Notice should be something")
-            if subservice == Subservices.TM_STEP_FAILURE and self.step_id is None:
+            if subservice == Subservice.TM_STEP_FAILURE and self.step_id is None:
                 raise InvalidVerifParams("Step ID should be something")
-            elif subservice != Subservices.TM_STEP_FAILURE and self.step_id is not None:
+            elif subservice != Subservice.TM_STEP_FAILURE and self.step_id is not None:
                 raise InvalidVerifParams("Step ID should be empty")
         else:
             if self.failure_notice is not None:
                 raise InvalidVerifParams("Failure Notice should be empty")
-            if subservice == Subservices.TM_STEP_SUCCESS and self.step_id is None:
+            if subservice == Subservice.TM_STEP_SUCCESS and self.step_id is None:
                 raise InvalidVerifParams("Step ID should be something")
-            elif subservice != Subservices.TM_STEP_SUCCESS and self.step_id is not None:
+            elif subservice != Subservice.TM_STEP_SUCCESS and self.step_id is not None:
                 raise InvalidVerifParams("Step ID should be empty")
 
 
@@ -124,7 +124,7 @@ class Service1Tm(AbstractPusTm):
 
     def __init__(
         self,
-        subservice: Subservices,
+        subservice: Subservice,
         verif_params: Optional[VerificationParams] = None,
         time_provider: Optional[CcsdsTimeProvider] = None,
         seq_count: int = 0,
@@ -156,7 +156,7 @@ class Service1Tm(AbstractPusTm):
 
     @classmethod
     def __empty(cls) -> Service1Tm:
-        return cls(subservice=Subservices.INVALID)
+        return cls(subservice=Subservice.INVALID)
 
     @classmethod
     def unpack(cls, data: bytes, params: UnpackParams) -> Service1Tm:
@@ -226,7 +226,7 @@ class Service1Tm(AbstractPusTm):
         )
 
     def _unpack_success_verification(self, unpack_cfg: UnpackParams):
-        if self.pus_tm.subservice == Subservices.TM_STEP_SUCCESS:
+        if self.pus_tm.subservice == Subservice.TM_STEP_SUCCESS:
             self._verif_params.step_id = StepId.unpack(
                 pfc=unpack_cfg.bytes_step_id * 8,
                 data=self.pus_tm.tm_data[4 : 4 + unpack_cfg.bytes_step_id],
@@ -261,8 +261,8 @@ class Service1Tm(AbstractPusTm):
     @property
     def is_step_reply(self) -> bool:
         return (
-            self.subservice == Subservices.TM_STEP_FAILURE
-            or self.subservice == Subservices.TM_STEP_SUCCESS
+            self.subservice == Subservice.TM_STEP_FAILURE
+            or self.subservice == Subservice.TM_STEP_SUCCESS
         )
 
     @property
@@ -273,7 +273,7 @@ class Service1Tm(AbstractPusTm):
 
 def create_acceptance_success_tm(pus_tc: PusTelecommand) -> Service1Tm:
     return Service1Tm(
-        subservice=Subservices.TM_ACCEPTANCE_SUCCESS,
+        subservice=Subservice.TM_ACCEPTANCE_SUCCESS,
         verif_params=VerificationParams(RequestId.from_sp_header(pus_tc.sp_header)),
     )
 
@@ -282,7 +282,7 @@ def create_acceptance_failure_tm(
     pus_tc: PusTelecommand, failure_notice: FailureNotice
 ) -> Service1Tm:
     return Service1Tm(
-        subservice=Subservices.TM_ACCEPTANCE_FAILURE,
+        subservice=Subservice.TM_ACCEPTANCE_FAILURE,
         verif_params=VerificationParams(
             req_id=RequestId.from_sp_header(pus_tc.sp_header),
             failure_notice=failure_notice,
@@ -292,7 +292,7 @@ def create_acceptance_failure_tm(
 
 def create_start_success_tm(pus_tc: PusTelecommand) -> Service1Tm:
     return Service1Tm(
-        subservice=Subservices.TM_START_SUCCESS,
+        subservice=Subservice.TM_START_SUCCESS,
         verif_params=VerificationParams(RequestId.from_sp_header(pus_tc.sp_header)),
     )
 
@@ -301,7 +301,7 @@ def create_start_failure_tm(
     pus_tc: PusTelecommand, failure_notice: FailureNotice
 ) -> Service1Tm:
     return Service1Tm(
-        subservice=Subservices.TM_START_FAILURE,
+        subservice=Subservice.TM_START_FAILURE,
         verif_params=VerificationParams(
             req_id=RequestId.from_sp_header(pus_tc.sp_header),
             failure_notice=failure_notice,
@@ -313,7 +313,7 @@ def create_step_success_tm(
     pus_tc: PusTelecommand, step_id: PacketFieldEnum
 ) -> Service1Tm:
     return Service1Tm(
-        subservice=Subservices.TM_STEP_SUCCESS,
+        subservice=Subservice.TM_STEP_SUCCESS,
         verif_params=VerificationParams(
             req_id=RequestId.from_sp_header(pus_tc.sp_header), step_id=step_id
         ),
@@ -324,7 +324,7 @@ def create_step_failure_tm(
     pus_tc: PusTelecommand, step_id: PacketFieldEnum, failure_notice: FailureNotice
 ) -> Service1Tm:
     return Service1Tm(
-        subservice=Subservices.TM_STEP_FAILURE,
+        subservice=Subservice.TM_STEP_FAILURE,
         verif_params=VerificationParams(
             req_id=RequestId.from_sp_header(pus_tc.sp_header),
             step_id=step_id,
@@ -335,7 +335,7 @@ def create_step_failure_tm(
 
 def create_completion_success_tm(pus_tc: PusTelecommand) -> Service1Tm:
     return Service1Tm(
-        subservice=Subservices.TM_COMPLETION_SUCCESS,
+        subservice=Subservice.TM_COMPLETION_SUCCESS,
         verif_params=VerificationParams(RequestId.from_sp_header(pus_tc.sp_header)),
     )
 
@@ -344,7 +344,7 @@ def create_completion_failure_tm(
     pus_tc: PusTelecommand, failure_notice: FailureNotice
 ) -> Service1Tm:
     return Service1Tm(
-        subservice=Subservices.TM_COMPLETION_FAILURE,
+        subservice=Subservice.TM_COMPLETION_FAILURE,
         verif_params=VerificationParams(
             req_id=RequestId.from_sp_header(pus_tc.sp_header),
             failure_notice=failure_notice,

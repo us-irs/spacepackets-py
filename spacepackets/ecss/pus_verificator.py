@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from typing import Dict, Optional, List
 
 from spacepackets.ecss import PusTelecommand
-from spacepackets.ecss.pus_1_verification import RequestId, Service1Tm, Subservices
+from spacepackets.ecss.pus_1_verification import RequestId, Service1Tm, Subservice
 
 
 class StatusField(enum.IntEnum):
@@ -89,31 +89,31 @@ class PusVerificator:
         if subservice % 2 == 0:
             # For failures, verification handling is completed
             res.completed = True
-        if subservice == Subservices.TM_ACCEPTANCE_SUCCESS:
+        if subservice == Subservice.TM_ACCEPTANCE_SUCCESS:
             verif_status.accepted = StatusField.SUCCESS
-        elif subservice == Subservices.TM_ACCEPTANCE_FAILURE:
+        elif subservice == Subservice.TM_ACCEPTANCE_FAILURE:
             verif_status.all_verifs_recvd = True
             verif_status.accepted = StatusField.FAILURE
             res.completed = True
-        elif subservice == Subservices.TM_START_SUCCESS:
+        elif subservice == Subservice.TM_START_SUCCESS:
             verif_status.started = StatusField.SUCCESS
-        elif subservice == Subservices.TM_START_FAILURE:
+        elif subservice == Subservice.TM_START_FAILURE:
             res.completed = True
             if verif_status.accepted != StatusField.UNSET:
                 verif_status.all_verifs_recvd = True
             verif_status.started = StatusField.FAILURE
-        elif subservice == Subservices.TM_STEP_SUCCESS:
+        elif subservice == Subservice.TM_STEP_SUCCESS:
             # Do not overwrite a failed step status
             if verif_status.step == StatusField.UNSET:
                 verif_status.step = StatusField.SUCCESS
             verif_status.step_list.append(pus_1_tm.step_id.val)
-        elif subservice == Subservices.TM_STEP_FAILURE:
+        elif subservice == Subservice.TM_STEP_FAILURE:
             self._handle_step_failure(verif_status, res, pus_1_tm)
-        elif subservice == Subservices.TM_COMPLETION_SUCCESS:
+        elif subservice == Subservice.TM_COMPLETION_SUCCESS:
             self._check_all_replies_recvd_after_step(verif_status)
             verif_status.completed = StatusField.SUCCESS
             res.completed = True
-        elif subservice == Subservices.TM_COMPLETION_FAILURE:
+        elif subservice == Subservice.TM_COMPLETION_FAILURE:
             self._check_all_replies_recvd_after_step(verif_status)
             verif_status.completed = StatusField.FAILURE
             res.completed = True
