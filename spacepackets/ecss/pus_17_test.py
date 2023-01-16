@@ -63,10 +63,11 @@ class Service17Tm(AbstractPusTm):
     def unpack(
         cls,
         raw_telemetry: bytes,
+        time_reader: Optional[CcsdsTimeProvider],
         pus_version: PusVersion = PusVersion.GLOBAL_CONFIG,
     ) -> Service17Tm:
         service_17_tm = cls.__empty()
         service_17_tm.pus_tm = PusTelemetry.unpack(
-            raw_telemetry=raw_telemetry, time_reader=CdsShortTimestamp.empty()
+            raw_telemetry=raw_telemetry, time_reader=time_reader
         )
         return service_17_tm
