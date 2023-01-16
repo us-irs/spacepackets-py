@@ -270,7 +270,9 @@ class TestTelemetry(TestCase):
         self.assertEqual(srv_17_tm.pus_tm.subservice, 2)
         srv_17_tm_raw = srv_17_tm.pack()
         srv_17_tm_unpacked = Service17Tm.unpack(
-            raw_telemetry=srv_17_tm_raw, pus_version=PusVersion.PUS_C
+            raw_telemetry=srv_17_tm_raw,
+            time_reader=CdsShortTimestamp.empty(),
+            pus_version=PusVersion.PUS_C,
         )
         self.assertEqual(srv_17_tm_unpacked.pus_tm.subservice, 2)
 
