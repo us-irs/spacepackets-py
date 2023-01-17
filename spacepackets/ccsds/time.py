@@ -9,6 +9,7 @@ from typing import Optional
 
 DAYS_CCSDS_TO_UNIX = -4383
 SECONDS_PER_DAY = 86400
+MS_PER_DAY = SECONDS_PER_DAY * 1000
 UNIX_EPOCH = datetime.datetime.utcfromtimestamp(0)
 
 
@@ -165,8 +166,8 @@ class CdsShortTimestamp(CcsdsTimeProvider):
             raise ValueError(
                 f"Invalid CCSDS Time Code {p_field}, expected {CcsdsTimeCodeId.CDS}"
             )
-        ccsds_days = (raw[1] << 8) | (raw[2])
-        ms_of_day = (raw[3] << 24) | (raw[4] << 16) | (raw[5]) << 8 | raw[6]
+        ccsds_days = struct.unpack("!H", raw[1:3])[0]
+        ms_of_day = struct.unpack("!I", raw[3:7])[0]
         return ccsds_days, ms_of_day
 
     def __repr__(self):
@@ -177,6 +178,27 @@ class CdsShortTimestamp(CcsdsTimeProvider):
 
     def __str__(self):
         return f"Date {self._date_time!r} with representation {self!r}"
+
+
+    def __add__(self, timedelta: datetime.timedelta):
+        """Allows adding timedelta to the CDS timestamp provider.
+        :param timedelta:
+        :raises TypeError: Type other than timedelta was passed.
+        :raises OverflowError: CCSDS days would have an invalid value (exceeding value representable
+            by 16 bits) after increment.
+        :return:
+        """
+        if not isinstance(timedelta, datetime.timedelta):
+            raise TypeError("can only handle timedelta")
+        self._ms_of_day += timedelta.microseconds / 1000
+        if self._ms_of_day > MS_PER_DAY:
+            self._ms_of_day -= MS_PER_DAY
+            self._ccsds_days += 1
+            if self._ccsds_days > pow(2, 16) - 1:
+                raise OverflowError("CCSDS days overflow")
+        self._ccsds_days += timedelta.days * 24 * 60 * 60 + timedelta.seconds
+        if self._ccsds_days > pow(2, 16) - 1:
+            raise OverflowError("CCSDS days overflow")
 
     @classmethod
     def from_current_time(cls) -> CdsShortTimestamp:
