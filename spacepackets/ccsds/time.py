@@ -87,7 +87,7 @@ class CcsdsTimeProvider(ABC):
         pass
 
     def as_time_string(self) -> str:
-        return self.as_datetime().strftime("%Y-%m-%d %H:%M:%S.%f")
+        return self.as_date_time().strftime("%Y-%m-%d %H:%M:%S.%f")
 
     def ccsds_time_code(self) -> int:
         if self.pfield == bytes():
