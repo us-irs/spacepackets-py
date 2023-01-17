@@ -8,8 +8,19 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 # [unreleased]
 
+## Added
+
+- `CdsShortTimestamp`
+  - Add `__add__` magic method impl which allows adding timedeltas
+    (but only timedeltas)
+  - Add new constructor `from_date_time` to create timestamp from `datetime.datetime`
+  - Add `ms_of_day` and `ccsds_days` properties
+  - (breaking): `ms_of_day` staticmethod renamed to `ms_of_today`
+
 ## Changed
 
+- `CcsdsTimeProvider`: Renamed `as_datetime` to `as_date_time`. Old function still there but marked
+  deprecated.
 - (breaking): The `CcsdsTimeProvider` is now optional for the ECSS TM packet constructors, but
   needs to be supplied explicitely. There is no automatic construction of a specific version of the
   CDS timestamp with 16 bit days anymore if no time provider is passed. If this behaviour

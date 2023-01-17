@@ -31,7 +31,8 @@ classifiers = [
     "Topic :: Scientific/Engineering"
 ]
 dependencies = [
-    "crcmod>=1.7"
+    "crcmod~=1.7",
+    "deprecation~=2.1"
 ]
 
 [project.urls]
