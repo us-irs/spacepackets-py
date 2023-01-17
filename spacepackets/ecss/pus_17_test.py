@@ -1,6 +1,7 @@
 from __future__ import annotations
 import enum
 from typing import Optional
+from warnings import warn
 
 from spacepackets import SpacePacketHeader
 from spacepackets.ccsds.time import CcsdsTimeProvider
@@ -11,6 +12,22 @@ from spacepackets.ecss.tm import PusVersion, PusTelemetry, AbstractPusTm
 class Subservice(enum.IntEnum):
     TC_PING = 1
     TM_REPLY = 2
+
+
+class Subservices(Subservice):
+    def __init_subclass__(cls, **kwargs):
+        """This throws a deprecation warning on subclassing."""
+        warn(f"{cls.__name__} will be deprecated.", DeprecationWarning, stacklevel=2)
+        super().__init_subclass__(**kwargs)
+
+    def __init__(self, *args, **kwargs):
+        """This throws a deprecation warning on initialization."""
+        warn(
+            f"{self.__class__.__name__} will be deprecated.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        super().__init__(*args, **kwargs)
 
 
 class Service17Tm(AbstractPusTm):

@@ -5,6 +5,7 @@ from __future__ import annotations
 import enum
 from dataclasses import dataclass
 from typing import Optional
+from warnings import warn
 
 from spacepackets.ccsds import SpacePacketHeader
 from spacepackets.ccsds.time import CcsdsTimeProvider
@@ -28,6 +29,22 @@ class Subservice(enum.IntEnum):
     TM_STEP_FAILURE = 6
     TM_COMPLETION_SUCCESS = 7
     TM_COMPLETION_FAILURE = 8
+
+
+class Subservices(Subservice):
+    def __init_subclass__(cls, **kwargs):
+        """This throws a deprecation warning on subclassing."""
+        warn(f"{cls.__name__} will be deprecated.", DeprecationWarning, stacklevel=2)
+        super().__init_subclass__(**kwargs)
+
+    def __init__(self, *args, **kwargs):
+        """This throws a deprecation warning on initialization."""
+        warn(
+            f"{self.__class__.__name__} will be deprecated.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        super().__init__(*args, **kwargs)
 
 
 ErrorCode = PacketFieldEnum
