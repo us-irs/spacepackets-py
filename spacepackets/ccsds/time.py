@@ -173,13 +173,13 @@ class CdsShortTimestamp(CcsdsTimeProvider):
         return cls(ccsds_days=0, ms_of_day=0, init_dt_unix_stamp=init_dt_unix_stamp)
 
     @classmethod
-    def unpack(cls, time_field: bytes) -> CdsShortTimestamp:
-        ccsds_days, ms_of_day = CdsShortTimestamp.unpack_from_raw(time_field)
+    def unpack(cls, raw_stamp: bytes) -> CdsShortTimestamp:
+        ccsds_days, ms_of_day = CdsShortTimestamp.unpack_from_raw(raw_stamp)
         return cls(ccsds_days=ccsds_days, ms_of_day=ms_of_day)
 
-    def read_from_raw(self, timestamp: bytes):
+    def read_from_raw(self, raw_stamp: bytes):
         (self._unix_seconds, self._ms_of_day) = CdsShortTimestamp.unpack_from_raw(
-            timestamp
+            raw_stamp
         )
         self._setup()
 
@@ -212,7 +212,7 @@ class CdsShortTimestamp(CcsdsTimeProvider):
         :return:
         """
         if not isinstance(timedelta, datetime.timedelta):
-            raise TypeError("can only handle timedelta")
+            raise TypeError("can only handle timedelta for additions")
         self._ms_of_day += timedelta.microseconds / 1000 + timedelta.seconds * 1000
         if self._ms_of_day > MS_PER_DAY:
             self._ms_of_day -= MS_PER_DAY

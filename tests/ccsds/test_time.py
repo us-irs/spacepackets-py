@@ -5,12 +5,16 @@ from spacepackets.ccsds.time import (
     convert_unix_days_to_ccsds_days,
     convert_ccsds_days_to_unix_days,
     SECONDS_PER_DAY,
+    MS_PER_DAY,
 )
 
 
 class TestTime(TestCase):
     def test_basic(self):
         empty_stamp = CdsShortTimestamp(0, 0)
+        self.assertEqual(
+            empty_stamp.pfield, bytes([CdsShortTimestamp.CDS_SHORT_ID << 4])
+        )
         self.assertEqual(empty_stamp.ccsds_days, 0)
         self.assertEqual(empty_stamp.ms_of_day, 0)
         dt = empty_stamp.as_date_time()
@@ -55,5 +59,12 @@ class TestTime(TestCase):
         self.assertEqual(empty_stamp.ms_of_day, 12 * 60 * 1000 + 15)
         self.assertEqual(empty_stamp.ccsds_days, 2)
 
-    def test_addition_2(self):
-        pass
+    def test_invalid_addition(self):
+        with self.assertRaises(TypeError):
+            CdsShortTimestamp(0, 0) + CdsShortTimestamp(0, 0)
+
+    def test_addition_days_increment(self):
+        stamp = CdsShortTimestamp(0, MS_PER_DAY - 5)
+        stamp += datetime.timedelta(milliseconds=10)
+        self.assertEqual(stamp.ccsds_days, 1)
+        self.assertEqual(stamp.ms_of_day, 5)
