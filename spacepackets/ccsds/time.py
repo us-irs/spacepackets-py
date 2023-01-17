@@ -179,7 +179,6 @@ class CdsShortTimestamp(CcsdsTimeProvider):
     def __str__(self):
         return f"Date {self._date_time!r} with representation {self!r}"
 
-
     def __add__(self, timedelta: datetime.timedelta):
         """Allows adding timedelta to the CDS timestamp provider.
         :param timedelta:
@@ -207,6 +206,15 @@ class CdsShortTimestamp(CcsdsTimeProvider):
             unix_days=(datetime.datetime.utcnow() - UNIX_EPOCH).days,
             ms_of_day=cls.ms_of_day(),
         )
+
+    @classmethod
+    def from_date_time(cls, dt: datetime.datetime) -> CdsShortTimestamp:
+        unix_secs = dt.timestamp()
+        full_unix_secs = int(math.floor(unix_secs))
+        subsec_millis = int((unix_secs - full_unix_secs) * 1000)
+        unix_days = int(full_unix_secs / SECONDS_PER_DAY)
+        secs_of_day = full_unix_secs % SECONDS_PER_DAY
+        return cls.from_unix_days(unix_days, secs_of_day * 1000 + subsec_millis)
 
     @staticmethod
     def ms_of_day(seconds_since_epoch: Optional[float] = None):
