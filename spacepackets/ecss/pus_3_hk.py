@@ -22,19 +22,3 @@ class Subservice(enum.IntEnum):
 
     TC_MODIFY_PARAMETER_REPORT_COLLECTION_INTERVAL = 31
     TC_MODIFY_DIAGNOSTICS_REPORT_COLLECTION_INTERVAL = 32
-
-
-class Subservices(Subservice):
-    def __init_subclass__(cls, **kwargs):
-        """This throws a deprecation warning on subclassing."""
-        warn(f"{cls.__name__} will be deprecated.", DeprecationWarning, stacklevel=2)
-        super().__init_subclass__(**kwargs)
-
-    def __init__(self, *args, **kwargs):
-        """This throws a deprecation warning on initialization."""
-        warn(
-            f"{self.__class__.__name__} will be deprecated.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        super().__init__(*args, **kwargs)
