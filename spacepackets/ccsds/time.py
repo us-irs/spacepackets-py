@@ -80,7 +80,7 @@ class CcsdsTimeProvider(ABC):
         details="use as_date_time instead",
     )
     def as_datetime(self) -> datetime:
-        self.as_date_time()
+        return self.as_date_time()
 
     @abstractmethod
     def as_date_time(self) -> datetime:
