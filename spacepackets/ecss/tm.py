@@ -200,7 +200,7 @@ class PusTelemetry(AbstractPusTm):
     The following doc example cuts off the timestamp (7 byte CDS Short) and the CRC16 from the ping
     packet because those change regularly.
 
-    >>> ping_tm = PusTelemetry(service=17, subservice=2, seq_count=5, apid=0x01)
+    >>> ping_tm = PusTelemetry(service=17, subservice=2, seq_count=5, apid=0x01, time_reader=CdsShortTimestamp.empty())
     >>> ping_tm.service
     17
     >>> ping_tm.subservice

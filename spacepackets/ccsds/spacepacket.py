@@ -139,13 +139,13 @@ class SpacePacketHeader(AbstractSpacePacket):
         >>> hex(sph.apid)
         '0x42'
         >>> sph.packet_type
-        <PacketTypes.TC: 1>
+        <PacketType.TC: 1>
         >>> sph.data_len
         12
         >>> sph.packet_len
         19
         >>> sph.packet_id
-        PacketId(ptype=<PacketTypes.TC: 1>, sec_header_flag=False, apid=66)
+        PacketId(ptype=<PacketType.TC: 1>, sec_header_flag=False, apid=66)
         >>> sph.psc
         PacketSeqCtrl(seq_flags=<SequenceFlags.UNSEGMENTED: 3>, seq_count=0)
 

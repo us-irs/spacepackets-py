@@ -132,6 +132,8 @@ class CdsShortTimestamp(CcsdsTimeProvider):
         >>> unix_zero_as_ccsds = CdsShortTimestamp(ccsds_days=convert_ccsds_days_to_unix_days(0), ms_of_day=0)
         >>> unix_zero_as_ccsds.ccsds_days
         -4383
+        >>> CdsShortTimestamp(0x0102, 0x03040506).pack().hex(sep=',')
+        '40,01,02,03,04,05,06'
         """
         self.__p_field = bytes([CdsShortTimestamp.CDS_SHORT_ID << 4])
         # CCSDS recommends a 1958 Januar 1 epoch, which is different from the Unix epoch
