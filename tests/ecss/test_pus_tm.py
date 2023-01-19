@@ -333,7 +333,7 @@ class TestTelemetry(TestCase):
             )
         elif subservice == Subservice.TM_COMPLETION_SUCCESS:
             helper_created = create_completion_success_tm(
-                pus_tc, time_reader=self.time_stamp_provider
+                pus_tc, time_provider=self.time_stamp_provider
             )
         self._test_srv_1_success_tm(
             pus_tc,
@@ -425,7 +425,7 @@ class TestTelemetry(TestCase):
                 pus_tc,
                 failure_notice=failure_notice,
                 step_id=step_id,
-                time_reader=self.time_stamp_provider,
+                time_provider=self.time_stamp_provider,
             )
         elif subservice == Subservice.TM_COMPLETION_FAILURE:
             helper_created = create_completion_failure_tm(

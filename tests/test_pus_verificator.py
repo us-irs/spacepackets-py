@@ -34,7 +34,7 @@ class SuccessSet:
         self.ste_suc_tm = create_step_success_tm(
             pus_tc=pus_tc,
             step_id=StepId.with_byte_size(1, 1),
-            time_reader=self.time_reader,
+            time_provider=self.time_reader,
         )
         self.fin_suc_tm = create_completion_success_tm(
             pus_tc, CdsShortTimestamp.empty()
@@ -55,12 +55,12 @@ class FailureSet:
             pus_tc,
             failure_notice=self.failure_notice,
             step_id=StepId.with_byte_size(1, 1),
-            time_reader=CdsShortTimestamp.empty(),
+            time_provider=CdsShortTimestamp.empty(),
         )
         self.fin_fail_tm = create_completion_failure_tm(
             failure_notice=self.failure_notice,
             pus_tc=self.suc_set.pus_tc,
-            time_reader=CdsShortTimestamp.empty(),
+            time_provider=CdsShortTimestamp.empty(),
         )
 
     @property
