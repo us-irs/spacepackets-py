@@ -126,8 +126,8 @@ class Service1Tm(AbstractPusTm):
     def __init__(
         self,
         subservice: Subservice,
+        time_provider: Optional[CcsdsTimeProvider],
         verif_params: Optional[VerificationParams] = None,
-        time_provider: Optional[CcsdsTimeProvider] = None,
         seq_count: int = 0,
         apid: int = FETCH_GLOBAL_APID,
         packet_version: int = 0b000,
@@ -156,8 +156,8 @@ class Service1Tm(AbstractPusTm):
         return self.pus_tm.pack()
 
     @classmethod
-    def __empty(cls) -> Service1Tm:
-        return cls(subservice=Subservice.INVALID)
+    def __empty(cls, time_provider: Optional[CcsdsTimeProvider]) -> Service1Tm:
+        return cls(subservice=Subservice.INVALID, time_provider=time_provider)
 
     @classmethod
     def unpack(cls, data: bytes, params: UnpackParams) -> Service1Tm:
@@ -168,7 +168,7 @@ class Service1Tm(AbstractPusTm):
         :raises ValueError: Raw telemetry too short
         :return:
         """
-        service_1_tm = cls.__empty()
+        service_1_tm = cls.__empty(params.time_reader)
         service_1_tm.pus_tm = PusTelemetry.unpack(
             raw_telemetry=data, time_reader=params.time_reader
         )
@@ -272,15 +272,20 @@ class Service1Tm(AbstractPusTm):
         return self._verif_params.step_id
 
 
-def create_acceptance_success_tm(pus_tc: PusTelecommand) -> Service1Tm:
+def create_acceptance_success_tm(
+    pus_tc: PusTelecommand, time_reader: Optional[CcsdsTimeProvider]
+) -> Service1Tm:
     return Service1Tm(
         subservice=Subservice.TM_ACCEPTANCE_SUCCESS,
         verif_params=VerificationParams(RequestId.from_sp_header(pus_tc.sp_header)),
+        time_provider=time_reader,
     )
 
 
 def create_acceptance_failure_tm(
-    pus_tc: PusTelecommand, failure_notice: FailureNotice
+    pus_tc: PusTelecommand,
+    failure_notice: FailureNotice,
+    time_reader: Optional[CcsdsTimeProvider],
 ) -> Service1Tm:
     return Service1Tm(
         subservice=Subservice.TM_ACCEPTANCE_FAILURE,
@@ -288,18 +293,24 @@ def create_acceptance_failure_tm(
             req_id=RequestId.from_sp_header(pus_tc.sp_header),
             failure_notice=failure_notice,
         ),
+        time_provider=time_reader,
     )
 
 
-def create_start_success_tm(pus_tc: PusTelecommand) -> Service1Tm:
+def create_start_success_tm(
+    pus_tc: PusTelecommand, time_reader: Optional[CcsdsTimeProvider]
+) -> Service1Tm:
     return Service1Tm(
         subservice=Subservice.TM_START_SUCCESS,
         verif_params=VerificationParams(RequestId.from_sp_header(pus_tc.sp_header)),
+        time_provider=time_reader,
     )
 
 
 def create_start_failure_tm(
-    pus_tc: PusTelecommand, failure_notice: FailureNotice
+    pus_tc: PusTelecommand,
+    failure_notice: FailureNotice,
+    time_reader: Optional[CcsdsTimeProvider],
 ) -> Service1Tm:
     return Service1Tm(
         subservice=Subservice.TM_START_FAILURE,
@@ -307,22 +318,29 @@ def create_start_failure_tm(
             req_id=RequestId.from_sp_header(pus_tc.sp_header),
             failure_notice=failure_notice,
         ),
+        time_provider=time_reader,
     )
 
 
 def create_step_success_tm(
-    pus_tc: PusTelecommand, step_id: PacketFieldEnum
+    pus_tc: PusTelecommand,
+    step_id: PacketFieldEnum,
+    time_reader: Optional[CcsdsTimeProvider],
 ) -> Service1Tm:
     return Service1Tm(
         subservice=Subservice.TM_STEP_SUCCESS,
         verif_params=VerificationParams(
             req_id=RequestId.from_sp_header(pus_tc.sp_header), step_id=step_id
         ),
+        time_provider=time_reader,
     )
 
 
 def create_step_failure_tm(
-    pus_tc: PusTelecommand, step_id: PacketFieldEnum, failure_notice: FailureNotice
+    pus_tc: PusTelecommand,
+    step_id: PacketFieldEnum,
+    failure_notice: FailureNotice,
+    time_reader: Optional[CcsdsTimeProvider],
 ) -> Service1Tm:
     return Service1Tm(
         subservice=Subservice.TM_STEP_FAILURE,
@@ -331,18 +349,24 @@ def create_step_failure_tm(
             step_id=step_id,
             failure_notice=failure_notice,
         ),
+        time_provider=time_reader,
     )
 
 
-def create_completion_success_tm(pus_tc: PusTelecommand) -> Service1Tm:
+def create_completion_success_tm(
+    pus_tc: PusTelecommand, time_reader: Optional[CcsdsTimeProvider]
+) -> Service1Tm:
     return Service1Tm(
         subservice=Subservice.TM_COMPLETION_SUCCESS,
         verif_params=VerificationParams(RequestId.from_sp_header(pus_tc.sp_header)),
+        time_provider=time_reader,
     )
 
 
 def create_completion_failure_tm(
-    pus_tc: PusTelecommand, failure_notice: FailureNotice
+    pus_tc: PusTelecommand,
+    failure_notice: FailureNotice,
+    time_reader: Optional[CcsdsTimeProvider],
 ) -> Service1Tm:
     return Service1Tm(
         subservice=Subservice.TM_COMPLETION_FAILURE,
@@ -350,4 +374,5 @@ def create_completion_failure_tm(
             req_id=RequestId.from_sp_header(pus_tc.sp_header),
             failure_notice=failure_notice,
         ),
+        time_provider=time_reader,
     )

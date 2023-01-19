@@ -16,7 +16,7 @@ class RequestId:
     >>> psc = PacketSeqCtrl(seq_flags=SequenceFlags.UNSEGMENTED, seq_count=17)
     >>> req_id = RequestId(packet_id, psc)
     >>> req_id
-    RequestId(tc_packet_id=PacketId(ptype=<PacketTypes.TC: 1>, sec_header_flag=False, apid=34), \
+    RequestId(tc_packet_id=PacketId(ptype=<PacketType.TC: 1>, sec_header_flag=False, apid=34), \
 tc_psc=PacketSeqCtrl(seq_flags=<SequenceFlags.UNSEGMENTED: 3>, seq_count=17), ccsds_version=0)
     >>> struct.pack("!I", req_id.as_u32()).hex(sep=",")
     '10,22,c0,11'
