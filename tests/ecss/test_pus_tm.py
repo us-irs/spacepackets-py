@@ -13,7 +13,6 @@ from spacepackets.ccsds.spacepacket import (
     SequenceFlags,
     SpacePacketHeader,
 )
-from spacepackets.ccsds.time import CcsdsTimeProvider
 from spacepackets.ecss import PacketFieldEnum
 from spacepackets.ecss.tc import PusTelecommand
 from spacepackets.ecss.conf import set_default_tm_apid
@@ -155,7 +154,6 @@ class TestTelemetry(TestCase):
     def test_full_printout(self):
         crc16 = self.ping_reply.crc16
         crc_string = f"{(crc16 & 0xff00) >> 8:02x},{crc16 & 0xff:02x}"
-        raw_time = self.ping_reply.pus_tm_sec_header.time_provider.pack()
         raw_space_packet_header = self.ping_reply.sp_header.pack()
         sp_header_as_str = raw_space_packet_header.hex(sep=",", bytes_per_sep=1)
         raw_secondary_packet_header = self.ping_reply.pus_tm_sec_header.pack()

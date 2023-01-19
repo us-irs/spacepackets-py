@@ -1,5 +1,4 @@
 import enum
-import logging
 from dataclasses import dataclass, field
 from typing import Dict, Optional, List
 
@@ -79,7 +78,7 @@ class PusVerificator:
 
         return self._check_subservice(pus_1_tm, res, verif_status)
 
-    def _check_subservice(
+    def _check_subservice(  # noqa: C901
         self,
         pus_1_tm: Service1Tm,
         res: TmCheckResult,

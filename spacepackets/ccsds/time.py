@@ -129,7 +129,7 @@ class CdsShortTimestamp(CcsdsTimeProvider):
         0
         >>> zero_stamp.ms_of_day
         0
-        >>> unix_zero_as_ccsds = CdsShortTimestamp(ccsds_days=convert_ccsds_days_to_unix_days(0), ms_of_day=0)
+        >>> unix_zero_as_ccsds = CdsShortTimestamp(ccsds_days=convert_ccsds_days_to_unix_days(0), ms_of_day=0) # noqa: E501
         >>> unix_zero_as_ccsds.ccsds_days
         -4383
         >>> CdsShortTimestamp(0x0102, 0x03040506).pack().hex(sep=',')

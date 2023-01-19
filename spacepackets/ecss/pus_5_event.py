@@ -1,5 +1,4 @@
 import enum
-from warnings import warn
 
 
 class Severity(enum.IntEnum):

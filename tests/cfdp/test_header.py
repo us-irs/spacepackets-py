@@ -1,4 +1,3 @@
-import struct
 from unittest import TestCase
 
 from spacepackets.cfdp.conf import PduConfig, set_entity_ids
@@ -18,7 +17,6 @@ from spacepackets.util import (
     get_printable_data_string,
     PrintFormats,
     ByteFieldU8,
-    ByteFieldU32,
     ByteFieldU16,
 )
 

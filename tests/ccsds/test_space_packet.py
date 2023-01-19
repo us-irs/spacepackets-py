@@ -126,7 +126,6 @@ class TestSpacePacket(TestCase):
         )
         self.assertEqual(byte_two, 0xFF)
         self.assertEqual(byte_one & 0x07, 0x03)
-        packet_id_as_num = byte_one << 8 | byte_two
 
     def test_packet_id(self):
         byte_one, byte_two = get_space_packet_id_bytes(
@@ -236,7 +235,7 @@ class TestSpacePacket(TestCase):
         packet_id = PacketId(ptype=PacketType.TC, sec_header_flag=True, apid=0x7FF)
         self.assertEqual(
             f"{packet_id}",
-            f"Packet ID: [Packet Type: TC, Sec Header Flag: True, APID: 0x7ff]",
+            "Packet ID: [Packet Type: TC, Sec Header Flag: True, APID: 0x7ff]",
         )
         packet_id_raw = packet_id.raw()
         self.assertEqual(packet_id_raw, 0x1FFF)

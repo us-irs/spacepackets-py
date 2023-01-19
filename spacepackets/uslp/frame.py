@@ -397,7 +397,7 @@ class TransferFrame:
         return empty
 
     @classmethod
-    def unpack(
+    def unpack(  # noqa: C901
         cls, raw_frame: bytes, frame_type: FrameType, frame_properties: FramePropertiesT
     ) -> TransferFrame:
         """Unpack a USLP transfer frame from a raw bytearray. All managed parameters have

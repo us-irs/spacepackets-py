@@ -38,7 +38,7 @@ class TestUtility(TestCase):
         with self.assertRaises(ValueError) as cm:
             ByteFieldGenerator.from_int(byte_len=1, val=-1)
         self.assertEqual(
-            str(cm.exception), f"Passed value -1 larger than allowed 255 or negative"
+            str(cm.exception), "Passed value -1 larger than allowed 255 or negative"
         )
 
     def test_byte_field_u8_invalid_unpack(self):

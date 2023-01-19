@@ -1,5 +1,4 @@
 import datetime
-import unittest
 from unittest import TestCase
 from spacepackets.ccsds.time import (
     CdsShortTimestamp,

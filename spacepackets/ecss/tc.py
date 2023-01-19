@@ -381,11 +381,7 @@ class PusTelecommand:
     def print(self, print_format: PrintFormats = PrintFormats.HEX):
         """Print the raw command in a clean format."""
         packet = self.pack()
-        print(
-            get_printable_data_string(
-                print_format=print_format, data=packet, length=len(packet)
-            )
-        )
+        print(get_printable_data_string(print_format=print_format, data=packet))
 
 
 def generate_packet_crc(tc_packet: bytearray) -> bytearray:

@@ -10,39 +10,44 @@ class PrintFormats(enum.IntEnum):
     BIN = 2
 
 
-def get_printable_data_string(
-    print_format: PrintFormats, data: bytes, length: int = -1
-) -> str:
+def get_dec_data_string(data: bytes):
+    if len(data) == 0:
+        return "dec []"
+    elif len(data) == 1:
+        return f"dec [{data[0]}]"
+    elif len(data) >= 2:
+        string_to_print = "dec ["
+        for idx in range(len(data) - 1):
+            string_to_print += f"{data[idx]},"
+        string_to_print += f"{data[len(data) - 1]}]"
+        return string_to_print
+
+
+def get_bin_data_string(data: bytes):
+    if len(data) == 0:
+        return "bin []"
+    elif len(data) == 1:
+        return f"bin [0:{data[0]:08b}]"
+    elif len(data) >= 2:
+        string_to_print = "bin [\n"
+        for idx in range(len(data)):
+            string_to_print += f"{idx}:{data[idx]:08b}\n"
+        string_to_print += "]"
+        return string_to_print
+
+
+def get_printable_data_string(print_format: PrintFormats, data: bytes) -> str:
     """Returns the TM data in a clean printable hex string format
     :return: The string
     """
-    if length == -1:
-        length = len(data)
+    length = len(data)
     data_to_print = data[:length]
     if print_format == PrintFormats.HEX:
         return f'hex [{data_to_print.hex(sep=",", bytes_per_sep=1)}]'
     elif print_format == PrintFormats.DEC:
-        if len(data_to_print) == 0:
-            return "dec []"
-        elif len(data_to_print) == 1:
-            return f"dec [{data_to_print[0]}]"
-        elif len(data_to_print) >= 2:
-            string_to_print = "dec ["
-            for idx in range(len(data_to_print) - 1):
-                string_to_print += f"{data_to_print[idx]},"
-            string_to_print += f"{data_to_print[length - 1]}]"
-            return string_to_print
+        return get_dec_data_string(data)
     elif print_format == PrintFormats.BIN:
-        if len(data_to_print) == 0:
-            return "bin []"
-        elif len(data_to_print) == 1:
-            return f"bin [0:{data_to_print[0]:08b}]"
-        elif len(data_to_print) >= 2:
-            string_to_print = "bin [\n"
-            for idx in range(len(data_to_print)):
-                string_to_print += f"{idx}:{data_to_print[idx]:08b}\n"
-            string_to_print += f"]"
-            return string_to_print
+        return get_bin_data_string(data)
 
 
 class IntByteConversion:
@@ -162,7 +167,8 @@ class UnsignedByteField:
     def _verify_int_value(self, val: int):
         if val > pow(2, self.byte_len * 8) - 1 or val < 0:
             raise ValueError(
-                f"Passed value {val} larger than allowed {pow(2, self.byte_len * 8) - 1} or negative"
+                f"Passed value {val} larger than allowed {pow(2, self.byte_len * 8) - 1} or "
+                f"negative"
             )
 
     def _verify_bytes_value(self, val: bytes) -> (int, bytes):

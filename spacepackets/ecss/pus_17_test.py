@@ -1,7 +1,6 @@
 from __future__ import annotations
 import enum
 from typing import Optional
-from warnings import warn
 
 from spacepackets import SpacePacketHeader
 from spacepackets.ccsds.time import CcsdsTimeProvider

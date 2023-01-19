@@ -200,7 +200,7 @@ class PusTelemetry(AbstractPusTm):
     The following doc example cuts off the timestamp (7 byte CDS Short) and the CRC16 from the ping
     packet because those change regularly.
 
-    >>> ping_tm = PusTelemetry(service=17, subservice=2, seq_count=5, apid=0x01, time_provider=CdsShortTimestamp.empty())
+    >>> ping_tm = PusTelemetry(service=17, subservice=2, seq_count=5, apid=0x01, time_provider=CdsShortTimestamp.empty()) # noqa
     >>> ping_tm.service
     17
     >>> ping_tm.subservice
@@ -513,9 +513,7 @@ class PusTelemetry(AbstractPusTm):
         self, print_format: PrintFormats = PrintFormats.HEX
     ) -> str:
         packet_raw = self.pack()
-        return get_printable_data_string(
-            print_format=print_format, data=packet_raw, length=len(packet_raw)
-        )
+        return get_printable_data_string(print_format=print_format, data=packet_raw)
 
     def print_full_packet_string(self, print_format: PrintFormats = PrintFormats.HEX):
         """Print the full TM packet in a clean format."""
@@ -530,7 +528,5 @@ class PusTelemetry(AbstractPusTm):
     ) -> str:
         """Returns the source data string"""
         return get_printable_data_string(
-            print_format=print_format,
-            data=self._source_data,
-            length=len(self._source_data),
+            print_format=print_format, data=self._source_data
         )

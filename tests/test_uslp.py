@@ -285,9 +285,6 @@ class TestUslp(TestCase):
             FixedFrameProperties(fixed_len=5, has_fecf=False, has_insert_zone=True)
         with self.assertRaises(ValueError):
             FixedFrameProperties(fixed_len=5, has_fecf=True, has_insert_zone=False)
-        var_frame_props = VarFrameProperties(
-            has_insert_zone=False, has_fecf=True, fecf_len=2, truncated_frame_len=12
-        )
         with self.assertRaises(ValueError):
             invalid_tfdz = bytearray(70000)
             tfdf = TransferFrameDataField(

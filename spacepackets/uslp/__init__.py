@@ -12,4 +12,4 @@ from .header import (
     ProtocolCommandFlag,
     BypassSequenceControlFlag,
 )
-from .defs import *
+from .defs import *  # noqa: F403
