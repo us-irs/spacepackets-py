@@ -301,3 +301,9 @@ class ByteFieldGenerator:
             return ByteFieldU16.from_bytes(stream)
         elif byte_len == 4:
             return ByteFieldU32.from_bytes(stream)
+
+
+if __name__ == "__main__":
+    import doctest
+
+    doctest.testmod()

@@ -108,12 +108,12 @@ class CdsShortTimestamp(CcsdsTimeProvider):
     """Unpacks the time datafield of the TM packet. Right now, CDS Short timeformat is used,
     and the size of the time stamp is expected to be seven bytes.
 
-
+    >>> from spacepackets.ccsds.time import CcsdsTimeCodeId
     >>> cds_short_now = CdsShortTimestamp.from_current_time()
     >>> cds_short_now.len_packed
     7
-    >>> cds_short_now.pfield
-    CcsdsTimeCodeId.CDS << 4
+    >>> hex(cds_short_now.pfield[0])
+    '0x40'
     """
 
     CDS_SHORT_ID = 0b100
@@ -122,6 +122,17 @@ class CdsShortTimestamp(CcsdsTimeProvider):
     def __init__(
         self, ccsds_days: int, ms_of_day: int, init_dt_unix_stamp: bool = True
     ):
+        """Create a stamp from the contained values directly.
+
+        >>> zero_stamp = CdsShortTimestamp(ccsds_days=0, ms_of_day=0)
+        >>> zero_stamp.ccsds_days
+        0
+        >>> zero_stamp.ms_of_day
+        0
+        >>> unix_zero_as_ccsds = CdsShortTimestamp(ccsds_days=convert_ccsds_days_to_unix_days(0), ms_of_day=0)
+        >>> unix_zero_as_ccsds.ccsds_days
+        -4383
+        """
         self.__p_field = bytes([CdsShortTimestamp.CDS_SHORT_ID << 4])
         # CCSDS recommends a 1958 Januar 1 epoch, which is different from the Unix epoch
         self._ccsds_days = ccsds_days
@@ -276,3 +287,9 @@ class CdsShortTimestamp(CcsdsTimeProvider):
 
     def as_date_time(self) -> datetime.datetime:
         return self._date_time
+
+
+if __name__ == "__main__":
+    import doctest
+
+    doctest.testmod()
