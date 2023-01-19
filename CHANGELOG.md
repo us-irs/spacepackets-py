@@ -8,6 +8,20 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 # [unreleased]
 
+## Changed
+
+- `CcsdsTimeProvider`: Add `len_packed`, mark `len` as deprecated
+- `ecss.pus_1_verification`:
+  - `Service1Tm`: `time_provider` needs to be passed explicitely now, no default value.
+
+## Fixes
+
+- `ecss.tm.PusTelemetry`: Various fixes for new optional timestamp feature, added checks
+  that timestamp is not None. `time_provider` does not have a default value anymore and needs
+  to be passed explicitely.
+
+# [v0.14.0rc0]
+
 ## Added
 
 - `CdsShortTimestamp`

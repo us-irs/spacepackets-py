@@ -68,7 +68,7 @@ class PusTmSecondaryHeader:
         self,
         service: int,
         subservice: int,
-        time_provider: CcsdsTimeProvider,
+        time_provider: Optional[CcsdsTimeProvider],
         message_counter: int,
         dest_id: int = 0,
         spacecraft_time_ref: int = 0,
@@ -200,7 +200,7 @@ class PusTelemetry(AbstractPusTm):
     The following doc example cuts off the timestamp (7 byte CDS Short) and the CRC16 from the ping
     packet because those change regularly.
 
-    >>> ping_tm = PusTelemetry(service=17, subservice=2, seq_count=5, apid=0x01, time_reader=CdsShortTimestamp.empty())
+    >>> ping_tm = PusTelemetry(service=17, subservice=2, seq_count=5, apid=0x01, time_provider=CdsShortTimestamp.empty())
     >>> ping_tm.service
     17
     >>> ping_tm.subservice
@@ -219,7 +219,7 @@ class PusTelemetry(AbstractPusTm):
         self,
         service: int,
         subservice: int,
-        time_reader: Optional[CcsdsTimeProvider],
+        time_provider: Optional[CcsdsTimeProvider],
         source_data: bytearray = bytearray([]),
         seq_count: int = 0,
         apid: int = FETCH_GLOBAL_APID,
@@ -232,8 +232,8 @@ class PusTelemetry(AbstractPusTm):
             apid = get_default_tm_apid()
         self._source_data = source_data
         len_stamp = 0
-        if time_reader:
-            len_stamp += time_reader.len_packed
+        if time_provider:
+            len_stamp += time_provider.len_packed
         data_length = self.data_len_from_src_len_timestamp_len(
             timestamp_len=len_stamp,
             source_data_len=len(self._source_data),
@@ -252,7 +252,7 @@ class PusTelemetry(AbstractPusTm):
             message_counter=message_counter,
             dest_id=destination_id,
             spacecraft_time_ref=space_time_ref,
-            time_provider=time_reader,
+            time_provider=time_provider,
         )
         self._valid = True
         self._crc16 = 0
@@ -260,7 +260,7 @@ class PusTelemetry(AbstractPusTm):
     @classmethod
     def __empty(cls) -> PusTelemetry:
         return PusTelemetry(
-            service=0, subservice=0, time_reader=CdsShortTimestamp.from_current_time()
+            service=0, subservice=0, time_provider=CdsShortTimestamp.from_current_time()
         )
 
     def pack(self, calc_crc: bool = True) -> bytearray:

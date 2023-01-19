@@ -126,7 +126,7 @@ class Service1Tm(AbstractPusTm):
     def __init__(
         self,
         subservice: Subservice,
-        time_reader: Optional[CcsdsTimeProvider],
+        time_provider: Optional[CcsdsTimeProvider],
         verif_params: Optional[VerificationParams] = None,
         seq_count: int = 0,
         apid: int = FETCH_GLOBAL_APID,
@@ -141,7 +141,7 @@ class Service1Tm(AbstractPusTm):
         self.pus_tm = PusTelemetry(
             service=PusService.S1_VERIFICATION,
             subservice=subservice,
-            time_reader=time_reader,
+            time_provider=time_provider,
             seq_count=seq_count,
             apid=apid,
             packet_version=packet_version,
@@ -156,8 +156,8 @@ class Service1Tm(AbstractPusTm):
         return self.pus_tm.pack()
 
     @classmethod
-    def __empty(cls, time_reader: Optional[CcsdsTimeProvider]) -> Service1Tm:
-        return cls(subservice=Subservice.INVALID, time_reader=time_reader)
+    def __empty(cls, time_provider: Optional[CcsdsTimeProvider]) -> Service1Tm:
+        return cls(subservice=Subservice.INVALID, time_provider=time_provider)
 
     @classmethod
     def unpack(cls, data: bytes, params: UnpackParams) -> Service1Tm:
@@ -278,7 +278,7 @@ def create_acceptance_success_tm(
     return Service1Tm(
         subservice=Subservice.TM_ACCEPTANCE_SUCCESS,
         verif_params=VerificationParams(RequestId.from_sp_header(pus_tc.sp_header)),
-        time_reader=time_reader,
+        time_provider=time_reader,
     )
 
 
@@ -293,7 +293,7 @@ def create_acceptance_failure_tm(
             req_id=RequestId.from_sp_header(pus_tc.sp_header),
             failure_notice=failure_notice,
         ),
-        time_reader=time_reader,
+        time_provider=time_reader,
     )
 
 
@@ -303,7 +303,7 @@ def create_start_success_tm(
     return Service1Tm(
         subservice=Subservice.TM_START_SUCCESS,
         verif_params=VerificationParams(RequestId.from_sp_header(pus_tc.sp_header)),
-        time_reader=time_reader,
+        time_provider=time_reader,
     )
 
 
@@ -318,7 +318,7 @@ def create_start_failure_tm(
             req_id=RequestId.from_sp_header(pus_tc.sp_header),
             failure_notice=failure_notice,
         ),
-        time_reader=time_reader,
+        time_provider=time_reader,
     )
 
 
@@ -332,7 +332,7 @@ def create_step_success_tm(
         verif_params=VerificationParams(
             req_id=RequestId.from_sp_header(pus_tc.sp_header), step_id=step_id
         ),
-        time_reader=time_reader,
+        time_provider=time_reader,
     )
 
 
@@ -349,7 +349,7 @@ def create_step_failure_tm(
             step_id=step_id,
             failure_notice=failure_notice,
         ),
-        time_reader=time_reader,
+        time_provider=time_reader,
     )
 
 
@@ -359,7 +359,7 @@ def create_completion_success_tm(
     return Service1Tm(
         subservice=Subservice.TM_COMPLETION_SUCCESS,
         verif_params=VerificationParams(RequestId.from_sp_header(pus_tc.sp_header)),
-        time_reader=time_reader,
+        time_provider=time_reader,
     )
 
 
@@ -374,5 +374,5 @@ def create_completion_failure_tm(
             req_id=RequestId.from_sp_header(pus_tc.sp_header),
             failure_notice=failure_notice,
         ),
-        time_reader=time_reader,
+        time_provider=time_reader,
     )

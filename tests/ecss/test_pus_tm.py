@@ -58,7 +58,7 @@ class TestTelemetry(TestCase):
             apid=0x123,
             seq_count=0x234,
             source_data=bytearray(),
-            time_reader=self.time_stamp_provider,
+            time_provider=self.time_stamp_provider,
         )
         self.ping_reply_raw = self.ping_reply.pack()
 
@@ -267,7 +267,7 @@ class TestTelemetry(TestCase):
         self.assertRaises(ValueError, PusTelemetry.unpack, self.ping_reply_raw, None)
 
     def test_service_17_tm(self):
-        srv_17_tm = Service17Tm(subservice=2, time_reader=self.time_stamp_provider)
+        srv_17_tm = Service17Tm(subservice=2, time_provider=self.time_stamp_provider)
         self.assertEqual(srv_17_tm.pus_tm.subservice, 2)
         srv_17_tm_raw = srv_17_tm.pack()
         srv_17_tm_unpacked = Service17Tm.unpack(
@@ -345,7 +345,7 @@ class TestTelemetry(TestCase):
                     req_id=RequestId(pus_tc.packet_id, pus_tc.packet_seq_ctrl),
                     step_id=step_id,
                 ),
-                time_reader=CdsShortTimestamp.empty(),
+                time_provider=CdsShortTimestamp.empty(),
             ),
             subservice,
         )
@@ -442,7 +442,7 @@ class TestTelemetry(TestCase):
                     failure_notice=failure_notice,
                     step_id=step_id,
                 ),
-                time_reader=self.time_stamp_provider,
+                time_provider=self.time_stamp_provider,
             ),
             subservice=subservice,
             failure_notice=failure_notice,

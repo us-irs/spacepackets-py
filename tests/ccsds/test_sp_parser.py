@@ -9,7 +9,7 @@ from spacepackets.ecss.tm import PusTelemetry
 class TestSpParser(TestCase):
     def test_sp_parser(self):
         tm_packet = PusTelemetry(
-            service=17, subservice=2, time_reader=CdsShortTimestamp.empty()
+            service=17, subservice=2, time_provider=CdsShortTimestamp.empty()
         )
         packet_ids = (tm_packet.packet_id.raw(),)
         tm_packet_raw = tm_packet.pack()
@@ -27,7 +27,7 @@ class TestSpParser(TestCase):
             service=8,
             subservice=128,
             source_data=bytearray(64),
-            time_reader=CdsShortTimestamp.empty(),
+            time_provider=CdsShortTimestamp.empty(),
         )
         other_larger_packet_raw = other_larger_packet.pack()
         packet_deque.appendleft(tm_packet_raw)
