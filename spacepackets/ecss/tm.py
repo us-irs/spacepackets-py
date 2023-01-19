@@ -114,7 +114,8 @@ class PusTmSecondaryHeader:
         secondary_header.append(self.subservice)
         secondary_header.extend(struct.pack("!H", self.message_counter))
         secondary_header.extend(struct.pack("!H", self.dest_id))
-        secondary_header.extend(self.time_provider.pack())
+        if self.time_provider:
+            secondary_header.extend(self.time_provider.pack())
         return secondary_header
 
     @classmethod
@@ -166,7 +167,7 @@ class PusTmSecondaryHeader:
         secondary_header.time_provider = time_reader
         if time_reader:
             time_reader.read_from_raw(
-                header_start[current_idx : current_idx + time_reader.len]
+                header_start[current_idx : current_idx + time_reader.len_packed]
             )
         return secondary_header
 
@@ -185,7 +186,7 @@ class PusTmSecondaryHeader:
     def header_size(self) -> int:
         base_len = 7
         if self.time_provider:
-            base_len += self.time_provider.len
+            base_len += self.time_provider.len_packed
         return base_len
 
 
@@ -218,7 +219,7 @@ class PusTelemetry(AbstractPusTm):
         self,
         service: int,
         subservice: int,
-        time_provider: Optional[CcsdsTimeProvider] = None,
+        time_reader: Optional[CcsdsTimeProvider],
         source_data: bytearray = bytearray([]),
         seq_count: int = 0,
         apid: int = FETCH_GLOBAL_APID,
@@ -229,11 +230,13 @@ class PusTelemetry(AbstractPusTm):
     ):
         if apid == FETCH_GLOBAL_APID:
             apid = get_default_tm_apid()
-        if time_provider is None:
-            time_provider = CdsShortTimestamp.from_current_time()
         self._source_data = source_data
+        len_stamp = 0
+        if time_reader:
+            len_stamp += time_reader.len_packed
         data_length = self.data_len_from_src_len_timestamp_len(
-            timestamp_len=time_provider.len, source_data_len=len(self._source_data)
+            timestamp_len=len_stamp,
+            source_data_len=len(self._source_data),
         )
         self.sp_header = SpacePacketHeader(
             apid=apid,
@@ -249,7 +252,7 @@ class PusTelemetry(AbstractPusTm):
             message_counter=message_counter,
             dest_id=destination_id,
             spacecraft_time_ref=space_time_ref,
-            time_provider=time_provider,
+            time_provider=time_reader,
         )
         self._valid = True
         self._crc16 = 0
@@ -257,7 +260,7 @@ class PusTelemetry(AbstractPusTm):
     @classmethod
     def __empty(cls) -> PusTelemetry:
         return PusTelemetry(
-            service=0, subservice=0, time_provider=CdsShortTimestamp.from_current_time()
+            service=0, subservice=0, time_reader=CdsShortTimestamp.from_current_time()
         )
 
     def pack(self, calc_crc: bool = True) -> bytearray:
@@ -430,8 +433,11 @@ class PusTelemetry(AbstractPusTm):
     @tm_data.setter
     def tm_data(self, data: bytes):
         self._source_data = data
+        stamp_len = 0
+        if self.pus_tm_sec_header.time_provider:
+            stamp_len += self.pus_tm_sec_header.time_provider.len_packed
         self.sp_header.data_len = self.data_len_from_src_len_timestamp_len(
-            self.pus_tm_sec_header.time_provider.len, len(data)
+            stamp_len, len(data)
         )
 
     @property

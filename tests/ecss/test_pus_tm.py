@@ -2,7 +2,7 @@
 import struct
 from typing import Optional
 from unittest import TestCase
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, PropertyMock
 
 from crcmod.predefined import mkPredefinedCrcFun
 
@@ -47,8 +47,9 @@ from spacepackets.ecss.pus_1_verification import (
 
 class TestTelemetry(TestCase):
     def setUp(self) -> None:
-        self.time_stamp_provider = MagicMock(spec=CcsdsTimeProvider)
-        self.time_stamp_provider.len = 7
+        self.time_stamp_provider = MagicMock(spec=CdsShortTimestamp)
+        len_mock = PropertyMock(return_value=7)
+        type(self.time_stamp_provider).len_packed = len_mock
         self.raw_stamp = bytes([0, 1, 2, 3, 4, 5, 6])
         self.time_stamp_provider.pack.return_value = self.raw_stamp
         self.ping_reply = PusTelemetry(
@@ -57,7 +58,7 @@ class TestTelemetry(TestCase):
             apid=0x123,
             seq_count=0x234,
             source_data=bytearray(),
-            time_provider=self.time_stamp_provider,
+            time_reader=self.time_stamp_provider,
         )
         self.ping_reply_raw = self.ping_reply.pack()
 
@@ -266,12 +267,12 @@ class TestTelemetry(TestCase):
         self.assertRaises(ValueError, PusTelemetry.unpack, self.ping_reply_raw, None)
 
     def test_service_17_tm(self):
-        srv_17_tm = Service17Tm(subservice=2)
+        srv_17_tm = Service17Tm(subservice=2, time_reader=self.time_stamp_provider)
         self.assertEqual(srv_17_tm.pus_tm.subservice, 2)
         srv_17_tm_raw = srv_17_tm.pack()
         srv_17_tm_unpacked = Service17Tm.unpack(
             raw_telemetry=srv_17_tm_raw,
-            time_reader=CdsShortTimestamp.empty(),
+            time_reader=self.time_stamp_provider,
             pus_version=PusVersion.PUS_C,
         )
         self.assertEqual(srv_17_tm_unpacked.pus_tm.subservice, 2)
@@ -322,14 +323,20 @@ class TestTelemetry(TestCase):
         helper_created = None
         step_id = None
         if subservice == Subservice.TM_ACCEPTANCE_SUCCESS:
-            helper_created = create_acceptance_success_tm(pus_tc)
+            helper_created = create_acceptance_success_tm(
+                pus_tc, self.time_stamp_provider
+            )
         elif subservice == Subservice.TM_START_SUCCESS:
-            helper_created = create_start_success_tm(pus_tc)
+            helper_created = create_start_success_tm(pus_tc, self.time_stamp_provider)
         elif subservice == Subservice.TM_STEP_SUCCESS:
             step_id = PacketFieldEnum.with_byte_size(1, 4)
-            helper_created = create_step_success_tm(pus_tc, step_id)
+            helper_created = create_step_success_tm(
+                pus_tc, step_id, self.time_stamp_provider
+            )
         elif subservice == Subservice.TM_COMPLETION_SUCCESS:
-            helper_created = create_completion_success_tm(pus_tc)
+            helper_created = create_completion_success_tm(
+                pus_tc, time_reader=self.time_stamp_provider
+            )
         self._test_srv_1_success_tm(
             pus_tc,
             Service1Tm(
@@ -338,6 +345,7 @@ class TestTelemetry(TestCase):
                     req_id=RequestId(pus_tc.packet_id, pus_tc.packet_seq_ctrl),
                     step_id=step_id,
                 ),
+                time_reader=CdsShortTimestamp.empty(),
             ),
             subservice,
         )
@@ -387,7 +395,7 @@ class TestTelemetry(TestCase):
         self.assertEqual(srv_1_tm.tc_req_id.tc_psc, pus_tc.packet_seq_ctrl)
         srv_1_tm_raw = srv_1_tm.pack()
         srv_1_tm_unpacked = Service1Tm.unpack(
-            srv_1_tm_raw, UnpackParams(CdsShortTimestamp.empty())
+            srv_1_tm_raw, UnpackParams(self.time_stamp_provider)
         )
         self.assertEqual(
             srv_1_tm_unpacked.tc_req_id.tc_packet_id.raw(), pus_tc.packet_id.raw()
@@ -406,16 +414,25 @@ class TestTelemetry(TestCase):
         helper_created = None
         step_id = None
         if subservice == Subservice.TM_ACCEPTANCE_FAILURE:
-            helper_created = create_acceptance_failure_tm(pus_tc, failure_notice)
+            helper_created = create_acceptance_failure_tm(
+                pus_tc, failure_notice, self.time_stamp_provider
+            )
         elif subservice == Subservice.TM_START_FAILURE:
-            helper_created = create_start_failure_tm(pus_tc, failure_notice)
+            helper_created = create_start_failure_tm(
+                pus_tc, failure_notice, self.time_stamp_provider
+            )
         elif subservice == Subservice.TM_STEP_FAILURE:
             step_id = PacketFieldEnum.with_byte_size(2, 12)
             helper_created = create_step_failure_tm(
-                pus_tc, failure_notice=failure_notice, step_id=step_id
+                pus_tc,
+                failure_notice=failure_notice,
+                step_id=step_id,
+                time_reader=self.time_stamp_provider,
             )
         elif subservice == Subservice.TM_COMPLETION_FAILURE:
-            helper_created = create_completion_failure_tm(pus_tc, failure_notice)
+            helper_created = create_completion_failure_tm(
+                pus_tc, failure_notice, self.time_stamp_provider
+            )
         self._test_srv_1_failure_comparison_helper(
             pus_tc,
             Service1Tm(
@@ -425,6 +442,7 @@ class TestTelemetry(TestCase):
                     failure_notice=failure_notice,
                     step_id=step_id,
                 ),
+                time_reader=self.time_stamp_provider,
             ),
             subservice=subservice,
             failure_notice=failure_notice,
@@ -451,7 +469,7 @@ class TestTelemetry(TestCase):
         self.assertEqual(srv_1_tm.tc_req_id.tc_packet_id, pus_tc.packet_id)
         self.assertEqual(srv_1_tm.tc_req_id.tc_psc, pus_tc.packet_seq_ctrl)
         srv_1_tm_raw = srv_1_tm.pack()
-        unpack_params = UnpackParams(CdsShortTimestamp.empty())
+        unpack_params = UnpackParams(self.time_stamp_provider)
         if failure_notice is not None:
             unpack_params.bytes_err_code = failure_notice.code.len()
         if step_id is not None:

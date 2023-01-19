@@ -1,6 +1,7 @@
 from typing import Optional, List
 from unittest import TestCase
 
+from spacepackets.ccsds import CdsShortTimestamp
 from spacepackets.ecss import PusTelecommand
 from spacepackets.ecss.pus_1_verification import (
     create_acceptance_success_tm,
@@ -27,27 +28,39 @@ class SuccessSet:
     def __init__(self, pus_tc: PusTelecommand):
         self.pus_tc = pus_tc
         self.req_id = RequestId.from_pus_tc(pus_tc)
-        self.acc_suc_tm = create_acceptance_success_tm(pus_tc)
-        self.sta_suc_tm = create_start_success_tm(pus_tc)
+        self.time_reader = CdsShortTimestamp.empty()
+        self.acc_suc_tm = create_acceptance_success_tm(pus_tc, self.time_reader)
+        self.sta_suc_tm = create_start_success_tm(pus_tc, self.time_reader)
         self.ste_suc_tm = create_step_success_tm(
-            pus_tc, step_id=StepId.with_byte_size(1, 1)
+            pus_tc=pus_tc,
+            step_id=StepId.with_byte_size(1, 1),
+            time_reader=self.time_reader,
         )
-        self.fin_suc_tm = create_completion_success_tm(pus_tc)
+        self.fin_suc_tm = create_completion_success_tm(
+            pus_tc, CdsShortTimestamp.empty()
+        )
 
 
 class FailureSet:
     def __init__(self, pus_tc: PusTelecommand, failure_notice: FailureNotice):
         self.suc_set = SuccessSet(pus_tc)
         self.failure_notice = failure_notice
-        self.acc_fail_tm = create_acceptance_failure_tm(pus_tc, self.failure_notice)
-        self.sta_fail_tm = create_start_failure_tm(pus_tc, self.failure_notice)
+        self.acc_fail_tm = create_acceptance_failure_tm(
+            pus_tc, self.failure_notice, CdsShortTimestamp.empty()
+        )
+        self.sta_fail_tm = create_start_failure_tm(
+            pus_tc, self.failure_notice, CdsShortTimestamp.empty()
+        )
         self.ste_fail_tm = create_step_failure_tm(
             pus_tc,
             failure_notice=self.failure_notice,
             step_id=StepId.with_byte_size(1, 1),
+            time_reader=CdsShortTimestamp.empty(),
         )
         self.fin_fail_tm = create_completion_failure_tm(
-            failure_notice=self.failure_notice, pus_tc=self.suc_set.pus_tc
+            failure_notice=self.failure_notice,
+            pus_tc=self.suc_set.pus_tc,
+            time_reader=CdsShortTimestamp.empty(),
         )
 
     @property

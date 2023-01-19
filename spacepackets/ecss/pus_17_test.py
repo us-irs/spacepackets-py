@@ -18,7 +18,7 @@ class Service17Tm(AbstractPusTm):
     def __init__(
         self,
         subservice: int,
-        time_provider: Optional[CcsdsTimeProvider] = None,
+        time_reader: Optional[CcsdsTimeProvider],
         ssc: int = 0,
         source_data: bytearray = bytearray([]),
         apid: int = -1,
@@ -29,7 +29,7 @@ class Service17Tm(AbstractPusTm):
         self.pus_tm = PusTelemetry(
             service=PusService.S17_TEST,
             subservice=subservice,
-            time_provider=time_provider,
+            time_reader=time_reader,
             seq_count=ssc,
             source_data=source_data,
             apid=apid,
@@ -57,8 +57,8 @@ class Service17Tm(AbstractPusTm):
         return self.pus_tm.pack()
 
     @classmethod
-    def __empty(cls) -> Service17Tm:
-        return cls(subservice=0)
+    def __empty(cls, time_provider: Optional[CcsdsTimeProvider]) -> Service17Tm:
+        return cls(subservice=0, time_reader=time_provider)
 
     @classmethod
     def unpack(
@@ -67,7 +67,7 @@ class Service17Tm(AbstractPusTm):
         time_reader: Optional[CcsdsTimeProvider],
         pus_version: PusVersion = PusVersion.GLOBAL_CONFIG,
     ) -> Service17Tm:
-        service_17_tm = cls.__empty()
+        service_17_tm = cls.__empty(time_provider=time_reader)
         service_17_tm.pus_tm = PusTelemetry.unpack(
             raw_telemetry=raw_telemetry, time_reader=time_reader
         )

@@ -1,13 +1,16 @@
 from unittest import TestCase
 from collections import deque
 
+from spacepackets.ccsds import CdsShortTimestamp
 from spacepackets.ccsds.spacepacket import parse_space_packets
 from spacepackets.ecss.tm import PusTelemetry
 
 
 class TestSpParser(TestCase):
     def test_sp_parser(self):
-        tm_packet = PusTelemetry(service=17, subservice=2)
+        tm_packet = PusTelemetry(
+            service=17, subservice=2, time_reader=CdsShortTimestamp.empty()
+        )
         packet_ids = (tm_packet.packet_id.raw(),)
         tm_packet_raw = tm_packet.pack()
         packet_deque = deque()
@@ -24,6 +27,7 @@ class TestSpParser(TestCase):
             service=8,
             subservice=128,
             source_data=bytearray(64),
+            time_reader=CdsShortTimestamp.empty(),
         )
         other_larger_packet_raw = other_larger_packet.pack()
         packet_deque.appendleft(tm_packet_raw)

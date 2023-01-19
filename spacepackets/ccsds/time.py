@@ -59,8 +59,17 @@ class CcsdsTimeProvider(ABC):
 
     @property
     @abstractmethod
-    def len(self) -> int:
+    def len_packed(self) -> int:
         pass
+
+    @deprecation.deprecated(
+        deprecated_in="0.14.0rc1",
+        current_version=__version__,
+        details="use len_packed instead",
+    )
+    @property
+    def len(self) -> int:
+        return self.len_packed
 
     @abstractmethod
     def pack(self) -> bytearray:
@@ -98,6 +107,13 @@ class CcsdsTimeProvider(ABC):
 class CdsShortTimestamp(CcsdsTimeProvider):
     """Unpacks the time datafield of the TM packet. Right now, CDS Short timeformat is used,
     and the size of the time stamp is expected to be seven bytes.
+
+
+    >>> cds_short_now = CdsShortTimestamp.from_current_time()
+    >>> cds_short_now.len_packed
+    7
+    >>> cds_short_now.pfield
+    CcsdsTimeCodeId.CDS << 4
     """
 
     CDS_SHORT_ID = 0b100
@@ -140,7 +156,7 @@ class CdsShortTimestamp(CcsdsTimeProvider):
         return self.__p_field
 
     @property
-    def len(self) -> int:
+    def len_packed(self) -> int:
         return CdsShortTimestamp.TIMESTAMP_SIZE
 
     @property
