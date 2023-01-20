@@ -254,7 +254,7 @@ class TestTelemetry(TestCase):
             PusTmSecondaryHeader(
                 service=0,
                 subservice=0,
-                time_provider=CdsShortTimestamp.from_current_time(),
+                time_provider=CdsShortTimestamp.from_now(),
                 message_counter=129302,
             )
 

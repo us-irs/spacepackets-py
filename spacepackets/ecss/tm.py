@@ -103,7 +103,7 @@ class PusTmSecondaryHeader:
         return PusTmSecondaryHeader(
             service=0,
             subservice=0,
-            time_provider=CdsShortTimestamp.from_current_time(),
+            time_provider=CdsShortTimestamp.from_now(),
             message_counter=0,
         )
 
@@ -260,7 +260,7 @@ class PusTelemetry(AbstractPusTm):
     @classmethod
     def __empty(cls) -> PusTelemetry:
         return PusTelemetry(
-            service=0, subservice=0, time_provider=CdsShortTimestamp.from_current_time()
+            service=0, subservice=0, time_provider=CdsShortTimestamp.from_now()
         )
 
     def pack(self, calc_crc: bool = True) -> bytearray:

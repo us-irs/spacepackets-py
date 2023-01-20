@@ -158,11 +158,13 @@ class CdsShortTimestamp(CcsdsTimeProvider):
 
     def _calculate_date_time(self):
         if self._unix_seconds < 0:
-            self._date_time = datetime.datetime(1970, 1, 1) + datetime.timedelta(
-                seconds=self._unix_seconds
-            )
+            self._date_time = datetime.datetime(
+                1970, 1, 1, tzinfo=datetime.timezone.utc
+            ) + datetime.timedelta(seconds=self._unix_seconds)
         else:
-            self._date_time = datetime.datetime.utcfromtimestamp(self._unix_seconds)
+            self._date_time = datetime.datetime.fromtimestamp(
+                self._unix_seconds, tz=datetime.timezone.utc
+            )
 
     @property
     def pfield(self) -> bytes:
@@ -232,6 +234,11 @@ class CdsShortTimestamp(CcsdsTimeProvider):
     def __str__(self):
         return f"Date {self._date_time!r} with representation {self!r}"
 
+    def __eq__(self, other: CdsShortTimestamp):
+        return (self.ccsds_days == other.ccsds_days) and (
+            self.ms_of_day == other.ms_of_day
+        )
+
     def __add__(self, timedelta: datetime.timedelta):
         """Allows adding timedelta to the CDS timestamp provider.
         :param timedelta:
@@ -255,12 +262,18 @@ class CdsShortTimestamp(CcsdsTimeProvider):
         return self
 
     @classmethod
-    def from_current_time(cls) -> CdsShortTimestamp:
+    def from_now(cls) -> CdsShortTimestamp:
         """Returns a seven byte CDS short timestamp with the current time"""
-        return cls.from_unix_days(
-            unix_days=(datetime.datetime.utcnow() - UNIX_EPOCH).days,
-            ms_of_day=cls.ms_of_today(),
-        )
+        return cls.from_date_time(datetime.datetime.now(tz=datetime.timezone.utc))
+
+    @classmethod
+    @deprecation.deprecated(
+        deprecated_in="0.14.0rc1",
+        current_version=__version__,
+        details="use from_now instead",
+    )
+    def from_current_time(cls) -> CdsShortTimestamp:
+        return cls.from_now()
 
     @classmethod
     def from_date_time(cls, dt: datetime.datetime) -> CdsShortTimestamp:
