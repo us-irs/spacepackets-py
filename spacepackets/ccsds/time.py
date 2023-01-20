@@ -25,25 +25,26 @@ class CcsdsTimeCodeId(enum.IntEnum):
 
 
 def convert_unix_days_to_ccsds_days(unix_days: int) -> int:
-    """Convert Unix days to CCSDS days
+    """Convert Unix days to CCSDS days.
 
-    CCSDS epoch: 1958 Januar 1
-    Unix epoch: 1970 January 1
+    CCSDS epoch: 1958-01-01 00:00:00.
+    Unix epoch: 1970-01-01 00:00:00.
     """
     return unix_days - DAYS_CCSDS_TO_UNIX
 
 
 def convert_ccsds_days_to_unix_days(ccsds_days: int) -> int:
-    """Convert CCSDS days to Unix days
+    """Convert CCSDS days to Unix days.
 
-    CCSDS epoch: 1958 Januar 1
-    Unix epoch: 1970 January 1
+    CCSDS epoch: 1958-01-01 00:00:00.
+    Unix epoch: 1970-01-01 00:00:00.
     """
     return ccsds_days + DAYS_CCSDS_TO_UNIX
 
 
 def read_p_field(p_field: int) -> CcsdsTimeCodeId:
-    """Read the p field and return the CCSDS Time Code ID
+    """Read the p field and return the CCSDS Time Code ID.
+
     :param p_field:
     :return:
     :raise IndexError: P field has invalid value
@@ -93,6 +94,9 @@ class CcsdsTimeProvider(ABC):
 
     @abstractmethod
     def as_date_time(self) -> datetime:
+        """Retrieve a :py:class:`datetime.datetime` with the :py:class:`datetime.timezone` set to
+        utc.
+        """
         pass
 
     def as_time_string(self) -> str:
@@ -109,7 +113,7 @@ class CdsShortTimestamp(CcsdsTimeProvider):
     and the size of the time stamp is expected to be seven bytes.
 
     >>> from spacepackets.ccsds.time import CcsdsTimeCodeId
-    >>> cds_short_now = CdsShortTimestamp.from_current_time()
+    >>> cds_short_now = CdsShortTimestamp.from_now()
     >>> cds_short_now.len_packed
     7
     >>> hex(cds_short_now.pfield[0])
@@ -158,11 +162,13 @@ class CdsShortTimestamp(CcsdsTimeProvider):
 
     def _calculate_date_time(self):
         if self._unix_seconds < 0:
-            self._date_time = datetime.datetime(1970, 1, 1) + datetime.timedelta(
-                seconds=self._unix_seconds
-            )
+            self._date_time = datetime.datetime(
+                1970, 1, 1, tzinfo=datetime.timezone.utc
+            ) + datetime.timedelta(seconds=self._unix_seconds)
         else:
-            self._date_time = datetime.datetime.utcfromtimestamp(self._unix_seconds)
+            self._date_time = datetime.datetime.fromtimestamp(
+                self._unix_seconds, tz=datetime.timezone.utc
+            )
 
     @property
     def pfield(self) -> bytes:
@@ -197,6 +203,7 @@ class CdsShortTimestamp(CcsdsTimeProvider):
     @classmethod
     def empty(cls, init_dt_unix_stamp: bool = True):
         """Empty instance containing only zero for all fields.
+
         :return:
         """
         return cls(ccsds_days=0, ms_of_day=0, init_dt_unix_stamp=init_dt_unix_stamp)
@@ -232,8 +239,14 @@ class CdsShortTimestamp(CcsdsTimeProvider):
     def __str__(self):
         return f"Date {self._date_time!r} with representation {self!r}"
 
+    def __eq__(self, other: CdsShortTimestamp):
+        return (self.ccsds_days == other.ccsds_days) and (
+            self.ms_of_day == other.ms_of_day
+        )
+
     def __add__(self, timedelta: datetime.timedelta):
         """Allows adding timedelta to the CDS timestamp provider.
+
         :param timedelta:
         :raises TypeError: Type other than timedelta was passed.
         :raises OverflowError: CCSDS days would have an invalid value (exceeding value representable
@@ -255,12 +268,18 @@ class CdsShortTimestamp(CcsdsTimeProvider):
         return self
 
     @classmethod
+    def from_now(cls) -> CdsShortTimestamp:
+        """Returns a seven byte CDS short timestamp with the current time."""
+        return cls.from_date_time(datetime.datetime.now(tz=datetime.timezone.utc))
+
+    @classmethod
+    @deprecation.deprecated(
+        deprecated_in="0.14.0rc1",
+        current_version=__version__,
+        details="use from_now instead",
+    )
     def from_current_time(cls) -> CdsShortTimestamp:
-        """Returns a seven byte CDS short timestamp with the current time"""
-        return cls.from_unix_days(
-            unix_days=(datetime.datetime.utcnow() - UNIX_EPOCH).days,
-            ms_of_day=cls.ms_of_today(),
-        )
+        return cls.from_now()
 
     @classmethod
     def from_date_time(cls, dt: datetime.datetime) -> CdsShortTimestamp:

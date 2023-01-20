@@ -19,6 +19,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - `ecss.tm.PusTelemetry`: Various fixes for new optional timestamp feature, added checks
   that timestamp is not None. `time_provider` does not have a default value anymore and needs
   to be passed explicitely.
+- `CdsShortTimestamp`: The new `from_now` (and former `from_current_time`) classmehod now creates
+  the timestamp from a UTC datetime.
+- `CdsShortTimestamp`: The `datetime.datetime` instance returned from `as_date_time` now
+  returns has the `datetime.timezone.utc` set as the time zone information.
+
+## Added
+
+- `CdsShortTimestamp`:
+  - Add new `from_now` classmethod and deprecate `from_current_time`.
+  - Add `__eq__` implementation which only compares CCSDS days and ms of day.
 
 # [v0.14.0rc0]
 

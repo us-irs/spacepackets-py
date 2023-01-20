@@ -1,5 +1,5 @@
 """This module also includes the :py:class:`SpacePacketHeader` class, which is the header component
-of all CCSDS packets"""
+of all CCSDS packets."""
 from __future__ import annotations
 
 from abc import abstractmethod, ABC
@@ -27,6 +27,9 @@ class SequenceFlags(enum.IntEnum):
 
 
 class PacketSeqCtrl:
+    """The packet sequence control is the third and fourth byte of the space packet header.
+    It contains the sequence flags and the 14-bit sequence count.
+    """
     def __init__(self, seq_flags: SequenceFlags, seq_count: int):
         if seq_count > pow(2, 14) - 1 or seq_count < 0:
             raise ValueError(
@@ -69,6 +72,8 @@ class PacketSeqCtrl:
 
 
 class PacketId:
+    """The packet ID forms the last thirteen bits of the first two bytes of the space packet header.
+    """
     def __init__(self, ptype: PacketType, sec_header_flag: bool, apid: int):
         if apid > pow(2, 11) - 1 or apid < 0:
             raise ValueError(
@@ -192,7 +197,7 @@ class SpacePacketHeader(AbstractSpacePacket):
 
     def pack(self) -> bytearray:
         """Serialize raw space packet header into a bytearray, using big endian for each
-        2 octet field of the space packet header"""
+        2 octet field of the space packet header."""
         header = bytearray()
         packet_id_with_version = self.ccsds_version << 13 | self.packet_id.raw()
         header.extend(struct.pack("!H", packet_id_with_version))
