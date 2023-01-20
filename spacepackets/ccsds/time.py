@@ -93,6 +93,9 @@ class CcsdsTimeProvider(ABC):
 
     @abstractmethod
     def as_date_time(self) -> datetime:
+        """Retrieve a :py:class:`datetime.datetime` with the timezone set to
+        `datetime.timezone.utc`.
+        """
         pass
 
     def as_time_string(self) -> str:
