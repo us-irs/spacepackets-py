@@ -260,7 +260,7 @@ class PusTelemetry(AbstractPusTm):
     @classmethod
     def __empty(cls) -> PusTelemetry:
         return PusTelemetry(
-            service=0, subservice=0, time_provider=CdsShortTimestamp.from_now()
+            service=0, subservice=0, time_provider=CdsShortTimestamp.empty()
         )
 
     def pack(self, calc_crc: bool = True) -> bytearray:
