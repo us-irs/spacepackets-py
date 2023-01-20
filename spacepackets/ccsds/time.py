@@ -113,7 +113,7 @@ class CdsShortTimestamp(CcsdsTimeProvider):
     and the size of the time stamp is expected to be seven bytes.
 
     >>> from spacepackets.ccsds.time import CcsdsTimeCodeId
-    >>> cds_short_now = CdsShortTimestamp.from_current_time()
+    >>> cds_short_now = CdsShortTimestamp.from_now()
     >>> cds_short_now.len_packed
     7
     >>> hex(cds_short_now.pfield[0])

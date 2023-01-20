@@ -75,3 +75,20 @@ provided that `pytest` and `coverage` were installed with
 ```sh
 python3 -m pip install coverage pytest
 ```
+
+# Documentation
+
+The documentation is built with Sphinx
+
+Install the required dependencies first:
+
+```sh
+pip install sphinx sphinx_rtd_theme
+```
+
+Then you can build the documentation with
+
+```sh
+cd docs
+make html
+```
