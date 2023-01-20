@@ -86,7 +86,7 @@ Install the required dependencies first:
 pip install sphinx sphinx_rtd_theme
 ```
 
-Then you can build the documentation with
+Then the documentation can be built with
 
 ```sh
 cd docs
