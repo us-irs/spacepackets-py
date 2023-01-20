@@ -78,7 +78,22 @@ class TestTelemetry(TestCase):
         self.assertEqual(self.ping_reply.sp_header.data_len, 15)
         self.assertEqual(self.ping_reply.packet_len, 22)
 
-    def test_raw(self):
+    def test_no_timestamp(self):
+        self.ping_reply = PusTelemetry(
+            service=17,
+            subservice=2,
+            apid=0x123,
+            seq_count=0x234,
+            source_data=bytearray(),
+            time_provider=None,
+        )
+        self.assertEqual(self.ping_reply.pus_tm_sec_header.time_provider, None)
+        tm_raw = self.ping_reply.pack()
+        self.assertEqual(self.ping_reply.packet_len, 15)
+        self.assertEqual(len(tm_raw), 15)
+        self.raw_check_before_stamp()
+
+    def raw_check_before_stamp(self):
         # Secondary header is set -> 0b0000_1001 , APID occupies last bit of first byte
         self.assertEqual(self.ping_reply_raw[0], 0x09)
         # Rest of APID
@@ -97,6 +112,9 @@ class TestTelemetry(TestCase):
         # Destination ID
         self.assertEqual(self.ping_reply_raw[11], 0x00)
         self.assertEqual(self.ping_reply_raw[12], 0x00)
+
+    def test_raw(self):
+        self.raw_check_before_stamp()
         self.assertEqual(self.ping_reply_raw[13 : 13 + 7], self.raw_stamp)
         # CRC16-CCITT checksum
         crc_func = mkPredefinedCrcFun(crc_name="crc-ccitt-false")
@@ -177,6 +195,7 @@ class TestTelemetry(TestCase):
         pus_17_tm_unpacked = PusTelemetry.unpack(
             raw_telemetry=self.ping_reply_raw, time_reader=self.time_stamp_provider
         )
+        self.assertEqual(pus_17_tm_unpacked, self.ping_reply)
 
         self.assertEqual(pus_17_tm_unpacked.apid, 0x22)
         self.assertEqual(
@@ -234,6 +253,11 @@ class TestTelemetry(TestCase):
         self.assertRaises(
             ValueError, PusTmSecondaryHeader.unpack, invalid_secondary_header, None
         )
+
+    def test_sp_header_getter(self):
+        sp_header = self.ping_reply.get_sp_header()
+        self.assertEqual(sp_header.apid, 0x123)
+        self.assertEqual(sp_header.packet_type, PacketType.TM)
 
     def test_space_packet_conversion(self):
         ccsds_packet = self.ping_reply.to_space_packet()

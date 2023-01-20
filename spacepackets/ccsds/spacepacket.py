@@ -30,6 +30,7 @@ class PacketSeqCtrl:
     """The packet sequence control is the third and fourth byte of the space packet header.
     It contains the sequence flags and the 14-bit sequence count.
     """
+
     def __init__(self, seq_flags: SequenceFlags, seq_count: int):
         if seq_count > pow(2, 14) - 1 or seq_count < 0:
             raise ValueError(
@@ -72,8 +73,8 @@ class PacketSeqCtrl:
 
 
 class PacketId:
-    """The packet ID forms the last thirteen bits of the first two bytes of the space packet header.
-    """
+    """The packet ID forms the last thirteen bits of the first two bytes of the space packet header."""
+
     def __init__(self, ptype: PacketType, sec_header_flag: bool, apid: int):
         if apid > pow(2, 11) - 1 or apid < 0:
             raise ValueError(
