@@ -25,25 +25,26 @@ class CcsdsTimeCodeId(enum.IntEnum):
 
 
 def convert_unix_days_to_ccsds_days(unix_days: int) -> int:
-    """Convert Unix days to CCSDS days
+    """Convert Unix days to CCSDS days.
 
-    CCSDS epoch: 1958 Januar 1
-    Unix epoch: 1970 January 1
+    CCSDS epoch: 1958-01-01 00:00:00.
+    Unix epoch: 1970-01-01 00:00:00.
     """
     return unix_days - DAYS_CCSDS_TO_UNIX
 
 
 def convert_ccsds_days_to_unix_days(ccsds_days: int) -> int:
-    """Convert CCSDS days to Unix days
+    """Convert CCSDS days to Unix days.
 
-    CCSDS epoch: 1958 Januar 1
-    Unix epoch: 1970 January 1
+    CCSDS epoch: 1958-01-01 00:00:00.
+    Unix epoch: 1970-01-01 00:00:00.
     """
     return ccsds_days + DAYS_CCSDS_TO_UNIX
 
 
 def read_p_field(p_field: int) -> CcsdsTimeCodeId:
-    """Read the p field and return the CCSDS Time Code ID
+    """Read the p field and return the CCSDS Time Code ID.
+
     :param p_field:
     :return:
     :raise IndexError: P field has invalid value
@@ -93,8 +94,8 @@ class CcsdsTimeProvider(ABC):
 
     @abstractmethod
     def as_date_time(self) -> datetime:
-        """Retrieve a :py:class:`datetime.datetime` with the timezone set to
-        `datetime.timezone.utc`.
+        """Retrieve a :py:class:`datetime.datetime` with the :py:class:`datetime.timezone` set to
+        utc.
         """
         pass
 
@@ -202,6 +203,7 @@ class CdsShortTimestamp(CcsdsTimeProvider):
     @classmethod
     def empty(cls, init_dt_unix_stamp: bool = True):
         """Empty instance containing only zero for all fields.
+
         :return:
         """
         return cls(ccsds_days=0, ms_of_day=0, init_dt_unix_stamp=init_dt_unix_stamp)
@@ -244,6 +246,7 @@ class CdsShortTimestamp(CcsdsTimeProvider):
 
     def __add__(self, timedelta: datetime.timedelta):
         """Allows adding timedelta to the CDS timestamp provider.
+
         :param timedelta:
         :raises TypeError: Type other than timedelta was passed.
         :raises OverflowError: CCSDS days would have an invalid value (exceeding value representable
@@ -266,7 +269,7 @@ class CdsShortTimestamp(CcsdsTimeProvider):
 
     @classmethod
     def from_now(cls) -> CdsShortTimestamp:
-        """Returns a seven byte CDS short timestamp with the current time"""
+        """Returns a seven byte CDS short timestamp with the current time."""
         return cls.from_date_time(datetime.datetime.now(tz=datetime.timezone.utc))
 
     @classmethod
