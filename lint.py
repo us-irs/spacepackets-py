@@ -24,10 +24,10 @@ def main():
             print(f"Flake8 linter errors with status {status}")
             sys.exit(0)
     additional_flags_second_step = (
-        '--exit-zero --max-complexity=10 --per-file-ignores="__init__.py:F401"'
+        '--exit-zero --max-complexity=10'
     )
     if not os.path.exists("setup.cfg"):
-        additional_flags_second_step += " --max-line-length=100"
+        pass
     flake8_second_step_cmd = (
         f"flake8 . {additional_flags_both_steps}  {additional_flags_second_step}"
         f" {exclude_dirs_flag}"
