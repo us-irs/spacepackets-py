@@ -73,8 +73,7 @@ class PacketSeqCtrl:
 
 
 class PacketId:
-    """The packet ID forms the last thirteen bits of the first two bytes of the space packet header.
-    """
+    """The packet ID forms the last thirteen bits of the first two bytes of the space packet header."""
 
     def __init__(self, ptype: PacketType, sec_header_flag: bool, apid: int):
         if apid > pow(2, 11) - 1 or apid < 0:

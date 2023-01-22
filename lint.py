@@ -23,9 +23,7 @@ def main():
         if os.WEXITSTATUS(status) != 0:
             print(f"Flake8 linter errors with status {status}")
             sys.exit(0)
-    additional_flags_second_step = (
-        '--exit-zero --max-complexity=10'
-    )
+    additional_flags_second_step = "--exit-zero --max-complexity=10"
     if not os.path.exists("setup.cfg"):
         pass
     flake8_second_step_cmd = (
