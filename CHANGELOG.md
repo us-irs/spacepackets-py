@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 # [unreleased]
 
+# [v0.14.0rc1] 2022-01-22
+
 ## Changed
 
 - `CcsdsTimeProvider`: Add `len_packed`, mark `len` as deprecated
@@ -30,7 +32,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   - Add new `from_now` classmethod and deprecate `from_current_time`.
   - Add `__eq__` implementation which only compares CCSDS days and ms of day.
 
-# [v0.14.0rc0]
+# [v0.14.0rc0] 2022-01-18
 
 ## Added
 
@@ -57,7 +59,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - (breaking): Rename `pus_5_event.Subservices` to `pus_5_event.Subservice`
 - (breaking): Rename `pus_17_test.Subservices` to `pus_17_test.Subservice`
 
-# [v0.13.0] 15.09.2022
+# [v0.13.0] 2022-09-15
 
 - Improved Time Handling inside for the TM module, make it possible
   to use different timestamps
@@ -67,12 +69,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Basic `AbstractSpacePacket` class
 - Singular enum names for CFPD module
 
-# [v0.13.0rc3] 19.07.2022
+# [v0.13.0rc3] 2022-07-19
 
 - Refactored and improved TLV API and handling. Implementation is also a bit more efficient
 - Basic CFDP version support: Sanity checks on version field. Only version 2 supported
 
-# [v0.13.0rc2] 12.07.2022
+# [v0.13.0rc2] 2022-07-12
 
 - Improved documentation, first docstrings
 - Added more re-exports, for example for the `ccsds` module
@@ -86,18 +88,18 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   code like common dunder implementations
 - Split up and improve test structure a bit
 
-# [v0.13.0rc1] 01.07.2022
+# [v0.13.0rc1] 2022-07-01
 
 - Update `pyproject.toml` file for full support, but still keep `setup.cfg` for now
 - API improvements for PUS Verificator
 - Setter properties for sequence count and APID in ECSS module
 - Make `as_u32` function of `RequestId` public
 
-# [v0.12.1] 30.06.2022
+# [v0.12.1] 2022-06-30
 
 - Small bugfix for PUS 1 Step ID unpacking
 
-# [v0.12.0] 30.06.2022
+# [v0.12.0] 2022-06-30
 
 - Added `PusVerificator` module which can track the verification status of sent telecommands
 - Added several magic method implementations, notably `__eq__` and `__hash__` where 
@@ -109,7 +111,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   `PacketFieldBase`. This is useful to have an abstraction for the various PUS standard packet
   fields which can have variable sizes
 
-# [v0.11.0] 28.06.2022
+# [v0.11.0] 2022-06-28
 
 - Minor name change for PUS 17 and PUS 1 TM classes
 - New `RequestId` class to encapsulate the field used by the PUS 1 Verification
@@ -118,7 +120,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   manually with a dedicated `calc_crc` call and then omit the calculation in
   the `pack` call with an additional argument.
 
-# [v0.10.0] 23.06.2022
+# [v0.10.0] 2022-06-23
 
 - New Helper objects for CCSDS Space Packet subfields, namely new
   `PacketId` and `PacketSeqCtrl` class
@@ -128,37 +130,37 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - API simplification, shorter or better keywords for PUS TM and PUS TC
   constructor calls
 
-# [v0.9.0]
+# [v0.9.0] 2022-06-14
 
 - API improvements, bugfix and general improvements for CCSDS spacepacket
   header implementation
 
-# [v0.8.1]
+# [v0.8.1] 2022-05-24
 
 - Named value for fetching global APID
 
-# [v0.8.0]
+# [v0.8.0] 2022-05-24
 
 - Update `PusServices` enumeration
 
-# [v0.7.1]
+# [v0.7.1] 2022-05-05
 
 - Added subservice enumerations for generic PUS Services 1, 3, 5 and 17
 
-# [v0.7.0]
+# [v0.7.0] 2022-05-05
 
 - Improvement for API of PUS TM1 and PUS TM17 base classes
 
-# [v0.6.2]
+# [v0.6.2] 2022-04-08
 
 - Fix in size pre-check of space packet parser `parse_space_packets`
 
-# [v0.6.1]
+# [v0.6.1] 2022-04-08
 
 - Add packet sizes in `__str__` method of PUS TM and TC
 - Some type corrections: Expect `bytes` instead of `bytearray` where applicable
 
-# [v0.6.0]
+# [v0.6.0] 2022-02-12
 
 ## Added
 
@@ -168,20 +170,20 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 - Assign default print format in TM and TC implementation
 
-# [v0.5.4]
+# [v0.5.4] 2022-01-13
 
 - Important bugfix in space packet parser implementation
 
-# [v0.5.3]
+# [v0.5.3] 2021-12-20
 
 - Maximum TC packet size configurable now, will be checked when packaging TC packets.
   Default maximum size is 1004 bytes for now
 
-# [v0.5.2]
+# [v0.5.2] 2021-12-20
 
 - Smaller tweaks for CFDP
 
-# [v0.5.1]
+# [v0.5.1] 2021-12-07
 
 - Applied formatting with the `black` Python formatter
 - Small tweaks to the NOTICE file
