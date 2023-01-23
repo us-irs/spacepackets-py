@@ -83,7 +83,7 @@ The documentation is built with Sphinx
 Install the required dependencies first:
 
 ```sh
-pip install sphinx sphinx_rtd_theme
+pip install -r docs/requirements.txt
 ```
 
 Then the documentation can be built with
