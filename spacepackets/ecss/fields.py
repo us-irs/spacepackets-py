@@ -123,3 +123,18 @@ class PacketFieldEnum(PacketFieldBase):
 
     def __eq__(self, other: PacketFieldEnum):
         return self.pfc == other.pfc and self.val == other.val
+
+
+class PacketFieldU8(PacketFieldEnum):
+    def __init__(self, val: int):
+        super().__init__(pfc=8, val=val)
+
+
+class PacketFieldU16(PacketFieldEnum):
+    def __init__(self, val: int):
+        super().__init__(pfc=16, val=val)
+
+
+class PacketFieldU32(PacketFieldEnum):
+    def __init__(self, val: int):
+        super().__init__(pfc=32, val=val)
