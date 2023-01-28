@@ -3,6 +3,9 @@ from .tm import PusTelemetry, PusTmSecondaryHeader
 from .fields import (
     PacketFieldEnum,
     PacketFieldBase,
+    PacketFieldU8,
+    PacketFieldU16,
+    PacketFieldU32,
     Ptc,
     PfcReal,
     PfcSigned,

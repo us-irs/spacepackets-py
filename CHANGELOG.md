@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 # [unreleased]
 
+## Added
+
+- New `ecss.PacketFieldU8`, `ecss.PacketFieldU16` and `ecss.PacketFieldU32` helper types.
+
 # [v0.14.0rc1] 2022-01-22
 
 ## Changed
