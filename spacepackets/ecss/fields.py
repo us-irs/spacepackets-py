@@ -94,7 +94,7 @@ class PacketFieldEnum(PacketFieldBase):
 
     def len(self):
         """Return the length in bytes. This will raise a ValueError for non-byte-aligned
-        PFC values"""
+        PFC values."""
         return self.check_pfc(self.pfc)
 
     @classmethod
