@@ -38,6 +38,11 @@ extensions = [
     "sphinx_rtd_theme"
 ]
 
+# Disable the doctests of the full package because those would require the explicit specification
+# of imports. The doctests inside the source code are covered by pytest, using the --doctest-modules
+# configuration option.
+doctest_test_doctest_blocks = ""
+
 autoclass_content = "both"
 
 # The suffix of source filenames.
