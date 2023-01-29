@@ -424,11 +424,11 @@ class PusTelemetry(AbstractPusTm):
         return self._valid
 
     @property
-    def tm_data(self) -> bytearray:
+    def tm_data(self) -> bytes:
         """
         :return: TM source data (raw)
         """
-        return bytearray(self._source_data)
+        return self._source_data
 
     @tm_data.setter
     def tm_data(self, data: bytes):
