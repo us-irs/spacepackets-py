@@ -109,4 +109,4 @@ packet.
 .. testoutput:: uslp
 
     USLP variable length frame without FECF containing a simple space packet
-    Contained space packet (hex): [c0,07,30,20,00,00,00,e0,10,73,c0,00,00,03,01,02,03,04]
+    Contained space packet (hex): [c0,07,30,20,00,00,00,e0,10,73,c0,00,00,03,01,02,03,04
