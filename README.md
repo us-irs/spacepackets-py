@@ -44,22 +44,7 @@ py -m pip install spacepackets
 
 # Examples
 
-You can find all examples listed here in the `example` folder as well.
-
-## ECSS PUS Packets
-
-[This example](https://github.com/robamu-org/py-spacepackets/blob/main/examples/example_pus.py) shows how to generate PUS packets using the PUS ping telecommand and a PUS
-ping telemetry reply
-
-## CCSDS Space Packet
-
-[This example](https://github.com/robamu-org/py-spacepackets/blob/main/examples/example_spacepacket.py)
-shows how to generate a space packet header:
-
-## USLP Frames
-
-[This example](https://github.com/robamu-org/py-spacepackets/blob/main/examples/example_uslp.py)
-shows how to generate a simple variable length USLP frame containing a simple space packet
+You can find all examples [inside the documentation](https://spacepackets.readthedocs.io/en/latest/examples.html).
 
 # Tests
 
@@ -91,4 +76,10 @@ Then the documentation can be built with
 ```sh
 cd docs
 make html
+```
+
+You can run the doctests with
+
+```sh
+make doctest
 ```
