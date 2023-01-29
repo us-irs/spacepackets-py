@@ -1,9 +1,6 @@
 Examples
 =========
 
-You can find all examples listed here in the ``example`` `folder <https://github.com/robamu-org/py-spacepackets/tree/main/examples>`_
-of the project as well.
-
 ECSS PUS packets
 -----------------
 
