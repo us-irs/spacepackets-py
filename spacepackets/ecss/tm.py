@@ -52,6 +52,11 @@ class AbstractPusTm(AbstractSpacePacket):
 
     @property
     @abstractmethod
+    def time_provider(self) -> Optional[CcsdsTimeProvider]:
+        pass
+
+    @property
+    @abstractmethod
     def subservice(self) -> int:
         pass
 
@@ -416,6 +421,10 @@ class PusTelemetry(AbstractPusTm):
     @property
     def sp_header(self) -> SpacePacketHeader:
         return self.space_packet_header
+
+    @property
+    def time_provider(self) -> Optional[CcsdsTimeProvider]:
+        return self.pus_tm_sec_header.time_provider
 
     @property
     def service(self) -> int:

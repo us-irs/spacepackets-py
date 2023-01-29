@@ -68,7 +68,7 @@ class FailureNotice:
 
 @dataclass
 class UnpackParams:
-    time_reader: CcsdsTimeProvider
+    time_reader: Optional[CcsdsTimeProvider]
     bytes_step_id: int = 1
     bytes_err_code: int = 1
 
@@ -120,7 +120,7 @@ class InvalidVerifParams(Exception):
 
 
 class Service1Tm(AbstractPusTm):
-    """Service 1 TM class representation"""
+    """Service 1 TM class representation."""
 
     def __init__(
         self,
@@ -159,12 +159,19 @@ class Service1Tm(AbstractPusTm):
         return cls(subservice=Subservice.INVALID, time_provider=time_provider)
 
     @classmethod
+    def from_tm(cls, tm: PusTelemetry, params: UnpackParams) -> Service1Tm:
+        service_1_tm = cls.__empty(params.time_reader)
+        service_1_tm.pus_tm = tm
+        cls._unpack_raw_tm(service_1_tm, params)
+        return service_1_tm
+
+    @classmethod
     def unpack(cls, data: bytes, params: UnpackParams) -> Service1Tm:
-        """Parse a service 1 telemetry packet
+        """Parse a service 1 telemetry packet.
 
         :param params:
         :param data:
-        :raises ValueError: Raw telemetry too short
+        :raises ValueError: Raw telemetry too short or subservice invalid.
         :return:
         """
         service_1_tm = cls.__empty(params.time_reader)
@@ -174,6 +181,11 @@ class Service1Tm(AbstractPusTm):
         cls._unpack_raw_tm(service_1_tm, params)
         return service_1_tm
 
+    @property
+    def time_provider(self) -> Optional[CcsdsTimeProvider]:
+        return self.pus_tm.time_provider
+
+    @property
     def sp_header(self) -> SpacePacketHeader:
         return self.pus_tm.space_packet_header
 
@@ -208,8 +220,7 @@ class Service1Tm(AbstractPusTm):
         if subservice == 6:
             expected_len += unpack_cfg.bytes_step_id
         elif subservice not in [2, 4, 8]:
-            logger = get_console_logger()
-            logger.error("Service1TM: Invalid subservice")
+            raise ValueError(f"invalid subservice {subservice}")
         if len(tm_data) < expected_len:
             raise ValueError(
                 f"PUS TM[1,{subservice}] source data with length {len(tm_data)} smaller than "
@@ -232,8 +243,7 @@ class Service1Tm(AbstractPusTm):
                 data=self.pus_tm.tm_data[4 : 4 + unpack_cfg.bytes_step_id],
             )
         elif self.pus_tm.subservice not in [1, 3, 7]:
-            logger = get_console_logger()
-            logger.warning("Service1TM: Invalid subservice")
+            raise ValueError(f"invalid subservice {self.pus_tm.subservice}")
 
     @property
     def failure_notice(self) -> Optional[FailureNotice]:

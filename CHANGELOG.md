@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 # [unreleased]
 
+## Fixed
+
+- `ecss.pus_17_test.Service17Tm`: Remove (optional) PUS version argument for `unpack`
+
 ## Changed
 
 - (breaking): `AbstractPusTm` `get_sp_header` renamed to `sp_header` and is a property now.
@@ -17,6 +21,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## Added
 
 - New `ecss.PacketFieldU8`, `ecss.PacketFieldU16` and `ecss.PacketFieldU32` helper types.
+- (breaking): `AbstractPusTm`: Add new `time_provider` abstract property which should return
+  `Optional[CcsdsTimeProvider]`
 
 # [v0.14.0rc1] 2022-01-22
 

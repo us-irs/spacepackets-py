@@ -4,6 +4,7 @@ from typing import Optional
 
 from spacepackets import SpacePacketHeader
 from spacepackets.ccsds.time import CcsdsTimeProvider
+from spacepackets.ecss.conf import FETCH_GLOBAL_APID
 from spacepackets.ecss.defs import PusService
 from spacepackets.ecss.tm import PusVersion, PusTelemetry, AbstractPusTm
 
@@ -19,8 +20,8 @@ class Service17Tm(AbstractPusTm):
         subservice: int,
         time_provider: Optional[CcsdsTimeProvider],
         ssc: int = 0,
-        source_data: bytearray = bytearray([]),
-        apid: int = -1,
+        source_data: bytes = bytes(),
+        apid: int = FETCH_GLOBAL_APID,
         packet_version: int = 0b000,
         space_time_ref: int = 0b0000,
         destination_id: int = 0,
@@ -37,12 +38,17 @@ class Service17Tm(AbstractPusTm):
             destination_id=destination_id,
         )
 
+    @property
     def sp_header(self) -> SpacePacketHeader:
-        return self.pus_tm.space_packet_header()
+        return self.pus_tm.space_packet_header
 
     @property
     def service(self) -> int:
         return self.pus_tm.service
+
+    @property
+    def time_provider(self) -> Optional[CcsdsTimeProvider]:
+        return self.pus_tm.time_provider
 
     @property
     def subservice(self) -> int:
@@ -61,10 +67,7 @@ class Service17Tm(AbstractPusTm):
 
     @classmethod
     def unpack(
-        cls,
-        raw_telemetry: bytes,
-        time_reader: Optional[CcsdsTimeProvider],
-        pus_version: PusVersion = PusVersion.GLOBAL_CONFIG,
+        cls, raw_telemetry: bytes, time_reader: Optional[CcsdsTimeProvider]
     ) -> Service17Tm:
         service_17_tm = cls.__empty(time_provider=time_reader)
         service_17_tm.pus_tm = PusTelemetry.unpack(
