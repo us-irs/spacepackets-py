@@ -6,7 +6,7 @@ from abc import abstractmethod, ABC
 import enum
 import struct
 
-from typing import Tuple, Deque, List, Final, Optional
+from typing import Tuple, Deque, List, Final, Optional, Sequence
 
 SPACE_PACKET_HEADER_SIZE: Final = 6
 SEQ_FLAG_MASK = 0xC000
@@ -414,7 +414,7 @@ def get_total_space_packet_len_from_len_field(len_field: int):
 
 
 def parse_space_packets(
-    analysis_queue: Deque[bytearray], packet_ids: Tuple[PacketId]
+    analysis_queue: Deque[bytearray], packet_ids: Sequence[PacketId]
 ) -> List[bytearray]:
     """Given a deque of bytearrays, parse for space packets. Any broken headers will be removed.
     If a packet is detected and the broken tail packets will be reinserted into the given deque.
