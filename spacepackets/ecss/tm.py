@@ -220,7 +220,7 @@ class PusTelemetry(AbstractPusTm):
         service: int,
         subservice: int,
         time_provider: Optional[CcsdsTimeProvider],
-        source_data: bytearray = bytearray([]),
+        source_data: bytes = bytes([]),
         seq_count: int = 0,
         apid: int = FETCH_GLOBAL_APID,
         message_counter: int = 0,
@@ -428,7 +428,7 @@ class PusTelemetry(AbstractPusTm):
         """
         :return: TM source data (raw)
         """
-        return self._source_data
+        return bytearray(self._source_data)
 
     @tm_data.setter
     def tm_data(self, data: bytes):
