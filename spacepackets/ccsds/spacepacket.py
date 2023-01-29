@@ -414,7 +414,7 @@ def get_total_space_packet_len_from_len_field(len_field: int):
 
 
 def parse_space_packets(
-    analysis_queue: Deque[bytearray], packet_ids: Tuple[int]
+    analysis_queue: Deque[bytearray], packet_ids: Tuple[PacketId]
 ) -> List[bytearray]:
     """Given a deque of bytearrays, parse for space packets. Any broken headers will be removed.
     If a packet is detected and the broken tail packets will be reinserted into the given deque.
@@ -423,6 +423,7 @@ def parse_space_packets(
     :param packet_ids:
     :return:
     """
+    ids_raw = [packet_id.raw() for packet_id in packet_ids]
     tm_list = []
     concatenated_packets = bytearray()
     if not analysis_queue:
@@ -441,7 +442,7 @@ def parse_space_packets(
             struct.unpack("!H", concatenated_packets[current_idx : current_idx + 2])[0]
             & PACKET_ID_MASK
         )
-        if current_packet_id in packet_ids:
+        if current_packet_id in ids_raw:
             result, current_idx = __handle_packet_id_match(
                 concatenated_packets=concatenated_packets,
                 analysis_queue=analysis_queue,

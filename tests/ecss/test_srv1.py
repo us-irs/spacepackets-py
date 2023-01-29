@@ -41,6 +41,7 @@ class Service1TmTest(TestCase):
 
     def test_other_ctor(self):
         srv1_tm = Service1Tm.from_tm(self.srv1_tm.pus_tm, UnpackParams(None))
+        self.assertEqual(srv1_tm, self.srv1_tm)
 
     def test_service_1_tm_acc_success(self):
         self._generic_test_srv_1_success(Subservice.TM_ACCEPTANCE_SUCCESS)

@@ -6,7 +6,7 @@ from spacepackets import SpacePacketHeader
 from spacepackets.ccsds.time import CcsdsTimeProvider
 from spacepackets.ecss.conf import FETCH_GLOBAL_APID
 from spacepackets.ecss.defs import PusService
-from spacepackets.ecss.tm import PusVersion, PusTelemetry, AbstractPusTm
+from spacepackets.ecss.tm import PusTelemetry, AbstractPusTm
 
 
 class Subservice(enum.IntEnum):

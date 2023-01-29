@@ -11,7 +11,7 @@ class TestSpParser(TestCase):
         tm_packet = PusTelemetry(
             service=17, subservice=2, time_provider=CdsShortTimestamp.empty()
         )
-        packet_ids = (tm_packet.packet_id.raw(),)
+        packet_ids = (tm_packet.packet_id,)
         tm_packet_raw = tm_packet.pack()
         packet_deque = deque()
         packet_deque.appendleft(tm_packet_raw)

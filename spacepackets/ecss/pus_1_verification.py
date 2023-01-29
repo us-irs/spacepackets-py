@@ -13,7 +13,6 @@ from spacepackets.ecss.conf import FETCH_GLOBAL_APID
 from spacepackets.ecss.defs import PusService
 from spacepackets.ecss.fields import PacketFieldEnum
 from spacepackets.ecss.tm import PusTelemetry, AbstractPusTm
-from spacepackets.log import get_console_logger
 
 from .req_id import RequestId
 
@@ -279,6 +278,11 @@ class Service1Tm(AbstractPusTm):
     def step_id(self) -> Optional[StepId]:
         """Retrieve the step number. Returns NONE if this packet does not have a step ID"""
         return self._verif_params.step_id
+
+    def __eq__(self, other: Service1Tm):
+        return (self.pus_tm == other.pus_tm) and (
+            self._verif_params == other._verif_params
+        )
 
 
 def create_acceptance_success_tm(

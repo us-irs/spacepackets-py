@@ -14,6 +14,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Changed
 
+- (breaking): `parse_space_packets`: Expects a tuple of `PacketId`s instead of raw integers now
+  which are converted to integers internally.
 - (breaking): `AbstractPusTm` `get_sp_header` renamed to `sp_header` and is a property now.
 - (breaking): `ecss.PusTelemetry`: public member `sp_header` is now named `space_packet_header` to
   avoid name clash with new property.
