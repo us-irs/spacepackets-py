@@ -100,7 +100,9 @@ class IntByteConversion:
         if byte_num == 0:
             return bytes()
         if val > pow(2, byte_num * 8) - 1:
-            raise ValueError(f"Passed value larger than allowed {pow(2, byte_num * 8) - 1}")
+            raise ValueError(
+                f"Passed value larger than allowed {pow(2, byte_num * 8) - 1}"
+            )
         return struct.pack(IntByteConversion.unsigned_struct_specifier(byte_num), val)
 
 

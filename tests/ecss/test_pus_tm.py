@@ -75,7 +75,7 @@ class TestTelemetry(TestCase):
         self.assertEqual(self.ping_reply.service, 17)
         self.assertEqual(self.ping_reply.apid, 0x123)
         self.assertEqual(self.ping_reply.seq_count, 0x234)
-        self.assertEqual(self.ping_reply.sp_header.data_len, 15)
+        self.assertEqual(self.ping_reply.space_packet_header.data_len, 15)
         self.assertEqual(self.ping_reply.packet_len, 22)
 
     def test_no_timestamp(self):
@@ -123,7 +123,7 @@ class TestTelemetry(TestCase):
         self.assertEqual(crc16, struct.unpack("!H", self.ping_reply_raw[20:22])[0])
 
     def test_state_setting(self):
-        self.ping_reply.sp_header.apid = 0x22
+        self.ping_reply.space_packet_header.apid = 0x22
         source_data = bytearray([0x42, 0x38])
         self.ping_reply.tm_data = source_data
         self.assertEqual(self.ping_reply.apid, 0x22)
@@ -172,7 +172,7 @@ class TestTelemetry(TestCase):
     def test_full_printout(self):
         crc16 = self.ping_reply.crc16
         crc_string = f"{(crc16 & 0xff00) >> 8:02x},{crc16 & 0xff:02x}"
-        raw_space_packet_header = self.ping_reply.sp_header.pack()
+        raw_space_packet_header = self.ping_reply.space_packet_header.pack()
         sp_header_as_str = raw_space_packet_header.hex(sep=",", bytes_per_sep=1)
         raw_secondary_packet_header = self.ping_reply.pus_tm_sec_header.pack()
         second_header_as_str = raw_secondary_packet_header.hex(sep=",", bytes_per_sep=1)
@@ -189,7 +189,7 @@ class TestTelemetry(TestCase):
     def test_unpack(self):
         source_data = bytearray([0x42, 0x38])
         self.ping_reply.tm_data = source_data
-        self.ping_reply.sp_header.apid = 0x22
+        self.ping_reply.space_packet_header.apid = 0x22
         self.ping_reply_raw = self.ping_reply.pack()
         self.time_stamp_provider.read_from_raw = MagicMock()
         pus_17_tm_unpacked = PusTelemetry.unpack(
@@ -255,9 +255,10 @@ class TestTelemetry(TestCase):
         )
 
     def test_sp_header_getter(self):
-        sp_header = self.ping_reply.get_sp_header()
+        sp_header = self.ping_reply.sp_header
         self.assertEqual(sp_header.apid, 0x123)
         self.assertEqual(sp_header.packet_type, PacketType.TM)
+        self.assertEqual(sp_header, self.ping_reply.space_packet_header)
 
     def test_space_packet_conversion(self):
         ccsds_packet = self.ping_reply.to_space_packet()
@@ -266,7 +267,7 @@ class TestTelemetry(TestCase):
         self.assertEqual(ccsds_packet.seq_count, self.ping_reply.seq_count)
         self.assertEqual(ccsds_packet.sec_header_flag, True)
         pus_17_from_composite_fields = PusTelemetry.from_composite_fields(
-            sp_header=self.ping_reply.sp_header,
+            sp_header=self.ping_reply.space_packet_header,
             sec_header=self.ping_reply.pus_tm_sec_header,
             tm_data=self.ping_reply.tm_data,
         )

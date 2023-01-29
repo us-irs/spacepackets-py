@@ -174,8 +174,8 @@ class Service1Tm(AbstractPusTm):
         cls._unpack_raw_tm(service_1_tm, params)
         return service_1_tm
 
-    def get_sp_header(self) -> SpacePacketHeader:
-        return self.pus_tm.sp_header
+    def sp_header(self) -> SpacePacketHeader:
+        return self.pus_tm.space_packet_header
 
     @property
     def service(self):

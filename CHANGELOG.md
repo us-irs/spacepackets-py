@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 # [unreleased]
 
+## Changed
+
+- (breaking): `AbstractPusTm` `get_sp_header` renamed to `sp_header` and is a property now.
+- (breaking): `ecss.PusTelemetry`: public member `sp_header` is now named `space_packet_header` to
+  avoid name clash with new property.
+
 ## Added
 
 - New `ecss.PacketFieldU8`, `ecss.PacketFieldU16` and `ecss.PacketFieldU32` helper types.

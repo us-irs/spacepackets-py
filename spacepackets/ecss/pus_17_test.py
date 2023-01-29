@@ -37,8 +37,8 @@ class Service17Tm(AbstractPusTm):
             destination_id=destination_id,
         )
 
-    def get_sp_header(self) -> SpacePacketHeader:
-        return self.pus_tm.get_sp_header()
+    def sp_header(self) -> SpacePacketHeader:
+        return self.pus_tm.space_packet_header()
 
     @property
     def service(self) -> int:

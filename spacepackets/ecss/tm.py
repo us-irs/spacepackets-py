@@ -7,8 +7,10 @@ from abc import abstractmethod
 import struct
 from typing import Optional
 
+import deprecation
 from crcmod.predefined import mkPredefinedCrcFun, PredefinedCrc
 
+from spacepackets import __version__
 from spacepackets.log import get_console_logger
 from spacepackets.util import PrintFormats, get_printable_data_string
 from spacepackets.ccsds.spacepacket import (
@@ -30,9 +32,18 @@ from spacepackets.ecss.conf import (
 class AbstractPusTm(AbstractSpacePacket):
     """Generic abstraction for PUS TM packets"""
 
+    @property
     @abstractmethod
-    def get_sp_header(self) -> SpacePacketHeader:
+    def sp_header(self) -> SpacePacketHeader:
         pass
+
+    @deprecation.deprecated(
+        deprecated_in="v0.14.0rc2",
+        details="use sp_header property instead",
+        current_version=__version__,
+    )
+    def get_sp_header(self) -> SpacePacketHeader:
+        return self.sp_header
 
     @property
     @abstractmethod
@@ -46,11 +57,11 @@ class AbstractPusTm(AbstractSpacePacket):
 
     @property
     def apid(self) -> int:
-        return self.get_sp_header().apid
+        return self.sp_header.apid
 
     @property
     def seq_count(self) -> int:
-        return self.get_sp_header().seq_count
+        return self.sp_header.seq_count
 
     @property
     @abstractmethod
@@ -238,7 +249,7 @@ class PusTelemetry(AbstractPusTm):
             timestamp_len=len_stamp,
             source_data_len=len(self._source_data),
         )
-        self.sp_header = SpacePacketHeader(
+        self.space_packet_header = SpacePacketHeader(
             apid=apid,
             packet_type=PacketType.TM,
             sec_header_flag=True,
@@ -270,7 +281,7 @@ class PusTelemetry(AbstractPusTm):
             was called before.
         """
         tm_packet_raw = bytearray()
-        tm_packet_raw.extend(self.sp_header.pack())
+        tm_packet_raw.extend(self.space_packet_header.pack())
         tm_packet_raw.extend(self.pus_tm_sec_header.pack())
         tm_packet_raw.extend(self._source_data)
         if calc_crc:
@@ -283,7 +294,7 @@ class PusTelemetry(AbstractPusTm):
     def calc_crc(self):
         """Can be called to calculate the CRC16"""
         crc = PredefinedCrc(crc_name="crc-ccitt-false")
-        crc.update(self.sp_header.pack())
+        crc.update(self.space_packet_header.pack())
         crc.update(self.pus_tm_sec_header.pack())
         crc.update(self._source_data)
         self._crc16 = crc.crcValue
@@ -305,9 +316,11 @@ class PusTelemetry(AbstractPusTm):
             raise ValueError("Given byte stream is empty")
         pus_tm = cls.__empty()
         pus_tm._valid = False
-        pus_tm.sp_header = SpacePacketHeader.unpack(space_packet_raw=raw_telemetry)
+        pus_tm.space_packet_header = SpacePacketHeader.unpack(
+            space_packet_raw=raw_telemetry
+        )
         expected_packet_len = get_total_space_packet_len_from_len_field(
-            pus_tm.sp_header.data_len
+            pus_tm.space_packet_header.data_len
         )
         if expected_packet_len > len(raw_telemetry):
             raise ValueError(
@@ -327,7 +340,7 @@ class PusTelemetry(AbstractPusTm):
             logger = get_console_logger()
             logger.warning(
                 f"PusTelemetry: Packet length field "
-                f"{pus_tm.sp_header.data_len} might be invalid!"
+                f"{pus_tm.space_packet_header.data_len} might be invalid!"
             )
             logger.warning(f"Packet size from size field: {pus_tm.packet_len}")
             logger.warning(f"Length of raw telemetry: {len(raw_telemetry)}")
@@ -364,7 +377,7 @@ class PusTelemetry(AbstractPusTm):
             raise ValueError(
                 f"Invalid Packet Type {sp_header.packet_type} in CCSDS primary header"
             )
-        pus_tm.sp_header = sp_header
+        pus_tm.space_packet_header = sp_header
         pus_tm.pus_tm_sec_header = sec_header
         pus_tm._source_data = tm_data
         return pus_tm
@@ -375,7 +388,9 @@ class PusTelemetry(AbstractPusTm):
         self.calc_crc()
         user_data = bytearray(self._source_data)
         user_data.extend(struct.pack("!H", self.crc16))
-        return SpacePacket(self.sp_header, self.pus_tm_sec_header.pack(), user_data)
+        return SpacePacket(
+            self.space_packet_header, self.pus_tm_sec_header.pack(), user_data
+        )
 
     def __str__(self):
         return (
@@ -387,19 +402,20 @@ class PusTelemetry(AbstractPusTm):
     def __repr__(self):
         return (
             f"{self.__class__.__name__}.from_composite_fields({self.__class__.__name__}"
-            f"(sp_header={self.sp_header!r}, sec_header={self.pus_tm_sec_header!r}, "
+            f"(sp_header={self.space_packet_header!r}, sec_header={self.pus_tm_sec_header!r}, "
             f"tm_data={self.tm_data!r}"
         )
 
     def __eq__(self, other: PusTelemetry):
         return (
-            self.sp_header == other.sp_header
+            self.space_packet_header == other.space_packet_header
             and self.pus_tm_sec_header == other.pus_tm_sec_header
             and self._source_data == other._source_data
         )
 
-    def get_sp_header(self) -> SpacePacketHeader:
-        return self.sp_header
+    @property
+    def sp_header(self) -> SpacePacketHeader:
+        return self.space_packet_header
 
     @property
     def service(self) -> int:
@@ -436,29 +452,29 @@ class PusTelemetry(AbstractPusTm):
         stamp_len = 0
         if self.pus_tm_sec_header.time_provider:
             stamp_len += self.pus_tm_sec_header.time_provider.len_packed
-        self.sp_header.data_len = self.data_len_from_src_len_timestamp_len(
+        self.space_packet_header.data_len = self.data_len_from_src_len_timestamp_len(
             stamp_len, len(data)
         )
 
     @property
     def apid(self):
-        return self.sp_header.apid
+        return self.space_packet_header.apid
 
     @apid.setter
     def apid(self, apid: int):
-        self.sp_header.apid = apid
+        self.space_packet_header.apid = apid
 
     @property
     def seq_flags(self):
-        return self.sp_header.seq_flags
+        return self.space_packet_header.seq_flags
 
     @seq_flags.setter
     def seq_flags(self, seq_flags):
-        self.sp_header.seq_flags = seq_flags
+        self.space_packet_header.seq_flags = seq_flags
 
     @property
     def packet_id(self):
-        return self.sp_header.packet_id
+        return self.space_packet_header.packet_id
 
     def __perform_crc_check(self, raw_telemetry: bytes) -> bool:
         # CRC16-CCITT checksum
@@ -496,14 +512,14 @@ class PusTelemetry(AbstractPusTm):
         The space packet data field is the full length of data field minus one without
         the space packet header.
         """
-        return self.sp_header.packet_len
+        return self.space_packet_header.packet_len
 
     @property
     def seq_count(self) -> int:
         """Get the source sequence count
         :return: Source Sequence Count (see below, or PUS documentation)
         """
-        return self.sp_header.seq_count
+        return self.space_packet_header.seq_count
 
     @property
     def crc16(self) -> int:
