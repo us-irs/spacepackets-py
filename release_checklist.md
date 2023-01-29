@@ -4,7 +4,8 @@ Checklist for new releases
 # Pre-Release
 
 1. Make sure the docs build with Sphinx, using `make html` inside the
-   `docs` directory with `sphinx` and `sphinx_rtd_theme` installed.
+   `docs` directory with `sphinx` and `sphinx_rtd_theme` installed. Also test the examples with
+   `make doctest`.
 2. Bump version inside the `spacepackets/__init__.py` file.
 3. Update `CHANGELOG.md`: Convert `unreleased` section into version section
    with date and new `unreleased`section.
