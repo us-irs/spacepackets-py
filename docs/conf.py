@@ -35,7 +35,7 @@ extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.intersphinx",
     "sphinx.ext.doctest",
-    "sphinx_rtd_theme"
+    "sphinx_rtd_theme",
 ]
 
 # Disable the doctests of the full package because those would require the explicit specification

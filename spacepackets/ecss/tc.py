@@ -118,7 +118,6 @@ class PusTelecommand:
         subservice: int,
         app_data: bytes = bytes([]),
         seq_count: int = 0,
-        seq_flags: SequenceFlags = SequenceFlags.UNSEGMENTED,
         source_id: int = 0,
         ack_flags: int = 0b1111,
         apid: int = FETCH_GLOBAL_APID,
@@ -152,7 +151,7 @@ class PusTelecommand:
             apid=apid,
             sec_header_flag=True,
             packet_type=PacketType.TC,
-            seq_flags=seq_flags,
+            seq_flags=SequenceFlags.UNSEGMENTED,
             data_len=data_length,
             seq_count=seq_count,
         )
