@@ -103,6 +103,8 @@ packet.
     print("USLP variable length frame without FECF containing a simple space packet")
     print(f"Contained space packet (hex): [{var_frame_packed.hex(sep=',')}]")
 
+Output:
+
 .. testoutput:: uslp
 
     USLP variable length frame without FECF containing a simple space packet
