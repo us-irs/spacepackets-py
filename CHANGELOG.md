@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - `ecss.pus_17_test.Service17Tm`: Remove (optional) PUS version argument for `unpack`
 - `ccsds.time.CdsShortTimestamp`: Fix for `__add__` dunder, use integer division
   when adding microseconds to MS of day.
+- `ccsds.time.CdsShortTimestamp`: Fixed bug in `read_from_raw` method
+  where the retrieved CCSDS days were assigned to the UNIX seconds.
 
 ## Changed
 

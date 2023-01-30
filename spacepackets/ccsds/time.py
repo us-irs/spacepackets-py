@@ -214,7 +214,7 @@ class CdsShortTimestamp(CcsdsTimeProvider):
         return cls(ccsds_days=ccsds_days, ms_of_day=ms_of_day)
 
     def read_from_raw(self, raw_stamp: bytes):
-        (self._unix_seconds, self._ms_of_day) = CdsShortTimestamp.unpack_from_raw(
+        (self._ccsds_days, self._ms_of_day) = CdsShortTimestamp.unpack_from_raw(
             raw_stamp
         )
         self._setup()
