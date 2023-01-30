@@ -12,7 +12,7 @@ from spacepackets.ccsds.spacepacket import (
     SequenceFlags,
     SpacePacketHeader,
 )
-from spacepackets.ecss import PacketFieldEnum
+from spacepackets.ecss import PacketFieldEnum, check_pus_crc
 from spacepackets.ecss.conf import set_default_tm_apid
 from spacepackets.util import PrintFormats
 from spacepackets.ecss.tm import (
@@ -65,6 +65,9 @@ class TestTelemetry(TestCase):
         self.assertEqual(self.ping_reply.seq_count, 0x234)
         self.assertEqual(self.ping_reply.space_packet_header.data_len, 15)
         self.assertEqual(self.ping_reply.packet_len, 22)
+
+    def test_valid_crc(self):
+        self.assertTrue(check_pus_crc(self.ping_reply_raw))
 
     def test_no_timestamp(self):
         self.ping_reply = PusTelemetry(

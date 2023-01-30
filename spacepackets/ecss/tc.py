@@ -383,19 +383,19 @@ class PusTelecommand:
         print(get_printable_data_string(print_format=print_format, data=packet))
 
 
-def generate_packet_crc(tc_packet: bytearray) -> bytearray:
+def generate_packet_crc(tc_packet: bytearray) -> bytes:
     """Removes current Packet Error Control, calculates new
     CRC16 checksum and adds it as correct Packet Error Control Code.
     Reference: ECSS-E70-41A p. 207-212
     """
     crc_func = mkPredefinedCrcFun(crc_name="crc-ccitt-false")
-    crc = crc_func(bytearray(tc_packet[0 : len(tc_packet) - 2]))
+    crc = crc_func(tc_packet[0 : len(tc_packet) - 2])
     tc_packet[len(tc_packet) - 2] = (crc & 0xFF00) >> 8
     tc_packet[len(tc_packet) - 1] = crc & 0xFF
     return tc_packet
 
 
-def generate_crc(data: bytearray) -> bytearray:
+def generate_crc(data: bytearray) -> bytes:
     """Takes the application data, appends the CRC16 checksum and returns resulting bytearray"""
     data_with_crc = bytearray()
     data_with_crc += data

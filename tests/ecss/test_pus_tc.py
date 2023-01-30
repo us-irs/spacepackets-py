@@ -3,7 +3,7 @@ from unittest import TestCase
 import crcmod
 
 from spacepackets import SpacePacketHeader, PacketType
-from spacepackets.ecss import PusTelecommand, PusTcDataFieldHeader
+from spacepackets.ecss import PusTelecommand, PusTcDataFieldHeader, check_pus_crc
 from spacepackets.ecss.conf import get_default_tc_apid, set_default_tc_apid, PusVersion
 from spacepackets.ecss.tc import generate_crc, generate_packet_crc
 from spacepackets.util import PrintFormats
@@ -29,6 +29,9 @@ class TestTelecommand(TestCase):
         self.assertEqual(self.ping_tc.packet_id.raw(), (0x18 << 8 | 0x02))
         self.assertEqual(self.ping_tc.app_data, bytearray())
         self.assertEqual(self.ping_tc.apid, 0x02)
+
+    def test_valid_crc(self):
+        self.assertTrue(check_pus_crc(self.ping_tc_raw))
 
     def test_packed(self):
         self.assertEqual(self.ping_tc_raw[0], 0x18)
