@@ -3,10 +3,12 @@ import struct
 from unittest import TestCase
 from spacepackets.ccsds.time import (
     CdsShortTimestamp,
-    convert_unix_days_to_ccsds_days,
-    convert_ccsds_days_to_unix_days,
     SECONDS_PER_DAY,
     MS_PER_DAY,
+)
+from spacepackets.ccsds.time.common import (
+    convert_ccsds_days_to_unix_days,
+    convert_unix_days_to_ccsds_days,
 )
 
 

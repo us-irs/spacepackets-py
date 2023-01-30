@@ -11,6 +11,7 @@ import deprecation
 from crcmod.predefined import mkPredefinedCrcFun, PredefinedCrc
 
 from spacepackets import __version__
+from spacepackets.ccsds.time.common import read_p_field
 from spacepackets.log import get_console_logger
 from spacepackets.util import PrintFormats, get_printable_data_string
 from spacepackets.ccsds.spacepacket import (
@@ -22,7 +23,7 @@ from spacepackets.ccsds.spacepacket import (
     AbstractSpacePacket,
     SequenceFlags,
 )
-from spacepackets.ccsds.time import CdsShortTimestamp, read_p_field, CcsdsTimeProvider
+from spacepackets.ccsds.time import CdsShortTimestamp, CcsdsTimeProvider
 from spacepackets.ecss.conf import (
     PusVersion,
     get_default_tm_apid,
