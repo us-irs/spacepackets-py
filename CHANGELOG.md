@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 # [unreleased]
 
+# [v0.14.0rc2] 2022-01-30
+
 ## Fixed
 
 - `ecss.pus_17_test.Service17Tm`: Remove (optional) PUS version argument for `unpack`
