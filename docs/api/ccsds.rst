@@ -16,11 +16,3 @@ spacepackets.ccsds.spacepacket module
    :members:
    :undoc-members:
    :show-inheritance:
-
-spacepackets.ccsds.time module
---------------------------------
-
-.. automodule:: spacepackets.ccsds.time
-   :members:
-   :undoc-members:
-   :show-inheritance:
