@@ -1,4 +1,5 @@
 import datetime
+import struct
 from unittest import TestCase
 from spacepackets.ccsds.time import (
     CdsShortTimestamp,
@@ -58,6 +59,9 @@ class TestTime(TestCase):
         empty_stamp += datetime.timedelta(days=2, minutes=12, milliseconds=15)
         self.assertEqual(empty_stamp.ms_of_day, 12 * 60 * 1000 + 15)
         self.assertEqual(empty_stamp.ccsds_days, 2)
+        stamp_packed = empty_stamp.pack()
+        self.assertEqual(struct.unpack("!H", stamp_packed[1:3])[0], 2)
+        self.assertEqual(struct.unpack("!I", stamp_packed[3:7])[0], 12 * 60 * 1000 + 15)
 
     def test_invalid_addition(self):
         with self.assertRaises(TypeError):

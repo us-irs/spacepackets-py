@@ -255,7 +255,7 @@ class CdsShortTimestamp(CcsdsTimeProvider):
         """
         if not isinstance(timedelta, datetime.timedelta):
             raise TypeError("can only handle timedelta for additions")
-        self._ms_of_day += timedelta.microseconds / 1000 + timedelta.seconds * 1000
+        self._ms_of_day += timedelta.microseconds // 1000 + timedelta.seconds * 1000
         if self._ms_of_day > MS_PER_DAY:
             self._ms_of_day -= MS_PER_DAY
             self._ccsds_days += 1
