@@ -29,6 +29,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - New `ecss.PacketFieldU8`, `ecss.PacketFieldU16` and `ecss.PacketFieldU32` helper types.
 - (breaking): `AbstractPusTm`: Add new `time_provider` abstract property which should return
   `Optional[CcsdsTimeProvider]`
+- New `ecss.check_pus_crc` function to check whether a PUS packet in raw format.
 
 # [v0.14.0rc1] 2022-01-22
 
