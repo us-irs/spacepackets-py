@@ -181,11 +181,11 @@ class PusTmSecondaryHeader:
         time_code_id = read_p_field(header_start[current_idx])
         if time_code_id:
             pass
-        secondary_header.time_provider = time_reader
         if time_reader:
             time_reader.read_from_raw(
                 header_start[current_idx : current_idx + time_reader.len_packed]
             )
+        secondary_header.time_provider = time_reader
         return secondary_header
 
     def __repr__(self):
