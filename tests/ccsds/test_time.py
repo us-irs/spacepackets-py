@@ -86,3 +86,10 @@ class TestTime(TestCase):
         new_stamp = CdsShortTimestamp(ccsds_days, ms_of_day)
         self.assertEqual(new_stamp, stamp)
         self.assertEqual(new_stamp.as_unix_seconds(), new_stamp.as_unix_seconds())
+
+    def test_read_from_raw(self):
+        stamp = CdsShortTimestamp(30000, 1000)
+        stamp_raw = stamp.pack()
+        empty_stamp = CdsShortTimestamp.empty()
+        empty_stamp.read_from_raw(stamp_raw)
+        self.assertEqual(empty_stamp, stamp)
