@@ -8,6 +8,41 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 # [unreleased]
 
+Refactored `logging` module usage to be more pythonic.
+
+## Added
+
+- New `spacepackets.exceptions` module with new generic exception `BytesTooShortError` for errors
+  where the object creation from a raw byte stream fails.
+- `spacepackets.get_lib_logger` to get access to the library root logger
+- `spacepackets.ecss.tc.PusTelecommand`: `empty` constructor
+- `spacepackets.ecss.tm.PusTelemetry`: `empty` constructor
+
+## Changed
+
+- (breaking): All `unpack` APIs now consistently expect use the `data` keyword argument
+- (possibly breaking): The `spacepackets.ecss.tc.PusTelecommand` now throws the
+  `InvalidTcCrc16` exception if an invalid CRC16 is detected.
+- (possibly breaking): The `spacepackets.ecss.tm.PusTelemetry` now throws the
+  `InvalidTmCrc16` exception if an invalid CRC16 is detected.
+- (possibly breaking): `spacepackets.ecss.tc.PusTelecommand` and
+  `spacepackets.ecss.tm.PusTelemetry`: The `calc_crc` keyword argument for `pack` has been renamed
+  to `recalc_crc`.
+- (breaking): The `crc16` proprerty will now return a `Optional[bytes]` object instead of an
+  integer.
+
+## Removed
+
+- `spacepackets.cfdp.conf.check_packet_length`
+- `spacepackets.log` module.
+- `spacepackets.ecss.tc.PusTelecommand` and `spacepackets.ecss.tm.PusTelemetry`: `valid` property
+  removed. Instead, detection of an invalid CRC will now trigger a `InvalidTmCrc16` or
+  `InvalidTcCrc16` exception.
+
+## Deprecated
+
+- Printer utilities for PUS TMTC classes.
+
 # [v0.14.0rc2] 2022-01-30
 
 ## Fixed
