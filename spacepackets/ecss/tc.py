@@ -272,7 +272,7 @@ class PusTelecommand:
     @classmethod
     def unpack(cls, data: bytes) -> PusTelecommand:
         tc_unpacked = cls.empty()
-        tc_unpacked.sp_header = SpacePacketHeader.unpack(space_packet_raw=data)
+        tc_unpacked.sp_header = SpacePacketHeader.unpack(data=data)
         tc_unpacked.pus_tc_sec_header = PusTcDataFieldHeader.unpack(
             raw_packet=data[SPACE_PACKET_HEADER_SIZE:]
         )
@@ -285,8 +285,8 @@ class PusTelecommand:
                 f"Invalid length of raw telecommand packet, expected minimum length "
                 f"{expected_packet_len}"
             )
-        tc_unpacked._app_data = data[header_len: expected_packet_len - 2]
-        tc_unpacked._crc16 = data[expected_packet_len - 2: expected_packet_len]
+        tc_unpacked._app_data = data[header_len : expected_packet_len - 2]
+        tc_unpacked._crc16 = data[expected_packet_len - 2 : expected_packet_len]
         crc_func = mkPredefinedCrcFun(crc_name="crc-ccitt-false")
         if crc_func(data[:expected_packet_len]) != 0:
             raise InvalidTcCrc16(tc_unpacked)
@@ -314,7 +314,7 @@ class PusTelecommand:
     @deprecation.deprecated(
         deprecated_in="v0.14.0rc2",
         current_version=__version__,
-        details="use pack and the class itself to build this instead"
+        details="use pack and the class itself to build this instead",
     )
     def pack_command_tuple(self) -> Tuple[bytearray, PusTelecommand]:
         """Pack a tuple consisting of the raw packet as the first entry and the class representation

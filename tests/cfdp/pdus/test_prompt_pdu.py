@@ -18,7 +18,7 @@ class TestPromptPdu(TestCase):
             bytes([0x20, 0x00, 0x02, 0x11, 0x00, 0x00, 0x00, 0x09, 0x80]),
         )
         self.assertEqual(prompt_pdu.packet_len, 9)
-        prompt_pdu_unpacked = PromptPdu.unpack(raw_packet=prompt_pdu_raw)
+        prompt_pdu_unpacked = PromptPdu.unpack(data=prompt_pdu_raw)
         self.assertEqual(prompt_pdu.pdu_file_directive.pdu_data_field_len, 2)
         self.assertEqual(prompt_pdu.pdu_file_directive.header_len, 8)
         self.assertEqual(
@@ -27,4 +27,4 @@ class TestPromptPdu(TestCase):
         self.assertEqual(prompt_pdu.pdu_file_directive.large_file_flag_set, False)
         prompt_pdu_raw = prompt_pdu_raw[:-1]
         with self.assertRaises(ValueError):
-            PromptPdu.unpack(raw_packet=prompt_pdu_raw)
+            PromptPdu.unpack(data=prompt_pdu_raw)

@@ -80,7 +80,7 @@ class TestSpacePacket(TestCase):
 
     def test_unpack(self):
         sp_packed = self.sp_header.pack()
-        sp_unpacked = SpacePacketHeader.unpack(space_packet_raw=sp_packed)
+        sp_unpacked = SpacePacketHeader.unpack(data=sp_packed)
         self.assertEqual(sp_unpacked.packet_type, PacketType.TC)
         self.assertEqual(sp_unpacked.apid, 0x02)
         self.assertEqual(sp_unpacked.ccsds_version, 0b000)

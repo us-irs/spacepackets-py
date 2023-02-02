@@ -81,9 +81,7 @@ class TestFileDataPdu(TestCase):
         self.assertEqual(fd_pdu_large_offset.packet_len, expected_packet_len)
         fd_pdu_large_offset_raw = fd_pdu_with_metadata.pack()
         self.assertEqual(len(fd_pdu_large_offset_raw), expected_packet_len)
-        fd_pdu_large_offset_unpacked = FileDataPdu.unpack(
-            data=fd_pdu_large_offset_raw
-        )
+        fd_pdu_large_offset_unpacked = FileDataPdu.unpack(data=fd_pdu_large_offset_raw)
         self.assertEqual(
             fd_pdu_large_offset_unpacked.segment_metadata, bytes([0xAA, 0xBB])
         )

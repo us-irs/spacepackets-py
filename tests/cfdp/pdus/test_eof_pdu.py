@@ -34,9 +34,7 @@ class TestEofPdu(TestCase):
         eof_pdu_with_fault_loc = eof_pdu
         eof_pdu_with_fault_loc_raw = eof_pdu_with_fault_loc.pack()
         self.assertEqual(len(eof_pdu_with_fault_loc_raw), expected_packet_len + 4)
-        eof_pdu_with_fault_loc_unpacked = EofPdu.unpack(
-            data=eof_pdu_with_fault_loc_raw
-        )
+        eof_pdu_with_fault_loc_unpacked = EofPdu.unpack(data=eof_pdu_with_fault_loc_raw)
         self.assertEqual(
             eof_pdu_with_fault_loc_unpacked.fault_location.pack(), fault_loc_tlv.pack()
         )

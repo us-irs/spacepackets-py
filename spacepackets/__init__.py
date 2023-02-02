@@ -7,3 +7,5 @@ from spacepackets.ccsds import (
     PacketType,
     SequenceFlags,
 )
+
+from spacepackets.exceptions import BytesTooShortError

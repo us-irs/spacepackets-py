@@ -130,8 +130,8 @@ class CdsShortTimestamp(CcsdsTimeProvider):
         return cls(ccsds_days=0, ms_of_day=0, init_dt_unix_stamp=init_dt_unix_stamp)
 
     @classmethod
-    def unpack(cls, raw_stamp: bytes) -> CdsShortTimestamp:
-        ccsds_days, ms_of_day = CdsShortTimestamp.unpack_from_raw(raw_stamp)
+    def unpack(cls, data: bytes) -> CdsShortTimestamp:
+        ccsds_days, ms_of_day = CdsShortTimestamp.unpack_from_raw(data)
         return cls(ccsds_days=ccsds_days, ms_of_day=ms_of_day)
 
     def read_from_raw(self, raw_stamp: bytes):

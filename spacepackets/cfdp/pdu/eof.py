@@ -11,7 +11,7 @@ from spacepackets.cfdp.pdu.file_directive import (
 from spacepackets.cfdp.defs import ConditionCode
 from spacepackets.cfdp.conf import PduConfig
 from spacepackets.cfdp.tlv import EntityIdTlv
-from spacepackets.ecss.defs import BytesTooShortError
+from spacepackets.exceptions import BytesTooShortError
 
 
 class EofPdu(AbstractFileDirectiveBase):
@@ -112,15 +112,13 @@ class EofPdu(AbstractFileDirectiveBase):
         current_idx = eof_pdu.pdu_file_directive.header_len
         eof_pdu.condition_code = data[current_idx] & 0xF0
         current_idx += 1
-        eof_pdu.file_checksum = data[current_idx: current_idx + 4]
+        eof_pdu.file_checksum = data[current_idx : current_idx + 4]
         current_idx += 4
         current_idx, eof_pdu.file_size = eof_pdu.pdu_file_directive.parse_fss_field(
             raw_packet=data, current_idx=current_idx
         )
         if len(data) > current_idx:
-            eof_pdu.fault_location = EntityIdTlv.unpack(
-                raw_bytes=data[current_idx:]
-            )
+            eof_pdu.fault_location = EntityIdTlv.unpack(data=data[current_idx:])
         return eof_pdu
 
     def __eq__(self, other: EofPdu):

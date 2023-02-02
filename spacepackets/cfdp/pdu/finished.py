@@ -12,7 +12,7 @@ from spacepackets.cfdp.pdu.file_directive import (
 from spacepackets.cfdp.defs import ConditionCode
 from spacepackets.cfdp.conf import PduConfig
 from spacepackets.cfdp.tlv import TlvTypes, FileStoreResponseTlv, EntityIdTlv
-from spacepackets.ecss.defs import BytesTooShortError
+from spacepackets.exceptions import BytesTooShortError
 
 
 class DeliveryCode(enum.IntEnum):
@@ -221,7 +221,7 @@ class FinishedPdu(AbstractFileDirectiveBase):
             next_tlv_code = rest_of_packet[current_idx]
             if next_tlv_code == TlvTypes.FILESTORE_RESPONSE:
                 next_fs_response = FileStoreResponseTlv.unpack(
-                    raw_bytes=rest_of_packet[current_idx:]
+                    data=rest_of_packet[current_idx:]
                 )
                 current_idx += next_fs_response.packet_len
                 fs_responses_list.append(next_fs_response)
@@ -230,7 +230,7 @@ class FinishedPdu(AbstractFileDirectiveBase):
                     raise ValueError(
                         "Entity ID found in Finished PDU but wrong condition code"
                     )
-                fault_loc = EntityIdTlv.unpack(raw_bytes=rest_of_packet[current_idx:])
+                fault_loc = EntityIdTlv.unpack(data=rest_of_packet[current_idx:])
                 current_idx += fault_loc.packet_len
             else:
                 raise ValueError("Invalid TLV ID in Finished PDU detected")

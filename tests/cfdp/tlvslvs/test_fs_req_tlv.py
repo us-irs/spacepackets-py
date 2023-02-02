@@ -48,9 +48,7 @@ class TestFsReqTlv(TestCase):
         self.fs_reqeust_tlv.generate_tlv()
         fs_reqeust_tlv_tlv = self.fs_reqeust_tlv.tlv
         fs_reqeust_tlv_raw = self.fs_reqeust_tlv.pack()
-        fs_reqeust_tlv_unpacked = FileStoreRequestTlv.unpack(
-            raw_bytes=fs_reqeust_tlv_raw
-        )
+        fs_reqeust_tlv_unpacked = FileStoreRequestTlv.unpack(data=fs_reqeust_tlv_raw)
         self.assertEqual(fs_reqeust_tlv_unpacked.first_file_name, "test.txt")
         self.assertEqual(
             fs_reqeust_tlv_unpacked.action_code, FilestoreActionCode.APPEND_FILE_SNP

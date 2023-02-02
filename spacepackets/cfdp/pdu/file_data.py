@@ -8,7 +8,7 @@ from spacepackets.cfdp import LargeFileFlag
 from spacepackets.cfdp.pdu.file_directive import SegmentMetadataFlag, PduType
 from spacepackets.cfdp.conf import PduConfig
 from spacepackets.cfdp.pdu.header import PduHeader, AbstractPduBase
-from spacepackets.ecss.defs import BytesTooShortError
+from spacepackets.exceptions import BytesTooShortError
 from spacepackets.util import UnsignedByteField
 
 
@@ -175,12 +175,10 @@ class FileDataPdu(AbstractPduBase):
             segment_metadata_len = data[current_idx] & 0x3F
             current_idx += 1
             if current_idx + segment_metadata_len >= len(data):
-                raise BytesTooShortError(
-                    current_idx + segment_metadata_len, len(data)
-                )
+                raise BytesTooShortError(current_idx + segment_metadata_len, len(data))
             file_data_packet._params.segment_metadata = data[
                 current_idx : current_idx + segment_metadata_len
-                                                        ]
+            ]
             current_idx += segment_metadata_len
         if not file_data_packet.pdu_header.large_file_flag_set:
             struct_arg_tuple = ("!I", 4)
@@ -190,7 +188,7 @@ class FileDataPdu(AbstractPduBase):
             raise ValueError("Packet too small to accommodate offset")
         file_data_packet._params.offset = struct.unpack(
             struct_arg_tuple[0],
-            data[current_idx: current_idx + struct_arg_tuple[1]],
+            data[current_idx : current_idx + struct_arg_tuple[1]],
         )[0]
         current_idx += struct_arg_tuple[1]
         if current_idx < len(data):

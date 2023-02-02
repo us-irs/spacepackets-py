@@ -32,7 +32,7 @@ class TestMetadata(TestCase):
         # 5 bytes from FSS with normal size and first eight bits
         self.assertEqual(metadata_pdu.packet_len, header_len + 5 + 10 + 9)
         metadata_pdu_raw = metadata_pdu.pack()
-        metadata_pdu_unpacked = MetadataPdu.unpack(raw_packet=metadata_pdu_raw)
+        metadata_pdu_unpacked = MetadataPdu.unpack(data=metadata_pdu_raw)
         self.check_metadata_fields_0(metadata_pdu=metadata_pdu_unpacked)
         metadata_pdu_raw = metadata_pdu_raw[: 8 + 6]
         self.assertRaises(ValueError, MetadataPdu.unpack, raw_packet=metadata_pdu_raw)
@@ -67,7 +67,7 @@ class TestMetadata(TestCase):
         self.assertEqual(pdu_with_option.packet_len, expected_len)
         pdu_with_option_raw = pdu_with_option.pack()
         self.assertEqual(len(pdu_with_option_raw), expected_len)
-        pdu_with_option_unpacked = MetadataPdu.unpack(raw_packet=pdu_with_option_raw)
+        pdu_with_option_unpacked = MetadataPdu.unpack(data=pdu_with_option_raw)
         tlv_wrapper = TlvHolder(pdu_with_option_unpacked.options[0])
         tlv_typed = tlv_wrapper.to_fs_request()
         self.assertIsNotNone(tlv_typed)
@@ -128,7 +128,7 @@ class TestMetadata(TestCase):
         pdu_file_size_large_raw = pdu_file_size_large.pack()
         pdu_file_size_large_raw = pdu_file_size_large_raw[:-2]
         with self.assertRaises(ValueError):
-            MetadataPdu.unpack(raw_packet=pdu_file_size_large_raw)
+            MetadataPdu.unpack(data=pdu_file_size_large_raw)
 
     def check_metadata_fields_0(self, metadata_pdu: MetadataPdu):
         self.assertEqual(metadata_pdu.params.closure_requested, False)

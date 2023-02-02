@@ -12,7 +12,7 @@ from crcmod.predefined import mkPredefinedCrcFun, PredefinedCrc
 
 from spacepackets import __version__
 from spacepackets.ccsds.time.common import read_p_field
-from spacepackets.ecss.defs import BytesTooShortError
+from spacepackets.exceptions import BytesTooShortError
 from spacepackets.util import PrintFormats, get_printable_data_string
 from spacepackets.ccsds.spacepacket import (
     SpacePacketHeader,
@@ -326,17 +326,12 @@ class PusTelemetry(AbstractPusTm):
         elif len(data) == 0:
             raise ValueError("Given byte stream is empty")
         pus_tm = cls.empty()
-        pus_tm.space_packet_header = SpacePacketHeader.unpack(
-            space_packet_raw=data
-        )
+        pus_tm.space_packet_header = SpacePacketHeader.unpack(data=data)
         expected_packet_len = get_total_space_packet_len_from_len_field(
             pus_tm.space_packet_header.data_len
         )
         if expected_packet_len > len(data):
-            raise BytesTooShortError(
-                expected_packet_len,
-                len(data)
-            )
+            raise BytesTooShortError(expected_packet_len, len(data))
         pus_tm.pus_tm_sec_header = PusTmSecondaryHeader.unpack(
             header_start=data[SPACE_PACKET_HEADER_SIZE:],
             time_reader=time_reader,
@@ -350,14 +345,14 @@ class PusTelemetry(AbstractPusTm):
             pus_tm.pus_tm_sec_header.header_size
             + SPACE_PACKET_HEADER_SIZE : expected_packet_len
             - 2
-                              ]
-        pus_tm._crc16 = data[expected_packet_len - 2: expected_packet_len]
+        ]
+        pus_tm._crc16 = data[expected_packet_len - 2 : expected_packet_len]
         # CRC16-CCITT checksum
         crc_func = mkPredefinedCrcFun(crc_name="crc-ccitt-false")
         print(expected_packet_len)
         print(len(data))
-        print(data.hex(sep=','))
-        print(data[:expected_packet_len].hex(sep=','))
+        print(data.hex(sep=","))
+        print(data[:expected_packet_len].hex(sep=","))
         if crc_func(data[:expected_packet_len]) != 0:
             raise InvalidTmCrc16(pus_tm)
         return pus_tm

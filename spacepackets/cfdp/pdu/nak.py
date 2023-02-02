@@ -84,7 +84,7 @@ class NakPdu(AbstractFileDirectiveBase):
     @segment_requests.setter
     def segment_requests(self, segment_requests: Optional[List[Tuple[int, int]]]):
         """Update the segment requests. This changes the length of the packet when packed as well
-        which is handled by this function"""
+        which is handled by this function."""
         self._segment_requests = segment_requests
         if self._segment_requests is None:
             self._segment_requests = []
@@ -97,7 +97,7 @@ class NakPdu(AbstractFileDirectiveBase):
         self.pdu_file_directive.directive_param_field_len = directive_param_field_len
 
     def pack(self) -> bytearray:
-        """Pack the NAK PDU
+        """Pack the NAK PDU.
 
         :raises ValueError: File sizes too large for non-large files
         """
@@ -128,9 +128,9 @@ class NakPdu(AbstractFileDirectiveBase):
         return nak_pdu
 
     @classmethod
-    def unpack(cls, raw_packet: bytes) -> NakPdu:
+    def unpack(cls, data: bytes) -> NakPdu:
         nak_pdu = cls.__empty()
-        nak_pdu.pdu_file_directive = FileDirectivePduBase.unpack(raw_packet=raw_packet)
+        nak_pdu.pdu_file_directive = FileDirectivePduBase.unpack(raw_packet=data)
         current_idx = nak_pdu.pdu_file_directive.header_len
         if not nak_pdu.pdu_file_directive.pdu_header.large_file_flag_set:
             struct_arg_tuple = ("!I", 4)
@@ -138,33 +138,31 @@ class NakPdu(AbstractFileDirectiveBase):
             struct_arg_tuple = ("!Q", 8)
         nak_pdu.start_of_scope = struct.unpack(
             struct_arg_tuple[0],
-            raw_packet[current_idx : current_idx + struct_arg_tuple[1]],
+            data[current_idx : current_idx + struct_arg_tuple[1]],
         )[0]
         current_idx += struct_arg_tuple[1]
         nak_pdu.end_of_scope = struct.unpack(
             struct_arg_tuple[0],
-            raw_packet[current_idx : current_idx + struct_arg_tuple[1]],
+            data[current_idx : current_idx + struct_arg_tuple[1]],
         )[0]
         current_idx += struct_arg_tuple[1]
-        if current_idx < len(raw_packet):
-            packet_size_check = (len(raw_packet) - current_idx) % (
-                struct_arg_tuple[1] * 2
-            )
+        if current_idx < len(data):
+            packet_size_check = (len(data) - current_idx) % (struct_arg_tuple[1] * 2)
             if packet_size_check != 0:
                 raise ValueError(
                     f"Invalid size for remaining data, "
                     f"which should be a multiple of {struct_arg_tuple[1] * 2}"
                 )
             segment_requests = []
-            while current_idx < len(raw_packet):
+            while current_idx < len(data):
                 start_of_segment = struct.unpack(
                     struct_arg_tuple[0],
-                    raw_packet[current_idx : current_idx + struct_arg_tuple[1]],
+                    data[current_idx : current_idx + struct_arg_tuple[1]],
                 )[0]
                 current_idx += struct_arg_tuple[1]
                 end_of_segment = struct.unpack(
                     struct_arg_tuple[0],
-                    raw_packet[current_idx : current_idx + struct_arg_tuple[1]],
+                    data[current_idx : current_idx + struct_arg_tuple[1]],
                 )[0]
 
                 tuple_entry = start_of_segment, end_of_segment

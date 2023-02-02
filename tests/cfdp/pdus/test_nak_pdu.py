@@ -54,7 +54,7 @@ class TestNakPdu(TestCase):
         self.assertEqual(nak_pdu.packet_len, 35)
         nak_packed = nak_pdu.pack()
         self.assertEqual(len(nak_packed), 35)
-        nak_unpacked = NakPdu.unpack(raw_packet=nak_packed)
+        nak_unpacked = NakPdu.unpack(data=nak_packed)
         self.assertEqual(nak_unpacked.pack(), nak_packed)
 
         nak_pdu.file_flag = LargeFileFlag.LARGE
@@ -65,7 +65,7 @@ class TestNakPdu(TestCase):
         nak_packed = nak_pdu.pack()
         self.assertEqual(len(nak_packed), 59)
         nak_repacked = nak_unpacked.pack()
-        nak_unpacked = NakPdu.unpack(raw_packet=nak_packed)
+        nak_unpacked = NakPdu.unpack(data=nak_packed)
         self.assertEqual(nak_unpacked.pack(), nak_packed)
         nak_repacked.append(0)
         self.assertRaises(ValueError, NakPdu.unpack, raw_packet=nak_repacked)

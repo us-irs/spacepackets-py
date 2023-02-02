@@ -24,7 +24,7 @@ class TestMsgToUser(TestCase):
             MessageToUserTlv.from_tlv(cfdp_tlv=msg_to_usr_tlv_tlv)
         msg_to_usr_tlv_tlv.tlv_type = TlvTypes.MESSAGE_TO_USER
         msg_to_usr_tlv_raw = self.msg_to_usr_tlv.pack()
-        msg_to_usr_tlv_unpacked = MessageToUserTlv.unpack(raw_bytes=msg_to_usr_tlv_raw)
+        msg_to_usr_tlv_unpacked = MessageToUserTlv.unpack(data=msg_to_usr_tlv_raw)
         self.assertEqual(msg_to_usr_tlv_unpacked.tlv.value, bytes([0x00]))
         self.assertFalse(msg_to_usr_tlv_unpacked.is_standard_proxy_dir_ops_msg())
         proxy_val = create_cfdp_proxy_and_dir_op_message_marker()

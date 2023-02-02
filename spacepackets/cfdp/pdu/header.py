@@ -17,7 +17,7 @@ from spacepackets.cfdp.defs import (
 from spacepackets.cfdp.conf import (
     PduConfig,
 )
-from spacepackets.ecss.defs import BytesTooShortError
+from spacepackets.exceptions import BytesTooShortError
 from spacepackets.util import UnsignedByteField, ByteFieldGenerator
 
 
@@ -303,13 +303,9 @@ class PduHeader(AbstractPduBase):
         pdu_header.crc_flag = (data[0] & 0x02) >> 1
         pdu_header.file_flag = LargeFileFlag(data[0] & 0x01)
         pdu_header.pdu_data_field_len = data[1] << 8 | data[2]
-        pdu_header.segmentation_control = SegmentationControl(
-            (data[3] & 0x80) >> 7
-        )
+        pdu_header.segmentation_control = SegmentationControl((data[3] & 0x80) >> 7)
         expected_len_entity_ids = cls.check_len_in_bytes((data[3] & 0x70) >> 4)
-        pdu_header.segment_metadata_flag = SegmentMetadataFlag(
-            (data[3] & 0x08) >> 3
-        )
+        pdu_header.segment_metadata_flag = SegmentMetadataFlag((data[3] & 0x08) >> 3)
         expected_len_seq_num = cls.check_len_in_bytes(data[3] & 0x07)
         expected_remaining_len = 2 * expected_len_entity_ids + expected_len_seq_num
         if expected_remaining_len + cls.FIXED_LENGTH > len(data):
@@ -319,17 +315,17 @@ class PduHeader(AbstractPduBase):
         current_idx = 4
         source_entity_id = ByteFieldGenerator.from_bytes(
             expected_len_entity_ids,
-            data[current_idx: current_idx + expected_len_entity_ids],
+            data[current_idx : current_idx + expected_len_entity_ids],
         )
         current_idx += expected_len_entity_ids
         pdu_header.transaction_seq_num = ByteFieldGenerator.from_bytes(
             expected_len_seq_num,
-            data[current_idx: current_idx + expected_len_seq_num],
+            data[current_idx : current_idx + expected_len_seq_num],
         )
         current_idx += expected_len_seq_num
         dest_entity_id = ByteFieldGenerator.from_bytes(
             expected_len_entity_ids,
-            data[current_idx: current_idx + expected_len_entity_ids],
+            data[current_idx : current_idx + expected_len_entity_ids],
         )
         pdu_header.set_entity_ids(
             source_entity_id=source_entity_id, dest_entity_id=dest_entity_id

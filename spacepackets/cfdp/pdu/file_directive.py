@@ -12,7 +12,7 @@ from spacepackets.cfdp.pdu.header import (
 )
 from spacepackets.cfdp.defs import LargeFileFlag, CrcFlag
 from spacepackets.cfdp.conf import PduConfig
-from spacepackets.ecss.defs import BytesTooShortError
+from spacepackets.exceptions import BytesTooShortError
 from spacepackets.util import UnsignedByteField
 
 

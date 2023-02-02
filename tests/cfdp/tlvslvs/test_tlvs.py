@@ -24,14 +24,14 @@ class TestTlvs(TestCase):
             tlv_type=TlvTypes.FILESTORE_REQUEST, value=bytes([0, 1, 2, 3, 4])
         )
         test_tlv_package = test_tlv.pack()
-        test_tlv_unpacked = CfdpTlv.unpack(raw_bytes=test_tlv_package)
+        test_tlv_unpacked = CfdpTlv.unpack(data=test_tlv_package)
         self.assertEqual(test_tlv_unpacked.tlv_type, TlvTypes.FILESTORE_REQUEST)
         self.assertEqual(test_tlv_unpacked.length, 5)
         self.assertEqual(test_tlv_unpacked.value, bytes([0, 1, 2, 3, 4]))
 
     def test_length_field_missmatch(self):
         another_tlv = bytes([TlvTypes.ENTITY_ID, 1, 3, 4])
-        another_tlv_unpacked = CfdpTlv.unpack(raw_bytes=another_tlv)
+        another_tlv_unpacked = CfdpTlv.unpack(data=another_tlv)
         self.assertEqual(another_tlv_unpacked.value, bytes([3]))
         self.assertEqual(another_tlv_unpacked.length, 1)
 

@@ -8,6 +8,8 @@ import struct
 
 from typing import Tuple, Deque, List, Final, Optional, Sequence
 
+from spacepackets.exceptions import BytesTooShortError
+
 SPACE_PACKET_HEADER_SIZE: Final = 6
 SEQ_FLAG_MASK = 0xC000
 APID_MASK = 0x7FF
@@ -260,18 +262,18 @@ class SpacePacketHeader(AbstractSpacePacket):
         return SPACE_PACKET_HEADER_SIZE + self.data_len + 1
 
     @classmethod
-    def unpack(cls, space_packet_raw: bytes) -> SpacePacketHeader:
+    def unpack(cls, data: bytes) -> SpacePacketHeader:
         """Unpack a raw space packet into the space packet header instance.
 
         :raise ValueError: Raw packet length invalid
         """
-        if len(space_packet_raw) < SPACE_PACKET_HEADER_SIZE:
-            raise ValueError("packet size smaller than PUS header size")
-        packet_version = (space_packet_raw[0] >> 5) & 0b111
-        packet_type = PacketType((space_packet_raw[0] >> 4) & 0b1)
-        secondary_header_flag = (space_packet_raw[0] >> 3) & 0b1
-        apid = ((space_packet_raw[0] & 0b111) << 8) | space_packet_raw[1]
-        psc = struct.unpack("!H", space_packet_raw[2:4])[0]
+        if len(data) < SPACE_PACKET_HEADER_SIZE:
+            raise BytesTooShortError(SPACE_PACKET_HEADER_SIZE, len(data))
+        packet_version = (data[0] >> 5) & 0b111
+        packet_type = PacketType((data[0] >> 4) & 0b1)
+        secondary_header_flag = (data[0] >> 3) & 0b1
+        apid = ((data[0] & 0b111) << 8) | data[1]
+        psc = struct.unpack("!H", data[2:4])[0]
         sequence_flags = (psc & SEQ_FLAG_MASK) >> 14
         ssc = psc & (~SEQ_FLAG_MASK)
         return SpacePacketHeader(
@@ -279,7 +281,7 @@ class SpacePacketHeader(AbstractSpacePacket):
             apid=apid,
             sec_header_flag=bool(secondary_header_flag),
             ccsds_version=packet_version,
-            data_len=struct.unpack("!H", space_packet_raw[4:6])[0],
+            data_len=struct.unpack("!H", data[4:6])[0],
             seq_flags=SequenceFlags(sequence_flags),
             seq_count=ssc,
         )
