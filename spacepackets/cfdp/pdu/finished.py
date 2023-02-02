@@ -10,8 +10,9 @@ from spacepackets.cfdp.pdu.file_directive import (
     AbstractFileDirectiveBase,
 )
 from spacepackets.cfdp.defs import ConditionCode
-from spacepackets.cfdp.conf import check_packet_length, PduConfig
+from spacepackets.cfdp.conf import PduConfig
 from spacepackets.cfdp.tlv import TlvTypes, FileStoreResponseTlv, EntityIdTlv
+from spacepackets.ecss.defs import BytesTooShortError
 
 
 class DeliveryCode(enum.IntEnum):
@@ -192,11 +193,10 @@ class FinishedPdu(AbstractFileDirectiveBase):
         finished_pdu.pdu_file_directive = FileDirectivePduBase.unpack(
             raw_packet=raw_packet
         )
-        if not check_packet_length(
-            raw_packet_len=len(raw_packet),
-            min_len=finished_pdu.pdu_file_directive.packet_len,
-        ):
-            raise ValueError
+        if finished_pdu.pdu_file_directive.packet_len > len(raw_packet):
+            raise BytesTooShortError(
+                finished_pdu.pdu_file_directive.packet_len, len(raw_packet)
+            )
         current_idx = finished_pdu.pdu_file_directive.header_len
         first_param_byte = raw_packet[current_idx]
         params = FinishedParams(

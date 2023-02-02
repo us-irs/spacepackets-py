@@ -11,7 +11,7 @@ from spacepackets.cfdp.pdu.file_directive import (
 from spacepackets.cfdp.defs import ConditionCode
 from spacepackets.cfdp.conf import PduConfig
 from spacepackets.cfdp.tlv import EntityIdTlv
-from spacepackets.cfdp.conf import check_packet_length
+from spacepackets.ecss.defs import BytesTooShortError
 
 
 class EofPdu(AbstractFileDirectiveBase):
@@ -107,13 +107,10 @@ class EofPdu(AbstractFileDirectiveBase):
         eof_pdu = cls.__empty()
         eof_pdu.pdu_file_directive = FileDirectivePduBase.unpack(raw_packet=raw_packet)
         expected_min_len = eof_pdu.pdu_file_directive.header_len + 9
-        if not check_packet_length(
-            raw_packet_len=len(raw_packet), min_len=expected_min_len
-        ):
-            raise ValueError("Invalid packet length")
+        if expected_min_len > len(raw_packet):
+            raise BytesTooShortError(expected_min_len, len(raw_packet))
         current_idx = eof_pdu.pdu_file_directive.header_len
         eof_pdu.condition_code = raw_packet[current_idx] & 0xF0
-        expected_min_len = current_idx + 5
         current_idx += 1
         eof_pdu.file_checksum = raw_packet[current_idx : current_idx + 4]
         current_idx += 4

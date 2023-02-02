@@ -10,7 +10,6 @@ from spacepackets.cfdp.pdu.file_directive import (
     LargeFileFlag,
 )
 from spacepackets.cfdp.conf import PduConfig
-from spacepackets.log import get_console_logger
 
 
 class NakPdu(AbstractFileDirectiveBase):
@@ -152,12 +151,10 @@ class NakPdu(AbstractFileDirectiveBase):
                 struct_arg_tuple[1] * 2
             )
             if packet_size_check != 0:
-                logger = get_console_logger()
-                logger.warning(
+                raise ValueError(
                     f"Invalid size for remaining data, "
                     f"which should be a multiple of {struct_arg_tuple[1] * 2}"
                 )
-                raise ValueError
             segment_requests = []
             while current_idx < len(raw_packet):
                 start_of_segment = struct.unpack(

@@ -8,7 +8,7 @@ from spacepackets.cfdp import LargeFileFlag
 from spacepackets.cfdp.pdu.file_directive import SegmentMetadataFlag, PduType
 from spacepackets.cfdp.conf import PduConfig
 from spacepackets.cfdp.pdu.header import PduHeader, AbstractPduBase
-from spacepackets.log import get_console_logger
+from spacepackets.ecss.defs import BytesTooShortError
 from spacepackets.util import UnsignedByteField
 
 
@@ -150,11 +150,9 @@ class FileDataPdu(AbstractPduBase):
         if self.pdu_header.segment_metadata_flag:
             len_metadata = len(self._params.segment_metadata)
             if len_metadata > 63:
-                logger = get_console_logger()
-                logger.warning(
+                raise ValueError(
                     f"Segment metadata length {len_metadata} invalid, larger than 63 bytes"
                 )
-                raise ValueError
             file_data_pdu.append(self._params.record_cont_state << 6 | len_metadata)
             if len_metadata > 0:
                 file_data_pdu.extend(self._params.segment_metadata)
@@ -177,8 +175,8 @@ class FileDataPdu(AbstractPduBase):
             segment_metadata_len = raw_packet[current_idx] & 0x3F
             current_idx += 1
             if current_idx + segment_metadata_len >= len(raw_packet):
-                raise ValueError(
-                    "Packet too short for detected segment data length size"
+                raise BytesTooShortError(
+                    current_idx + segment_metadata_len, len(raw_packet)
                 )
             file_data_packet._params.segment_metadata = raw_packet[
                 current_idx : current_idx + segment_metadata_len

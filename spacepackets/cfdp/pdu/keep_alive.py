@@ -9,7 +9,6 @@ from spacepackets.cfdp.pdu.file_directive import (
     AbstractFileDirectiveBase,
 )
 from spacepackets.cfdp.conf import PduConfig, LargeFileFlag
-from spacepackets.log import get_console_logger
 
 
 class KeepAlivePdu(AbstractFileDirectiveBase):
@@ -74,9 +73,7 @@ class KeepAlivePdu(AbstractFileDirectiveBase):
         else:
             struct_arg_tuple = ("!Q", 8)
         if (len(raw_packet) - current_idx) < struct_arg_tuple[1]:
-            logger = get_console_logger()
-            logger.warning(f"Invalid length {len(raw_packet)} for Keep Alive PDU")
-            raise ValueError
+            raise ValueError(f"invalid length {len(raw_packet)} for Keep Alive PDU")
         keep_alive_pdu.progress = struct.unpack(
             struct_arg_tuple[0],
             raw_packet[current_idx : current_idx + struct_arg_tuple[1]],

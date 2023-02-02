@@ -9,7 +9,6 @@ from spacepackets.cfdp.defs import (
     Direction,
     SegmentationControl,
 )
-from spacepackets.log import get_console_logger
 from spacepackets.util import UnsignedByteField, ByteFieldU8, ByteFieldEmpty
 
 
@@ -77,24 +76,3 @@ def set_entity_ids(source_entity_id: bytes, dest_entity_id: bytes):
 def get_entity_ids() -> Tuple[bytes, bytes]:
     """Return a tuple where the first entry is the source entity ID"""
     return __CFDP_DICT["source_dest_entity_ids"]
-
-
-def check_packet_length(
-    raw_packet_len: int, min_len: int, warn_on_fail: bool = True
-) -> bool:
-    """Check whether the length of a raw packet is shorter than a specified expected minimum length.
-    By defaults, prints a warning if this is the case
-    :param raw_packet_len:
-    :param min_len:
-    :param warn_on_fail:
-    :return: Returns True if the raw packet is larger than the specified minimum length, False
-    otherwise
-    """
-    if raw_packet_len < min_len:
-        if warn_on_fail:
-            logger = get_console_logger()
-            logger.warning(
-                f"Detected packet length {raw_packet_len}, smaller than expected {min_len}"
-            )
-        return False
-    return True

@@ -1,6 +1,16 @@
 import enum
 
 
+class BytesTooShortError(ValueError):
+    """When unpacking something from raw :py:class:`bytes`, the length of the bytearray was too
+    short."""
+
+    def __init__(self, expected_len: int, bytes_len: int):
+        super().__init__(
+            f"bytearray with length {bytes_len} shorter than expected {expected_len}"
+        )
+
+
 class PusService(enum.IntEnum):
     S1_VERIFICATION = 1
     S2_RAW_CMD = 2

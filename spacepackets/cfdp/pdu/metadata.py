@@ -14,7 +14,7 @@ from spacepackets.cfdp.conf import PduConfig, LargeFileFlag
 from spacepackets.cfdp.tlv import CfdpTlv, TlvList
 from spacepackets.cfdp.lv import CfdpLv
 from spacepackets.cfdp.defs import ChecksumType
-from spacepackets.cfdp.conf import check_packet_length
+from spacepackets.ecss.defs import BytesTooShortError
 
 
 @dataclasses.dataclass
@@ -154,8 +154,7 @@ class MetadataPdu(AbstractFileDirectiveBase):
         return self.pdu_file_directive.packet_len
 
     def pack(self) -> bytearray:
-        if not self.pdu_file_directive.verify_file_len(self.params.file_size):
-            raise ValueError
+        self.pdu_file_directive._verify_file_len(self.params.file_size)
         packet = self.pdu_file_directive.pack()
         packet.append((self.params.closure_requested << 6) | self.params.checksum_type)
         if self.pdu_file_directive.pdu_header.large_file_flag_set:
@@ -178,8 +177,8 @@ class MetadataPdu(AbstractFileDirectiveBase):
         )
         current_idx = metadata_pdu.pdu_file_directive.header_len
         # Minimal length: 1 byte + FSS (4 byte) + 2 empty LV (1 byte)
-        if not check_packet_length(len(raw_packet), current_idx + 7):
-            raise ValueError
+        if current_idx + 7 > len(raw_packet):
+            raise BytesTooShortError(current_idx + 7, len(raw_packet))
         params = MetadataParams(False, ChecksumType.MODULAR, 0, "", "")
         params.closure_requested = bool(raw_packet[current_idx] & 0x40)
         params.checksum_type = ChecksumType(raw_packet[current_idx] & 0x0F)

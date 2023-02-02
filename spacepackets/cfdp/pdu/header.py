@@ -17,6 +17,7 @@ from spacepackets.cfdp.defs import (
 from spacepackets.cfdp.conf import (
     PduConfig,
 )
+from spacepackets.ecss.defs import BytesTooShortError
 from spacepackets.util import UnsignedByteField, ByteFieldGenerator
 
 
@@ -291,7 +292,7 @@ class PduHeader(AbstractPduBase):
         :return: Unpacked object representation of a PDU header
         """
         if len(raw_packet) < cls.FIXED_LENGTH:
-            raise ValueError("Can not unpack less than four bytes into PDU header")
+            raise BytesTooShortError(cls.FIXED_LENGTH, len(raw_packet))
         pdu_header = cls.__empty()
         version_raw = (raw_packet[0] >> 5) & 0b111
         if version_raw != CFDP_VERSION_2:
@@ -311,8 +312,8 @@ class PduHeader(AbstractPduBase):
         )
         expected_len_seq_num = cls.check_len_in_bytes(raw_packet[3] & 0x07)
         expected_remaining_len = 2 * expected_len_entity_ids + expected_len_seq_num
-        if len(raw_packet) - cls.FIXED_LENGTH < expected_remaining_len:
-            raise ValueError("Raw packet too small for PDU header")
+        if expected_remaining_len + cls.FIXED_LENGTH > len(raw_packet):
+            raise BytesTooShortError(expected_remaining_len + cls.FIXED_LENGTH, len(raw_packet))
         current_idx = 4
         source_entity_id = ByteFieldGenerator.from_bytes(
             expected_len_entity_ids,
