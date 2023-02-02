@@ -78,9 +78,7 @@ class TestFinishPdu(TestCase):
         finish_pdu_unpacked = FinishedPdu.unpack(data=finish_pdu_raw)
         finish_pdu_repacked = finish_pdu_unpacked.pack()
         finish_pdu_repacked = finish_pdu_repacked[:-1]
-        self.assertRaises(
-            ValueError, FinishedPdu.unpack, data=finish_pdu_repacked
-        )
+        self.assertRaises(ValueError, FinishedPdu.unpack, data=finish_pdu_repacked)
         invalid_fault_source = EntityIdTlv(entity_id=bytes([0x0]))
         finish_pdu_raw.extend(invalid_fault_source.pack())
         current_size = finish_pdu_raw[1] << 8 | finish_pdu_raw[2]
