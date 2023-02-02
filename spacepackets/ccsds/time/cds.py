@@ -9,6 +9,7 @@ from typing import Optional
 import deprecation
 
 from spacepackets import __version__
+from spacepackets.exceptions import BytesTooShortError
 from spacepackets.ccsds.time.common import (
     CcsdsTimeProvider,
     convert_ccsds_days_to_unix_days,
@@ -134,20 +135,22 @@ class CdsShortTimestamp(CcsdsTimeProvider):
         ccsds_days, ms_of_day = CdsShortTimestamp.unpack_from_raw(data)
         return cls(ccsds_days=ccsds_days, ms_of_day=ms_of_day)
 
-    def read_from_raw(self, raw_stamp: bytes):
+    def read_from_raw(self, data: bytes):
         """Updates the instance from a given raw CDS short timestamp
 
-        :param raw_stamp:
+        :param data:
         :return:
         """
         (self._ccsds_days, self._ms_of_day) = CdsShortTimestamp.unpack_from_raw(
-            raw_stamp
+            data
         )
         self._setup()
 
     @staticmethod
-    def unpack_from_raw(raw: bytes) -> (int, int):
-        p_field = raw[0]
+    def unpack_from_raw(data: bytes) -> (int, int):
+        if len(data) < CdsShortTimestamp.TIMESTAMP_SIZE:
+            raise BytesTooShortError(CdsShortTimestamp.TIMESTAMP_SIZE, len(data))
+        p_field = data[0]
         if (p_field >> 4) & 0b111 != CcsdsTimeCodeId.CDS:
             raise ValueError(
                 f"invalid CCSDS Time Code {p_field}, expected {CcsdsTimeCodeId.CDS}"
@@ -157,8 +160,8 @@ class CdsShortTimestamp(CcsdsTimeProvider):
             raise ValueError(
                 f"invalid length of days field {len_of_day} for CDS short timestamp"
             )
-        ccsds_days = struct.unpack("!H", raw[1:3])[0]
-        ms_of_day = struct.unpack("!I", raw[3:7])[0]
+        ccsds_days = struct.unpack("!H", data[1:3])[0]
+        ms_of_day = struct.unpack("!I", data[3:7])[0]
         return ccsds_days, ms_of_day
 
     def __repr__(self):
