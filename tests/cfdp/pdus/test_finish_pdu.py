@@ -79,7 +79,7 @@ class TestFinishPdu(TestCase):
         finish_pdu_repacked = finish_pdu_unpacked.pack()
         finish_pdu_repacked = finish_pdu_repacked[:-1]
         self.assertRaises(
-            ValueError, FinishedPdu.unpack, raw_packet=finish_pdu_repacked
+            ValueError, FinishedPdu.unpack, data=finish_pdu_repacked
         )
         invalid_fault_source = EntityIdTlv(entity_id=bytes([0x0]))
         finish_pdu_raw.extend(invalid_fault_source.pack())
