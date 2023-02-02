@@ -129,6 +129,11 @@ class NakPdu(AbstractFileDirectiveBase):
 
     @classmethod
     def unpack(cls, data: bytes) -> NakPdu:
+        """
+        :param data:
+        :raises BytesTooShortError:
+        :return:
+        """
         nak_pdu = cls.__empty()
         nak_pdu.pdu_file_directive = FileDirectivePduBase.unpack(raw_packet=data)
         current_idx = nak_pdu.pdu_file_directive.header_len

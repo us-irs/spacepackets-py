@@ -99,9 +99,10 @@ class EofPdu(AbstractFileDirectiveBase):
 
     @classmethod
     def unpack(cls, data: bytes) -> EofPdu:
-        """Deserialize raw EOF PDU packet
+        """Deserialize raw EOF PDU packet.
+
         :param data:
-        :raise ValueError: If raw packet is too short
+        :raise BytesTooShortError: If raw packet is too short
         :return:
         """
         eof_pdu = cls.__empty()

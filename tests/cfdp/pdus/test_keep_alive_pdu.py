@@ -35,7 +35,7 @@ class TestKeepAlivePdu(TestCase):
             ),
         )
         self.assertEqual(self.keep_alive_pdu.packet_len, 12)
-        keep_alive_unpacked = KeepAlivePdu.unpack(raw_packet=keep_alive_pdu_raw)
+        keep_alive_unpacked = KeepAlivePdu.unpack(data=keep_alive_pdu_raw)
         self.assertEqual(keep_alive_unpacked.packet_len, 12)
         self.assertEqual(keep_alive_unpacked.progress, 0)
         self.keep_alive_pdu.file_flag = LargeFileFlag.LARGE
@@ -54,7 +54,7 @@ class TestKeepAlivePdu(TestCase):
         keep_alive_pdu_large = KeepAlivePdu(pdu_conf=self.pdu_conf, progress=0)
         keep_alive_pdu_invalid = keep_alive_pdu_large.pack()[:-1]
         with self.assertRaises(ValueError):
-            KeepAlivePdu.unpack(raw_packet=keep_alive_pdu_invalid)
+            KeepAlivePdu.unpack(data=keep_alive_pdu_invalid)
 
     def test_print(self):
         print(self.keep_alive_pdu)

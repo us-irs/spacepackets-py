@@ -165,6 +165,12 @@ class FileDataPdu(AbstractPduBase):
 
     @classmethod
     def unpack(cls, data: bytes) -> FileDataPdu:
+        """Create from raw bytes.
+
+        :param data:
+        :raises BytesTooShortError:
+        :return:
+        """
         file_data_packet = cls.__empty()
         file_data_packet.pdu_header = PduHeader.unpack(data=data)
         current_idx = file_data_packet.pdu_header.header_len

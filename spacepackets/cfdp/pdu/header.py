@@ -286,7 +286,7 @@ class PduHeader(AbstractPduBase):
         """Unpack a raw bytearray into the PDU header object representation.
 
         :param data:
-        :raises ValueError: Passed bytearray is too short.
+        :raises BytesTooShortError: Passed bytearray is too short.
         :raises UnsupportedCfdpVersion: CFDP version not supported. Only version 2 related to
             CFDP version CCSDS 727.0-B-5 is supported.
         :return: Unpacked object representation of a PDU header

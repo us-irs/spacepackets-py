@@ -69,6 +69,12 @@ class Service17Tm(AbstractPusTm):
     def unpack(
         cls, data: bytes, time_reader: Optional[CcsdsTimeProvider]
     ) -> Service17Tm:
+        """
+
+        :raises BytesTooShortError: Passed bytestream too short.
+        :raises ValueError: Unsupported PUS version.
+        :raises InvalidTmCrc16: Invalid CRC16.
+        """
         service_17_tm = cls.__empty(time_provider=time_reader)
         service_17_tm.pus_tm = PusTelemetry.unpack(data=data, time_reader=time_reader)
         return service_17_tm

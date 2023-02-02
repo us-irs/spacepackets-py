@@ -97,6 +97,11 @@ class AckPdu(AbstractFileDirectiveBase):
 
     @classmethod
     def unpack(cls, data: bytes) -> AckPdu:
+        """
+        :param data:
+        :raise BytesTooShortError:
+        :return:
+        """
         ack_packet = cls.__empty()
         ack_packet.pdu_file_directive = FileDirectivePduBase.unpack(raw_packet=data)
         current_idx = ack_packet.pdu_file_directive.header_len

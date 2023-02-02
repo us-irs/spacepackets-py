@@ -170,6 +170,11 @@ class MetadataPdu(AbstractFileDirectiveBase):
 
     @classmethod
     def unpack(cls, data: bytes) -> MetadataPdu:
+        """
+        :param data:
+        :raises BytesTooShortError:
+        :return:
+        """
         metadata_pdu = cls.__empty()
 
         metadata_pdu.pdu_file_directive = FileDirectivePduBase.unpack(raw_packet=data)

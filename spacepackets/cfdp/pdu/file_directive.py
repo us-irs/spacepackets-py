@@ -172,7 +172,7 @@ class FileDirectivePduBase(AbstractFileDirectiveBase):
         """Unpack a raw bytearray into the File Directive PDU object representation.
 
         :param raw_packet: Unpack PDU file directive base
-        :raise ValueError: Passed bytearray is too short
+        :raise BytesTooShortError: Passed bytearray is too short
         :return:
         """
         file_directive = cls.__empty()

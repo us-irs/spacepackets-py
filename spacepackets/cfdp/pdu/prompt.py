@@ -43,6 +43,11 @@ class PromptPdu(AbstractFileDirectiveBase):
 
     @classmethod
     def unpack(cls, data: bytes) -> PromptPdu:
+        """
+        :param data:
+        :raises BytesTooShortError:
+        :return:
+        """
         prompt_pdu = cls.__empty()
         prompt_pdu.pdu_file_directive = FileDirectivePduBase.unpack(raw_packet=data)
         current_idx = prompt_pdu.pdu_file_directive.header_len
