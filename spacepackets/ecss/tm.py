@@ -80,7 +80,7 @@ class PusTmSecondaryHeader:
     """Unpacks the PUS telemetry packet secondary header.
     Currently only supports CDS short timestamps and PUS C"""
 
-    HEADER_SIZE = 7
+    MIN_LEN = 7
 
     def __init__(
         self,
@@ -138,53 +138,51 @@ class PusTmSecondaryHeader:
 
     @classmethod
     def unpack(
-        cls, header_start: bytes, time_reader: Optional[CcsdsTimeProvider]
+        cls, data: bytes, time_reader: Optional[CcsdsTimeProvider]
     ) -> PusTmSecondaryHeader:
         """Unpack the PUS TM secondary header from the raw packet starting at the header index.
 
-        :param header_start:
+        :param data: Raw data. Please note that the passed buffer should start where the actual
+            header start is.
         :param time_reader: Generic time reader which knows the time stamp size and how to interpret
             the raw timestamp
         :raises ValueError: bytearray too short or PUS version missmatch.
         :return:
         """
-        if len(header_start) < cls.HEADER_SIZE:
-            raise ValueError("passed bytearray too short")
+        if len(data) < cls.MIN_LEN:
+            raise BytesTooShortError(cls.MIN_LEN, len(data))
         secondary_header = cls.__empty()
         current_idx = 0
-        secondary_header.pus_version = (header_start[current_idx] & 0xF0) >> 4
+        secondary_header.pus_version = (data[current_idx] & 0xF0) >> 4
         if secondary_header.pus_version != PusVersion.PUS_C:
             raise ValueError(
                 f"PUS version field value {secondary_header.pus_version} "
                 f"found where PUS C {PusVersion.PUS_C} was expected"
             )
-        secondary_header.spacecraft_time_ref = header_start[current_idx] & 0x0F
-        if len(header_start) < secondary_header.header_size:
-            raise ValueError(
-                f"Invalid PUS data field header size, "
-                f"less than expected {secondary_header.header_size} bytes"
-            )
+        secondary_header.spacecraft_time_ref = data[current_idx] & 0x0F
+        if secondary_header.header_size > len(data):
+            raise BytesTooShortError(secondary_header.header_size, len(data))
         current_idx += 1
-        secondary_header.service = header_start[current_idx]
+        secondary_header.service = data[current_idx]
         current_idx += 1
-        secondary_header.subservice = header_start[current_idx]
+        secondary_header.subservice = data[current_idx]
         current_idx += 1
         secondary_header.message_counter = struct.unpack(
-            "!H", header_start[current_idx : current_idx + 2]
+            "!H", data[current_idx : current_idx + 2]
         )[0]
         current_idx += 2
         secondary_header.dest_id = struct.unpack(
-            "!H", header_start[current_idx : current_idx + 2]
+            "!H", data[current_idx : current_idx + 2]
         )[0]
         current_idx += 2
         # If other time formats are supported in the future, this information can be used
         #  to unpack the correct time code
-        time_code_id = read_p_field(header_start[current_idx])
+        time_code_id = read_p_field(data[current_idx])
         if time_code_id:
             pass
         if time_reader:
             time_reader.read_from_raw(
-                header_start[current_idx : current_idx + time_reader.len_packed]
+                data[current_idx : current_idx + time_reader.len_packed]
             )
         secondary_header.time_provider = time_reader
         return secondary_header
@@ -315,16 +313,15 @@ class PusTelemetry(AbstractPusTm):
     ) -> PusTelemetry:
         """Attempts to construct a generic PusTelemetry class given a raw bytearray.
 
-        :param data:
+        :param data: Raw bytes containing the PUS telemetry packet.
         :param time_reader: Time provider to read the timestamp. If the timestamp field is empty,
             you can supply None here.
-        :raises ValueError: if the format of the raw bytearray is invalid, for example the length.
-        :raises InvalidTmCrc16: Invalid CRC detected.
+        :raises BytesTooShortError: Passed bytestream too short.
+        :raises ValueError: Unsupported PUS version.
+        :raises InvalidTmCrc16: Invalid CRC16.
         """
         if data is None:
-            raise ValueError("Given byte stream invalid")
-        elif len(data) == 0:
-            raise ValueError("Given byte stream is empty")
+            raise ValueError("byte stream invalid")
         pus_tm = cls.empty()
         pus_tm.space_packet_header = SpacePacketHeader.unpack(data=data)
         expected_packet_len = get_total_space_packet_len_from_len_field(
@@ -333,7 +330,7 @@ class PusTelemetry(AbstractPusTm):
         if expected_packet_len > len(data):
             raise BytesTooShortError(expected_packet_len, len(data))
         pus_tm.pus_tm_sec_header = PusTmSecondaryHeader.unpack(
-            header_start=data[SPACE_PACKET_HEADER_SIZE:],
+            data=data[SPACE_PACKET_HEADER_SIZE:],
             time_reader=time_reader,
         )
         if (
@@ -493,7 +490,7 @@ class PusTelemetry(AbstractPusTm):
         :param source_data_len: Length of the source (user) data
         :param timestamp_len: Length of the used timestamp
         """
-        return PusTmSecondaryHeader.HEADER_SIZE + timestamp_len + source_data_len + 1
+        return PusTmSecondaryHeader.MIN_LEN + timestamp_len + source_data_len + 1
 
     @property
     def packet_len(self) -> int:

@@ -289,9 +289,9 @@ class SpacePacketHeader(AbstractSpacePacket):
     def __repr__(self):
         return (
             f"{self.__class__.__name__}(packet_version={self.ccsds_version!r}, "
-            f"packet_type={self.packet_type!r}, apid={self.apid!r}, seq_cnt={self.seq_count!r}),"
-            f"data_len={self.data_len!r}, sec_header_flag={self.sec_header_flag!r},"
-            f"seq_flags={self.seq_flags!r}"
+            f"packet_type={self.packet_type!r}, apid={self.apid!r}, seq_cnt={self.seq_count!r}, "
+            f"data_len={self.data_len!r}, sec_header_flag={self.sec_header_flag!r}, "
+            f"seq_flags={self.seq_flags!r})"
         )
 
     def __eq__(self, other: SpacePacketHeader):

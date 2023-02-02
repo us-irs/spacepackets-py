@@ -30,6 +30,8 @@ Refactored `logging` module usage to be more pythonic.
   to `recalc_crc`.
 - (breaking): The `crc16` proprerty will now return a `Optional[bytes]` object instead of an
   integer.
+- `PusTmSecondaryHeader.HEADER_SIZE` renamed to `PusTmSecondaryHeader.MIN_LEN` to better reflect
+  the header can actually be larger if it includes the timestamp.
 
 ## Removed
 

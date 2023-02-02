@@ -3,7 +3,7 @@ the :py:class:`PusTelecommand` class.
 """
 from __future__ import annotations
 
-from spacepackets import __version__
+from spacepackets import __version__, BytesTooShortError
 import struct
 from typing import Tuple, Optional
 
@@ -58,25 +58,24 @@ class PusTcDataFieldHeader:
         return header_raw
 
     @classmethod
-    def unpack(cls, raw_packet: bytes) -> PusTcDataFieldHeader:
+    def unpack(cls, data: bytes) -> PusTcDataFieldHeader:
         """Unpack a TC data field header.
 
-        :param raw_packet: Start of raw data belonging to the TC data field header
+        :param data: Start of raw data belonging to the TC data field header
+        :raises BytesTooShortError: Passed data too short.
         :return:
         """
         min_expected_len = cls.get_header_size()
-        if len(raw_packet) < min_expected_len:
-            raise ValueError(
-                f"Passed bytearray too short, expected minimum length {min_expected_len}"
-            )
-        version_and_ack_byte = raw_packet[0]
+        if len(data) < min_expected_len:
+            raise BytesTooShortError(min_expected_len, len(data))
+        version_and_ack_byte = data[0]
         pus_version = (version_and_ack_byte & 0xF0) >> 4
         if pus_version != PusVersion.PUS_C:
             raise ValueError("This implementation only supports PUS C")
         ack_flags = version_and_ack_byte & 0x0F
-        service = raw_packet[1]
-        subservice = raw_packet[2]
-        source_id = struct.unpack("!H", raw_packet[3:5])[0]
+        service = data[1]
+        subservice = data[2]
+        source_id = struct.unpack("!H", data[3:5])[0]
         return cls(
             service=service,
             subservice=subservice,
@@ -271,20 +270,23 @@ class PusTelecommand:
 
     @classmethod
     def unpack(cls, data: bytes) -> PusTelecommand:
+        """Create an instance from a raw bytestream.
+
+        :raises BytesTooShortError: Passed bytestream too short.
+        :raises ValueError: Unsupported PUS version.
+        :raises InvalidTcCrc16: Invalid CRC16.
+        """
         tc_unpacked = cls.empty()
         tc_unpacked.sp_header = SpacePacketHeader.unpack(data=data)
         tc_unpacked.pus_tc_sec_header = PusTcDataFieldHeader.unpack(
-            raw_packet=data[SPACE_PACKET_HEADER_SIZE:]
+            data=data[SPACE_PACKET_HEADER_SIZE:]
         )
         header_len = (
             SPACE_PACKET_HEADER_SIZE + tc_unpacked.pus_tc_sec_header.get_header_size()
         )
         expected_packet_len = tc_unpacked.packet_len
         if len(data) < expected_packet_len:
-            raise ValueError(
-                f"Invalid length of raw telecommand packet, expected minimum length "
-                f"{expected_packet_len}"
-            )
+            raise BytesTooShortError(expected_packet_len, len(data))
         tc_unpacked._app_data = data[header_len : expected_packet_len - 2]
         tc_unpacked._crc16 = data[expected_packet_len - 2 : expected_packet_len]
         crc_func = mkPredefinedCrcFun(crc_name="crc-ccitt-false")

@@ -20,13 +20,11 @@ class EcssConfKeys(enum.IntEnum):
     ECSS_TM_APID = 1
     PUS_TM_TYPE = 2
     PUS_TC_TYPE = 3
-    MAX_TC_PACKET_SIZE = 4
 
 
 __ECSS_DICT = {
     EcssConfKeys.ECSS_TM_APID: 0x00,
     EcssConfKeys.ECSS_TC_APID: 0x00,
-    EcssConfKeys.MAX_TC_PACKET_SIZE: 1500,
 }
 
 
@@ -44,11 +42,3 @@ def set_default_tc_apid(tc_apid: int):
 
 def get_default_tc_apid() -> int:
     return __ECSS_DICT[EcssConfKeys.ECSS_TC_APID]
-
-
-def set_max_tc_packet_size(max_len: int):
-    __ECSS_DICT[EcssConfKeys.MAX_TC_PACKET_SIZE] = max_len
-
-
-def get_max_tc_packet_size() -> int:
-    return __ECSS_DICT[EcssConfKeys.MAX_TC_PACKET_SIZE]
