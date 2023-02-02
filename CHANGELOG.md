@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 # [unreleased]
 
+# [v0.14.0rc3] 2023-02-02
+
 Refactored `logging` module usage to be more pythonic.
 
 ## Added

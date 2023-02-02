@@ -314,7 +314,7 @@ class PusTelecommand:
         return data_length
 
     @deprecation.deprecated(
-        deprecated_in="v0.14.0rc2",
+        deprecated_in="v0.14.0rc3",
         current_version=__version__,
         details="use pack and the class itself to build this instead",
     )
