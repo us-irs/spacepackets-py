@@ -16,8 +16,16 @@ can also be set via ``conf`` modules inside each subpackage.
 This package also uses the :py:mod:`logging` package to emmit warnings. The user
 can use the ``log`` module of the package to specify a custom logger name.
 
+spacepackets.exceptions module
+--------------------------------
+
+.. automodule:: spacepackets.exceptions
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 .. toctree::
-   :maxdepth: 4
+   :maxdepth: 3
 
    api/ccsds
    api/ccsds_time
@@ -26,14 +34,6 @@ can use the ``log`` module of the package to specify a custom logger name.
    api/ecss
    api/cfdp
    api/cfdp_pdu
-
-spacepackets.log module
--------------------------
-
-.. automodule:: spacepackets.log
-   :members:
-   :undoc-members:
-   :show-inheritance:
 
 spacepackets.util module
 --------------------------
