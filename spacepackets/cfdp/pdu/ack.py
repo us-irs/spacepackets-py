@@ -47,7 +47,9 @@ class AckPdu(AbstractFileDirectiveBase):
             DirectiveType.FINISHED_PDU,
             DirectiveType.EOF_PDU,
         ]:
-            raise ValueError(f"invalid directive code of acked PDU {directive_code_of_acked_pdu}")
+            raise ValueError(
+                f"invalid directive code of acked PDU {directive_code_of_acked_pdu}"
+            )
         self.directive_code_of_acked_pdu = directive_code_of_acked_pdu
         self.directive_subtype_code = 0
         if self.directive_code_of_acked_pdu == DirectiveType.FINISHED_PDU:

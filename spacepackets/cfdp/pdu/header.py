@@ -313,7 +313,9 @@ class PduHeader(AbstractPduBase):
         expected_len_seq_num = cls.check_len_in_bytes(raw_packet[3] & 0x07)
         expected_remaining_len = 2 * expected_len_entity_ids + expected_len_seq_num
         if expected_remaining_len + cls.FIXED_LENGTH > len(raw_packet):
-            raise BytesTooShortError(expected_remaining_len + cls.FIXED_LENGTH, len(raw_packet))
+            raise BytesTooShortError(
+                expected_remaining_len + cls.FIXED_LENGTH, len(raw_packet)
+            )
         current_idx = 4
         source_entity_id = ByteFieldGenerator.from_bytes(
             expected_len_entity_ids,
