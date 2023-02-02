@@ -1,8 +1,5 @@
-spacepackets.ccsds package
+ccsds package
 ==========================
-
-Module content
----------------
 
 .. automodule:: spacepackets.ccsds
    :members:

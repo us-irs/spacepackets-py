@@ -1,4 +1,4 @@
-spacepackets.ccsds.time package
+ccsds.time package
 ================================
 
 .. automodule:: spacepackets.ccsds.time
