@@ -57,7 +57,7 @@ class TestFinishPdu(TestCase):
             pdu_conf=self.pdu_conf,
         )
         finish_pdu_raw = finish_pdu.pack()
-        finish_pdu_unpacked = FinishedPdu.unpack(raw_packet=finish_pdu_raw)
+        finish_pdu_unpacked = FinishedPdu.unpack(data=finish_pdu_raw)
         self.assertEqual(finish_pdu_unpacked.delivery_code, DeliveryCode.DATA_COMPLETE)
         self.assertEqual(
             finish_pdu_unpacked.delivery_status,
@@ -75,12 +75,10 @@ class TestFinishPdu(TestCase):
             pdu_conf=self.pdu_conf,
         )
         finish_pdu_raw = finish_pdu.pack()
-        finish_pdu_unpacked = FinishedPdu.unpack(raw_packet=finish_pdu_raw)
+        finish_pdu_unpacked = FinishedPdu.unpack(data=finish_pdu_raw)
         finish_pdu_repacked = finish_pdu_unpacked.pack()
         finish_pdu_repacked = finish_pdu_repacked[:-1]
-        self.assertRaises(
-            ValueError, FinishedPdu.unpack, raw_packet=finish_pdu_repacked
-        )
+        self.assertRaises(ValueError, FinishedPdu.unpack, data=finish_pdu_repacked)
         invalid_fault_source = EntityIdTlv(entity_id=bytes([0x0]))
         finish_pdu_raw.extend(invalid_fault_source.pack())
         current_size = finish_pdu_raw[1] << 8 | finish_pdu_raw[2]
@@ -88,7 +86,7 @@ class TestFinishPdu(TestCase):
         finish_pdu_raw[1] = (current_size & 0xFF00) >> 8
         finish_pdu_raw[2] = current_size & 0x00FF
         with self.assertRaises(ValueError):
-            FinishedPdu.unpack(raw_packet=finish_pdu_raw)
+            FinishedPdu.unpack(data=finish_pdu_raw)
 
     def test_with_fault_location(self):
         # Now generate a packet with a fault location
@@ -160,9 +158,7 @@ class TestFinishPdu(TestCase):
         )
         expected_array.extend(filestore_response_1_packed)
         self.assertEqual(expected_array, pdu_with_response_raw)
-        pdu_with_response_unpacked = FinishedPdu.unpack(
-            raw_packet=pdu_with_response_raw
-        )
+        pdu_with_response_unpacked = FinishedPdu.unpack(data=pdu_with_response_raw)
         self.assertEqual(len(pdu_with_response_unpacked.file_store_responses), 1)
 
     def test_finished_pdu(self):
@@ -201,7 +197,7 @@ class TestFinishPdu(TestCase):
         fs_responses = finish_pdu_two_responses_one_fault_loc.file_store_responses
         self.assertEqual(len(fs_responses), 2)
         complex_pdu_raw = finish_pdu_two_responses_one_fault_loc.pack()
-        complex_pdu_unpacked = FinishedPdu.unpack(raw_packet=complex_pdu_raw)
+        complex_pdu_unpacked = FinishedPdu.unpack(data=complex_pdu_raw)
         self.assertEqual(
             complex_pdu_unpacked.fault_location.pack(), self.fault_location_tlv.pack()
         )
@@ -211,4 +207,4 @@ class TestFinishPdu(TestCase):
         # Change TLV type to make it invalid
         complex_pdu_raw[-5] = TlvTypes.FILESTORE_RESPONSE
         with self.assertRaises(ValueError):
-            FinishedPdu.unpack(raw_packet=complex_pdu_raw)
+            FinishedPdu.unpack(data=complex_pdu_raw)

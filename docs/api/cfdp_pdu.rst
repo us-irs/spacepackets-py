@@ -1,5 +1,5 @@
-spacepackets.cfdp.pdu package
-==============================
+cfdp.pdu package
+===============================
 
 The Protocol Data Unit (PDU) subpackage contains the CFDP data units
 which can be used by CFDP entities to exchange file data.
@@ -30,7 +30,7 @@ The helper module :py:mod:`spacepackets.cfdp.pdu.helper` contains components lik
 and allows typed conversion in to the concrete PDU type
 
 spacepackets.cfdp.pdu.helper module
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+-----------------------------------------
 
 .. automodule:: spacepackets.cfdp.pdu.helper
    :members:
@@ -38,7 +38,7 @@ spacepackets.cfdp.pdu.helper module
    :show-inheritance:
 
 File Data Submodules
----------------------------
+------------------------
 
 spacepackets.cfdp.pdu.file_data module
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -49,7 +49,7 @@ spacepackets.cfdp.pdu.file_data module
    :show-inheritance:
 
 File Directive Submodules
----------------------------
+------------------------------
 
 spacepackets.cfdp.pdu.ack module
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

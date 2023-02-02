@@ -11,8 +11,8 @@ from spacepackets.cfdp.pdu.header import (
     AbstractPduBase,
 )
 from spacepackets.cfdp.defs import LargeFileFlag, CrcFlag
-from spacepackets.cfdp.conf import check_packet_length, PduConfig
-from spacepackets.log import get_console_logger
+from spacepackets.cfdp.conf import PduConfig
+from spacepackets.exceptions import BytesTooShortError
 from spacepackets.util import UnsignedByteField
 
 
@@ -172,31 +172,27 @@ class FileDirectivePduBase(AbstractFileDirectiveBase):
         """Unpack a raw bytearray into the File Directive PDU object representation.
 
         :param raw_packet: Unpack PDU file directive base
-        :raise ValueError: Passed bytearray is too short
+        :raise BytesTooShortError: Passed bytearray is too short
         :return:
         """
         file_directive = cls.__empty()
-        file_directive._pdu_header = PduHeader.unpack(raw_packet=raw_packet)
+        file_directive._pdu_header = PduHeader.unpack(data=raw_packet)
         # + 1 because a file directive has the directive code in addition to the PDU header
         header_len = file_directive.pdu_header.header_len + 1
-        if not check_packet_length(raw_packet_len=len(raw_packet), min_len=header_len):
-            raise ValueError
+        if header_len > len(raw_packet):
+            raise BytesTooShortError(header_len, len(raw_packet))
         file_directive._directive_type = raw_packet[header_len - 1]
         return file_directive
 
-    def verify_file_len(self, file_size: int) -> bool:
+    def _verify_file_len(self, file_size: int):
         """Can be used by subclasses to verify a given file size"""
         if self.pdu_header.file_flag == LargeFileFlag.LARGE and file_size > pow(2, 64):
-            logger = get_console_logger()
-            logger.warning(f"File size {file_size} larger than 64 bit field")
-            return False
+
+            raise ValueError(f"File size {file_size} larger than 64 bit field")
         elif self.pdu_header.file_flag == LargeFileFlag.NORMAL and file_size > pow(
             2, 32
         ):
-            logger = get_console_logger()
-            logger.warning(f"File size {file_size} larger than 32 bit field")
-            return False
-        return True
+            raise ValueError(f"File size {file_size} larger than 32 bit field")
 
     def parse_fss_field(self, raw_packet: bytes, current_idx: int) -> (int, int):
         """Parse the FSS field, which has different size depending on the large file flag being
@@ -205,15 +201,15 @@ class FileDirectivePduBase(AbstractFileDirectiveBase):
         :raise ValueError: Packet not large enough
         """
         if self.pdu_header.file_flag == LargeFileFlag.LARGE:
-            if not check_packet_length(len(raw_packet), current_idx + 8):
-                raise ValueError
+            if current_idx + 8 > len(raw_packet):
+                raise BytesTooShortError(current_idx + 8, len(raw_packet))
             file_size = struct.unpack("!Q", raw_packet[current_idx : current_idx + 8])[
                 0
             ]
             current_idx += 8
         else:
-            if not check_packet_length(len(raw_packet), current_idx + 4):
-                raise ValueError
+            if current_idx + 4 > len(raw_packet):
+                raise BytesTooShortError(current_idx + 4, len(raw_packet))
             file_size = struct.unpack("!I", raw_packet[current_idx : current_idx + 4])[
                 0
             ]

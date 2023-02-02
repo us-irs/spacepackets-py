@@ -10,8 +10,9 @@ from spacepackets.cfdp.pdu.file_directive import (
     AbstractFileDirectiveBase,
 )
 from spacepackets.cfdp.defs import ConditionCode
-from spacepackets.cfdp.conf import check_packet_length, PduConfig
+from spacepackets.cfdp.conf import PduConfig
 from spacepackets.cfdp.tlv import TlvTypes, FileStoreResponseTlv, EntityIdTlv
+from spacepackets.exceptions import BytesTooShortError
 
 
 class DeliveryCode(enum.IntEnum):
@@ -181,24 +182,21 @@ class FinishedPdu(AbstractFileDirectiveBase):
         return packet
 
     @classmethod
-    def unpack(cls, raw_packet: bytes) -> FinishedPdu:
+    def unpack(cls, data: bytes) -> FinishedPdu:
         """Unpack a raw packet into a PDU object.
 
-        :param raw_packet:
-        :raise ValueError: If packet is too short
+        :param data:
+        :raise BytesTooShortError: If packet is too short
         :return:
         """
         finished_pdu = cls.__empty()
-        finished_pdu.pdu_file_directive = FileDirectivePduBase.unpack(
-            raw_packet=raw_packet
-        )
-        if not check_packet_length(
-            raw_packet_len=len(raw_packet),
-            min_len=finished_pdu.pdu_file_directive.packet_len,
-        ):
-            raise ValueError
+        finished_pdu.pdu_file_directive = FileDirectivePduBase.unpack(raw_packet=data)
+        if finished_pdu.pdu_file_directive.packet_len > len(data):
+            raise BytesTooShortError(
+                finished_pdu.pdu_file_directive.packet_len, len(data)
+            )
         current_idx = finished_pdu.pdu_file_directive.header_len
-        first_param_byte = raw_packet[current_idx]
+        first_param_byte = data[current_idx]
         params = FinishedParams(
             condition_code=ConditionCode((first_param_byte & 0xF0) >> 4),
             delivery_code=DeliveryCode((first_param_byte & 0x04) >> 2),
@@ -207,9 +205,9 @@ class FinishedPdu(AbstractFileDirectiveBase):
         finished_pdu.condition_code = params.condition_code
         finished_pdu._params = params
         current_idx += 1
-        if len(raw_packet) > current_idx:
+        if len(data) > current_idx:
             finished_pdu._unpack_tlvs(
-                rest_of_packet=raw_packet[current_idx : finished_pdu.packet_len]
+                rest_of_packet=data[current_idx : finished_pdu.packet_len]
             )
         return finished_pdu
 
@@ -221,7 +219,7 @@ class FinishedPdu(AbstractFileDirectiveBase):
             next_tlv_code = rest_of_packet[current_idx]
             if next_tlv_code == TlvTypes.FILESTORE_RESPONSE:
                 next_fs_response = FileStoreResponseTlv.unpack(
-                    raw_bytes=rest_of_packet[current_idx:]
+                    data=rest_of_packet[current_idx:]
                 )
                 current_idx += next_fs_response.packet_len
                 fs_responses_list.append(next_fs_response)
@@ -230,7 +228,7 @@ class FinishedPdu(AbstractFileDirectiveBase):
                     raise ValueError(
                         "Entity ID found in Finished PDU but wrong condition code"
                     )
-                fault_loc = EntityIdTlv.unpack(raw_bytes=rest_of_packet[current_idx:])
+                fault_loc = EntityIdTlv.unpack(data=rest_of_packet[current_idx:])
                 current_idx += fault_loc.packet_len
             else:
                 raise ValueError("Invalid TLV ID in Finished PDU detected")

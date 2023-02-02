@@ -14,7 +14,7 @@ from spacepackets.cfdp.conf import PduConfig, LargeFileFlag
 from spacepackets.cfdp.tlv import CfdpTlv, TlvList
 from spacepackets.cfdp.lv import CfdpLv
 from spacepackets.cfdp.defs import ChecksumType
-from spacepackets.cfdp.conf import check_packet_length
+from spacepackets.exceptions import BytesTooShortError
 
 
 @dataclasses.dataclass
@@ -154,8 +154,7 @@ class MetadataPdu(AbstractFileDirectiveBase):
         return self.pdu_file_directive.packet_len
 
     def pack(self) -> bytearray:
-        if not self.pdu_file_directive.verify_file_len(self.params.file_size):
-            raise ValueError
+        self.pdu_file_directive._verify_file_len(self.params.file_size)
         packet = self.pdu_file_directive.pack()
         packet.append((self.params.closure_requested << 6) | self.params.checksum_type)
         if self.pdu_file_directive.pdu_header.large_file_flag_set:
@@ -170,44 +169,43 @@ class MetadataPdu(AbstractFileDirectiveBase):
         return packet
 
     @classmethod
-    def unpack(cls, raw_packet: bytes) -> MetadataPdu:
+    def unpack(cls, data: bytes) -> MetadataPdu:
+        """
+        :param data:
+        :raises BytesTooShortError:
+        :return:
+        """
         metadata_pdu = cls.__empty()
 
-        metadata_pdu.pdu_file_directive = FileDirectivePduBase.unpack(
-            raw_packet=raw_packet
-        )
+        metadata_pdu.pdu_file_directive = FileDirectivePduBase.unpack(raw_packet=data)
         current_idx = metadata_pdu.pdu_file_directive.header_len
         # Minimal length: 1 byte + FSS (4 byte) + 2 empty LV (1 byte)
-        if not check_packet_length(len(raw_packet), current_idx + 7):
-            raise ValueError
+        if current_idx + 7 > len(data):
+            raise BytesTooShortError(current_idx + 7, len(data))
         params = MetadataParams(False, ChecksumType.MODULAR, 0, "", "")
-        params.closure_requested = bool(raw_packet[current_idx] & 0x40)
-        params.checksum_type = ChecksumType(raw_packet[current_idx] & 0x0F)
+        params.closure_requested = bool(data[current_idx] & 0x40)
+        params.checksum_type = ChecksumType(data[current_idx] & 0x0F)
         current_idx += 1
         (
             current_idx,
             params.file_size,
         ) = metadata_pdu.pdu_file_directive.parse_fss_field(
-            raw_packet=raw_packet, current_idx=current_idx
+            raw_packet=data, current_idx=current_idx
         )
         metadata_pdu.params = params
-        metadata_pdu._source_file_name_lv = CfdpLv.unpack(
-            raw_bytes=raw_packet[current_idx:]
-        )
+        metadata_pdu._source_file_name_lv = CfdpLv.unpack(raw_bytes=data[current_idx:])
         current_idx += metadata_pdu._source_file_name_lv.packet_len
-        metadata_pdu._dest_file_name_lv = CfdpLv.unpack(
-            raw_bytes=raw_packet[current_idx:]
-        )
+        metadata_pdu._dest_file_name_lv = CfdpLv.unpack(raw_bytes=data[current_idx:])
         current_idx += metadata_pdu._dest_file_name_lv.packet_len
-        if current_idx < len(raw_packet):
-            metadata_pdu._parse_options(raw_packet=raw_packet, start_idx=current_idx)
+        if current_idx < len(data):
+            metadata_pdu._parse_options(raw_packet=data, start_idx=current_idx)
         return metadata_pdu
 
     def _parse_options(self, raw_packet: bytes, start_idx: int):
         self._options = []
         current_idx = start_idx
         while True:
-            current_tlv = CfdpTlv.unpack(raw_bytes=raw_packet[current_idx:])
+            current_tlv = CfdpTlv.unpack(data=raw_packet[current_idx:])
             self._options.append(current_tlv)
             # This will always increment at least two, so we can't get stuck in the loop
             current_idx += current_tlv.packet_len

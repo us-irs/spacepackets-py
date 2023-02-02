@@ -9,7 +9,6 @@ from spacepackets.cfdp.pdu.file_directive import (
     AbstractFileDirectiveBase,
 )
 from spacepackets.cfdp.conf import PduConfig, LargeFileFlag
-from spacepackets.log import get_console_logger
 
 
 class KeepAlivePdu(AbstractFileDirectiveBase):
@@ -63,23 +62,24 @@ class KeepAlivePdu(AbstractFileDirectiveBase):
         return keep_alive_packet
 
     @classmethod
-    def unpack(cls, raw_packet: bytes) -> KeepAlivePdu:
+    def unpack(cls, data: bytes) -> KeepAlivePdu:
+        """
+        :param data:
+        :raises BytesTooShortError:
+        :return:
+        """
         keep_alive_pdu = cls.__empty()
-        keep_alive_pdu.pdu_file_directive = FileDirectivePduBase.unpack(
-            raw_packet=raw_packet
-        )
+        keep_alive_pdu.pdu_file_directive = FileDirectivePduBase.unpack(raw_packet=data)
         current_idx = keep_alive_pdu.pdu_file_directive.header_len
         if not keep_alive_pdu.pdu_file_directive.pdu_header.large_file_flag_set:
             struct_arg_tuple = ("!I", 4)
         else:
             struct_arg_tuple = ("!Q", 8)
-        if (len(raw_packet) - current_idx) < struct_arg_tuple[1]:
-            logger = get_console_logger()
-            logger.warning(f"Invalid length {len(raw_packet)} for Keep Alive PDU")
-            raise ValueError
+        if (len(data) - current_idx) < struct_arg_tuple[1]:
+            raise ValueError(f"invalid length {len(data)} for Keep Alive PDU")
         keep_alive_pdu.progress = struct.unpack(
             struct_arg_tuple[0],
-            raw_packet[current_idx : current_idx + struct_arg_tuple[1]],
+            data[current_idx : current_idx + struct_arg_tuple[1]],
         )[0]
         return keep_alive_pdu
 

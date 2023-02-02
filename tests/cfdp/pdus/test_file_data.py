@@ -29,7 +29,7 @@ class TestFileDataPdu(TestCase):
         expected_bytes.extend(bytes([0x00, 0x00, 0x00, 0x00]))
         expected_bytes.extend(file_data_bytes)
         self.assertEqual(file_data_pdu_raw, expected_bytes)
-        file_data_pdu_unpacked = FileDataPdu.unpack(raw_packet=file_data_pdu_raw)
+        file_data_pdu_unpacked = FileDataPdu.unpack(data=file_data_pdu_raw)
         self.assertEqual(file_data_pdu_unpacked.offset, 0)
         self.assertEqual(file_data_pdu_unpacked.file_data, file_data_bytes)
 
@@ -46,7 +46,7 @@ class TestFileDataPdu(TestCase):
         fd_pdu_with_metadata_raw = fd_pdu_with_metadata.pack()
         self.assertEqual(len(fd_pdu_with_metadata_raw), expected_packet_len)
         fd_pdu_with_metadata_unpacked = fd_pdu_with_metadata.unpack(
-            raw_packet=fd_pdu_with_metadata_raw
+            data=fd_pdu_with_metadata_raw
         )
         self.assertEqual(fd_pdu_with_metadata_unpacked.offset, 0)
         self.assertEqual(fd_pdu_with_metadata_unpacked.file_data, file_data_bytes)
@@ -81,9 +81,7 @@ class TestFileDataPdu(TestCase):
         self.assertEqual(fd_pdu_large_offset.packet_len, expected_packet_len)
         fd_pdu_large_offset_raw = fd_pdu_with_metadata.pack()
         self.assertEqual(len(fd_pdu_large_offset_raw), expected_packet_len)
-        fd_pdu_large_offset_unpacked = FileDataPdu.unpack(
-            raw_packet=fd_pdu_large_offset_raw
-        )
+        fd_pdu_large_offset_unpacked = FileDataPdu.unpack(data=fd_pdu_large_offset_raw)
         self.assertEqual(
             fd_pdu_large_offset_unpacked.segment_metadata, bytes([0xAA, 0xBB])
         )
@@ -96,9 +94,9 @@ class TestFileDataPdu(TestCase):
             :-2
         ]
         with self.assertRaises(ValueError):
-            FileDataPdu.unpack(raw_packet=fd_pdu_large_offset_no_file_data_invalid)
+            FileDataPdu.unpack(data=fd_pdu_large_offset_no_file_data_invalid)
         fd_pdu_large_offset_no_file_data_invalid = fd_pdu_large_offset_no_file_data_raw[
             :-9
         ]
         with self.assertRaises(ValueError):
-            FileDataPdu.unpack(raw_packet=fd_pdu_large_offset_no_file_data_invalid)
+            FileDataPdu.unpack(data=fd_pdu_large_offset_no_file_data_invalid)

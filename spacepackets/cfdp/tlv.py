@@ -5,6 +5,7 @@ from typing import Tuple, Optional, Type, Union, List, Any, cast
 import enum
 from spacepackets.cfdp.lv import CfdpLv
 from spacepackets.cfdp.defs import ConditionCode, FaultHandlerCode
+from spacepackets.exceptions import BytesTooShortError
 
 
 class TlvTypes(enum.IntEnum):
@@ -205,28 +206,29 @@ class CfdpTlv(AbstractTlvBase):
         return tlv_data
 
     @classmethod
-    def unpack(cls, raw_bytes: bytes) -> CfdpTlv:
+    def unpack(cls, data: bytes) -> CfdpTlv:
         """Parses LV field at the start of the given bytearray
 
-        :param raw_bytes:
+        :param data:
+        :raise BytesTooShortError: Length of raw data too short.
         :raise ValueError: Invalid format of the raw bytearray or type field invalid
         :return:
         """
-        if len(raw_bytes) < 2:
-            raise ValueError("Invalid length for TLV field, less than 2")
+        if len(data) < 2:
+            raise BytesTooShortError(2, len(data))
         try:
-            tlv_type = TlvTypes(raw_bytes[0])
+            tlv_type = TlvTypes(data[0])
         except ValueError:
             raise ValueError(
-                f"TLV field invalid, found value {raw_bytes[0]} is not a possible TLV parameter"
+                f"TLV field invalid, found value {data[0]} is not a possible TLV parameter"
             )
 
         value = bytearray()
-        if len(raw_bytes) > 2:
-            length = raw_bytes[1]
-            if 2 + length > len(raw_bytes):
-                raise ValueError("Detected TLV length exceeds size of passed bytearray")
-            value.extend(raw_bytes[2 : 2 + length])
+        if len(data) > 2:
+            length = data[1]
+            if 2 + length > len(data):
+                raise BytesTooShortError(length + 2, len(data))
+            value.extend(data[2 : 2 + length])
         return cls(tlv_type=tlv_type, value=value)
 
     @property
@@ -269,9 +271,9 @@ class EntityIdTlv(AbstractTlvBase):
         return cls(entity_id=bytes())
 
     @classmethod
-    def unpack(cls, raw_bytes: bytes) -> EntityIdTlv:
+    def unpack(cls, data: bytes) -> EntityIdTlv:
         entity_id_tlv = cls.__empty()
-        entity_id_tlv.tlv = CfdpTlv.unpack(raw_bytes=raw_bytes)
+        entity_id_tlv.tlv = CfdpTlv.unpack(data=data)
         entity_id_tlv.check_type(tlv_type=TlvTypes.ENTITY_ID)
         return entity_id_tlv
 
@@ -322,9 +324,9 @@ class FaultHandlerOverrideTlv(AbstractTlvBase):
         )
 
     @classmethod
-    def unpack(cls, raw_bytes: bytes) -> FaultHandlerOverrideTlv:
+    def unpack(cls, data: bytes) -> FaultHandlerOverrideTlv:
         fault_handler_ovr_tlv = cls.__empty()
-        fault_handler_ovr_tlv.tlv = CfdpTlv.unpack(raw_bytes=raw_bytes)
+        fault_handler_ovr_tlv.tlv = CfdpTlv.unpack(data=data)
         fault_handler_ovr_tlv.check_type(tlv_type=FaultHandlerOverrideTlv.TLV_TYPE)
         fault_handler_ovr_tlv.condition_code = (
             fault_handler_ovr_tlv.tlv.value[0] & 0xF0
@@ -380,9 +382,9 @@ class MessageToUserTlv(AbstractTlvBase):
         return cls(bytes())
 
     @classmethod
-    def unpack(cls, raw_bytes: bytes) -> MessageToUserTlv:
+    def unpack(cls, data: bytes) -> MessageToUserTlv:
         msg_to_user_tlv = cls.__empty()
-        msg_to_user_tlv.tlv = CfdpTlv.unpack(raw_bytes)
+        msg_to_user_tlv.tlv = CfdpTlv.unpack(data)
         msg_to_user_tlv.check_type(MessageToUserTlv.TLV_TYPE)
         return msg_to_user_tlv
 
@@ -421,9 +423,9 @@ class FlowLabelTlv(AbstractTlvBase):
         return FlowLabelTlv.TLV_TYPE
 
     @classmethod
-    def unpack(cls, raw_bytes: bytes) -> FlowLabelTlv:
+    def unpack(cls, data: bytes) -> FlowLabelTlv:
         flow_label_tlv = cls.__empty()
-        tlv = CfdpTlv.unpack(raw_bytes=raw_bytes)
+        tlv = CfdpTlv.unpack(data=data)
         if tlv.tlv_type != FlowLabelTlv.TLV_TYPE:
             raise TlvTypeMissmatch(tlv.tlv_type, cls.TLV_TYPE)
         flow_label_tlv.tlv = tlv
@@ -576,10 +578,10 @@ class FileStoreRequestTlv(FileStoreRequestBase, AbstractTlvBase):
         return CfdpTlv(tlv_type=TlvTypes.FILESTORE_REQUEST, value=tlv_value)
 
     @classmethod
-    def unpack(cls, raw_bytes: bytes) -> FileStoreRequestTlv:
-        cls._check_raw_tlv_field(raw_bytes[0], FileStoreRequestTlv.TLV_TYPE)
+    def unpack(cls, data: bytes) -> FileStoreRequestTlv:
+        cls._check_raw_tlv_field(data[0], FileStoreRequestTlv.TLV_TYPE)
         filestore_req = cls.__empty()
-        cls._set_fields(filestore_req, raw_bytes[2:])
+        cls._set_fields(filestore_req, data[2:])
         return filestore_req
 
     @classmethod
@@ -658,10 +660,10 @@ class FileStoreResponseTlv(FileStoreRequestBase, AbstractTlvBase):
         return CfdpTlv(tlv_type=TlvTypes.FILESTORE_RESPONSE, value=tlv_value)
 
     @classmethod
-    def unpack(cls, raw_bytes: bytes) -> FileStoreResponseTlv:
-        cls._check_raw_tlv_field(raw_bytes[0], FileStoreResponseTlv.TLV_TYPE)
+    def unpack(cls, data: bytes) -> FileStoreResponseTlv:
+        cls._check_raw_tlv_field(data[0], FileStoreResponseTlv.TLV_TYPE)
         filestore_reply = cls.__empty()
-        cls._set_fields(filestore_reply, raw_bytes[2:])
+        cls._set_fields(filestore_reply, data[2:])
         return filestore_reply
 
     @classmethod

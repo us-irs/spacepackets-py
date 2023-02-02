@@ -3,6 +3,7 @@ import enum
 import struct
 from dataclasses import dataclass
 
+from spacepackets import BytesTooShortError
 from spacepackets.util import IntByteConversion
 
 
@@ -99,7 +100,13 @@ class PacketFieldEnum(PacketFieldBase):
 
     @classmethod
     def unpack(cls, data: bytes, pfc: int):
+        """Construct from a raw bytestream.
+
+        :raises BytesTooShortError: Raw bytestream too short.
+        """
         num_bytes = cls.check_pfc(pfc)
+        if num_bytes > len(data):
+            raise BytesTooShortError(num_bytes, len(data))
         return cls(
             pfc,
             struct.unpack(
@@ -113,7 +120,7 @@ class PacketFieldEnum(PacketFieldBase):
         """Check for byte alignment of the PFC. Do not use this if to plan to pack multiple
         enumerations into one byte
         """
-        num_bytes = round(pfc / 8)
+        num_bytes = int(round(pfc / 8))
         if num_bytes not in [1, 2, 4, 8]:
             raise ValueError("Invalid PFC, not byte aligned")
         return num_bytes

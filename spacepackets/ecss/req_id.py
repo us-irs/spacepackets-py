@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import struct
 
+from spacepackets import BytesTooShortError
 from spacepackets.ccsds.spacepacket import PacketId, PacketSeqCtrl, SpacePacketHeader
 from spacepackets.ecss.tc import PusTelecommand
 
@@ -36,9 +37,7 @@ tc_psc=PacketSeqCtrl(seq_flags=<SequenceFlags.UNSEGMENTED: 3>, seq_count=17), cc
     @classmethod
     def unpack(cls, tm_data: bytes) -> RequestId:
         if len(tm_data) < 4:
-            raise ValueError(
-                "Given Raw TM data too small to parse Request ID. Must be 4 bytes at least"
-            )
+            raise BytesTooShortError(4, len(tm_data))
         packet_id_version_raw = struct.unpack("!H", tm_data[0:2])[0]
         psc_raw = struct.unpack("!H", tm_data[2:4])[0]
         return cls(

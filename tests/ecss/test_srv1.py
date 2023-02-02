@@ -18,6 +18,7 @@ from spacepackets.ecss.pus_1_verification import (
     create_start_failure_tm,
     create_step_failure_tm,
     create_completion_failure_tm,
+    ErrorCode,
 )
 
 
@@ -31,12 +32,18 @@ class Service1TmTest(TestCase):
         self.raw_stamp = bytes([0, 1, 2, 3, 4, 5, 6])
         self.time_stamp_provider.pack.return_value = self.raw_stamp
 
+    def test_failure_notice_invalid_creation(self):
+        with self.assertRaises(ValueError):
+            FailureNotice(ErrorCode(pfc=4, val=2), bytes())
+
     def test_basic(self):
         self.assertEqual(
             self.srv1_tm.sp_header, self.srv1_tm.pus_tm.space_packet_header
         )
         self.assertEqual(self.srv1_tm.time_provider, None)
         self.assertEqual(self.srv1_tm.is_step_reply, False)
+        self.assertEqual(self.srv1_tm.service, 1)
+        self.assertEqual(self.srv1_tm.subservice, 3)
         self.assertEqual(self.srv1_tm.error_code, None)
 
     def test_other_ctor(self):

@@ -46,12 +46,12 @@ class TestFsResponseTlv(TestCase):
         # This status code does not exist for the Create file action code 0b0000
         fs_response_tlv_raw[2] = 0b00001000
         with self.assertRaises(ValueError):
-            FileStoreResponseTlv.unpack(raw_bytes=fs_response_tlv_raw)
+            FileStoreResponseTlv.unpack(data=fs_response_tlv_raw)
         # Wrong ID
         fs_response_tlv_raw[0] = TlvTypes.ENTITY_ID
         with self.assertRaises(TlvTypeMissmatch):
-            FileStoreResponseTlv.unpack(raw_bytes=fs_response_tlv_raw)
+            FileStoreResponseTlv.unpack(data=fs_response_tlv_raw)
         fs_response_tlv_raw[0] = TlvTypes.FILESTORE_RESPONSE
         fs_response_tlv_raw[2] = 0b11110000
         with self.assertRaises(ValueError):
-            FileStoreResponseTlv.unpack(raw_bytes=fs_response_tlv_raw)
+            FileStoreResponseTlv.unpack(data=fs_response_tlv_raw)

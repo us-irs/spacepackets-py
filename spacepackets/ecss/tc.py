@@ -3,12 +3,13 @@ the :py:class:`PusTelecommand` class.
 """
 from __future__ import annotations
 
+from spacepackets import __version__, BytesTooShortError
 import struct
-from typing import Tuple
+from typing import Tuple, Optional
 
+import deprecation
 from crcmod.predefined import mkPredefinedCrcFun, PredefinedCrc
 
-from spacepackets.log import get_console_logger
 from spacepackets.ccsds.spacepacket import (
     SpacePacketHeader,
     PacketType,
@@ -18,7 +19,6 @@ from spacepackets.ccsds.spacepacket import (
     PacketSeqCtrl,
     SequenceFlags,
 )
-from spacepackets.util import get_printable_data_string, PrintFormats
 from spacepackets.ecss.conf import (
     get_default_tc_apid,
     PusVersion,
@@ -58,25 +58,24 @@ class PusTcDataFieldHeader:
         return header_raw
 
     @classmethod
-    def unpack(cls, raw_packet: bytes) -> PusTcDataFieldHeader:
+    def unpack(cls, data: bytes) -> PusTcDataFieldHeader:
         """Unpack a TC data field header.
 
-        :param raw_packet: Start of raw data belonging to the TC data field header
+        :param data: Start of raw data belonging to the TC data field header
+        :raises BytesTooShortError: Passed data too short.
         :return:
         """
         min_expected_len = cls.get_header_size()
-        if len(raw_packet) < min_expected_len:
-            raise ValueError(
-                f"Passed bytearray too short, expected minimum length {min_expected_len}"
-            )
-        version_and_ack_byte = raw_packet[0]
+        if len(data) < min_expected_len:
+            raise BytesTooShortError(min_expected_len, len(data))
+        version_and_ack_byte = data[0]
         pus_version = (version_and_ack_byte & 0xF0) >> 4
         if pus_version != PusVersion.PUS_C:
             raise ValueError("This implementation only supports PUS C")
         ack_flags = version_and_ack_byte & 0x0F
-        service = raw_packet[1]
-        subservice = raw_packet[2]
-        source_id = struct.unpack("!H", raw_packet[3:5])[0]
+        service = data[1]
+        subservice = data[2]
+        source_id = struct.unpack("!H", data[3:5])[0]
         return cls(
             service=service,
             subservice=subservice,
@@ -98,6 +97,11 @@ class PusTcDataFieldHeader:
         return cls.PUS_C_SEC_HEADER_LEN
 
 
+class InvalidTcCrc16(Exception):
+    def __init__(self, tc: PusTelecommand):
+        self.tc = tc
+
+
 class PusTelecommand:
     """Class representation of a PUS telecommand. Can be converted to the raw byte representation
     but also unpacked from a raw byte stream. Only PUS C telecommands are supported.
@@ -117,10 +121,10 @@ class PusTelecommand:
         service: int,
         subservice: int,
         app_data: bytes = bytes([]),
+        apid: int = FETCH_GLOBAL_APID,
         seq_count: int = 0,
         source_id: int = 0,
         ack_flags: int = 0b1111,
-        apid: int = FETCH_GLOBAL_APID,
     ):
         """Initiate a PUS telecommand from the given parameters. The raw byte representation
         can then be retrieved with the :py:meth:`pack` function.
@@ -135,7 +139,7 @@ class PusTelecommand:
             different packet sources (e.g. different ground stations)
         :raises ValueError: Invalid input parameters
         """
-        if apid == -1:
+        if apid == FETCH_GLOBAL_APID:
             apid = get_default_tc_apid()
         self.pus_tc_sec_header = PusTcDataFieldHeader(
             service=service,
@@ -157,7 +161,7 @@ class PusTelecommand:
         )
         self._app_data = app_data
         self._valid = True
-        self._crc16 = 0
+        self._crc16: Optional[bytes] = None
 
     @classmethod
     def from_sp_header(
@@ -169,7 +173,7 @@ class PusTelecommand:
         source_id: int = 0,
         ack_flags: int = 0b1111,
     ):
-        pus_tc = cls.__empty()
+        pus_tc = cls.empty()
         sp_header.packet_type = PacketType.TC
         sp_header.sec_header_flag = True
         sp_header.data_len = PusTelecommand.get_data_length(
@@ -193,7 +197,7 @@ class PusTelecommand:
         sec_header: PusTcDataFieldHeader,
         app_data: bytes = bytes([]),
     ) -> PusTelecommand:
-        pus_tc = cls.__empty()
+        pus_tc = cls.empty()
         if sp_header.packet_type == PacketType.TM:
             raise ValueError(
                 f"Invalid Packet Type {sp_header.packet_type} in CCSDS primary header"
@@ -204,7 +208,7 @@ class PusTelecommand:
         return pus_tc
 
     @classmethod
-    def __empty(cls) -> PusTelecommand:
+    def empty(cls) -> PusTelecommand:
         return PusTelecommand(service=0, subservice=0)
 
     def __repr__(self):
@@ -239,63 +243,55 @@ class PusTelecommand:
         user_data.extend(struct.pack("!H", self._crc16))
         return SpacePacket(self.sp_header, self.pus_tc_sec_header.pack(), user_data)
 
-    @property
-    def valid(self):
-        return self._valid
-
     def calc_crc(self):
-        """Can be called to calculate the CRC16"""
+        """Can be called to calculate the CRC16. Also sets the internal CRC16 field."""
         crc = PredefinedCrc(crc_name="crc-ccitt-false")
         crc.update(self.sp_header.pack())
         crc.update(self.pus_tc_sec_header.pack())
         crc.update(self.app_data)
         self._crc16 = crc.crcValue
 
-    def pack(self, calc_crc: bool = True) -> bytearray:
+    def pack(self, recalc_crc: bool = True) -> bytearray:
         """Serializes the TC data fields into a bytearray.
 
-        :param calc_crc: Recalculate the CRC. Can be disabled if :py:func:`calc_crc`
-            was called before
+        :param recalc_crc: Can be set to False if the CRC was previous calculated and no fields were
+            changed. This is set to True by default to ensure the CRC is always valid by default,
+            even if the user changes arbitrary fields after TC creation.
         """
         packed_data = bytearray()
         packed_data.extend(self.sp_header.pack())
         packed_data.extend(self.pus_tc_sec_header.pack())
         packed_data += self.app_data
-        if calc_crc:
+        if self._crc16 is None or recalc_crc:
             crc_func = mkPredefinedCrcFun(crc_name="crc-ccitt-false")
             self._crc16 = crc_func(packed_data)
         packed_data.extend(struct.pack("!H", self._crc16))
         return packed_data
 
     @classmethod
-    def unpack(cls, raw_packet: bytes) -> PusTelecommand:
-        tc_unpacked = cls.__empty()
-        tc_unpacked.sp_header = SpacePacketHeader.unpack(space_packet_raw=raw_packet)
+    def unpack(cls, data: bytes) -> PusTelecommand:
+        """Create an instance from a raw bytestream.
+
+        :raises BytesTooShortError: Passed bytestream too short.
+        :raises ValueError: Unsupported PUS version.
+        :raises InvalidTcCrc16: Invalid CRC16.
+        """
+        tc_unpacked = cls.empty()
+        tc_unpacked.sp_header = SpacePacketHeader.unpack(data=data)
         tc_unpacked.pus_tc_sec_header = PusTcDataFieldHeader.unpack(
-            raw_packet=raw_packet[SPACE_PACKET_HEADER_SIZE:]
+            data=data[SPACE_PACKET_HEADER_SIZE:]
         )
         header_len = (
             SPACE_PACKET_HEADER_SIZE + tc_unpacked.pus_tc_sec_header.get_header_size()
         )
         expected_packet_len = tc_unpacked.packet_len
-        if len(raw_packet) < expected_packet_len:
-            logger = get_console_logger()
-            logger.warning(
-                f"Invalid length of raw telecommand packet, expected minimum length "
-                f"{expected_packet_len}"
-            )
-            raise ValueError
-        tc_unpacked._app_data = raw_packet[header_len : expected_packet_len - 2]
-        tc_unpacked._crc16 = raw_packet[expected_packet_len - 2 : expected_packet_len]
+        if len(data) < expected_packet_len:
+            raise BytesTooShortError(expected_packet_len, len(data))
+        tc_unpacked._app_data = data[header_len : expected_packet_len - 2]
+        tc_unpacked._crc16 = data[expected_packet_len - 2 : expected_packet_len]
         crc_func = mkPredefinedCrcFun(crc_name="crc-ccitt-false")
-        whole_packet = raw_packet[:expected_packet_len]
-        should_be_zero = crc_func(whole_packet)
-        if should_be_zero == 0:
-            tc_unpacked._valid = True
-        else:
-            logger = get_console_logger()
-            logger.warning("Invalid CRC16 in raw telecommand detected")
-            tc_unpacked._valid = False
+        if crc_func(data[:expected_packet_len]) != 0:
+            raise InvalidTcCrc16(tc_unpacked)
         return tc_unpacked
 
     @property
@@ -314,14 +310,14 @@ class PusTelecommand:
         The size of the TC packet is the size of the packet secondary header with
         source ID + the length of the application data + length of the CRC16 checksum - 1
         """
-        try:
-            data_length = secondary_header_len + app_data_len + 1
-            return data_length
-        except TypeError:
-            logger = get_console_logger()
-            logger.warning("PusTelecommand: Invalid type of application data!")
-            return 0
+        data_length = secondary_header_len + app_data_len + 1
+        return data_length
 
+    @deprecation.deprecated(
+        deprecated_in="v0.14.0rc2",
+        current_version=__version__,
+        details="use pack and the class itself to build this instead",
+    )
     def pack_command_tuple(self) -> Tuple[bytearray, PusTelecommand]:
         """Pack a tuple consisting of the raw packet as the first entry and the class representation
         as the second entry
@@ -366,7 +362,10 @@ class PusTelecommand:
         return self._app_data
 
     @property
-    def crc16(self):
+    def crc16(self) -> Optional[bytes]:
+        """Will be the raw CRC16 if the telecommand was created using :py:meth:`unpack`,
+        :py:meth:`pack` was called at least once or :py:meth:`calc_crc` was called at
+        least once."""
         return self._crc16
 
     @seq_count.setter
@@ -376,11 +375,6 @@ class PusTelecommand:
     @apid.setter
     def apid(self, apid):
         self.sp_header.apid = apid
-
-    def print(self, print_format: PrintFormats = PrintFormats.HEX):
-        """Print the raw command in a clean format."""
-        packet = self.pack()
-        print(get_printable_data_string(print_format=print_format, data=packet))
 
 
 def generate_packet_crc(tc_packet: bytearray) -> bytes:

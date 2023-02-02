@@ -5,8 +5,7 @@ import crcmod
 from spacepackets import SpacePacketHeader, PacketType
 from spacepackets.ecss import PusTelecommand, PusTcDataFieldHeader, check_pus_crc
 from spacepackets.ecss.conf import get_default_tc_apid, set_default_tc_apid, PusVersion
-from spacepackets.ecss.tc import generate_crc, generate_packet_crc
-from spacepackets.util import PrintFormats
+from spacepackets.ecss.tc import generate_crc, generate_packet_crc, InvalidTcCrc16
 
 
 class TestTelecommand(TestCase):
@@ -21,7 +20,6 @@ class TestTelecommand(TestCase):
         command_tuple = self.ping_tc.pack_command_tuple()
         self.assertTrue(len(command_tuple[0]) == self.ping_tc.packet_len)
 
-        self.assertTrue(self.ping_tc.valid)
         # 6 bytes CCSDS header, 5 bytes secondary header, 2 bytes CRC
         self.assertEqual(self.ping_tc.packet_len, 13)
         # The data length field is the full packet length minus the primary header minus 1
@@ -86,7 +84,6 @@ class TestTelecommand(TestCase):
         self.assertEqual(ping_raw_unpacked, self.ping_tc)
 
     def test_print(self):
-        self.ping_tc.print(PrintFormats.HEX)
         print(repr(self.ping_tc))
         print(self.ping_tc)
 
@@ -115,21 +112,20 @@ class TestTelecommand(TestCase):
             PusTelecommand(service=493, subservice=5252, seq_count=99432942)
 
     def test_unpack(self):
-        pus_17_unpacked = PusTelecommand.unpack(raw_packet=self.ping_tc_raw)
+        pus_17_unpacked = PusTelecommand.unpack(data=self.ping_tc_raw)
         self.assertEqual(pus_17_unpacked.service, 17)
         self.assertEqual(pus_17_unpacked.subservice, 1)
-        self.assertEqual(pus_17_unpacked.valid, True)
         self.assertEqual(pus_17_unpacked.seq_count, 0x34)
 
     def test_faulty_unpack(self):
         with self.assertRaises(ValueError):
-            PusTelecommand.unpack(raw_packet=self.ping_tc_raw[:11])
+            PusTelecommand.unpack(data=self.ping_tc_raw[:11])
 
     def test_invalid_crc(self):
         # Make CRC invalid
         self.ping_tc_raw[-1] = self.ping_tc_raw[-1] + 1
-        pus_17_unpacked_invalid = PusTelecommand.unpack(raw_packet=self.ping_tc_raw)
-        self.assertFalse(pus_17_unpacked_invalid.valid)
+        with self.assertRaises(InvalidTcCrc16):
+            PusTelecommand.unpack(data=self.ping_tc_raw)
         self.assertEqual(PusTcDataFieldHeader.get_header_size(), 5)
 
     def test_to_space_packet(self):

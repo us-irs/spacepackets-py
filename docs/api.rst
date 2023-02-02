@@ -13,12 +13,12 @@ This package is split into three subpackages:
 To avoid specifying packet configuration which generally stays the same repeatedly, some parameters
 can also be set via ``conf`` modules inside each subpackage.
 
-This package also uses the :py:mod:`logging` package to emmit warnings. The user
-can use the ``log`` module of the package to specify a custom logger name.
+This package also uses the :py:mod:`logging` package to emit warnings.
 
 .. toctree::
-   :maxdepth: 4
+   :maxdepth: 3
 
+   api/exceptions
    api/ccsds
    api/ccsds_time
    api/ecss_tc
@@ -26,19 +26,4 @@ can use the ``log`` module of the package to specify a custom logger name.
    api/ecss
    api/cfdp
    api/cfdp_pdu
-
-spacepackets.log module
--------------------------
-
-.. automodule:: spacepackets.log
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-spacepackets.util module
---------------------------
-
-.. automodule:: spacepackets.util
-   :members:
-   :undoc-members:
-   :show-inheritance:
+   api/util

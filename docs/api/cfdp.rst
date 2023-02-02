@@ -1,4 +1,4 @@
-spacepackets.cfdp package
+cfdp package
 ==========================
 
 Module contents

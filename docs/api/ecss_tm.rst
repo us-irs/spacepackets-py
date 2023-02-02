@@ -1,5 +1,5 @@
-spacepackets.ecss.tm module
--------------------------------------
+ecss.tm package
+====================
 
 .. automodule:: spacepackets.ecss.tm
    :members:

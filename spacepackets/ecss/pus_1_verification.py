@@ -13,8 +13,10 @@ from spacepackets.ecss.conf import FETCH_GLOBAL_APID
 from spacepackets.ecss.defs import PusService
 from spacepackets.ecss.fields import PacketFieldEnum
 from spacepackets.ecss.tm import PusTelemetry, AbstractPusTm
+from .exceptions import TmSrcDataTooShortError
 
 from .req_id import RequestId
+from .. import BytesTooShortError
 
 
 class Subservice(enum.IntEnum):
@@ -34,10 +36,7 @@ ErrorCode = PacketFieldEnum
 
 class FailureNotice:
     def __init__(self, code: ErrorCode, data: bytes):
-        if (code.pfc % 8) != 0:
-            raise ValueError("PFC values for error code must be byte-aligned")
-        elif round(code.pfc / 8) not in [1, 2, 4, 8]:
-            raise ValueError("Allowed byte size for failure notice: 1, 2, 4 or 8")
+        # The PFC of the passed error code is already checked for validity.
         self.code = code
         self.data = data
 
@@ -170,12 +169,14 @@ class Service1Tm(AbstractPusTm):
 
         :param params:
         :param data:
-        :raises ValueError: Raw telemetry too short or subservice invalid.
+        :raises ValueError: Subservice invalid.
+        :raises BytesTooShortError: passed data too short
+        :raises TmSourceDataTooShortError: TM source data too short.
         :return:
         """
         service_1_tm = cls.__empty(params.time_reader)
         service_1_tm.pus_tm = PusTelemetry.unpack(
-            raw_telemetry=data, time_reader=params.time_reader
+            data=data, time_reader=params.time_reader
         )
         cls._unpack_raw_tm(service_1_tm, params)
         return service_1_tm
@@ -204,7 +205,7 @@ class Service1Tm(AbstractPusTm):
     def _unpack_raw_tm(cls, instance: Service1Tm, params: UnpackParams):
         tm_data = instance.pus_tm.tm_data
         if len(tm_data) < 4:
-            raise ValueError("TM data less than 4 bytes")
+            raise TmSrcDataTooShortError(4, len(tm_data))
         instance.tc_req_id = RequestId.unpack(tm_data[0:4])
         if instance.pus_tm.subservice % 2 == 0:
             instance._unpack_failure_verification(params)
@@ -221,10 +222,7 @@ class Service1Tm(AbstractPusTm):
         elif subservice not in [2, 4, 8]:
             raise ValueError(f"invalid subservice {subservice}")
         if len(tm_data) < expected_len:
-            raise ValueError(
-                f"PUS TM[1,{subservice}] source data with length {len(tm_data)} smaller than "
-                f"expected {expected_len} bytes"
-            )
+            raise TmSrcDataTooShortError(expected_len, len(tm_data))
         current_idx = 4
         if self.is_step_reply:
             self._verif_params.step_id = PacketFieldEnum.unpack(
@@ -237,12 +235,17 @@ class Service1Tm(AbstractPusTm):
 
     def _unpack_success_verification(self, unpack_cfg: UnpackParams):
         if self.pus_tm.subservice == Subservice.TM_STEP_SUCCESS:
-            self._verif_params.step_id = StepId.unpack(
-                pfc=unpack_cfg.bytes_step_id * 8,
-                data=self.pus_tm.tm_data[4 : 4 + unpack_cfg.bytes_step_id],
-            )
+            try:
+                self._verif_params.step_id = StepId.unpack(
+                    pfc=unpack_cfg.bytes_step_id * 8,
+                    data=self.pus_tm.tm_data[4 : 4 + unpack_cfg.bytes_step_id],
+                )
+            except BytesTooShortError as e:
+                raise TmSrcDataTooShortError(e.expected_len, e.bytes_len)
         elif self.pus_tm.subservice not in [1, 3, 7]:
-            raise ValueError(f"invalid subservice {self.pus_tm.subservice}")
+            raise ValueError(
+                f"invalid subservice {self.pus_tm.subservice}, not in [1, 3, 7]"
+            )
 
     @property
     def failure_notice(self) -> Optional[FailureNotice]:
