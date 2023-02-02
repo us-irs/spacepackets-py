@@ -184,7 +184,7 @@ class TestTelemetry(TestCase):
         self.ping_reply_raw = self.ping_reply.pack()
         # self.time_stamp_provider.read_from_raw = MagicMock()
         pus_17_tm_unpacked = PusTelemetry.unpack(
-            raw_telemetry=self.ping_reply_raw, time_reader=self.time_stamp_provider
+            data=self.ping_reply_raw, time_reader=self.time_stamp_provider
         )
         self.assertEqual(pus_17_tm_unpacked, self.ping_reply)
 
@@ -228,7 +228,7 @@ class TestTelemetry(TestCase):
         self.ping_reply_raw[5] = incorrect_size & 0xFF
         with self.assertRaises(InvalidTmCrc16):
             PusTelemetry.unpack(
-                raw_telemetry=self.ping_reply_raw, time_reader=self.time_stamp_provider
+                data=self.ping_reply_raw, time_reader=self.time_stamp_provider
             )
 
     def test_faulty_unpack(self):

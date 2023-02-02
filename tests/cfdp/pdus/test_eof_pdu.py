@@ -21,11 +21,11 @@ class TestEofPdu(TestCase):
         # File size is 0 as 4 bytes
         expected_header.extend(bytes([0x00, 0x00, 0x00, 0x00]))
         self.assertEqual(eof_pdu_raw, expected_header)
-        eof_unpacked = EofPdu.unpack(raw_packet=eof_pdu_raw)
+        eof_unpacked = EofPdu.unpack(data=eof_pdu_raw)
         self.assertEqual(eof_unpacked.pack(), eof_pdu_raw)
         eof_pdu_raw = eof_pdu_raw[:-2]
         with self.assertRaises(ValueError):
-            EofPdu.unpack(raw_packet=eof_pdu_raw)
+            EofPdu.unpack(data=eof_pdu_raw)
 
         fault_loc_tlv = EntityIdTlv(entity_id=bytes([0x00, 0x01]))
         self.assertEqual(fault_loc_tlv.packet_len, 4)
@@ -35,7 +35,7 @@ class TestEofPdu(TestCase):
         eof_pdu_with_fault_loc_raw = eof_pdu_with_fault_loc.pack()
         self.assertEqual(len(eof_pdu_with_fault_loc_raw), expected_packet_len + 4)
         eof_pdu_with_fault_loc_unpacked = EofPdu.unpack(
-            raw_packet=eof_pdu_with_fault_loc_raw
+            data=eof_pdu_with_fault_loc_raw
         )
         self.assertEqual(
             eof_pdu_with_fault_loc_unpacked.fault_location.pack(), fault_loc_tlv.pack()

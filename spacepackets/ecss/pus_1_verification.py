@@ -175,7 +175,7 @@ class Service1Tm(AbstractPusTm):
         """
         service_1_tm = cls.__empty(params.time_reader)
         service_1_tm.pus_tm = PusTelemetry.unpack(
-            raw_telemetry=data, time_reader=params.time_reader
+            data=data, time_reader=params.time_reader
         )
         cls._unpack_raw_tm(service_1_tm, params)
         return service_1_tm

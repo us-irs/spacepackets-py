@@ -3,9 +3,11 @@ the :py:class:`PusTelecommand` class.
 """
 from __future__ import annotations
 
+from spacepackets import __version__
 import struct
 from typing import Tuple, Optional
 
+import deprecation
 from crcmod.predefined import mkPredefinedCrcFun, PredefinedCrc
 
 from spacepackets.ccsds.spacepacket import (
@@ -250,38 +252,43 @@ class PusTelecommand:
         crc.update(self.app_data)
         self._crc16 = crc.crcValue
 
-    def pack(self) -> bytearray:
-        """Serializes the TC data fields into a bytearray."""
+    def pack(self, recalc_crc: bool = True) -> bytearray:
+        """Serializes the TC data fields into a bytearray.
+
+        :param recalc_crc: Can be set to False if the CRC was previous calculated and no fields were
+            changed. This is set to True by default to ensure the CRC is always valid by default,
+            even if the user changes arbitrary fields after TC creation.
+        """
         packed_data = bytearray()
         packed_data.extend(self.sp_header.pack())
         packed_data.extend(self.pus_tc_sec_header.pack())
         packed_data += self.app_data
-        if self._crc16 is None:
+        if self._crc16 is None or recalc_crc:
             crc_func = mkPredefinedCrcFun(crc_name="crc-ccitt-false")
             self._crc16 = crc_func(packed_data)
         packed_data.extend(struct.pack("!H", self._crc16))
         return packed_data
 
     @classmethod
-    def unpack(cls, raw_packet: bytes) -> PusTelecommand:
+    def unpack(cls, data: bytes) -> PusTelecommand:
         tc_unpacked = cls.empty()
-        tc_unpacked.sp_header = SpacePacketHeader.unpack(space_packet_raw=raw_packet)
+        tc_unpacked.sp_header = SpacePacketHeader.unpack(space_packet_raw=data)
         tc_unpacked.pus_tc_sec_header = PusTcDataFieldHeader.unpack(
-            raw_packet=raw_packet[SPACE_PACKET_HEADER_SIZE:]
+            raw_packet=data[SPACE_PACKET_HEADER_SIZE:]
         )
         header_len = (
             SPACE_PACKET_HEADER_SIZE + tc_unpacked.pus_tc_sec_header.get_header_size()
         )
         expected_packet_len = tc_unpacked.packet_len
-        if len(raw_packet) < expected_packet_len:
+        if len(data) < expected_packet_len:
             raise ValueError(
                 f"Invalid length of raw telecommand packet, expected minimum length "
                 f"{expected_packet_len}"
             )
-        tc_unpacked._app_data = raw_packet[header_len : expected_packet_len - 2]
-        tc_unpacked._crc16 = raw_packet[expected_packet_len - 2 : expected_packet_len]
+        tc_unpacked._app_data = data[header_len: expected_packet_len - 2]
+        tc_unpacked._crc16 = data[expected_packet_len - 2: expected_packet_len]
         crc_func = mkPredefinedCrcFun(crc_name="crc-ccitt-false")
-        if crc_func(raw_packet[:expected_packet_len]) != 0:
+        if crc_func(data[:expected_packet_len]) != 0:
             raise InvalidTcCrc16(tc_unpacked)
         return tc_unpacked
 
@@ -304,6 +311,11 @@ class PusTelecommand:
         data_length = secondary_header_len + app_data_len + 1
         return data_length
 
+    @deprecation.deprecated(
+        deprecated_in="v0.14.0rc2",
+        current_version=__version__,
+        details="use pack and the class itself to build this instead"
+    )
     def pack_command_tuple(self) -> Tuple[bytearray, PusTelecommand]:
         """Pack a tuple consisting of the raw packet as the first entry and the class representation
         as the second entry

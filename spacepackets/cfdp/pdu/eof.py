@@ -98,28 +98,28 @@ class EofPdu(AbstractFileDirectiveBase):
         return eof_pdu
 
     @classmethod
-    def unpack(cls, raw_packet: bytes) -> EofPdu:
+    def unpack(cls, data: bytes) -> EofPdu:
         """Deserialize raw EOF PDU packet
-        :param raw_packet:
+        :param data:
         :raise ValueError: If raw packet is too short
         :return:
         """
         eof_pdu = cls.__empty()
-        eof_pdu.pdu_file_directive = FileDirectivePduBase.unpack(raw_packet=raw_packet)
+        eof_pdu.pdu_file_directive = FileDirectivePduBase.unpack(raw_packet=data)
         expected_min_len = eof_pdu.pdu_file_directive.header_len + 9
-        if expected_min_len > len(raw_packet):
-            raise BytesTooShortError(expected_min_len, len(raw_packet))
+        if expected_min_len > len(data):
+            raise BytesTooShortError(expected_min_len, len(data))
         current_idx = eof_pdu.pdu_file_directive.header_len
-        eof_pdu.condition_code = raw_packet[current_idx] & 0xF0
+        eof_pdu.condition_code = data[current_idx] & 0xF0
         current_idx += 1
-        eof_pdu.file_checksum = raw_packet[current_idx : current_idx + 4]
+        eof_pdu.file_checksum = data[current_idx: current_idx + 4]
         current_idx += 4
         current_idx, eof_pdu.file_size = eof_pdu.pdu_file_directive.parse_fss_field(
-            raw_packet=raw_packet, current_idx=current_idx
+            raw_packet=data, current_idx=current_idx
         )
-        if len(raw_packet) > current_idx:
+        if len(data) > current_idx:
             eof_pdu.fault_location = EntityIdTlv.unpack(
-                raw_bytes=raw_packet[current_idx:]
+                raw_bytes=data[current_idx:]
             )
         return eof_pdu
 

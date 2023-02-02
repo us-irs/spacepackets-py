@@ -176,7 +176,7 @@ class FileDirectivePduBase(AbstractFileDirectiveBase):
         :return:
         """
         file_directive = cls.__empty()
-        file_directive._pdu_header = PduHeader.unpack(raw_packet=raw_packet)
+        file_directive._pdu_header = PduHeader.unpack(data=raw_packet)
         # + 1 because a file directive has the directive code in addition to the PDU header
         header_len = file_directive.pdu_header.header_len + 1
         if header_len > len(raw_packet):

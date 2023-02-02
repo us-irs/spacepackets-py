@@ -112,20 +112,20 @@ class TestTelecommand(TestCase):
             PusTelecommand(service=493, subservice=5252, seq_count=99432942)
 
     def test_unpack(self):
-        pus_17_unpacked = PusTelecommand.unpack(raw_packet=self.ping_tc_raw)
+        pus_17_unpacked = PusTelecommand.unpack(data=self.ping_tc_raw)
         self.assertEqual(pus_17_unpacked.service, 17)
         self.assertEqual(pus_17_unpacked.subservice, 1)
         self.assertEqual(pus_17_unpacked.seq_count, 0x34)
 
     def test_faulty_unpack(self):
         with self.assertRaises(ValueError):
-            PusTelecommand.unpack(raw_packet=self.ping_tc_raw[:11])
+            PusTelecommand.unpack(data=self.ping_tc_raw[:11])
 
     def test_invalid_crc(self):
         # Make CRC invalid
         self.ping_tc_raw[-1] = self.ping_tc_raw[-1] + 1
         with self.assertRaises(InvalidTcCrc16):
-            PusTelecommand.unpack(raw_packet=self.ping_tc_raw)
+            PusTelecommand.unpack(data=self.ping_tc_raw)
         self.assertEqual(PusTcDataFieldHeader.get_header_size(), 5)
 
     def test_to_space_packet(self):

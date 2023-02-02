@@ -164,37 +164,37 @@ class FileDataPdu(AbstractPduBase):
         return file_data_pdu
 
     @classmethod
-    def unpack(cls, raw_packet: bytes) -> FileDataPdu:
+    def unpack(cls, data: bytes) -> FileDataPdu:
         file_data_packet = cls.__empty()
-        file_data_packet.pdu_header = PduHeader.unpack(raw_packet=raw_packet)
+        file_data_packet.pdu_header = PduHeader.unpack(data=data)
         current_idx = file_data_packet.pdu_header.header_len
         if file_data_packet.pdu_header.segment_metadata_flag:
             file_data_packet._params.record_cont_state = RecordContinuationState(
-                (raw_packet[current_idx] & 0xC0) >> 6
+                (data[current_idx] & 0xC0) >> 6
             )
-            segment_metadata_len = raw_packet[current_idx] & 0x3F
+            segment_metadata_len = data[current_idx] & 0x3F
             current_idx += 1
-            if current_idx + segment_metadata_len >= len(raw_packet):
+            if current_idx + segment_metadata_len >= len(data):
                 raise BytesTooShortError(
-                    current_idx + segment_metadata_len, len(raw_packet)
+                    current_idx + segment_metadata_len, len(data)
                 )
-            file_data_packet._params.segment_metadata = raw_packet[
+            file_data_packet._params.segment_metadata = data[
                 current_idx : current_idx + segment_metadata_len
-            ]
+                                                        ]
             current_idx += segment_metadata_len
         if not file_data_packet.pdu_header.large_file_flag_set:
             struct_arg_tuple = ("!I", 4)
         else:
             struct_arg_tuple = ("!Q", 8)
-        if current_idx + struct_arg_tuple[1] >= len(raw_packet):
+        if current_idx + struct_arg_tuple[1] >= len(data):
             raise ValueError("Packet too small to accommodate offset")
         file_data_packet._params.offset = struct.unpack(
             struct_arg_tuple[0],
-            raw_packet[current_idx : current_idx + struct_arg_tuple[1]],
+            data[current_idx: current_idx + struct_arg_tuple[1]],
         )[0]
         current_idx += struct_arg_tuple[1]
-        if current_idx < len(raw_packet):
-            file_data_packet._params.file_data = raw_packet[current_idx:]
+        if current_idx < len(data):
+            file_data_packet._params.file_data = data[current_idx:]
         return file_data_packet
 
     @property

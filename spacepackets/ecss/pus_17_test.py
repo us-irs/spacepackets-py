@@ -71,6 +71,6 @@ class Service17Tm(AbstractPusTm):
     ) -> Service17Tm:
         service_17_tm = cls.__empty(time_provider=time_reader)
         service_17_tm.pus_tm = PusTelemetry.unpack(
-            raw_telemetry=raw_telemetry, time_reader=time_reader
+            data=raw_telemetry, time_reader=time_reader
         )
         return service_17_tm

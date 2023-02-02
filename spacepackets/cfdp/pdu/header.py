@@ -282,54 +282,54 @@ class PduHeader(AbstractPduBase):
         )
 
     @classmethod
-    def unpack(cls, raw_packet: bytes) -> PduHeader:
+    def unpack(cls, data: bytes) -> PduHeader:
         """Unpack a raw bytearray into the PDU header object representation.
 
-        :param raw_packet:
+        :param data:
         :raises ValueError: Passed bytearray is too short.
         :raises UnsupportedCfdpVersion: CFDP version not supported. Only version 2 related to
             CFDP version CCSDS 727.0-B-5 is supported.
         :return: Unpacked object representation of a PDU header
         """
-        if len(raw_packet) < cls.FIXED_LENGTH:
-            raise BytesTooShortError(cls.FIXED_LENGTH, len(raw_packet))
+        if len(data) < cls.FIXED_LENGTH:
+            raise BytesTooShortError(cls.FIXED_LENGTH, len(data))
         pdu_header = cls.__empty()
-        version_raw = (raw_packet[0] >> 5) & 0b111
+        version_raw = (data[0] >> 5) & 0b111
         if version_raw != CFDP_VERSION_2:
             raise UnsupportedCfdpVersion(version_raw)
-        pdu_header._pdu_type = (raw_packet[0] & 0x10) >> 4
-        pdu_header.direction = (raw_packet[0] & 0x08) >> 3
-        pdu_header.trans_mode = (raw_packet[0] & 0x04) >> 2
-        pdu_header.crc_flag = (raw_packet[0] & 0x02) >> 1
-        pdu_header.file_flag = LargeFileFlag(raw_packet[0] & 0x01)
-        pdu_header.pdu_data_field_len = raw_packet[1] << 8 | raw_packet[2]
+        pdu_header._pdu_type = (data[0] & 0x10) >> 4
+        pdu_header.direction = (data[0] & 0x08) >> 3
+        pdu_header.trans_mode = (data[0] & 0x04) >> 2
+        pdu_header.crc_flag = (data[0] & 0x02) >> 1
+        pdu_header.file_flag = LargeFileFlag(data[0] & 0x01)
+        pdu_header.pdu_data_field_len = data[1] << 8 | data[2]
         pdu_header.segmentation_control = SegmentationControl(
-            (raw_packet[3] & 0x80) >> 7
+            (data[3] & 0x80) >> 7
         )
-        expected_len_entity_ids = cls.check_len_in_bytes((raw_packet[3] & 0x70) >> 4)
+        expected_len_entity_ids = cls.check_len_in_bytes((data[3] & 0x70) >> 4)
         pdu_header.segment_metadata_flag = SegmentMetadataFlag(
-            (raw_packet[3] & 0x08) >> 3
+            (data[3] & 0x08) >> 3
         )
-        expected_len_seq_num = cls.check_len_in_bytes(raw_packet[3] & 0x07)
+        expected_len_seq_num = cls.check_len_in_bytes(data[3] & 0x07)
         expected_remaining_len = 2 * expected_len_entity_ids + expected_len_seq_num
-        if expected_remaining_len + cls.FIXED_LENGTH > len(raw_packet):
+        if expected_remaining_len + cls.FIXED_LENGTH > len(data):
             raise BytesTooShortError(
-                expected_remaining_len + cls.FIXED_LENGTH, len(raw_packet)
+                expected_remaining_len + cls.FIXED_LENGTH, len(data)
             )
         current_idx = 4
         source_entity_id = ByteFieldGenerator.from_bytes(
             expected_len_entity_ids,
-            raw_packet[current_idx : current_idx + expected_len_entity_ids],
+            data[current_idx: current_idx + expected_len_entity_ids],
         )
         current_idx += expected_len_entity_ids
         pdu_header.transaction_seq_num = ByteFieldGenerator.from_bytes(
             expected_len_seq_num,
-            raw_packet[current_idx : current_idx + expected_len_seq_num],
+            data[current_idx: current_idx + expected_len_seq_num],
         )
         current_idx += expected_len_seq_num
         dest_entity_id = ByteFieldGenerator.from_bytes(
             expected_len_entity_ids,
-            raw_packet[current_idx : current_idx + expected_len_entity_ids],
+            data[current_idx: current_idx + expected_len_entity_ids],
         )
         pdu_header.set_entity_ids(
             source_entity_id=source_entity_id, dest_entity_id=dest_entity_id

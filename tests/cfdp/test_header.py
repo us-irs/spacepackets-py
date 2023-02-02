@@ -64,7 +64,7 @@ class TestHeader(TestCase):
         )
         self.assertEqual(string, "hex [20,00,00,11,00,00,00]")
         self.check_fields_case_one(pdu_header_packed=pdu_header_packed)
-        pdu_header_unpacked = PduHeader.unpack(raw_packet=pdu_header_packed)
+        pdu_header_unpacked = PduHeader.unpack(data=pdu_header_packed)
         pdu_header_repacked = pdu_header_unpacked.pack()
         self.check_fields_case_one(pdu_header_packed=pdu_header_repacked)
 
@@ -90,7 +90,7 @@ class TestHeader(TestCase):
         invalid_pdu_header = bytearray([0, 1, 2])
         self.assertRaises(ValueError, PduHeader.unpack, invalid_pdu_header)
         self.assertRaises(ValueError, PduHeader.unpack, pdu_header_packed[0:6])
-        pdu_header_unpacked = PduHeader.unpack(raw_packet=pdu_header_packed)
+        pdu_header_unpacked = PduHeader.unpack(data=pdu_header_packed)
         self.assertEqual(pdu_header_unpacked.source_entity_id, ByteFieldU16(0))
         self.assertEqual(pdu_header_unpacked.dest_entity_id, ByteFieldU16(1))
         self.assertEqual(
