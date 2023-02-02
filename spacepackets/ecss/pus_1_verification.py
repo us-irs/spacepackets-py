@@ -34,10 +34,7 @@ ErrorCode = PacketFieldEnum
 
 class FailureNotice:
     def __init__(self, code: ErrorCode, data: bytes):
-        if (code.pfc % 8) != 0:
-            raise ValueError("PFC values for error code must be byte-aligned")
-        elif round(code.pfc / 8) not in [1, 2, 4, 8]:
-            raise ValueError("Allowed byte size for failure notice: 1, 2, 4 or 8")
+        # The PFC of the passed error code is already checked for validity.
         self.code = code
         self.data = data
 
@@ -242,7 +239,7 @@ class Service1Tm(AbstractPusTm):
                 data=self.pus_tm.tm_data[4 : 4 + unpack_cfg.bytes_step_id],
             )
         elif self.pus_tm.subservice not in [1, 3, 7]:
-            raise ValueError(f"invalid subservice {self.pus_tm.subservice}")
+            raise ValueError(f"invalid subservice {self.pus_tm.subservice}, not in [1, 3, 7]")
 
     @property
     def failure_notice(self) -> Optional[FailureNotice]:

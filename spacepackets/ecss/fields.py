@@ -113,7 +113,7 @@ class PacketFieldEnum(PacketFieldBase):
         """Check for byte alignment of the PFC. Do not use this if to plan to pack multiple
         enumerations into one byte
         """
-        num_bytes = round(pfc / 8)
+        num_bytes = int(round(pfc / 8))
         if num_bytes not in [1, 2, 4, 8]:
             raise ValueError("Invalid PFC, not byte aligned")
         return num_bytes
