@@ -35,7 +35,7 @@ class TestMetadata(TestCase):
         metadata_pdu_unpacked = MetadataPdu.unpack(data=metadata_pdu_raw)
         self.check_metadata_fields_0(metadata_pdu=metadata_pdu_unpacked)
         metadata_pdu_raw = metadata_pdu_raw[: 8 + 6]
-        self.assertRaises(ValueError, MetadataPdu.unpack, raw_packet=metadata_pdu_raw)
+        self.assertRaises(ValueError, MetadataPdu.unpack, data=metadata_pdu_raw)
 
     def test_equal_assertion(self):
         metadata_pdu = MetadataPdu(self.pdu_conf, self.metadata_params)

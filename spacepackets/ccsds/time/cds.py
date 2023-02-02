@@ -141,9 +141,7 @@ class CdsShortTimestamp(CcsdsTimeProvider):
         :param data:
         :return:
         """
-        (self._ccsds_days, self._ms_of_day) = CdsShortTimestamp.unpack_from_raw(
-            data
-        )
+        (self._ccsds_days, self._ms_of_day) = CdsShortTimestamp.unpack_from_raw(data)
         self._setup()
 
     @staticmethod
