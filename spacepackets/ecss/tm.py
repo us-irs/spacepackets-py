@@ -347,10 +347,6 @@ class PusTelemetry(AbstractPusTm):
         pus_tm._crc16 = data[expected_packet_len - 2 : expected_packet_len]
         # CRC16-CCITT checksum
         crc_func = mkPredefinedCrcFun(crc_name="crc-ccitt-false")
-        print(expected_packet_len)
-        print(len(data))
-        print(data.hex(sep=","))
-        print(data[:expected_packet_len].hex(sep=","))
         if crc_func(data[:expected_packet_len]) != 0:
             raise InvalidTmCrc16(pus_tm)
         return pus_tm
