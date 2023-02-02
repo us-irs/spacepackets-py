@@ -17,7 +17,8 @@ from spacepackets.ecss.pus_1_verification import (
     create_acceptance_failure_tm,
     create_start_failure_tm,
     create_step_failure_tm,
-    create_completion_failure_tm, ErrorCode,
+    create_completion_failure_tm,
+    ErrorCode,
 )
 
 

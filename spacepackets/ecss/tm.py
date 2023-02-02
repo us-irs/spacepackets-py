@@ -10,6 +10,7 @@ from typing import Optional
 import deprecation
 from crcmod.predefined import mkPredefinedCrcFun, PredefinedCrc
 
+from .exceptions import TmSrcDataTooShortError  # noqa  # re-export
 from spacepackets import __version__
 from spacepackets.ccsds.time.common import read_p_field
 from spacepackets.exceptions import BytesTooShortError
