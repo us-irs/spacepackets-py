@@ -8,7 +8,8 @@ import struct
 from typing import Tuple, Optional
 
 import deprecation
-from crcmod.predefined import mkPredefinedCrcFun, PredefinedCrc
+from spacepackets.ecss.crc import CRC16_CCITT_FUNC
+from crcmod.predefined import PredefinedCrc
 
 from spacepackets.ccsds.spacepacket import (
     SpacePacketHeader,
@@ -263,8 +264,7 @@ class PusTelecommand:
         packed_data.extend(self.pus_tc_sec_header.pack())
         packed_data += self.app_data
         if self._crc16 is None or recalc_crc:
-            crc_func = mkPredefinedCrcFun(crc_name="crc-ccitt-false")
-            self._crc16 = crc_func(packed_data)
+            self._crc16 = CRC16_CCITT_FUNC(packed_data)
         packed_data.extend(struct.pack("!H", self._crc16))
         return packed_data
 
@@ -289,8 +289,7 @@ class PusTelecommand:
             raise BytesTooShortError(expected_packet_len, len(data))
         tc_unpacked._app_data = data[header_len : expected_packet_len - 2]
         tc_unpacked._crc16 = data[expected_packet_len - 2 : expected_packet_len]
-        crc_func = mkPredefinedCrcFun(crc_name="crc-ccitt-false")
-        if crc_func(data[:expected_packet_len]) != 0:
+        if CRC16_CCITT_FUNC(data[:expected_packet_len]) != 0:
             raise InvalidTcCrc16(tc_unpacked)
         return tc_unpacked
 
@@ -382,8 +381,7 @@ def generate_packet_crc(tc_packet: bytearray) -> bytes:
     CRC16 checksum and adds it as correct Packet Error Control Code.
     Reference: ECSS-E70-41A p. 207-212
     """
-    crc_func = mkPredefinedCrcFun(crc_name="crc-ccitt-false")
-    crc = crc_func(tc_packet[0 : len(tc_packet) - 2])
+    crc = CRC16_CCITT_FUNC(tc_packet[0 : len(tc_packet) - 2])
     tc_packet[len(tc_packet) - 2] = (crc & 0xFF00) >> 8
     tc_packet[len(tc_packet) - 1] = crc & 0xFF
     return tc_packet
@@ -393,7 +391,6 @@ def generate_crc(data: bytearray) -> bytes:
     """Takes the application data, appends the CRC16 checksum and returns resulting bytearray"""
     data_with_crc = bytearray()
     data_with_crc += data
-    crc_func = mkPredefinedCrcFun(crc_name="crc-ccitt-false")
-    crc = crc_func(data)
+    crc = CRC16_CCITT_FUNC(data)
     data_with_crc.extend(struct.pack("!H", crc))
     return data_with_crc

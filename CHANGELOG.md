@@ -8,6 +8,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 # [unreleased]
 
+## Changed
+
+- The CRC16 function retrieved from `crcmod` is now cached on module
+  level instead of being re-created for every usage. This might yield
+  performance improvements.
+- Remove `setup.cfg` and fully move to `pyproject.toml`. The `flake8` config
+  was moved to a `.flake8` file.
+
 # [v0.14.0rc3] 2023-02-02
 
 Refactored `logging` module usage to be more pythonic.

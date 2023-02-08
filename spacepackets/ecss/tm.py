@@ -8,7 +8,7 @@ import struct
 from typing import Optional
 
 import deprecation
-from crcmod.predefined import mkPredefinedCrcFun, PredefinedCrc
+from crcmod.predefined import PredefinedCrc
 
 from .exceptions import TmSrcDataTooShortError  # noqa  # re-export
 from spacepackets import __version__
@@ -30,6 +30,7 @@ from spacepackets.ecss.conf import (
     get_default_tm_apid,
     FETCH_GLOBAL_APID,
 )
+from spacepackets.ecss.crc import CRC16_CCITT_FUNC
 
 
 class AbstractPusTm(AbstractSpacePacket):
@@ -295,8 +296,7 @@ class PusTelemetry(AbstractPusTm):
         tm_packet_raw.extend(self._source_data)
         if self._crc16 is None or recalc_crc:
             # CRC16-CCITT checksum
-            crc_func = mkPredefinedCrcFun(crc_name="crc-ccitt-false")
-            self._crc16 = crc_func(tm_packet_raw)
+            self._crc16 = CRC16_CCITT_FUNC(tm_packet_raw)
         tm_packet_raw.extend(struct.pack("!H", self._crc16))
         return tm_packet_raw
 
@@ -346,8 +346,7 @@ class PusTelemetry(AbstractPusTm):
         ]
         pus_tm._crc16 = data[expected_packet_len - 2 : expected_packet_len]
         # CRC16-CCITT checksum
-        crc_func = mkPredefinedCrcFun(crc_name="crc-ccitt-false")
-        if crc_func(data[:expected_packet_len]) != 0:
+        if CRC16_CCITT_FUNC(data[:expected_packet_len]) != 0:
             raise InvalidTmCrc16(pus_tm)
         return pus_tm
 
