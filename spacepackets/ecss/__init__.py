@@ -23,7 +23,8 @@ def check_pus_crc(tc_packet: bytes) -> bool:
     raw PUS packet. Both TC and TM packets can be passed to this function because both packet
     formats have a CCITT-CRC16 at the last two bytes as specified in the PUS standard.
 
-    :return True if the CRC is valid, False otherwise."""
+    :return: True if the CRC is valid, False otherwise.
+    """
     crc_func = mkPredefinedCrcFun(crc_name="crc-ccitt-false")
     crc = crc_func(tc_packet)
     return crc == 0
