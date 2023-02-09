@@ -17,11 +17,13 @@ class TestTelecommand(TestCase):
 
     def test_state(self):
         self.assertTrue(self.ping_tc.packet_len == len(self.ping_tc.pack()))
-        command_tuple = self.ping_tc.pack_command_tuple()
-        self.assertTrue(len(command_tuple[0]) == self.ping_tc.packet_len)
+        command_raw = self.ping_tc.pack()
+        self.assertTrue(len(command_raw) == self.ping_tc.packet_len)
 
         # 6 bytes CCSDS header, 5 bytes secondary header, 2 bytes CRC
         self.assertEqual(self.ping_tc.packet_len, 13)
+        self.assertTrue(isinstance(self.ping_tc.crc16, bytes))
+        self.assertTrue(len(self.ping_tc.crc16), 2)
         # The data length field is the full packet length minus the primary header minus 1
         self.assertEqual(self.ping_tc.sp_header.data_len, 6)
         self.assertEqual(self.ping_tc.packet_id.raw(), (0x18 << 8 | 0x02))
@@ -53,6 +55,7 @@ class TestTelecommand(TestCase):
         # CRC is checked separately, still check raw value
         self.assertEqual(self.ping_tc_raw[11], 0xEE)
         self.assertEqual(self.ping_tc_raw[12], 0x63)
+        self.assertEqual(self.ping_tc.crc16, self.ping_tc_raw[11:13])
 
     def test_source_id(self):
         self.assertEqual(self.ping_tc.source_id, 0)
@@ -116,6 +119,7 @@ class TestTelecommand(TestCase):
         self.assertEqual(pus_17_unpacked.service, 17)
         self.assertEqual(pus_17_unpacked.subservice, 1)
         self.assertEqual(pus_17_unpacked.seq_count, 0x34)
+        self.assertEqual(self.ping_tc.crc16, pus_17_unpacked.crc16)
 
     def test_faulty_unpack(self):
         with self.assertRaises(ValueError):

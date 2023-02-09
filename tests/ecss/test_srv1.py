@@ -1,7 +1,7 @@
 from typing import Optional
 from unittest import TestCase
-from unittest.mock import MagicMock, PropertyMock
 
+from spacepackets import SpacePacketHeader, PacketType
 from spacepackets.ccsds import CdsShortTimestamp
 from spacepackets.ecss import PusTelecommand, PacketFieldEnum, RequestId
 from spacepackets.ecss.pus_1_verification import (
@@ -19,18 +19,16 @@ from spacepackets.ecss.pus_1_verification import (
     create_step_failure_tm,
     create_completion_failure_tm,
     ErrorCode,
+    StepId,
 )
+from tests.ecss.common import generic_time_provider_mock, TEST_STAMP
 
 
 class Service1TmTest(TestCase):
     def setUp(self) -> None:
         ping_tc = PusTelecommand(service=17, subservice=1)
         self.srv1_tm = create_start_success_tm(ping_tc, None)
-        self.time_stamp_provider = MagicMock(spec=CdsShortTimestamp)
-        len_mock = PropertyMock(return_value=7)
-        type(self.time_stamp_provider).len_packed = len_mock
-        self.raw_stamp = bytes([0, 1, 2, 3, 4, 5, 6])
-        self.time_stamp_provider.pack.return_value = self.raw_stamp
+        self.time_stamp_provider = generic_time_provider_mock(TEST_STAMP)
 
     def test_failure_notice_invalid_creation(self):
         with self.assertRaises(ValueError):
@@ -49,6 +47,36 @@ class Service1TmTest(TestCase):
     def test_other_ctor(self):
         srv1_tm = Service1Tm.from_tm(self.srv1_tm.pus_tm, UnpackParams(None))
         self.assertEqual(srv1_tm, self.srv1_tm)
+
+    def test_failure_notice(self):
+        error_code = PacketFieldEnum(pfc=8, val=2)
+        failure_notice = FailureNotice(code=error_code, data=bytes([0, 2, 4, 8]))
+        self.assertEqual(failure_notice.code.val, error_code.val)
+        self.assertEqual(failure_notice.code.pfc, error_code.pfc)
+        notice_raw = failure_notice.pack()
+        notice_unpacked = FailureNotice.unpack(notice_raw, 1, 4)
+        self.assertEqual(notice_unpacked.code.val, error_code.val)
+        self.assertEqual(notice_unpacked.code.pfc, error_code.pfc)
+        self.assertEqual(notice_unpacked.data, bytes([0, 2, 4, 8]))
+
+    def test_verif_params(self):
+        sp_header = SpacePacketHeader(
+            packet_type=PacketType.TM,
+            apid=0x22,
+            sec_header_flag=False,
+            seq_count=22,
+            data_len=35,
+        )
+        verif_param = VerificationParams(req_id=RequestId.from_sp_header(sp_header))
+        self.assertEqual(verif_param.len(), 4)
+        verif_param.step_id = StepId(pfc=8, val=12)
+        self.assertEqual(verif_param.len(), 5)
+        verif_param.step_id.pfc = 16
+        self.assertEqual(verif_param.len(), 6)
+        verif_param.failure_notice = FailureNotice(
+            code=ErrorCode(pfc=16, val=22), data=bytes([0, 1, 2])
+        )
+        self.assertEqual(verif_param.len(), 11)
 
     def test_service_1_tm_acc_success(self):
         self._generic_test_srv_1_success(Subservice.TM_ACCEPTANCE_SUCCESS)

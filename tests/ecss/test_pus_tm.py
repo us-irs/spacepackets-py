@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import struct
 from unittest import TestCase
-from unittest.mock import MagicMock, PropertyMock
+from unittest.mock import MagicMock
 
 from crcmod.predefined import mkPredefinedCrcFun
 
@@ -12,7 +12,7 @@ from spacepackets.ccsds.spacepacket import (
     SequenceFlags,
     SpacePacketHeader,
 )
-from spacepackets.ecss import PacketFieldEnum, check_pus_crc
+from spacepackets.ecss import check_pus_crc
 from spacepackets.ecss.conf import set_default_tm_apid
 from spacepackets.util import PrintFormats
 from spacepackets.ecss.tm import (
@@ -22,23 +22,17 @@ from spacepackets.ecss.tm import (
     PusTmSecondaryHeader,
     InvalidTmCrc16,
 )
-from spacepackets.ecss.pus_17_test import Service17Tm
 from spacepackets.ecss.pus_1_verification import (
     RequestId,
-    VerificationParams,
-    FailureNotice,
-    StepId,
-    ErrorCode,
 )
+from .common import generic_time_provider_mock, TEST_STAMP
 
 
 class TestTelemetry(TestCase):
     def setUp(self) -> None:
         self.time_stamp_provider = MagicMock(spec=CdsShortTimestamp)
-        len_mock = PropertyMock(return_value=7)
-        type(self.time_stamp_provider).len_packed = len_mock
-        self.raw_stamp = bytes([0, 1, 2, 3, 4, 5, 6])
-        self.time_stamp_provider.pack.return_value = self.raw_stamp
+
+        self.time_stamp_provider = generic_time_provider_mock(TEST_STAMP)
         self.ping_reply = PusTelemetry(
             service=17,
             subservice=2,
@@ -107,7 +101,7 @@ class TestTelemetry(TestCase):
 
     def test_raw(self):
         self.raw_check_before_stamp()
-        self.assertEqual(self.ping_reply_raw[13 : 13 + 7], self.raw_stamp)
+        self.assertEqual(self.ping_reply_raw[13 : 13 + 7], TEST_STAMP)
         # CRC16-CCITT checksum
         crc_func = mkPredefinedCrcFun(crc_name="crc-ccitt-false")
         data_to_check = self.ping_reply_raw[0:20]
@@ -119,6 +113,8 @@ class TestTelemetry(TestCase):
         source_data = bytearray([0x42, 0x38])
         self.ping_reply.tm_data = source_data
         self.assertEqual(self.ping_reply.apid, 0x22)
+        self.assertTrue(isinstance(self.ping_reply.crc16, bytes))
+        self.assertTrue(len(self.ping_reply.crc16), 2)
         self.assertEqual(
             self.ping_reply.pus_tm_sec_header.pus_version, PusVersion.PUS_C
         )
@@ -161,16 +157,22 @@ class TestTelemetry(TestCase):
         self.assertEqual(raw_secondary_packet_header[2], 2)
 
     def test_full_printout(self):
+        self.ping_reply.calc_crc()
         crc16 = self.ping_reply.crc16
-        crc_string = f"{(crc16 & 0xff00) >> 8:02x},{crc16 & 0xff:02x}"
         raw_space_packet_header = self.ping_reply.space_packet_header.pack()
-        sp_header_as_str = raw_space_packet_header.hex(sep=",", bytes_per_sep=1)
+        sp_header_as_str = raw_space_packet_header.hex(sep=",")
         raw_secondary_packet_header = self.ping_reply.pus_tm_sec_header.pack()
-        second_header_as_str = raw_secondary_packet_header.hex(sep=",", bytes_per_sep=1)
-        expected_printout = f"hex [{sp_header_as_str},{second_header_as_str},"
-        expected_printout += f"{crc_string}]"
+        second_header_as_str = raw_secondary_packet_header.hex(sep=",")
+        expected_printout = (
+            f"hex [{sp_header_as_str},{second_header_as_str},{crc16.hex(sep=',')}]"
+        )
         self.assertEqual(
-            self.ping_reply.get_full_packet_string(PrintFormats.HEX), expected_printout
+            f"hex [{self.ping_reply.pack(recalc_crc=False).hex(sep=',')}]",
+            expected_printout,
+        )
+        self.assertEqual(
+            f"hex [{self.ping_reply.pack(recalc_crc=True).hex(sep=',')}]",
+            expected_printout,
         )
 
     def test_print_2(self):
@@ -186,6 +188,7 @@ class TestTelemetry(TestCase):
         pus_17_tm_unpacked = PusTelemetry.unpack(
             data=self.ping_reply_raw, time_reader=self.time_stamp_provider
         )
+        self.assertEqual(self.ping_reply.crc16, pus_17_tm_unpacked.crc16)
         self.assertEqual(pus_17_tm_unpacked, self.ping_reply)
 
         self.assertEqual(pus_17_tm_unpacked.apid, 0x22)
@@ -194,7 +197,7 @@ class TestTelemetry(TestCase):
         )
         pus_17_tm_unpacked.pus_tm_sec_header.time_provider.read_from_raw.assert_called_once()
         pus_17_tm_unpacked.pus_tm_sec_header.time_provider.read_from_raw.assert_called_with(
-            self.raw_stamp
+            TEST_STAMP
         )
         self.assertEqual(pus_17_tm_unpacked.tm_data, source_data)
         self.assertEqual(pus_17_tm_unpacked.packet_id.raw(), 0x0822)
@@ -276,15 +279,6 @@ class TestTelemetry(TestCase):
         self.ping_reply_raw[5] = 0x00
         self.assertRaises(ValueError, PusTelemetry.unpack, self.ping_reply_raw, None)
 
-    def test_service_17_tm(self):
-        srv_17_tm = Service17Tm(subservice=2, time_provider=self.time_stamp_provider)
-        self.assertEqual(srv_17_tm.pus_tm.subservice, 2)
-        srv_17_tm_raw = srv_17_tm.pack()
-        srv_17_tm_unpacked = Service17Tm.unpack(
-            data=srv_17_tm_raw, time_reader=self.time_stamp_provider
-        )
-        self.assertEqual(srv_17_tm_unpacked.pus_tm.subservice, 2)
-
     def test_req_id(self):
         tc_packet_id = PacketId(ptype=PacketType.TC, sec_header_flag=True, apid=0x42)
         tc_psc = PacketSeqCtrl(seq_flags=SequenceFlags.UNSEGMENTED, seq_count=22)
@@ -302,33 +296,3 @@ class TestTelemetry(TestCase):
         self.assertEqual(unpack_req_id.tc_psc.raw(), tc_psc.raw())
         with self.assertRaises(ValueError):
             RequestId.unpack(bytes([0, 1, 2]))
-
-    def test_failure_notice(self):
-        error_code = PacketFieldEnum(pfc=8, val=2)
-        failure_notice = FailureNotice(code=error_code, data=bytes([0, 2, 4, 8]))
-        self.assertEqual(failure_notice.code.val, error_code.val)
-        self.assertEqual(failure_notice.code.pfc, error_code.pfc)
-        notice_raw = failure_notice.pack()
-        notice_unpacked = FailureNotice.unpack(notice_raw, 1, 4)
-        self.assertEqual(notice_unpacked.code.val, error_code.val)
-        self.assertEqual(notice_unpacked.code.pfc, error_code.pfc)
-        self.assertEqual(notice_unpacked.data, bytes([0, 2, 4, 8]))
-
-    def test_verif_params(self):
-        sp_header = SpacePacketHeader(
-            packet_type=PacketType.TM,
-            apid=0x22,
-            sec_header_flag=False,
-            seq_count=22,
-            data_len=35,
-        )
-        verif_param = VerificationParams(req_id=RequestId.from_sp_header(sp_header))
-        self.assertEqual(verif_param.len(), 4)
-        verif_param.step_id = StepId(pfc=8, val=12)
-        self.assertEqual(verif_param.len(), 5)
-        verif_param.step_id.pfc = 16
-        self.assertEqual(verif_param.len(), 6)
-        verif_param.failure_notice = FailureNotice(
-            code=ErrorCode(pfc=16, val=22), data=bytes([0, 1, 2])
-        )
-        self.assertEqual(verif_param.len(), 11)

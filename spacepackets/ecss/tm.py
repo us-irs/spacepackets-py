@@ -296,8 +296,8 @@ class PusTelemetry(AbstractPusTm):
         tm_packet_raw.extend(self._source_data)
         if self._crc16 is None or recalc_crc:
             # CRC16-CCITT checksum
-            self._crc16 = CRC16_CCITT_FUNC(tm_packet_raw)
-        tm_packet_raw.extend(struct.pack("!H", self._crc16))
+            self._crc16 = struct.pack("!H", CRC16_CCITT_FUNC(tm_packet_raw))
+        tm_packet_raw.extend(self._crc16)
         return tm_packet_raw
 
     def calc_crc(self):
@@ -306,7 +306,7 @@ class PusTelemetry(AbstractPusTm):
         crc.update(self.space_packet_header.pack())
         crc.update(self.pus_tm_sec_header.pack())
         crc.update(self._source_data)
-        self._crc16 = crc.crcValue
+        self._crc16 = struct.pack("!H", crc.crcValue)
 
     @classmethod
     def unpack(
@@ -379,12 +379,12 @@ class PusTelemetry(AbstractPusTm):
         pus_tm._source_data = tm_data
         return pus_tm
 
-    def to_space_packet(self):
+    def to_space_packet(self) -> SpacePacket:
         """Retrieve the generic CCSDS space packet representation. This also calculates the CRC16
         before converting the PUS TC to a generic Space Packet"""
         self.calc_crc()
         user_data = bytearray(self._source_data)
-        user_data.extend(struct.pack("!H", self.crc16))
+        user_data.extend(self.crc16)
         return SpacePacket(
             self.space_packet_header, self.pus_tm_sec_header.pack(), user_data
         )

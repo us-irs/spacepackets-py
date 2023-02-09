@@ -241,7 +241,7 @@ class PusTelecommand:
         before converting the PUS TC to a generic Space Packet"""
         self.calc_crc()
         user_data = bytearray(self._app_data)
-        user_data.extend(struct.pack("!H", self._crc16))
+        user_data.extend(self._crc16)
         return SpacePacket(self.sp_header, self.pus_tc_sec_header.pack(), user_data)
 
     def calc_crc(self):
@@ -250,7 +250,7 @@ class PusTelecommand:
         crc.update(self.sp_header.pack())
         crc.update(self.pus_tc_sec_header.pack())
         crc.update(self.app_data)
-        self._crc16 = crc.crcValue
+        self._crc16 = struct.pack("!H", crc.crcValue)
 
     def pack(self, recalc_crc: bool = True) -> bytearray:
         """Serializes the TC data fields into a bytearray.
@@ -264,8 +264,8 @@ class PusTelecommand:
         packed_data.extend(self.pus_tc_sec_header.pack())
         packed_data += self.app_data
         if self._crc16 is None or recalc_crc:
-            self._crc16 = CRC16_CCITT_FUNC(packed_data)
-        packed_data.extend(struct.pack("!H", self._crc16))
+            self._crc16 = struct.pack("!H", CRC16_CCITT_FUNC(packed_data))
+        packed_data.extend(self._crc16)
         return packed_data
 
     @classmethod
