@@ -40,21 +40,3 @@ dependencies = [
 
 [tool.setuptools.dynamic]
 version = {attr = "spacepackets.__version__"}
-
-# Default flake8 does not appear to have implemented proper pyproject.toml
-# support yet but there are project like flake9 and pyproject-flake8 which
-# aim to alleviate this problem
-[tool.flake8]
-max-line-length = 100
-ignore = "D203, W503"
-exclude = [
-    ".git",
-    "__pycache__",
-    "docs/conf.py",
-    "old",
-    "build",
-    "dist",
-    "venv"
-]
-max-complexity = 10
-extend-ignore = "E203,"
