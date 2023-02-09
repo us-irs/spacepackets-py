@@ -6,10 +6,13 @@ from abc import abstractmethod, ABC
 import deprecation
 from spacepackets import __version__
 
+#: The day offset to convert from CCSDS days to UNIX days.
 DAYS_CCSDS_TO_UNIX = -4383
-SECONDS_PER_DAY = 86400
-MS_PER_DAY = SECONDS_PER_DAY * 1000
-UNIX_EPOCH = datetime.datetime.utcfromtimestamp(0)
+#: Seconds per days as integer
+SECONDS_PER_DAY: int = 86400
+#: Milliseconds per day as integer
+MS_PER_DAY: int = SECONDS_PER_DAY * 1000
+UNIX_EPOCH = datetime.datetime.fromtimestamp(0, tz=datetime.timezone.utc)
 
 
 class CcsdsTimeCodeId(enum.IntEnum):

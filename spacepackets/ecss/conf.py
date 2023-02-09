@@ -1,6 +1,8 @@
 import enum
 
 
+#: Can be passed as an APID value to automatically fetch an APID value configured globally for
+#: the library
 FETCH_GLOBAL_APID = -1
 
 
