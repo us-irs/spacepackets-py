@@ -16,6 +16,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Remove `setup.cfg` and fully move to `pyproject.toml`. The `flake8` config
   was moved to a `.flake8` file.
 
+## Fixed
+
+- The `crc16` property of both `spacepackets.ecss.tc.PusTelecommand`
+  and `spacepackets.ecss.tm.PusTelemetry` still was an `int` in some cases.
+  It should always be an `Optional[bytes]` (size 2) now.
+
 # [v0.14.0rc3] 2023-02-02
 
 Refactored `logging` module usage to be more pythonic.
