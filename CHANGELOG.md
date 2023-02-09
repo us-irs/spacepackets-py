@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 # [unreleased]
 
+# [v0.14.0] 2023-02-09
+
 ## Changed
 
 - The CRC16 function retrieved from `crcmod` is now cached on module
