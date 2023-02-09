@@ -144,6 +144,23 @@ class TestTelecommand(TestCase):
         self.assertEqual(tc_header_pus_c_raw[1], 1)
         self.assertEqual(tc_header_pus_c_raw[2], 2)
 
+    def test_calc_crc(self):
+        new_ping_tc = PusTelecommand(service=17, subservice=1)
+        self.assertIsNone(new_ping_tc.crc16)
+        new_ping_tc.calc_crc()
+        self.assertIsNotNone(new_ping_tc.crc16)
+        self.assertTrue(isinstance(new_ping_tc.crc16, bytes))
+        self.assertEqual(len(new_ping_tc.crc16), 2)
+
+    def test_crc_always_calced_if_none(self):
+        new_ping_tc = PusTelecommand(service=17, subservice=1)
+        self.assertIsNone(new_ping_tc.crc16)
+        # Should still calculate CRC
+        tc_raw = new_ping_tc.pack(recalc_crc=False)
+        # Will throw invalid CRC16 error if CRC was not calculated
+        tc_unpacked = PusTelecommand.unpack(tc_raw)
+        self.assertEqual(tc_unpacked, new_ping_tc)
+
     def test_from_composite_fields(self):
         pus_17_from_composite_fields = PusTelecommand.from_composite_fields(
             sp_header=self.ping_tc.sp_header,

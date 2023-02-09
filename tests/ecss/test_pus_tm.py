@@ -14,7 +14,7 @@ from spacepackets.ccsds.spacepacket import (
 )
 from spacepackets.ecss import check_pus_crc
 from spacepackets.ecss.conf import set_default_tm_apid
-from spacepackets.util import PrintFormats
+from spacepackets.util import PrintFormats, get_printable_data_string
 from spacepackets.ecss.tm import (
     PusTelemetry,
     CdsShortTimestamp,
@@ -45,14 +45,15 @@ class TestTelemetry(TestCase):
 
     def test_state(self):
         self.assertEqual(self.ping_reply.sp_header, self.ping_reply.space_packet_header)
+        src_data = self.ping_reply.source_data
         self.assertEqual(
-            self.ping_reply.get_source_data_string(PrintFormats.HEX), "hex []"
+            get_printable_data_string(PrintFormats.DEC, src_data), "dec []"
         )
         self.assertEqual(
-            self.ping_reply.get_source_data_string(PrintFormats.DEC), "dec []"
+            get_printable_data_string(PrintFormats.HEX, src_data), "hex []"
         )
         self.assertEqual(
-            self.ping_reply.get_source_data_string(PrintFormats.BIN), "bin []"
+            get_printable_data_string(PrintFormats.BIN, src_data), "bin []"
         )
         self.assertEqual(self.ping_reply.subservice, 2)
         self.assertEqual(self.ping_reply.service, 17)
@@ -135,18 +136,16 @@ class TestTelemetry(TestCase):
         source_data = bytearray([0x42, 0x38])
         self.ping_reply.tm_data = source_data
         self.assertEqual(
-            self.ping_reply.get_source_data_string(PrintFormats.HEX), "hex [42,38]"
+            f"hex [{self.ping_reply.source_data.hex(sep=',')}]", "hex [42,38]"
         )
         self.assertEqual(
-            self.ping_reply.get_source_data_string(PrintFormats.DEC), "dec [66,56]"
+            get_printable_data_string(PrintFormats.DEC, self.ping_reply.source_data),
+            "dec [66,56]",
         )
         self.assertEqual(
-            self.ping_reply.get_source_data_string(PrintFormats.BIN),
+            get_printable_data_string(PrintFormats.BIN, self.ping_reply.source_data),
             "bin [\n0:01000010\n1:00111000\n]",
         )
-
-    def test_print(self):
-        self.ping_reply.print_full_packet_string(PrintFormats.HEX)
 
     def test_sec_header(self):
         raw_secondary_packet_header = self.ping_reply.pus_tm_sec_header.pack()
@@ -233,6 +232,27 @@ class TestTelemetry(TestCase):
             PusTelemetry.unpack(
                 data=self.ping_reply_raw, time_reader=self.time_stamp_provider
             )
+
+    def test_calc_crc(self):
+        new_ping_tm = PusTelemetry(
+            service=17, subservice=2, time_provider=self.time_stamp_provider
+        )
+        self.assertIsNone(new_ping_tm.crc16)
+        new_ping_tm.calc_crc()
+        self.assertIsNotNone(new_ping_tm.crc16)
+        self.assertTrue(isinstance(new_ping_tm.crc16, bytes))
+        self.assertEqual(len(new_ping_tm.crc16), 2)
+
+    def test_crc_always_calced_if_none(self):
+        new_ping_tm = PusTelemetry(
+            service=17, subservice=2, time_provider=self.time_stamp_provider
+        )
+        self.assertIsNone(new_ping_tm.crc16)
+        # Should still calculate CRC
+        tc_raw = new_ping_tm.pack(recalc_crc=False)
+        # Will throw invalid CRC16 error if CRC was not calculated
+        tc_unpacked = PusTelemetry.unpack(tc_raw, time_reader=self.time_stamp_provider)
+        self.assertEqual(tc_unpacked, new_ping_tm)
 
     def test_faulty_unpack(self):
         self.assertRaises(ValueError, PusTelemetry.unpack, None, None)
