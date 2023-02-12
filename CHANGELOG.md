@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 # [unreleased]
 
+# [v0.14.1] 2023-02-12
+
+## Changed
+
+- Use custom package discovery in `pyproject.toml` for more robustness.
+
 # [v0.14.0] 2023-02-09
 
 ## Changed

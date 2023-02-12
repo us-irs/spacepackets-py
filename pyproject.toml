@@ -25,6 +25,7 @@ classifiers = [
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.7",
     "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
     "Topic :: Communications",
     "Topic :: Software Development :: Libraries",
     "Topic :: Software Development :: Libraries :: Python Modules",
@@ -40,3 +41,6 @@ dependencies = [
 
 [tool.setuptools.dynamic]
 version = {attr = "spacepackets.__version__"}
+
+[tool.setuptools.packages]
+find = {}
