@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 # [unreleased]
 
+- Removed `ecss.pus_5_event.Severity`, moved to `tmtccmd` package because it is not ECSS generic.
+
 # [v0.14.1] 2023-02-12
 
 ## Changed
