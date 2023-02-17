@@ -8,7 +8,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 # [unreleased]
 
+# [v0.15.0] 2023-02-17
+
 - Removed `ecss.pus_5_event.Severity`, moved to `tmtccmd` package because it is not ECSS generic.
+- Added first basic `ecss.pus_15_tm_storage` module with `Subservice` enum.
 
 # [v0.14.1] 2023-02-12
 
