@@ -10,6 +10,7 @@ class PusService(enum.IntEnum):
     S8_FUNC_CMD = 8
     S9_TIME_MGMT = 9
     S11_TC_SCHED = 11
+    S15_TM_STORAGE = 15
     S17_TEST = 17
     S20_PARAMETER = 20
     S23_FILE_MGMT = 23
