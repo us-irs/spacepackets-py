@@ -36,7 +36,7 @@ class TestAckPdu(TestCase):
                     0x20,
                     0x00,
                     0x03,
-                    0x22,
+                    0x11,
                     0x00,  # This and following byte in source ID
                     0x02,
                     0x00,  # This and following byte is seq number
@@ -83,7 +83,7 @@ class TestAckPdu(TestCase):
                     0x26,
                     0x00,
                     0x03,
-                    0x44,
+                    0x33,
                     0x10,
                     0x00,
                     0x01,

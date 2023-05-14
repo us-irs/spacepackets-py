@@ -15,7 +15,7 @@ class TestEofPdu(TestCase):
         expected_packet_len = 8 + 1 + 4 + 4
         self.assertEqual(eof_pdu.packet_len, expected_packet_len)
         eof_pdu_raw = eof_pdu.pack()
-        expected_header = bytearray([0x20, 0x00, 0x0A, 0x11, 0x00, 0x00, 0x00, 0x04])
+        expected_header = bytearray([0x20, 0x00, 0x0A, 0x00, 0x00, 0x00, 0x00, 0x04])
         expected_header.append(0)
         expected_header.extend(NULL_CHECKSUM_U32)
         # File size is 0 as 4 bytes

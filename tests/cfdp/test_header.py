@@ -62,7 +62,7 @@ class TestHeader(TestCase):
         string = get_printable_data_string(
             print_format=PrintFormats.HEX, data=pdu_header_packed
         )
-        self.assertEqual(string, "hex [20,00,00,11,00,00,00]")
+        self.assertEqual(string, "hex [20,00,00,00,00,00,00]")
         self.check_fields_case_one(pdu_header_packed=pdu_header_packed)
         pdu_header_unpacked = PduHeader.unpack(data=pdu_header_packed)
         pdu_header_repacked = pdu_header_unpacked.pack()
@@ -138,11 +138,11 @@ class TestHeader(TestCase):
         # Segmentation Control
         self.assertEqual((pdu_header_packed[3] & 0x80) >> 7, 0)
         # Length of entity IDs
-        self.assertEqual((pdu_header_packed[3] & 0x70) >> 4, LenInBytes.ONE_BYTE)
+        self.assertEqual(((pdu_header_packed[3] >> 4) & 0b111) + 1, LenInBytes.ONE_BYTE)
         # Segment metadata flag
         self.assertEqual((pdu_header_packed[3] & 0x08) >> 3, 0)
         # Length of transaction sequence number
-        self.assertEqual(pdu_header_packed[3] & 0b111, LenInBytes.ONE_BYTE)
+        self.assertEqual((pdu_header_packed[3] & 0b111) + 1, LenInBytes.ONE_BYTE)
         # Source entity ID
         self.assertEqual(pdu_header_packed[4], 0)
         # Transaction Sequence number
@@ -169,11 +169,13 @@ class TestHeader(TestCase):
         # Segmentation Control
         self.assertEqual((pdu_header_packed[3] & 0x80) >> 7, 1)
         # Length of entity IDs
-        self.assertEqual((pdu_header_packed[3] & 0x70) >> 4, LenInBytes.TWO_BYTES)
+        self.assertEqual(
+            ((pdu_header_packed[3] >> 4) & 0b111) + 1, LenInBytes.TWO_BYTES
+        )
         # Segment metadata flag
         self.assertEqual((pdu_header_packed[3] & 0x08) >> 3, 1)
         # Length of transaction sequence number
-        self.assertEqual(pdu_header_packed[3] & 0b111, LenInBytes.TWO_BYTES)
+        self.assertEqual((pdu_header_packed[3] & 0b111) + 1, LenInBytes.TWO_BYTES)
         # Source entity ID
         self.assertEqual(pdu_header_packed[4:6], bytes([0, 0]))
         # Transaction Sequence number

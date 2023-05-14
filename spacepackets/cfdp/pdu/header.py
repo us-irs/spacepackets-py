@@ -112,8 +112,8 @@ class AbstractPduBase(abc.ABC):
 
     @staticmethod
     def header_len_from_raw(data: bytes):
-        entity_id_len = (data[3] >> 4) & 0b111
-        seq_num_len = data[3] & 0b111
+        entity_id_len = ((data[3] >> 4) & 0b111) + 1
+        seq_num_len = (data[3] & 0b111) + 1
         return AbstractPduBase.FIXED_LENGTH + 2 * entity_id_len + seq_num_len
 
 
@@ -262,9 +262,9 @@ class PduHeader(AbstractPduBase):
         header.append(self.pdu_data_field_len & 0xFF)
         header.append(
             self.pdu_conf.seg_ctrl << 7
-            | self.source_entity_id.byte_len << 4
+            | ((self.source_entity_id.byte_len - 1) << 4)
             | self.segment_metadata_flag << 3
-            | self.transaction_seq_num.byte_len
+            | (self.transaction_seq_num.byte_len - 1)
         )
         header.extend(self.pdu_conf.source_entity_id.as_bytes)
         header.extend(self.pdu_conf.transaction_seq_num.as_bytes)
@@ -304,9 +304,9 @@ class PduHeader(AbstractPduBase):
         pdu_header.file_flag = LargeFileFlag(data[0] & 0x01)
         pdu_header.pdu_data_field_len = data[1] << 8 | data[2]
         pdu_header.segmentation_control = SegmentationControl((data[3] & 0x80) >> 7)
-        expected_len_entity_ids = cls.check_len_in_bytes((data[3] & 0x70) >> 4)
-        pdu_header.segment_metadata_flag = SegmentMetadataFlag((data[3] & 0x08) >> 3)
-        expected_len_seq_num = cls.check_len_in_bytes(data[3] & 0x07)
+        expected_len_entity_ids = cls.check_len_in_bytes(((data[3] >> 4) & 0b111) + 1)
+        pdu_header.segment_metadata_flag = SegmentMetadataFlag((data[3] >> 3) & 0b1)
+        expected_len_seq_num = cls.check_len_in_bytes((data[3] & 0b111) + 1)
         expected_remaining_len = 2 * expected_len_entity_ids + expected_len_seq_num
         if expected_remaining_len + cls.FIXED_LENGTH > len(data):
             raise BytesTooShortError(

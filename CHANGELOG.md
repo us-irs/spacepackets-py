@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 # [unreleased]
 
+## Fixed
+
+- Important bugfix in CFDP PDU header format: The entity length field and the transaction sequence
+  number fields stored the actual length of the field instead of the length minus 1 like specified
+  in the CFDP standard.
+
 # [v0.15.0] 2023-02-17
 
 - Removed `ecss.pus_5_event.Severity`, moved to `tmtccmd` package because it is not ECSS generic.
