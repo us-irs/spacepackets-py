@@ -8,11 +8,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 # [unreleased]
 
+# [v0.16.0] 2023-05-15
+
 ## Fixed
 
 - Important bugfix in CFDP PDU header format: The entity length field and the transaction sequence
-  number fields stored the actual length of the field instead of the length minus 1 like specified
-  in the CFDP standard.
+  number length field stored the actual length of the field instead of the length minus 1 like
+  specified in the CFDP standard.
 
 # [v0.15.0] 2023-02-17
 
