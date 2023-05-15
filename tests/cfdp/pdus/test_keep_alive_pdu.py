@@ -22,7 +22,7 @@ class TestKeepAlivePdu(TestCase):
                     0x20,
                     0x00,
                     0x05,
-                    0x11,
+                    0x00,
                     0x00,
                     0x00,
                     0x00,

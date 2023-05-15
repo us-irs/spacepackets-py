@@ -48,7 +48,7 @@ class TestFinishPdu(TestCase):
         # delivery status
         self.assertEqual(
             finish_pdu_raw,
-            bytes([0x20, 0x00, 0x02, 0x11, 0x00, 0x00, 0x00, 0x05, 0x03]),
+            bytes([0x20, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x05, 0x03]),
         )
 
     def test_unpack_basic(self):
@@ -154,7 +154,7 @@ class TestFinishPdu(TestCase):
         self.assertEqual(pdu_with_response.packet_len, 22)
         pdu_with_response_raw = pdu_with_response.pack()
         expected_array = bytearray(
-            [0x20, 0x00, 0x0F, 0x11, 0x00, 0x00, 0x00, 0x05, 0x44]
+            [0x20, 0x00, 0x0F, 0x00, 0x00, 0x00, 0x00, 0x05, 0x44]
         )
         expected_array.extend(filestore_response_1_packed)
         self.assertEqual(expected_array, pdu_with_response_raw)

@@ -15,7 +15,7 @@ class TestPromptPdu(TestCase):
         prompt_pdu_raw = prompt_pdu.pack()
         self.assertEqual(
             prompt_pdu_raw,
-            bytes([0x20, 0x00, 0x02, 0x11, 0x00, 0x00, 0x00, 0x09, 0x80]),
+            bytes([0x20, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x09, 0x80]),
         )
         self.assertEqual(prompt_pdu.packet_len, 9)
         prompt_pdu_unpacked = PromptPdu.unpack(data=prompt_pdu_raw)
