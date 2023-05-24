@@ -699,6 +699,54 @@ class FileStoreResponseTlv(FileStoreRequestBase, AbstractTlvBase):
 TlvList = List[Union[AbstractTlvBase]]
 
 
+class ProxyMessageType(enum.IntEnum):
+    PUT_REQUEST = 0x00
+    MSG_TO_USER = 0x01
+    FS_REQUEST = 0x02
+    FAULT_HANDLER_OVERRIDE = 0x03
+    TRANSMISSION_MODE = 0x04
+    FLOW_LABEL = 0x05
+    SEGMENTATION_CTRL = 0x06
+    PUT_RESPONSE = 0x07
+    FS_RESPONSE = 0x08
+    PUT_CANCEL = 0x09
+    CLOSURE_REQUEST = 0x0B
+
+
+class ReservedCfdpMessage(AbstractTlvBase):
+    def __init__(self, msg_type: int, value: bytes):
+        assert msg_type < pow(2, 8) - 1
+        full_value = bytearray("cfdp".encode())
+        full_value.append(msg_type)
+        full_value.extend(value)
+        self.tlv = CfdpTlv(TlvTypes.MESSAGE_TO_USER, full_value)
+
+    def pack(self) -> bytearray:
+        return self.tlv.pack()
+
+    @property
+    def packet_len(self):
+        return self.tlv.packet_len
+
+    @property
+    def tlv_type(self) -> TlvTypes:
+        return self.tlv.tlv_type
+
+    @property
+    def value(self) -> bytes:
+        return self.tlv.value
+
+
+class ProxyPutRequest(ReservedCfdpMessage):
+    def __init__(
+        self, dest_entity_id: CfdpLv, source_file_name: CfdpLv, dest_file_name: CfdpLv
+    ):
+        value = dest_entity_id.pack()
+        value.extend(source_file_name.pack())
+        value.extend(dest_file_name.pack())
+        super().__init__(ProxyMessageType.PUT_REQUEST, value)
+
+
 class TlvHolder:
     def __init__(self, tlv_base: Optional[AbstractTlvBase]):
         self.base = tlv_base
