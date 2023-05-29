@@ -1,5 +1,6 @@
 from __future__ import annotations
 import enum
+import struct
 from dataclasses import dataclass
 from typing import List, Optional
 
@@ -9,9 +10,10 @@ from spacepackets.cfdp.pdu.file_directive import (
     DirectiveType,
     AbstractFileDirectiveBase,
 )
-from spacepackets.cfdp.defs import ConditionCode
+from spacepackets.cfdp.defs import ConditionCode, CrcFlag
 from spacepackets.cfdp.conf import PduConfig
 from spacepackets.cfdp.tlv import TlvTypes, FileStoreResponseTlv, EntityIdTlv
+from spacepackets.crc import CRC16_CCITT_FUNC
 from spacepackets.exceptions import BytesTooShortError
 
 
@@ -115,14 +117,9 @@ class FinishedPdu(AbstractFileDirectiveBase):
         """
         if file_store_responses is None:
             self._params.file_store_responses = []
-            self.pdu_file_directive.directive_param_field_len = (
-                1 + self.fault_location_len
-            )
-            return
-        self._params.file_store_responses = file_store_responses
-        self.pdu_file_directive.directive_param_field_len = (
-            1 + self.fault_location_len + self.file_store_responses_len
-        )
+        else:
+            self._params.file_store_responses = file_store_responses
+        self._calculate_directive_field_len()
 
     @property
     def file_store_responses_len(self):
@@ -143,14 +140,20 @@ class FinishedPdu(AbstractFileDirectiveBase):
         """Setter function for the fault location.
         :raises ValueError: Type ID is not entity ID (0x06)
         """
-        if fault_location is None:
+        self._params.fault_location = fault_location
+        self._calculate_directive_field_len()
+
+    def _calculate_directive_field_len(self):
+        base_len = 1
+        if self.fault_location is None:
             fault_loc_len = 0
         else:
             fault_loc_len = self.fault_location_len
+        if self.pdu_file_directive.pdu_conf.crc_flag == CrcFlag.WITH_CRC:
+            base_len += 2
         self.pdu_file_directive.directive_param_field_len = (
-            1 + fault_loc_len + self.file_store_responses_len
+            base_len + fault_loc_len + self.file_store_responses_len
         )
-        self._params.fault_location = fault_location
 
     @property
     def fault_location_len(self):
@@ -179,6 +182,8 @@ class FinishedPdu(AbstractFileDirectiveBase):
                 packet.extend(file_store_reponse.pack())
         if self.fault_location is not None and self.might_have_fault_location:
             packet.extend(self.fault_location.pack())
+        if self.pdu_file_directive.pdu_conf.crc_flag == CrcFlag.WITH_CRC:
+            packet.extend(struct.pack("!H", CRC16_CCITT_FUNC(packet)))
         return packet
 
     @classmethod
@@ -191,6 +196,7 @@ class FinishedPdu(AbstractFileDirectiveBase):
         """
         finished_pdu = cls.__empty()
         finished_pdu.pdu_file_directive = FileDirectivePduBase.unpack(raw_packet=data)
+        finished_pdu.pdu_file_directive.verify_length_and_checksum(data)
         if finished_pdu.pdu_file_directive.packet_len > len(data):
             raise BytesTooShortError(
                 finished_pdu.pdu_file_directive.packet_len, len(data)

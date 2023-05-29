@@ -8,6 +8,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 # [unreleased]
 
+## Changed
+
+- Moved `CRC16_CCITT_FUNC` from `spacepackets.ecss.crc` to `spacepackets.crc`. This checksum is
+  not just used by PUS, but by the CCSDS TC and the CFDP standard as well.
+
+## Added
+
+- Checksum and PDU length checks when creating PDUs from a raw buffer.
+- CRC flag support for CFDP.
+
 # [v0.16.0] 2023-05-15
 
 ## Fixed
