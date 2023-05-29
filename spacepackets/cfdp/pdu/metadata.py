@@ -154,10 +154,6 @@ class MetadataPdu(AbstractFileDirectiveBase):
             self._dest_file_name_lv = CfdpLv(value=dest_file_name_as_bytes)
         self._calculate_directive_field_len()
 
-    @property
-    def packet_len(self) -> int:
-        return self.pdu_file_directive.packet_len
-
     def pack(self) -> bytearray:
         self.pdu_file_directive._verify_file_len(self.params.file_size)
         packet = self.pdu_file_directive.pack()

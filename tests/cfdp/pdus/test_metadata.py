@@ -7,7 +7,7 @@ from spacepackets.cfdp import (
     ConditionCode,
 )
 from spacepackets.cfdp.conf import PduConfig
-from spacepackets.cfdp.defs import FaultHandlerCode, LargeFileFlag
+from spacepackets.cfdp.defs import FaultHandlerCode, LargeFileFlag, CrcFlag
 from spacepackets.cfdp.pdu import MetadataPdu
 from spacepackets.cfdp.pdu.metadata import MetadataParams
 from spacepackets.cfdp.tlv import TlvHolder, FaultHandlerOverrideTlv
@@ -42,6 +42,15 @@ class TestMetadata(TestCase):
         metadata_raw = metadata_pdu.pack()
         metadata_unpacked = MetadataPdu.unpack(metadata_raw)
         self.assertEqual(metadata_pdu, metadata_unpacked)
+
+    def test_metadata_with_crc(self):
+        self.pdu_conf.crc_flag = CrcFlag.WITH_CRC
+        metadata_pdu = MetadataPdu(pdu_conf=self.pdu_conf, params=self.metadata_params)
+        expected_len = metadata_pdu.header_len + 5 + 10 + 9 + 2
+        self.assertEqual(metadata_pdu.header_len, 8)
+        self.assertEqual(metadata_pdu.packet_len, expected_len)
+        metadata_raw = metadata_pdu.pack()
+        self.assertEqual(len(metadata_raw), expected_len)
 
     def test_metadata_pdu(self):
         file_name = "hallo.txt"
