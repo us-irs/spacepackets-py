@@ -68,11 +68,11 @@ class TestAckPdu(TestCase):
             transaction_status=TransactionStatus.ACTIVE,
             pdu_conf=pdu_conf,
         )
-        self.check_fields_packet_1(ack_pdu=ack_pdu_2)
+        self.check_fields_packet_1(ack_pdu=ack_pdu_2, with_crc=True)
         ack_pdu_raw = ack_pdu_2.pack()
-        self.assertEqual(len(ack_pdu_raw), 19)
+        self.assertEqual(len(ack_pdu_raw), 21)
         self.assertEqual(
-            ack_pdu_raw,
+            ack_pdu_raw[:19],
             # 0x06 because this is the directive code of ACK PDUs
             # 0x40 because 0x04 << 4 is the directive code of the EOF PDU and 0b0000 because
             # because this is not a Finished PDUs
@@ -82,7 +82,7 @@ class TestAckPdu(TestCase):
                 [
                     0x26,
                     0x00,
-                    0x03,
+                    0x05,
                     0x33,
                     0x10,
                     0x00,
@@ -137,7 +137,7 @@ class TestAckPdu(TestCase):
         )
         self.assertEqual(ack_pdu.packet_len, 13)
 
-    def check_fields_packet_1(self, ack_pdu: AckPdu):
+    def check_fields_packet_1(self, ack_pdu: AckPdu, with_crc: bool):
         self.assertEqual(ack_pdu.directive_code_of_acked_pdu, DirectiveType.EOF_PDU)
         self.assertEqual(
             ack_pdu.condition_code_of_acked_pdu,
@@ -160,4 +160,7 @@ class TestAckPdu(TestCase):
             ack_pdu.pdu_file_directive.pdu_header.pdu_conf.trans_mode,
             TransmissionMode.UNACKNOWLEDGED,
         )
-        self.assertEqual(ack_pdu.packet_len, 19)
+        if with_crc:
+            self.assertEqual(ack_pdu.packet_len, 21)
+        else:
+            self.assertEqual(ack_pdu.packet_len, 19)

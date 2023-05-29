@@ -13,7 +13,8 @@ from spacepackets.cfdp.pdu.file_directive import (
 from spacepackets.cfdp.conf import PduConfig, LargeFileFlag
 from spacepackets.cfdp.tlv import CfdpTlv, TlvList
 from spacepackets.cfdp.lv import CfdpLv
-from spacepackets.cfdp.defs import ChecksumType
+from spacepackets.cfdp.defs import ChecksumType, CrcFlag
+from spacepackets.crc import CRC16_CCITT_FUNC
 from spacepackets.exceptions import BytesTooShortError
 
 
@@ -100,17 +101,21 @@ class MetadataPdu(AbstractFileDirectiveBase):
         return self.pdu_file_directive.directive_param_field_len
 
     def _calculate_directive_field_len(self):
-        directive_param_field_len = 5
+        directive_param_field_len = (
+            5
+            + self._source_file_name_lv.packet_len
+            + self._dest_file_name_lv.packet_len
+        )
         if (
             self.pdu_file_directive.pdu_header.large_file_flag_set
             == LargeFileFlag.LARGE
         ):
-            directive_param_field_len = 9
-        directive_param_field_len += self._source_file_name_lv.packet_len
-        directive_param_field_len += self._dest_file_name_lv.packet_len
+            directive_param_field_len += 4
         if self._options is not None:
             for option in self._options:
                 directive_param_field_len += option.packet_len
+        if self.pdu_file_directive.pdu_conf.crc_flag == CrcFlag.WITH_CRC:
+            directive_param_field_len += 2
         self.pdu_file_directive.directive_param_field_len = directive_param_field_len
 
     @property
@@ -166,6 +171,8 @@ class MetadataPdu(AbstractFileDirectiveBase):
         if self._options is not None:
             for option in self.options:
                 packet.extend(option.pack())
+        if self.pdu_file_directive.pdu_conf.crc_flag == CrcFlag.WITH_CRC:
+            packet.extend(struct.pack("!H", CRC16_CCITT_FUNC(packet)))
         return packet
 
     @classmethod

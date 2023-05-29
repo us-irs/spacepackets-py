@@ -1,5 +1,6 @@
 from __future__ import annotations
 import enum
+import struct
 
 from spacepackets.cfdp.pdu import PduHeader
 from spacepackets.cfdp.pdu.file_directive import (
@@ -7,8 +8,9 @@ from spacepackets.cfdp.pdu.file_directive import (
     DirectiveType,
     AbstractFileDirectiveBase,
 )
-from spacepackets.cfdp.defs import ConditionCode
+from spacepackets.cfdp.defs import ConditionCode, CrcFlag
 from spacepackets.cfdp.conf import PduConfig
+from spacepackets.crc import CRC16_CCITT_FUNC
 
 
 class TransactionStatus(enum.IntEnum):
@@ -58,6 +60,7 @@ class AckPdu(AbstractFileDirectiveBase):
             self.directive_subtype_code = 0b0000
         self.condition_code_of_acked_pdu = condition_code_of_acked_pdu
         self.transaction_status = transaction_status
+        self._calculate_directive_field_len()
 
     @property
     def directive_type(self) -> DirectiveType:
@@ -93,7 +96,15 @@ class AckPdu(AbstractFileDirectiveBase):
             (self.directive_code_of_acked_pdu << 4) | self.directive_subtype_code
         )
         packet.append((self.condition_code_of_acked_pdu << 4) | self.transaction_status)
+        if self.pdu_file_directive.pdu_conf.crc_flag == CrcFlag.WITH_CRC:
+            packet.extend(struct.pack("!H", CRC16_CCITT_FUNC(packet)))
         return packet
+
+    def _calculate_directive_field_len(self):
+        directive_param_field_len = 2
+        if self.pdu_file_directive.pdu_conf.crc_flag == CrcFlag.WITH_CRC:
+            directive_param_field_len += 2
+        self.pdu_file_directive.directive_param_field_len = directive_param_field_len
 
     @classmethod
     def unpack(cls, data: bytes) -> AckPdu:
