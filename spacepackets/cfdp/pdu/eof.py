@@ -8,9 +8,10 @@ from spacepackets.cfdp.pdu.file_directive import (
     DirectiveType,
     AbstractFileDirectiveBase,
 )
-from spacepackets.cfdp.defs import ConditionCode
+from spacepackets.cfdp.defs import ConditionCode, CrcFlag
 from spacepackets.cfdp.conf import PduConfig
 from spacepackets.cfdp.tlv import EntityIdTlv
+from spacepackets.crc import CRC16_CCITT_FUNC
 from spacepackets.exceptions import BytesTooShortError
 
 
@@ -74,6 +75,8 @@ class EofPdu(AbstractFileDirectiveBase):
             directive_param_field_len = 13
         if self._fault_location is not None:
             directive_param_field_len += self._fault_location.packet_len
+        if self.pdu_file_directive.pdu_conf.crc_flag == CrcFlag.WITH_CRC:
+            directive_param_field_len += 2
         self.pdu_file_directive.directive_param_field_len = directive_param_field_len
 
     @classmethod
@@ -95,6 +98,8 @@ class EofPdu(AbstractFileDirectiveBase):
             eof_pdu.extend(struct.pack("!I", self.file_size))
         if self.fault_location is not None:
             eof_pdu.extend(self.fault_location.pack())
+        if self.pdu_file_directive.pdu_conf.crc_flag == CrcFlag.WITH_CRC:
+            eof_pdu.extend(struct.pack("!H", CRC16_CCITT_FUNC(eof_pdu)))
         return eof_pdu
 
     @classmethod

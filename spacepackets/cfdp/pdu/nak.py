@@ -2,6 +2,7 @@ from __future__ import annotations
 import struct
 from typing import List, Tuple, Optional
 
+from spacepackets.cfdp import CrcFlag
 from spacepackets.cfdp.pdu import PduHeader
 from spacepackets.cfdp.pdu.file_directive import (
     AbstractFileDirectiveBase,
@@ -10,6 +11,7 @@ from spacepackets.cfdp.pdu.file_directive import (
     LargeFileFlag,
 )
 from spacepackets.cfdp.conf import PduConfig
+from spacepackets.crc import CRC16_CCITT_FUNC
 
 
 class NakPdu(AbstractFileDirectiveBase):
@@ -65,12 +67,17 @@ class NakPdu(AbstractFileDirectiveBase):
         """Set the file size. This changes the length of the packet when packed as well
         which is handled by this function"""
         self.pdu_file_directive.file_flag = file_flag
-        if file_flag == LargeFileFlag.NORMAL:
+        self._calculate_directive_field_len()
+
+    def _calculate_directive_field_len(self):
+        if self.pdu_file_directive.file_flag == LargeFileFlag.NORMAL:
             directive_param_field_len = 8 + len(self._segment_requests) * 8
-        elif file_flag == LargeFileFlag.LARGE:
+        elif self.pdu_file_directive.file_flag == LargeFileFlag.LARGE:
             directive_param_field_len = 16 + len(self._segment_requests) * 16
         else:
             raise ValueError("Invalid large file flag argument")
+        if self.pdu_file_directive.pdu_conf.crc_flag == CrcFlag.WITH_CRC:
+            directive_param_field_len += 2
         self.pdu_file_directive.directive_param_field_len = directive_param_field_len
 
     @property
@@ -89,12 +96,7 @@ class NakPdu(AbstractFileDirectiveBase):
         if self._segment_requests is None:
             self._segment_requests = []
             return
-        is_large_file = self.pdu_file_directive.pdu_header.large_file_flag_set
-        if not is_large_file:
-            directive_param_field_len = 8 + len(self._segment_requests) * 8
-        else:
-            directive_param_field_len = 16 + len(self._segment_requests) * 16
-        self.pdu_file_directive.directive_param_field_len = directive_param_field_len
+        self._calculate_directive_field_len()
 
     def pack(self) -> bytearray:
         """Pack the NAK PDU.
@@ -125,6 +127,8 @@ class NakPdu(AbstractFileDirectiveBase):
             else:
                 nak_pdu.extend(struct.pack("!Q", segment_request[0]))
                 nak_pdu.extend(struct.pack("!Q", segment_request[1]))
+        if self.pdu_file_directive.pdu_conf.crc_flag == CrcFlag.WITH_CRC:
+            nak_pdu.extend(struct.pack("!H", CRC16_CCITT_FUNC(nak_pdu)))
         return nak_pdu
 
     @classmethod

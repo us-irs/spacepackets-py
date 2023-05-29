@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import struct
 
+from spacepackets.cfdp import CrcFlag
 from spacepackets.cfdp.pdu import PduHeader
 from spacepackets.cfdp.pdu.file_directive import (
     FileDirectivePduBase,
@@ -9,6 +10,7 @@ from spacepackets.cfdp.pdu.file_directive import (
     AbstractFileDirectiveBase,
 )
 from spacepackets.cfdp.conf import PduConfig, LargeFileFlag
+from spacepackets.crc import CRC16_CCITT_FUNC
 
 
 class KeepAlivePdu(AbstractFileDirectiveBase):
@@ -18,6 +20,8 @@ class KeepAlivePdu(AbstractFileDirectiveBase):
         directive_param_field_len = 4
         if pdu_conf.file_flag == LargeFileFlag.LARGE:
             directive_param_field_len = 8
+        if pdu_conf.crc_flag == CrcFlag.WITH_CRC:
+            directive_param_field_len += 2
         # Directive param field length is minimum FSS size which is 4 bytes
         self.pdu_file_directive = FileDirectivePduBase(
             directive_code=DirectiveType.KEEP_ALIVE_PDU,
@@ -59,6 +63,10 @@ class KeepAlivePdu(AbstractFileDirectiveBase):
             keep_alive_packet.extend(struct.pack("I", self.progress))
         else:
             keep_alive_packet.extend(struct.pack("Q", self.progress))
+        if self.pdu_file_directive.pdu_conf.crc_flag == CrcFlag.WITH_CRC:
+            keep_alive_packet.extend(
+                struct.pack("!H", CRC16_CCITT_FUNC(keep_alive_packet))
+            )
         return keep_alive_packet
 
     @classmethod

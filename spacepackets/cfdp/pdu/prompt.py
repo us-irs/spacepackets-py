@@ -1,9 +1,12 @@
 from __future__ import annotations
 import enum
+import struct
 
+from spacepackets.cfdp import CrcFlag
 from spacepackets.cfdp.pdu.file_directive import FileDirectivePduBase, DirectiveType
 from spacepackets.cfdp.conf import PduConfig
 from spacepackets.cfdp.pdu import AbstractFileDirectiveBase, PduHeader
+from spacepackets.crc import CRC16_CCITT_FUNC
 from spacepackets.exceptions import BytesTooShortError
 
 
@@ -21,6 +24,8 @@ class PromptPdu(AbstractFileDirectiveBase):
             pdu_conf=pdu_conf,
             directive_param_field_len=1,
         )
+        if pdu_conf.crc_flag == CrcFlag.WITH_CRC:
+            self.pdu_file_directive.directive_param_field_len = 3
         self.response_required = response_required
 
     @property
@@ -39,6 +44,8 @@ class PromptPdu(AbstractFileDirectiveBase):
     def pack(self) -> bytearray:
         prompt_pdu = self.pdu_file_directive.pack()
         prompt_pdu.append(self.response_required << 7)
+        if self.pdu_file_directive.pdu_conf.crc_flag == CrcFlag.WITH_CRC:
+            prompt_pdu.extend(struct.pack("!H", CRC16_CCITT_FUNC(prompt_pdu)))
         return prompt_pdu
 
     @classmethod
