@@ -178,10 +178,15 @@ class MetadataPdu(AbstractFileDirectiveBase):
         metadata_pdu = cls.__empty()
 
         metadata_pdu.pdu_file_directive = FileDirectivePduBase.unpack(raw_packet=data)
+        metadata_pdu.pdu_file_directive.verify_length_and_checksum(data)
         current_idx = metadata_pdu.pdu_file_directive.header_len
+        min_expected_len = current_idx + 7
+        if metadata_pdu.pdu_file_directive.pdu_conf.file_flag == LargeFileFlag.LARGE:
+            min_expected_len += 4
+        min_expected_len = max(min_expected_len, metadata_pdu.packet_len)
         # Minimal length: 1 byte + FSS (4 byte) + 2 empty LV (1 byte)
-        if current_idx + 7 > len(data):
-            raise BytesTooShortError(current_idx + 7, len(data))
+        if len(data) < min_expected_len:
+            raise BytesTooShortError(min_expected_len, len(data))
         params = MetadataParams(False, ChecksumType.MODULAR, 0, "", "")
         params.closure_requested = bool(data[current_idx] & 0x40)
         params.checksum_type = ChecksumType(data[current_idx] & 0x0F)
@@ -211,7 +216,7 @@ class MetadataPdu(AbstractFileDirectiveBase):
             current_idx += current_tlv.packet_len
             if current_idx > len(raw_packet):
                 # This can not really happen because the CFDP TLV should check the remaining packet
-                # length as well. Still keep it for defensive proramming
+                # length as well. Still keep it for defensive programming
                 raise ValueError
             elif current_idx == len(raw_packet):
                 break

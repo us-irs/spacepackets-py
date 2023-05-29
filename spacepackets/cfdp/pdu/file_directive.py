@@ -132,6 +132,9 @@ class FileDirectivePduBase(AbstractFileDirectiveBase):
         )
         self._directive_type = directive_code
 
+    def verify_length_and_checksum(self, data: bytes):
+        self.pdu_header.verify_length_and_checksum(data)
+
     @property
     def pdu_conf(self) -> PduConfig:
         return self.pdu_header.pdu_conf

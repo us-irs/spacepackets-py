@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import abc
+import struct
 
 from spacepackets.cfdp.defs import (
     LargeFileFlag,
@@ -17,6 +18,8 @@ from spacepackets.cfdp.defs import (
 from spacepackets.cfdp.conf import (
     PduConfig,
 )
+from spacepackets.cfdp.exceptions import InvalidCrc
+from spacepackets.crc import CRC16_CCITT_FUNC
 from spacepackets.exceptions import BytesTooShortError
 from spacepackets.util import UnsignedByteField, ByteFieldGenerator
 
@@ -331,6 +334,16 @@ class PduHeader(AbstractPduBase):
             source_entity_id=source_entity_id, dest_entity_id=dest_entity_id
         )
         return pdu_header
+
+    def verify_length_and_checksum(self, data: bytes) -> int:
+        if len(data) < self.packet_len:
+            raise BytesTooShortError(self.packet_len, len(data))
+        if self.pdu_conf.crc_flag == CrcFlag.WITH_CRC:
+            if CRC16_CCITT_FUNC(data[: self.packet_len]) != 0:
+                raise InvalidCrc(
+                    struct.unpack("!H", data[self.packet_len - 2 : self.packet_len])[0]
+                )
+        return self.packet_len
 
     @staticmethod
     def check_len_in_bytes(detected_len: int) -> LenInBytes:
