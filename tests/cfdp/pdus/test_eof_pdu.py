@@ -1,15 +1,17 @@
 from unittest import TestCase
 
-from spacepackets.cfdp import LargeFileFlag, EntityIdTlv, NULL_CHECKSUM_U32
+from spacepackets.cfdp import LargeFileFlag, EntityIdTlv, NULL_CHECKSUM_U32, CrcFlag
 from spacepackets.cfdp.conf import PduConfig
 from spacepackets.cfdp.pdu import EofPdu
 
 
 class TestEofPdu(TestCase):
+    def setUp(self) -> None:
+        self.pdu_conf = PduConfig.default()
+
     def test_eof_pdu(self):
-        pdu_conf = PduConfig.default()
         eof_pdu = EofPdu(
-            file_checksum=NULL_CHECKSUM_U32, file_size=0, pdu_conf=pdu_conf
+            file_checksum=NULL_CHECKSUM_U32, file_size=0, pdu_conf=self.pdu_conf
         )
         self.assertEqual(eof_pdu.pdu_file_directive.header_len, 8)
         expected_packet_len = 8 + 1 + 4 + 4
@@ -40,12 +42,24 @@ class TestEofPdu(TestCase):
         )
 
         with self.assertRaises(ValueError):
-            EofPdu(file_checksum=bytes([0x00]), file_size=0, pdu_conf=pdu_conf)
+            EofPdu(file_checksum=bytes([0x00]), file_size=0, pdu_conf=self.pdu_conf)
 
-        pdu_conf.file_flag = LargeFileFlag.LARGE
+    def test_large_file_flag(self):
+        expected_packet_len = 8 + 1 + 4 + 8
+        self.pdu_conf.file_flag = LargeFileFlag.LARGE
         eof_pdu_large_file = EofPdu(
-            file_checksum=NULL_CHECKSUM_U32, file_size=0, pdu_conf=pdu_conf
+            file_checksum=NULL_CHECKSUM_U32, file_size=0, pdu_conf=self.pdu_conf
         )
-        self.assertEqual(eof_pdu_large_file.packet_len, expected_packet_len + 4)
+        self.assertEqual(eof_pdu_large_file.packet_len, expected_packet_len)
         eof_pdu_large_file_raw = eof_pdu_large_file.pack()
-        self.assertEqual(len(eof_pdu_large_file_raw), expected_packet_len + 4)
+        self.assertEqual(len(eof_pdu_large_file_raw), expected_packet_len)
+
+    def test_with_crc(self):
+        self.pdu_conf.crc_flag = CrcFlag.WITH_CRC
+        eof = EofPdu(
+            file_checksum=NULL_CHECKSUM_U32, file_size=0, pdu_conf=self.pdu_conf
+        )
+        expected_packet_len = eof.header_len + 1 + 4 + 4 + 2
+        self.assertEqual(eof.packet_len, expected_packet_len)
+        eof_raw = eof.pack()
+        self.assertEqual(len(eof_raw), expected_packet_len)
