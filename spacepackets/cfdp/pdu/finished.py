@@ -191,6 +191,7 @@ class FinishedPdu(AbstractFileDirectiveBase):
         """
         finished_pdu = cls.__empty()
         finished_pdu.pdu_file_directive = FileDirectivePduBase.unpack(raw_packet=data)
+        finished_pdu.pdu_file_directive.verify_length_and_checksum(data)
         if finished_pdu.pdu_file_directive.packet_len > len(data):
             raise BytesTooShortError(
                 finished_pdu.pdu_file_directive.packet_len, len(data)

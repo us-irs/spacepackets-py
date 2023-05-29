@@ -50,6 +50,7 @@ class PromptPdu(AbstractFileDirectiveBase):
         """
         prompt_pdu = cls.__empty()
         prompt_pdu.pdu_file_directive = FileDirectivePduBase.unpack(raw_packet=data)
+        prompt_pdu.pdu_file_directive.verify_length_and_checksum(data)
         current_idx = prompt_pdu.pdu_file_directive.header_len
         if current_idx >= len(data):
             raise BytesTooShortError(current_idx, len(data))

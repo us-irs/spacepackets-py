@@ -173,6 +173,7 @@ class FileDataPdu(AbstractPduBase):
         """
         file_data_packet = cls.__empty()
         file_data_packet.pdu_header = PduHeader.unpack(data=data)
+        file_data_packet.pdu_header.verify_length_and_checksum(data)
         current_idx = file_data_packet.pdu_header.header_len
         if file_data_packet.pdu_header.segment_metadata_flag:
             file_data_packet._params.record_cont_state = RecordContinuationState(

@@ -70,6 +70,7 @@ class KeepAlivePdu(AbstractFileDirectiveBase):
         """
         keep_alive_pdu = cls.__empty()
         keep_alive_pdu.pdu_file_directive = FileDirectivePduBase.unpack(raw_packet=data)
+        keep_alive_pdu.pdu_file_directive.verify_length_and_checksum(data)
         current_idx = keep_alive_pdu.pdu_file_directive.header_len
         if not keep_alive_pdu.pdu_file_directive.pdu_header.large_file_flag_set:
             struct_arg_tuple = ("!I", 4)

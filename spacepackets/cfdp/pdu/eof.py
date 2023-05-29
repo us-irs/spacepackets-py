@@ -107,6 +107,7 @@ class EofPdu(AbstractFileDirectiveBase):
         """
         eof_pdu = cls.__empty()
         eof_pdu.pdu_file_directive = FileDirectivePduBase.unpack(raw_packet=data)
+        eof_pdu.pdu_file_directive.verify_length_and_checksum(data)
         expected_min_len = eof_pdu.pdu_file_directive.header_len + 9
         if expected_min_len > len(data):
             raise BytesTooShortError(expected_min_len, len(data))

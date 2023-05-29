@@ -136,6 +136,7 @@ class NakPdu(AbstractFileDirectiveBase):
         """
         nak_pdu = cls.__empty()
         nak_pdu.pdu_file_directive = FileDirectivePduBase.unpack(raw_packet=data)
+        nak_pdu.pdu_file_directive.verify_length_and_checksum(data)
         current_idx = nak_pdu.pdu_file_directive.header_len
         if not nak_pdu.pdu_file_directive.pdu_header.large_file_flag_set:
             struct_arg_tuple = ("!I", 4)
