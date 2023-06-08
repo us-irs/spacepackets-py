@@ -18,6 +18,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Checksum and PDU length checks when creating PDUs from a raw buffer.
 - CRC flag support for CFDP.
 
+## Fixed
+
+- Bugfix in `ccsds.spacepackets` `parse_space_packets` function: If a broken
+  packet was detected and the current parsing index was larger than 0, the broken
+  packet was not detected and re-inserted into the `deque` properly.
+
 # [v0.16.0] 2023-05-15
 
 ## Fixed
