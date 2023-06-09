@@ -419,7 +419,8 @@ def parse_space_packets(
     analysis_queue: Deque[bytearray], packet_ids: Sequence[PacketId]
 ) -> List[bytearray]:
     """Given a deque of bytearrays, parse for space packets. Any broken headers will be removed.
-    If a packet is detected and the broken tail packets will be reinserted into the given deque.
+    If a split packet with a valid header is detected, broken tail packets will be reinserted
+    in the given deque.
 
     :param analysis_queue:
     :param packet_ids:
@@ -438,7 +439,7 @@ def parse_space_packets(
         return tm_list
     # Packet ID detected
     while True:
-        # Can't even parse CCSDS header.
+        # Can't even parse CCSDS header. Wait for more data to arrive.
         if current_idx + SPACE_PACKET_HEADER_SIZE >= len(concatenated_packets):
             break
         current_packet_id = (
@@ -471,7 +472,7 @@ def __handle_packet_id_match(
     )
     # Might be part of packet. Put back into analysis queue as whole
     if current_idx + total_packet_len > len(concatenated_packets):
-        analysis_queue.appendleft(concatenated_packets)
+        analysis_queue.append(concatenated_packets[current_idx:])
         return -1, current_idx
     else:
         tm_list.append(

@@ -82,5 +82,5 @@ class TestSpParser(TestCase):
         )
         self.assertEqual(len(sp_list), 1)
         self.assertEqual(len(self.packet_deque), 1)
-        # self.assertEqual(self.packet_deque.pop(), tm_packet_first_half)
+        self.assertEqual(self.packet_deque.pop(), tm_packet_first_half)
         self.assertEqual(sp_list[0], self.tm_packet_raw)
