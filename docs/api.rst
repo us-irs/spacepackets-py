@@ -18,7 +18,7 @@ This package also uses the :py:mod:`logging` package to emit warnings.
 .. toctree::
    :maxdepth: 3
 
-   api/exceptions
+   api/generic
    api/ccsds
    api/ccsds_time
    api/ecss_tc

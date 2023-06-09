@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 # [unreleased]
 
+# [v0.17.0] 2023-06-09
+
 ## Changed
 
 - Moved `CRC16_CCITT_FUNC` from `spacepackets.ecss.crc` to `spacepackets.crc`. This checksum is
