@@ -4,10 +4,11 @@ from dataclasses import dataclass
 from typing import Union, Optional
 import struct
 
-from spacepackets.cfdp import LargeFileFlag
+from spacepackets.cfdp import LargeFileFlag, CrcFlag
 from spacepackets.cfdp.pdu.file_directive import SegmentMetadataFlag, PduType
 from spacepackets.cfdp.conf import PduConfig
 from spacepackets.cfdp.pdu.header import PduHeader, AbstractPduBase
+from spacepackets.crc import CRC16_CCITT_FUNC
 from spacepackets.exceptions import BytesTooShortError
 from spacepackets.util import UnsignedByteField
 
@@ -143,6 +144,8 @@ class FileDataPdu(AbstractPduBase):
         else:
             pdu_data_field_len += 4
         pdu_data_field_len += len(self._params.file_data)
+        if self.pdu_header.pdu_conf.crc_flag == CrcFlag.WITH_CRC:
+            pdu_data_field_len += 2
         self.pdu_header.pdu_data_field_len = pdu_data_field_len
 
     def pack(self) -> bytearray:
@@ -161,6 +164,8 @@ class FileDataPdu(AbstractPduBase):
         else:
             file_data_pdu.extend(struct.pack("!Q", self._params.offset))
         file_data_pdu.extend(self._params.file_data)
+        if self.pdu_header.crc_flag == CrcFlag.WITH_CRC:
+            file_data_pdu.extend(struct.pack("!H", CRC16_CCITT_FUNC(file_data_pdu)))
         return file_data_pdu
 
     @classmethod
@@ -173,6 +178,7 @@ class FileDataPdu(AbstractPduBase):
         """
         file_data_packet = cls.__empty()
         file_data_packet.pdu_header = PduHeader.unpack(data=data)
+        file_data_packet.pdu_header.verify_length_and_checksum(data)
         current_idx = file_data_packet.pdu_header.header_len
         if file_data_packet.pdu_header.segment_metadata_flag:
             file_data_packet._params.record_cont_state = RecordContinuationState(

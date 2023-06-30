@@ -30,7 +30,7 @@ from spacepackets.ecss.conf import (
     get_default_tm_apid,
     FETCH_GLOBAL_APID,
 )
-from spacepackets.ecss.crc import CRC16_CCITT_FUNC
+from spacepackets.crc import CRC16_CCITT_FUNC
 
 
 class AbstractPusTm(AbstractSpacePacket):

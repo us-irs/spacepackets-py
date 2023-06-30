@@ -8,7 +8,7 @@ import struct
 from typing import Tuple, Optional
 
 import deprecation
-from spacepackets.ecss.crc import CRC16_CCITT_FUNC
+from spacepackets.crc import CRC16_CCITT_FUNC
 from crcmod.predefined import PredefinedCrc
 
 from spacepackets.ccsds.spacepacket import (

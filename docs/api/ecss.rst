@@ -17,14 +17,6 @@ each time anymore when creating ECSS packets
    :undoc-members:
    :show-inheritance:
 
-spacepackets.ecss.crc
-----------------------------------
-
-.. automodule:: spacepackets.ecss.crc
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 spacepackets.ecss.fields
 ----------------------------------
 

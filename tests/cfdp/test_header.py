@@ -39,7 +39,6 @@ class TestHeader(TestCase):
             pdu_conf=self.pdu_conf,
         )
 
-    # TODO: Split up in smaller test fixtures
     def test_pdu_header(self):
         self.assertEqual(self.pdu_header.pdu_type, PduType.FILE_DIRECTIVE)
         self.assertEqual(self.pdu_header.source_entity_id, ByteFieldU8(0))
@@ -68,7 +67,9 @@ class TestHeader(TestCase):
         pdu_header_repacked = pdu_header_unpacked.pack()
         self.check_fields_case_one(pdu_header_packed=pdu_header_repacked)
 
+    def _switch_cfg(self):
         self.pdu_header.pdu_type = PduType.FILE_DATA
+
         self.pdu_header.set_entity_ids(
             source_entity_id=ByteFieldU16(0), dest_entity_id=ByteFieldU16(1)
         )
@@ -81,6 +82,8 @@ class TestHeader(TestCase):
         self.pdu_header.seg_ctrl = SegmentationControl.RECORD_BOUNDARIES_PRESERVATION
         self.pdu_header.segment_metadata_flag = SegmentMetadataFlag.PRESENT
 
+    def test_pdu_header_2(self):
+        self._switch_cfg()
         self.assertTrue(self.pdu_header.large_file_flag_set)
         pdu_header_packed = self.pdu_header.pack()
         self.check_fields_case_two(pdu_header_packed=pdu_header_packed)
@@ -98,6 +101,8 @@ class TestHeader(TestCase):
             300,
         )
 
+    def test_with_prompt_pdu(self):
+        self._switch_cfg()
         self.pdu_conf.source_entity_id = ByteFieldU8(0)
         self.pdu_conf.dest_entity_id = ByteFieldU8(0)
         self.pdu_conf.transaction_seq_num = ByteFieldU16.from_bytes(bytes([0x00, 0x2C]))
@@ -105,7 +110,7 @@ class TestHeader(TestCase):
             response_required=ResponseRequired.KEEP_ALIVE, pdu_conf=self.pdu_conf
         )
         self.assertEqual(prompt_pdu.pdu_file_directive.header_len, 9)
-        self.assertEqual(prompt_pdu.packet_len, 10)
+        self.assertEqual(prompt_pdu.packet_len, 12)
         self.assertEqual(prompt_pdu.crc_flag, CrcFlag.WITH_CRC)
         self.assertEqual(prompt_pdu.source_entity_id, ByteFieldU8(0))
         self.assertEqual(prompt_pdu.dest_entity_id, ByteFieldU8(0))

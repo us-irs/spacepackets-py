@@ -13,7 +13,8 @@ from spacepackets.cfdp.pdu.file_directive import (
 from spacepackets.cfdp.conf import PduConfig, LargeFileFlag
 from spacepackets.cfdp.tlv import CfdpTlv, TlvList
 from spacepackets.cfdp.lv import CfdpLv
-from spacepackets.cfdp.defs import ChecksumType
+from spacepackets.cfdp.defs import ChecksumType, CrcFlag
+from spacepackets.crc import CRC16_CCITT_FUNC
 from spacepackets.exceptions import BytesTooShortError
 
 
@@ -100,17 +101,21 @@ class MetadataPdu(AbstractFileDirectiveBase):
         return self.pdu_file_directive.directive_param_field_len
 
     def _calculate_directive_field_len(self):
-        directive_param_field_len = 5
+        directive_param_field_len = (
+            5
+            + self._source_file_name_lv.packet_len
+            + self._dest_file_name_lv.packet_len
+        )
         if (
             self.pdu_file_directive.pdu_header.large_file_flag_set
             == LargeFileFlag.LARGE
         ):
-            directive_param_field_len = 9
-        directive_param_field_len += self._source_file_name_lv.packet_len
-        directive_param_field_len += self._dest_file_name_lv.packet_len
+            directive_param_field_len += 4
         if self._options is not None:
             for option in self._options:
                 directive_param_field_len += option.packet_len
+        if self.pdu_file_directive.pdu_conf.crc_flag == CrcFlag.WITH_CRC:
+            directive_param_field_len += 2
         self.pdu_file_directive.directive_param_field_len = directive_param_field_len
 
     @property
@@ -149,10 +154,6 @@ class MetadataPdu(AbstractFileDirectiveBase):
             self._dest_file_name_lv = CfdpLv(value=dest_file_name_as_bytes)
         self._calculate_directive_field_len()
 
-    @property
-    def packet_len(self) -> int:
-        return self.pdu_file_directive.packet_len
-
     def pack(self) -> bytearray:
         self.pdu_file_directive._verify_file_len(self.params.file_size)
         packet = self.pdu_file_directive.pack()
@@ -166,6 +167,8 @@ class MetadataPdu(AbstractFileDirectiveBase):
         if self._options is not None:
             for option in self.options:
                 packet.extend(option.pack())
+        if self.pdu_file_directive.pdu_conf.crc_flag == CrcFlag.WITH_CRC:
+            packet.extend(struct.pack("!H", CRC16_CCITT_FUNC(packet)))
         return packet
 
     @classmethod
@@ -178,10 +181,15 @@ class MetadataPdu(AbstractFileDirectiveBase):
         metadata_pdu = cls.__empty()
 
         metadata_pdu.pdu_file_directive = FileDirectivePduBase.unpack(raw_packet=data)
+        metadata_pdu.pdu_file_directive.verify_length_and_checksum(data)
         current_idx = metadata_pdu.pdu_file_directive.header_len
+        min_expected_len = current_idx + 7
+        if metadata_pdu.pdu_file_directive.pdu_conf.file_flag == LargeFileFlag.LARGE:
+            min_expected_len += 4
+        min_expected_len = max(min_expected_len, metadata_pdu.packet_len)
         # Minimal length: 1 byte + FSS (4 byte) + 2 empty LV (1 byte)
-        if current_idx + 7 > len(data):
-            raise BytesTooShortError(current_idx + 7, len(data))
+        if len(data) < min_expected_len:
+            raise BytesTooShortError(min_expected_len, len(data))
         params = MetadataParams(False, ChecksumType.MODULAR, 0, "", "")
         params.closure_requested = bool(data[current_idx] & 0x40)
         params.checksum_type = ChecksumType(data[current_idx] & 0x0F)
@@ -211,7 +219,7 @@ class MetadataPdu(AbstractFileDirectiveBase):
             current_idx += current_tlv.packet_len
             if current_idx > len(raw_packet):
                 # This can not really happen because the CFDP TLV should check the remaining packet
-                # length as well. Still keep it for defensive proramming
+                # length as well. Still keep it for defensive programming
                 raise ValueError
             elif current_idx == len(raw_packet):
                 break
