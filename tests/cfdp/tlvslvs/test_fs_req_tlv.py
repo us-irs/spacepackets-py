@@ -5,7 +5,7 @@ from spacepackets.cfdp import (
     FilestoreActionCode,
     TlvHolder,
     TlvTypeMissmatch,
-    TlvTypes,
+    TlvType,
     CfdpTlv,
 )
 
@@ -16,11 +16,11 @@ class TestFsReqTlv(TestCase):
             action_code=FilestoreActionCode.APPEND_FILE_SNP, first_file_name="test.txt"
         )
         self.cfdp_tlv = CfdpTlv(
-            tlv_type=TlvTypes.FILESTORE_REQUEST, value=self.fs_reqeust_tlv.value
+            tlv_type=TlvType.FILESTORE_REQUEST, value=self.fs_reqeust_tlv.value
         )
 
     def test_basic(self):
-        self.assertEqual(self.fs_reqeust_tlv.tlv_type, TlvTypes.FILESTORE_REQUEST)
+        self.assertEqual(self.fs_reqeust_tlv.tlv_type, TlvType.FILESTORE_REQUEST)
         self.assertEqual(
             self.fs_reqeust_tlv.action_code, FilestoreActionCode.APPEND_FILE_SNP
         )
@@ -53,6 +53,6 @@ class TestFsReqTlv(TestCase):
         self.assertEqual(
             fs_reqeust_tlv_unpacked.action_code, FilestoreActionCode.APPEND_FILE_SNP
         )
-        fs_reqeust_tlv_tlv.tlv_type = TlvTypes.ENTITY_ID
+        fs_reqeust_tlv_tlv.tlv_type = TlvType.ENTITY_ID
         with self.assertRaises(TlvTypeMissmatch):
             FileStoreRequestTlv.from_tlv(cfdp_tlv=fs_reqeust_tlv_tlv)

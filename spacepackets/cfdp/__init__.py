@@ -14,7 +14,7 @@ from .defs import (
 from .tlv import (
     CfdpTlv,
     EntityIdTlv,
-    TlvTypes,
+    TlvType,
     MessageToUserTlv,
     FileStoreRequestTlv,
     FileStoreResponseTlv,
