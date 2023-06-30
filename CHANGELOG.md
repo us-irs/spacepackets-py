@@ -8,6 +8,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 # [unreleased]
 
+# [v0.18.0] 2023-06-30
+
+## Changed
+
+- Renamed `TlvTypes` to `TlvType`.
+
+## Added
+
+- Added basic low level support for the Proxy Put Request operation.
+
 # [v0.17.0] 2023-06-09
 
 ## Changed
