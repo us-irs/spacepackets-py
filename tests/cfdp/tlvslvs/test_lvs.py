@@ -41,3 +41,12 @@ class TestLvs(TestCase):
         test_lv = CfdpLv(value=bytes([0, 1, 2, 3, 4]))
         print(test_lv)
         print(f"{test_lv!r}")
+
+    def test_from_str(self):
+        string = "hello.txt"
+        str_lv = CfdpLv.from_str(string)
+        self.assertEqual(str_lv.packet_len, len(string) + 1)
+        self.assertEqual(str_lv.value, string.encode())
+        raw_bytes = str_lv.pack()
+        self.assertEqual(raw_bytes[0], len(string))
+        self.assertEqual(raw_bytes[1:].decode(), string)

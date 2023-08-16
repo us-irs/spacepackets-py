@@ -14,6 +14,10 @@ class CfdpLv:
         self.len = len(value)
         self.value = value
 
+    @classmethod
+    def from_str(cls, string: str):
+        return cls(string.encode())
+
     @property
     def packet_len(self):
         """Returns length of full LV packet"""

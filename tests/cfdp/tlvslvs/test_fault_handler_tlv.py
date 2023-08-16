@@ -5,7 +5,7 @@ from spacepackets.cfdp import (
     ConditionCode,
     FaultHandlerCode,
     TlvHolder,
-    TlvTypes,
+    TlvType,
     TlvTypeMissmatch,
     CfdpTlv,
 )
@@ -34,7 +34,7 @@ class TestFaultHandlerOverrideTlv(TestCase):
 
     def test_type_missmatch(self):
         fault_handler_ovvrd_tlv_tlv = self.fault_handler_ovvrd_tlv.tlv
-        fault_handler_ovvrd_tlv_tlv.tlv_type = TlvTypes.ENTITY_ID
+        fault_handler_ovvrd_tlv_tlv.tlv_type = TlvType.ENTITY_ID
         with self.assertRaises(TlvTypeMissmatch):
             FaultHandlerOverrideTlv.from_tlv(cfdp_tlv=fault_handler_ovvrd_tlv_tlv)
 

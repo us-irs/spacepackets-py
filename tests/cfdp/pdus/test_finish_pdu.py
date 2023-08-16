@@ -6,7 +6,7 @@ from spacepackets.cfdp import (
     FileStoreResponseTlv,
     FilestoreActionCode,
     FilestoreResponseStatusCode,
-    TlvTypes,
+    TlvType,
 )
 from spacepackets.cfdp.conf import PduConfig
 from spacepackets.cfdp.pdu import FinishedPdu
@@ -127,7 +127,7 @@ class TestFinishPdu(TestCase):
             filestore_response_1_packed,
             bytes(
                 [
-                    TlvTypes.FILESTORE_RESPONSE,
+                    TlvType.FILESTORE_RESPONSE,
                     11,
                     0x60,
                     0x08,
@@ -205,6 +205,6 @@ class TestFinishPdu(TestCase):
         self.assertEqual(filestore_reponse_2.pack(), fs_responses[1].pack())
 
         # Change TLV type to make it invalid
-        complex_pdu_raw[-5] = TlvTypes.FILESTORE_RESPONSE
+        complex_pdu_raw[-5] = TlvType.FILESTORE_RESPONSE
         with self.assertRaises(ValueError):
             FinishedPdu.unpack(data=complex_pdu_raw)
