@@ -725,6 +725,9 @@ class ReservedCfdpMessage(AbstractTlvBase):
     def pack(self) -> bytearray:
         return self.tlv.pack()
 
+    def to_generic_msg_to_user_tlv(self) -> MessageToUserTlv:
+        return MessageToUserTlv.from_tlv(self.tlv)
+
     @property
     def packet_len(self):
         return self.tlv.packet_len
