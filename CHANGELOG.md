@@ -8,15 +8,24 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 # [unreleased]
 
-# [v0.18.0] 2023-06-30
+# [v0.18.0rc0] 2023-08-17
+
+- Bumped required Python version to v3.8.
 
 ## Changed
 
 - Renamed `TlvTypes` to `TlvType`.
+- Package version is single-sourced using the `importlib.metadata` variant: The `pyproject.toml`
+  now contains the version information, but the informatio can be retrieved at runtime
+  by using the new `version.get_version` API or `importlib.metadata.version("spacepackets")`.
 
 ## Added
 
 - Added basic low level support for the Proxy Put Request operation.
+
+## Removed
+
+- `setup.py` which is not required anymore.
 
 # [v0.17.0] 2023-06-09
 
