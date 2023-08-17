@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 # [v0.18.0rc0] 2023-08-17
 
+- Bumped required Python version to v3.8.
+
 ## Changed
 
 - Renamed `TlvTypes` to `TlvType`.

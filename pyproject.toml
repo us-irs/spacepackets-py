@@ -7,7 +7,7 @@ name = "spacepackets"
 description = "Various CCSDS and ECSS packet implementations"
 readme = "README.md"
 version = "0.18.0rc0"
-requires-python = ">=3.7"
+requires-python = ">=3.8"
 license = {text = "Apache-2.0"}
 authors = [
   {name = "Robin Mueller", email = "robin.mueller.m@gmail.com"}
