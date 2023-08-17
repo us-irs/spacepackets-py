@@ -3,7 +3,8 @@ the :py:class:`PusTelecommand` class.
 """
 from __future__ import annotations
 
-from spacepackets import __version__, BytesTooShortError
+from spacepackets import BytesTooShortError
+from spacepackets.version import get_version
 import struct
 from typing import Tuple, Optional
 
@@ -314,7 +315,7 @@ class PusTelecommand:
 
     @deprecation.deprecated(
         deprecated_in="v0.14.0rc3",
-        current_version=__version__,
+        current_version=get_version(),
         details="use pack and the class itself to build this instead",
     )
     def pack_command_tuple(self) -> Tuple[bytearray, PusTelecommand]:

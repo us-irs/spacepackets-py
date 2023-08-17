@@ -14,16 +14,16 @@ import os
 import sys
 
 sys.path.insert(0, os.path.abspath(".."))
-from spacepackets import __version__
+from spacepackets.version import get_version
 
 # -- Project information -----------------------------------------------------
 
 project = "spacepackets"
-copyright = "2021, Robin Mueller"
+copyright = "2021-2023, Robin Mueller"
 author = "Robin Mueller"
 
 # The full version, including alpha/beta/rc tags
-version = release = __version__
+version = release = get_version()
 
 
 # -- General configuration ---------------------------------------------------

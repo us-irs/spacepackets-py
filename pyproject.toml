@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "spacepackets"
 description = "Various CCSDS and ECSS packet implementations"
 readme = "README.md"
-dynamic = ["version"]
+version = "0.18.0rc0"
 requires-python = ">=3.7"
 license = {text = "Apache-2.0"}
 authors = [
@@ -35,9 +35,6 @@ dependencies = [
 
 [project.urls]
 "Homepage" = "https://github.com/us-irs/spacepackets-py"
-
-[tool.setuptools.dynamic]
-version = {attr = "spacepackets.__version__"}
 
 [tool.setuptools.packages]
 find = {}

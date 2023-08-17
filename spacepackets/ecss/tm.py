@@ -11,7 +11,7 @@ import deprecation
 from crcmod.predefined import PredefinedCrc
 
 from .exceptions import TmSrcDataTooShortError  # noqa  # re-export
-from spacepackets import __version__
+from spacepackets.version import get_version
 from spacepackets.ccsds.time.common import read_p_field
 from spacepackets.exceptions import BytesTooShortError
 from spacepackets.util import PrintFormats, get_printable_data_string
@@ -44,7 +44,7 @@ class AbstractPusTm(AbstractSpacePacket):
     @deprecation.deprecated(
         deprecated_in="v0.14.0rc2",
         details="use sp_header property instead",
-        current_version=__version__,
+        current_version=get_version(),
     )
     def get_sp_header(self) -> SpacePacketHeader:
         return self.sp_header
@@ -512,7 +512,7 @@ class PusTelemetry(AbstractPusTm):
 
     @deprecation.deprecated(
         deprecated_in="0.14.0rc3",
-        current_version=__version__,
+        current_version=get_version(),
         details="use pack and get_printable_data_string or the hex method on bytearray instead",
     )
     def get_full_packet_string(
@@ -523,7 +523,7 @@ class PusTelemetry(AbstractPusTm):
 
     @deprecation.deprecated(
         deprecated_in="0.14.0rc3",
-        current_version=__version__,
+        current_version=get_version(),
         details="use pack and get_printable_data_string or the hex method on bytearray instead",
     )
     def print_full_packet_string(self, print_format: PrintFormats = PrintFormats.HEX):
@@ -532,7 +532,7 @@ class PusTelemetry(AbstractPusTm):
 
     @deprecation.deprecated(
         deprecated_in="0.14.0rc3",
-        current_version=__version__,
+        current_version=get_version(),
         details="use print, the source_data property and the hex method on bytearray instead",
     )
     def print_source_data(self, print_format: PrintFormats = PrintFormats.HEX):
@@ -541,7 +541,7 @@ class PusTelemetry(AbstractPusTm):
 
     @deprecation.deprecated(
         deprecated_in="0.14.0rc3",
-        current_version=__version__,
+        current_version=get_version(),
         details="use the source_data property and the hex method on bytearray instead",
     )
     def get_source_data_string(

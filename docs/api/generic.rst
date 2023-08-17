@@ -19,3 +19,11 @@ spacepackets.exception
    :members:
    :undoc-members:
    :show-inheritance:
+
+spacepackets.version
+----------------------------------
+
+.. automodule:: spacepackets.version
+   :members:
+   :undoc-members:
+   :show-inheritance:

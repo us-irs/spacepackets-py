@@ -1,5 +1,3 @@
-__version__ = "0.18.0rc0"
-
 import logging
 from spacepackets.ccsds import (
     SpacePacketHeader,

@@ -8,7 +8,7 @@ from typing import Optional
 
 import deprecation
 
-from spacepackets import __version__
+from spacepackets.version import get_version
 from spacepackets.exceptions import BytesTooShortError
 from spacepackets.ccsds.time.common import (
     CcsdsTimeProvider,
@@ -207,7 +207,7 @@ class CdsShortTimestamp(CcsdsTimeProvider):
     @classmethod
     @deprecation.deprecated(
         deprecated_in="0.14.0rc1",
-        current_version=__version__,
+        current_version=get_version(),
         details="use from_now instead",
     )
     def from_current_time(cls) -> CdsShortTimestamp:

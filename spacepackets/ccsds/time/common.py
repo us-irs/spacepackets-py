@@ -2,9 +2,9 @@ from __future__ import annotations
 import datetime
 import enum
 from abc import abstractmethod, ABC
+from spacepackets.version import get_version
 
 import deprecation
-from spacepackets import __version__
 
 #: The day offset to convert from CCSDS days to UNIX days.
 DAYS_CCSDS_TO_UNIX = -4383
@@ -64,7 +64,7 @@ class CcsdsTimeProvider(ABC):
 
     @deprecation.deprecated(
         deprecated_in="0.14.0rc1",
-        current_version=__version__,
+        current_version=get_version(),
         details="use len_packed instead",
     )
     @property
@@ -85,7 +85,7 @@ class CcsdsTimeProvider(ABC):
 
     @deprecation.deprecated(
         deprecated_in="0.14.0rc0",
-        current_version=__version__,
+        current_version=get_version(),
         details="use as_date_time instead",
     )
     def as_datetime(self) -> datetime:
