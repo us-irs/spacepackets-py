@@ -379,9 +379,23 @@ class MessageToUserTlv(AbstractTlvBase):
         return False
 
     def get_reserved_cfdp_message_type(self) -> Optional[int]:
-        if self.is_reserved_cfdp_message():
+        if not self.is_reserved_cfdp_message():
             return None
         return self.tlv.value[4]
+
+    def is_cfdp_proxy_operation(self) -> bool:
+        if not self.is_reserved_cfdp_message():
+            return False
+        try:
+            ProxyMessageType(self.get_reserved_cfdp_message_type())
+            return True
+        except IndexError:
+            return False
+
+    def get_cfdp_proxy_message_type(self) -> Optional[ProxyMessageType]:
+        if not self.is_cfdp_proxy_operation():
+            return None
+        return ProxyMessageType(self.get_reserved_cfdp_message_type())
 
     @classmethod
     def __empty(cls):

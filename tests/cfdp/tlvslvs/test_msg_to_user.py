@@ -1,8 +1,11 @@
 from unittest import TestCase
 
 from spacepackets.cfdp import MessageToUserTlv, TlvHolder, TlvType, TlvTypeMissmatch
-from spacepackets.cfdp.tlv import create_cfdp_proxy_and_dir_op_message_marker, CfdpTlv, \
-    ProxyMessageType
+from spacepackets.cfdp.tlv import (
+    create_cfdp_proxy_and_dir_op_message_marker,
+    CfdpTlv,
+    ProxyMessageType,
+)
 
 
 class TestMsgToUser(TestCase):
