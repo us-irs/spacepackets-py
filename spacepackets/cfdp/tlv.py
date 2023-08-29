@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import dataclasses
+import struct
 from abc import ABC, abstractmethod
 from typing import Tuple, Optional, Type, Union, List, Any, cast
 import enum
@@ -766,17 +768,48 @@ class ReservedCfdpMessage(AbstractTlvBase):
             return None
         return ProxyMessageType(self.get_reserved_cfdp_message_type())
 
+    def get_proxy_put_request_params(self) -> Optional[ProxyPutRequestParams]:
+        """This function extract the proxy put request parameters from the raw value if
+        applicable."""
+        current_idx = 5
+        dest_id_lv = CfdpLv.unpack(self.value[current_idx:])
+        current_idx += dest_id_lv.packet_len
+        if current_idx >= len(self.value):
+            return None
+        source_name_lv = CfdpLv.unpack(self.value[current_idx:])
+        current_idx += source_name_lv.packet_len
+        if current_idx >= len(self.value):
+            return None
+        dest_name_lv = CfdpLv.unpack(self.value[current_idx:])
+        if len(dest_id_lv.value) == 1:
+            dest_id = dest_id_lv.value[0]
+        elif len(dest_id_lv.value) == 2:
+            dest_id = struct.unpack("!H", dest_name_lv.value[0:2])[0]
+        elif len(dest_id_lv.value) == 4:
+            dest_id = struct.unpack("!I", dest_name_lv.value[0:4])[0]
+        elif len(dest_id_lv.value) == 8:
+            dest_id = struct.unpack("!Q", dest_name_lv.value[0:4])[0]
+        else:
+            return None
+        return ProxyPutRequestParams(
+            UnsignedByteField(dest_id, len(dest_id_lv.value)),
+            source_name_lv,
+            dest_name_lv,
+        )
+
+
+@dataclasses.dataclass
+class ProxyPutRequestParams:
+    dest_entity_id: UnsignedByteField
+    source_file_name: CfdpLv
+    dest_file_name: CfdpLv
+
 
 class ProxyPutRequest(ReservedCfdpMessage):
-    def __init__(
-        self,
-        dest_entity_id: UnsignedByteField,
-        source_file_name: CfdpLv,
-        dest_file_name: CfdpLv,
-    ):
-        value = CfdpLv(dest_entity_id.as_bytes).pack()
-        value.extend(source_file_name.pack())
-        value.extend(dest_file_name.pack())
+    def __init__(self, params: ProxyPutRequestParams):
+        value = CfdpLv(params.dest_entity_id.as_bytes).pack()
+        value.extend(params.source_file_name.pack())
+        value.extend(params.dest_file_name.pack())
         super().__init__(ProxyMessageType.PUT_REQUEST, value)
 
 
