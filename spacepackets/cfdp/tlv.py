@@ -380,6 +380,7 @@ class MessageToUserTlv(AbstractTlvBase):
             return True
         return False
 
+    # TODO: Add unit test.
     def to_reserved_msg_tlv(self) -> Optional[ReservedCfdpMessage]:
         if not self.is_reserved_cfdp_message():
             return None
@@ -753,9 +754,11 @@ class ReservedCfdpMessage(AbstractTlvBase):
     def value(self) -> bytes:
         return self.tlv.value
 
+    # TODO: Add unit test.
     def get_reserved_cfdp_message_type(self) -> int:
         return self.tlv.value[4]
 
+    # TODO: Add unit test.
     def is_cfdp_proxy_operation(self) -> bool:
         try:
             ProxyMessageType(self.get_reserved_cfdp_message_type())
@@ -763,11 +766,13 @@ class ReservedCfdpMessage(AbstractTlvBase):
         except IndexError:
             return False
 
+    # TODO: Add unit test.
     def get_cfdp_proxy_message_type(self) -> Optional[ProxyMessageType]:
         if not self.is_cfdp_proxy_operation():
             return None
         return ProxyMessageType(self.get_reserved_cfdp_message_type())
 
+    # TODO: Add unit test.
     def get_proxy_put_request_params(self) -> Optional[ProxyPutRequestParams]:
         """This function extract the proxy put request parameters from the raw value if
         applicable."""
@@ -784,11 +789,11 @@ class ReservedCfdpMessage(AbstractTlvBase):
         if len(dest_id_lv.value) == 1:
             dest_id = dest_id_lv.value[0]
         elif len(dest_id_lv.value) == 2:
-            dest_id = struct.unpack("!H", dest_name_lv.value[0:2])[0]
+            dest_id = struct.unpack("!H", dest_id_lv.value[0:2])[0]
         elif len(dest_id_lv.value) == 4:
-            dest_id = struct.unpack("!I", dest_name_lv.value[0:4])[0]
+            dest_id = struct.unpack("!I", dest_id_lv.value[0:4])[0]
         elif len(dest_id_lv.value) == 8:
-            dest_id = struct.unpack("!Q", dest_name_lv.value[0:4])[0]
+            dest_id = struct.unpack("!Q", dest_id_lv.value[0:8])[0]
         else:
             return None
         return ProxyPutRequestParams(
