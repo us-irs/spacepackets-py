@@ -378,24 +378,10 @@ class MessageToUserTlv(AbstractTlvBase):
             return True
         return False
 
-    def get_reserved_cfdp_message_type(self) -> Optional[int]:
+    def to_reserved_msg_tlv(self) -> Optional[ReservedCfdpMessage]:
         if not self.is_reserved_cfdp_message():
             return None
-        return self.tlv.value[4]
-
-    def is_cfdp_proxy_operation(self) -> bool:
-        if not self.is_reserved_cfdp_message():
-            return False
-        try:
-            ProxyMessageType(self.get_reserved_cfdp_message_type())
-            return True
-        except IndexError:
-            return False
-
-    def get_cfdp_proxy_message_type(self) -> Optional[ProxyMessageType]:
-        if not self.is_cfdp_proxy_operation():
-            return None
-        return ProxyMessageType(self.get_reserved_cfdp_message_type())
+        return ReservedCfdpMessage(self.tlv.value[4], self.tlv.value[5:])
 
     @classmethod
     def __empty(cls):
@@ -764,6 +750,21 @@ class ReservedCfdpMessage(AbstractTlvBase):
     @property
     def value(self) -> bytes:
         return self.tlv.value
+
+    def get_reserved_cfdp_message_type(self) -> int:
+        return self.tlv.value[4]
+
+    def is_cfdp_proxy_operation(self) -> bool:
+        try:
+            ProxyMessageType(self.get_reserved_cfdp_message_type())
+            return True
+        except IndexError:
+            return False
+
+    def get_cfdp_proxy_message_type(self) -> Optional[ProxyMessageType]:
+        if not self.is_cfdp_proxy_operation():
+            return None
+        return ProxyMessageType(self.get_reserved_cfdp_message_type())
 
 
 class ProxyPutRequest(ReservedCfdpMessage):
