@@ -373,10 +373,15 @@ class MessageToUserTlv(AbstractTlvBase):
     def tlv_type(self) -> TlvType:
         return MessageToUserTlv.TLV_TYPE
 
-    def is_standard_proxy_dir_ops_msg(self) -> bool:
-        if len(self.tlv.value) >= 4 and self.tlv.value[0:4].decode() == "cfdp":
+    def is_reserved_cfdp_message(self) -> bool:
+        if len(self.tlv.value) >= 5 and self.tlv.value[0:4].decode() == "cfdp":
             return True
         return False
+
+    def get_reserved_cfdp_message_type(self) -> Optional[int]:
+        if self.is_reserved_cfdp_message():
+            return None
+        return self.tlv.value[4]
 
     @classmethod
     def __empty(cls):
@@ -396,6 +401,12 @@ class MessageToUserTlv(AbstractTlvBase):
         msg_to_user_tlv = cls.__empty()
         msg_to_user_tlv.tlv = cfdp_tlv
         return msg_to_user_tlv
+
+    def __str__(self):
+        if self.is_reserved_cfdp_message():
+            return "Reserved CFDP Message to user TLV"
+        else:
+            return "Custom Message to user TLV"
 
 
 class FlowLabelTlv(AbstractTlvBase):
