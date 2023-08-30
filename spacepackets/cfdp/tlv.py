@@ -380,8 +380,9 @@ class MessageToUserTlv(AbstractTlvBase):
             return True
         return False
 
-    # TODO: Add unit test.
     def to_reserved_msg_tlv(self) -> Optional[ReservedCfdpMessage]:
+        """Attempt to convert to a reserved CFDP message. Please note that this operation
+        will fail if the message if not a reserved CFDP message and will then return None."""
         if not self.is_reserved_cfdp_message():
             return None
         return ReservedCfdpMessage(self.tlv.value[4], self.tlv.value[5:])

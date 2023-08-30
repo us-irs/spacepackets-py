@@ -35,3 +35,6 @@ class TestMsgToUser(TestCase):
         proxy_val.append(ProxyMessageType.PUT_REQUEST)
         msg_to_usr_tlv = MessageToUserTlv(msg=proxy_val)
         self.assertTrue(msg_to_usr_tlv.is_reserved_cfdp_message())
+
+    def test_invalid_conversion(self):
+        self.assertIsNone(self.msg_to_usr_tlv.to_reserved_msg_tlv())

@@ -40,3 +40,10 @@ class TestReservedMsg(TestCase):
     def test_conversion_to_generic(self):
         msg_to_user = self.proxy_put_request.to_generic_msg_to_user_tlv()
         self.assertEqual(msg_to_user.tlv_type, TlvType.MESSAGE_TO_USER)
+
+    def test_to_generic_and_to_reserved_again(self):
+        msg_to_user = self.proxy_put_request.to_generic_msg_to_user_tlv()
+        reserved_msg = msg_to_user.to_reserved_msg_tlv()
+        self.assertIsNotNone(reserved_msg)
+        self.assertEqual(self.proxy_put_request, reserved_msg)
+        self.assertEqual(self.proxy_put_request.packet_len, reserved_msg.packet_len)
