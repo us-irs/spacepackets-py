@@ -766,7 +766,7 @@ class ReservedCfdpMessage(AbstractTlvBase):
 
     def get_proxy_put_request_params(self) -> Optional[ProxyPutRequestParams]:
         """This function extract the proxy put request parameters from the raw value if
-        applicable."""
+        applicable. If the value format is invalid, this function will return None."""
         current_idx = 5
         dest_id_lv = CfdpLv.unpack(self.value[current_idx:])
         current_idx += dest_id_lv.packet_len
