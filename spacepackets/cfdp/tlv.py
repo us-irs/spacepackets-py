@@ -754,11 +754,9 @@ class ReservedCfdpMessage(AbstractTlvBase):
     def value(self) -> bytes:
         return self.tlv.value
 
-    # TODO: Add unit test.
     def get_reserved_cfdp_message_type(self) -> int:
         return self.tlv.value[4]
 
-    # TODO: Add unit test.
     def is_cfdp_proxy_operation(self) -> bool:
         try:
             ProxyMessageType(self.get_reserved_cfdp_message_type())
@@ -766,13 +764,11 @@ class ReservedCfdpMessage(AbstractTlvBase):
         except IndexError:
             return False
 
-    # TODO: Add unit test.
     def get_cfdp_proxy_message_type(self) -> Optional[ProxyMessageType]:
         if not self.is_cfdp_proxy_operation():
             return None
         return ProxyMessageType(self.get_reserved_cfdp_message_type())
 
-    # TODO: Add unit test.
     def get_proxy_put_request_params(self) -> Optional[ProxyPutRequestParams]:
         """This function extract the proxy put request parameters from the raw value if
         applicable."""
