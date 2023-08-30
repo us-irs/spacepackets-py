@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import dataclasses
+import struct
 from abc import ABC, abstractmethod
 from typing import Tuple, Optional, Type, Union, List, Any, cast
 import enum
@@ -373,10 +375,17 @@ class MessageToUserTlv(AbstractTlvBase):
     def tlv_type(self) -> TlvType:
         return MessageToUserTlv.TLV_TYPE
 
-    def is_standard_proxy_dir_ops_msg(self) -> bool:
-        if len(self.tlv.value) >= 4 and self.tlv.value[0:4].decode() == "cfdp":
+    def is_reserved_cfdp_message(self) -> bool:
+        if len(self.tlv.value) >= 5 and self.tlv.value[0:4].decode() == "cfdp":
             return True
         return False
+
+    def to_reserved_msg_tlv(self) -> Optional[ReservedCfdpMessage]:
+        """Attempt to convert to a reserved CFDP message. Please note that this operation
+        will fail if the message if not a reserved CFDP message and will then return None."""
+        if not self.is_reserved_cfdp_message():
+            return None
+        return ReservedCfdpMessage(self.tlv.value[4], self.tlv.value[5:])
 
     @classmethod
     def __empty(cls):
@@ -740,17 +749,65 @@ class ReservedCfdpMessage(AbstractTlvBase):
     def value(self) -> bytes:
         return self.tlv.value
 
+    def get_reserved_cfdp_message_type(self) -> int:
+        return self.tlv.value[4]
+
+    def is_cfdp_proxy_operation(self) -> bool:
+        try:
+            ProxyMessageType(self.get_reserved_cfdp_message_type())
+            return True
+        except IndexError:
+            # TODO: Once a directory msg type was added, test this.
+            return False
+
+    def get_cfdp_proxy_message_type(self) -> Optional[ProxyMessageType]:
+        # TODO: Once a directory msg type was added, test this.
+        if not self.is_cfdp_proxy_operation():
+            return None
+        return ProxyMessageType(self.get_reserved_cfdp_message_type())
+
+    def get_proxy_put_request_params(self) -> Optional[ProxyPutRequestParams]:
+        """This function extract the proxy put request parameters from the raw value if
+        applicable. If the value format is invalid, this function will return None."""
+        current_idx = 5
+        dest_id_lv = CfdpLv.unpack(self.value[current_idx:])
+        current_idx += dest_id_lv.packet_len
+        if current_idx >= len(self.value):
+            return None
+        source_name_lv = CfdpLv.unpack(self.value[current_idx:])
+        current_idx += source_name_lv.packet_len
+        if current_idx >= len(self.value):
+            return None
+        dest_name_lv = CfdpLv.unpack(self.value[current_idx:])
+        if len(dest_id_lv.value) == 1:
+            dest_id = dest_id_lv.value[0]
+        elif len(dest_id_lv.value) == 2:
+            dest_id = struct.unpack("!H", dest_id_lv.value[0:2])[0]
+        elif len(dest_id_lv.value) == 4:
+            dest_id = struct.unpack("!I", dest_id_lv.value[0:4])[0]
+        elif len(dest_id_lv.value) == 8:
+            dest_id = struct.unpack("!Q", dest_id_lv.value[0:8])[0]
+        else:
+            return None
+        return ProxyPutRequestParams(
+            UnsignedByteField(dest_id, len(dest_id_lv.value)),
+            source_name_lv,
+            dest_name_lv,
+        )
+
+
+@dataclasses.dataclass
+class ProxyPutRequestParams:
+    dest_entity_id: UnsignedByteField
+    source_file_name: CfdpLv
+    dest_file_name: CfdpLv
+
 
 class ProxyPutRequest(ReservedCfdpMessage):
-    def __init__(
-        self,
-        dest_entity_id: UnsignedByteField,
-        source_file_name: CfdpLv,
-        dest_file_name: CfdpLv,
-    ):
-        value = CfdpLv(dest_entity_id.as_bytes).pack()
-        value.extend(source_file_name.pack())
-        value.extend(dest_file_name.pack())
+    def __init__(self, params: ProxyPutRequestParams):
+        value = CfdpLv(params.dest_entity_id.as_bytes).pack()
+        value.extend(params.source_file_name.pack())
+        value.extend(params.dest_file_name.pack())
         super().__init__(ProxyMessageType.PUT_REQUEST, value)
 
 

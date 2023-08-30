@@ -1,7 +1,11 @@
 from unittest import TestCase
 
 from spacepackets.cfdp import MessageToUserTlv, TlvHolder, TlvType, TlvTypeMissmatch
-from spacepackets.cfdp.tlv import create_cfdp_proxy_and_dir_op_message_marker, CfdpTlv
+from spacepackets.cfdp.tlv import (
+    create_cfdp_proxy_and_dir_op_message_marker,
+    CfdpTlv,
+    ProxyMessageType,
+)
 
 
 class TestMsgToUser(TestCase):
@@ -26,7 +30,11 @@ class TestMsgToUser(TestCase):
         msg_to_usr_tlv_raw = self.msg_to_usr_tlv.pack()
         msg_to_usr_tlv_unpacked = MessageToUserTlv.unpack(data=msg_to_usr_tlv_raw)
         self.assertEqual(msg_to_usr_tlv_unpacked.tlv.value, bytes([0x00]))
-        self.assertFalse(msg_to_usr_tlv_unpacked.is_standard_proxy_dir_ops_msg())
-        proxy_val = create_cfdp_proxy_and_dir_op_message_marker()
+        self.assertFalse(msg_to_usr_tlv_unpacked.is_reserved_cfdp_message())
+        proxy_val = bytearray(create_cfdp_proxy_and_dir_op_message_marker())
+        proxy_val.append(ProxyMessageType.PUT_REQUEST)
         msg_to_usr_tlv = MessageToUserTlv(msg=proxy_val)
-        self.assertTrue(msg_to_usr_tlv.is_standard_proxy_dir_ops_msg())
+        self.assertTrue(msg_to_usr_tlv.is_reserved_cfdp_message())
+
+    def test_invalid_conversion(self):
+        self.assertIsNone(self.msg_to_usr_tlv.to_reserved_msg_tlv())
