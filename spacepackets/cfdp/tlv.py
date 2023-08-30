@@ -757,9 +757,11 @@ class ReservedCfdpMessage(AbstractTlvBase):
             ProxyMessageType(self.get_reserved_cfdp_message_type())
             return True
         except IndexError:
+            # TODO: Once a directory msg type was added, test this.
             return False
 
     def get_cfdp_proxy_message_type(self) -> Optional[ProxyMessageType]:
+        # TODO: Once a directory msg type was added, test this.
         if not self.is_cfdp_proxy_operation():
             return None
         return ProxyMessageType(self.get_reserved_cfdp_message_type())
