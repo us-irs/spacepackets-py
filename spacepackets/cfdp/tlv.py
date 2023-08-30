@@ -406,12 +406,6 @@ class MessageToUserTlv(AbstractTlvBase):
         msg_to_user_tlv.tlv = cfdp_tlv
         return msg_to_user_tlv
 
-    def __str__(self):
-        if self.is_reserved_cfdp_message():
-            return "Reserved CFDP Message to user TLV"
-        else:
-            return "Custom Message to user TLV"
-
 
 class FlowLabelTlv(AbstractTlvBase):
     TLV_TYPE = TlvType.FLOW_LABEL
