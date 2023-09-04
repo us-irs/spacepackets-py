@@ -51,7 +51,7 @@ Output:
 CFDP Packets
 -----------------
 
-This example shows how to generate the 3 CFDP PDUs which constitute of full
+This example shows how to generate the 3 CFDP PDUs which constitute a full
 small file transfer.
 
 .. testcode:: cfdp
