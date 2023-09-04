@@ -8,6 +8,31 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 # [unreleased]
 
+# [v0.18.0rc1] 2023-09-04
+
+## Added
+
+- New `ProxyPutRequestParams` dataclass as a generic data model for the CFDP proxy put request
+  parameters.
+- New API for `ReservedCfdpMessage`
+  - `get_reserved_cfdp_message_type`: Retrieve type as `int`
+  - `is_cfdp_proxy_operation`
+  - `get_cfdp_proxy_message_type`
+  - `get_proxy_put_request_params` to extract proxy put request parameters
+    from the message when applicable.
+- `MessageToUserTlv`: Added new method `to_reserved_msg_tlv` which can be used to create
+  a `ReservedCfdpMessage` from the instance when applicable.
+
+## Changed
+
+- Renamed `MessageToUserTlv.is_standard_proxy_dir_ops_msg` to `is_reserved_cfdp_message`
+- `ProxyPutRequest` constructor now expects a `ProxyPutRequestParams` instance.
+
+## Fixed
+
+- The new `is_reserved_cfdp_message` API now checks for a value length of 5 to ensure the message
+  type is included as well.
+
 # [v0.18.0rc0] 2023-08-17
 
 - Bumped required Python version to v3.8.

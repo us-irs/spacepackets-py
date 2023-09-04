@@ -355,6 +355,7 @@ def create_cfdp_proxy_and_dir_op_message_marker() -> bytes:
 
 
 class MessageToUserTlv(AbstractTlvBase):
+    """Message to User TLV implementation as specified in CCSDS 727.0-B-5 5.4.3"""
     TLV_TYPE = TlvType.MESSAGE_TO_USER
 
     def __init__(self, msg: bytes):
@@ -382,7 +383,9 @@ class MessageToUserTlv(AbstractTlvBase):
 
     def to_reserved_msg_tlv(self) -> Optional[ReservedCfdpMessage]:
         """Attempt to convert to a reserved CFDP message. Please note that this operation
-        will fail if the message if not a reserved CFDP message and will then return None."""
+        will fail if the message if not a reserved CFDP message and will then return None.
+        This method is especially useful to have access to the more specialized
+        :py:class:`ReservedCfdpMessage` API."""
         if not self.is_reserved_cfdp_message():
             return None
         return ReservedCfdpMessage(self.tlv.value[4], self.tlv.value[5:])
@@ -724,6 +727,7 @@ class ProxyMessageType(enum.IntEnum):
 
 
 class ReservedCfdpMessage(AbstractTlvBase):
+    """Reserved CFDP message implementation as specified in CCSDS 727.0-B-5 6.1"""
     def __init__(self, msg_type: int, value: bytes):
         assert msg_type < pow(2, 8) - 1
         full_value = bytearray("cfdp".encode())
@@ -735,6 +739,9 @@ class ReservedCfdpMessage(AbstractTlvBase):
         return self.tlv.pack()
 
     def to_generic_msg_to_user_tlv(self) -> MessageToUserTlv:
+        """Can be used to convert the reserved CFDP message to the more generic superset.
+        This is required for the metadata PDU API, which expects generic
+        :py:class:`MessageToUserTlv` s"""
         return MessageToUserTlv.from_tlv(self.tlv)
 
     @property
