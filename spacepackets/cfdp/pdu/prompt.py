@@ -18,7 +18,7 @@ class ResponseRequired(enum.IntEnum):
 class PromptPdu(AbstractFileDirectiveBase):
     """Encapsulates the Prompt file directive PDU, see CCSDS 727.0-B-5 p.84"""
 
-    def __init__(self, response_required: ResponseRequired, pdu_conf: PduConfig):
+    def __init__(self, pdu_conf: PduConfig, response_required: ResponseRequired):
         self.pdu_file_directive = FileDirectivePduBase(
             directive_code=DirectiveType.PROMPT_PDU,
             pdu_conf=pdu_conf,

@@ -20,9 +20,9 @@ class EofPdu(AbstractFileDirectiveBase):
 
     def __init__(
         self,
+        pdu_conf: PduConfig,
         file_checksum: bytes,
         file_size: int,
-        pdu_conf: PduConfig,
         fault_location: Optional[EntityIdTlv] = None,
         condition_code: ConditionCode = ConditionCode.NO_ERROR,
     ):

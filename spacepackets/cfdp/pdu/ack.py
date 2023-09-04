@@ -27,10 +27,10 @@ class AckPdu(AbstractFileDirectiveBase):
 
     def __init__(
         self,
+        pdu_conf: PduConfig,
         directive_code_of_acked_pdu: DirectiveType,
         condition_code_of_acked_pdu: ConditionCode,
         transaction_status: TransactionStatus,
-        pdu_conf: PduConfig,
     ):
         """Construct a ACK PDU object
 
