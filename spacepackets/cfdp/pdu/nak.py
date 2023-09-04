@@ -19,9 +19,9 @@ class NakPdu(AbstractFileDirectiveBase):
 
     def __init__(
         self,
+        pdu_conf: PduConfig,
         start_of_scope: int,
         end_of_scope: int,
-        pdu_conf: PduConfig,
         segment_requests: Optional[List[Tuple[int, int]]] = None,
     ):
         """Create a NAK PDU object instance

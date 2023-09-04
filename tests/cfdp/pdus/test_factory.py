@@ -46,7 +46,7 @@ class TestPduHolder(TestCase):
 
     def test_factory_file_directive_on_file_data(self):
         fd_params = FileDataParams(file_data=bytes(), offset=0)
-        file_data_pdu = FileDataPdu(fd_params, self.pdu_conf)
+        file_data_pdu = FileDataPdu(self.pdu_conf, fd_params)
         fd_pdu_raw = file_data_pdu.pack()
         self.assertEqual(self.pdu_factory.pdu_directive_type(fd_pdu_raw), None)
 

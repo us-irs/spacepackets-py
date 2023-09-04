@@ -110,9 +110,9 @@ class FileDirectivePduBase(AbstractFileDirectiveBase):
 
     def __init__(
         self,
+        pdu_conf: PduConfig,
         directive_code: DirectiveType,
         directive_param_field_len: int,
-        pdu_conf: PduConfig,
     ):
         """Generic constructor for a file directive PDU. Most arguments are passed on the
         to build the generic PDU header.

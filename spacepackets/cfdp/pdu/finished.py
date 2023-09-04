@@ -51,8 +51,8 @@ class FinishedPdu(AbstractFileDirectiveBase):
 
     def __init__(
         self,
-        params: FinishedParams,
         pdu_conf: PduConfig,
+        params: FinishedParams,
     ):
         self.pdu_file_directive = FileDirectivePduBase(
             directive_code=DirectiveType.FINISHED_PDU,

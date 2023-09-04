@@ -44,7 +44,7 @@ class FileDataParams:
 
 
 class FileDataPdu(AbstractPduBase):
-    def __init__(self, params: FileDataParams, pdu_conf: PduConfig):
+    def __init__(self, pdu_conf: PduConfig, params: FileDataParams):
         self._params = params
         if isinstance(params.segment_metadata_flag, bool):
             self._params.segment_metadata_flag = SegmentMetadataFlag(

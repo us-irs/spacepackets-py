@@ -27,6 +27,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 - Renamed `MessageToUserTlv.is_standard_proxy_dir_ops_msg` to `is_reserved_cfdp_message`
 - `ProxyPutRequest` constructor now expects a `ProxyPutRequestParams` instance.
+- Swapped `FileDataPdu`, `KeepAlivePdu`, `EofPdu`, `FinishedPdu`, `PromptPdu` and `AckPdu`
+  constructor argument order : `PduConfig` is the first parameter now while
+  `FileDataParams` is the second parameter. `PduConfig` is the only common parameter, so it makes
+  more sense to have it as the first argument.
 
 ## Fixed
 

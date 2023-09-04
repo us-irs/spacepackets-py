@@ -16,7 +16,7 @@ from spacepackets.crc import CRC16_CCITT_FUNC
 class KeepAlivePdu(AbstractFileDirectiveBase):
     """Encapsulates the Keep Alive file directive PDU, see CCSDS 727.0-B-5 p.85"""
 
-    def __init__(self, progress: int, pdu_conf: PduConfig):
+    def __init__(self, pdu_conf: PduConfig, progress: int):
         directive_param_field_len = 4
         if pdu_conf.file_flag == LargeFileFlag.LARGE:
             directive_param_field_len = 8

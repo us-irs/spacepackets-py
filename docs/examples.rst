@@ -48,6 +48,15 @@ Output:
 
     Space packet header (hex): [10,01,c0,00,00,00]
 
+CFDP Packets
+-----------------
+
+This example shows how to generate the 3 CFDP PDUs which constitute of full
+small file transfer.
+
+.. testcode:: cfdp
+   pass
+
 USLP Frames
 -------------------
 
@@ -109,3 +118,5 @@ Output:
 
     USLP variable length frame without FECF containing a simple space packet
     Contained space packet (hex): [c0,07,30,20,00,00,00,e0,10,73,c0,00,00,03,01,02,03,04]
+
+
