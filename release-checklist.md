@@ -13,7 +13,7 @@ The steps shown here are for Ubuntu/MacOS.
    with date and new `unreleased`section.
 4. Run tests with `pytest .`
 5. Run auto-formatter with `black .`
-6. Run linter script `flake8 .`
+6. Run linter with `flake8 .`
 7. Wait for CI/CD results. This also runs the tests on different operating systems
 
 # Release
