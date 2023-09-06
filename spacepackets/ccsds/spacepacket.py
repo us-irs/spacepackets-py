@@ -2,6 +2,7 @@
 of all CCSDS packets."""
 from __future__ import annotations
 
+import logging
 from abc import abstractmethod, ABC
 import enum
 import struct
@@ -418,9 +419,10 @@ def get_total_space_packet_len_from_len_field(len_field: int):
 def parse_space_packets(
     analysis_queue: Deque[bytearray], packet_ids: Sequence[PacketId]
 ) -> List[bytearray]:
-    """Given a deque of bytearrays, parse for space packets. Any broken headers will be removed.
-    If a split packet with a valid header is detected, broken tail packets will be reinserted
-    in the given deque.
+    """Given a deque of bytearrays, parse for space packets. This funtion expects the deque
+    to be filled on the right side, for example with :py:meth:`collections.deque.append`.
+    If a split packet with a valid header is detected, this function will re-insert the header into
+    the given deque on the right side.
 
     :param analysis_queue:
     :param packet_ids:
@@ -433,7 +435,7 @@ def parse_space_packets(
         return tm_list
     while analysis_queue:
         # Put it all in one buffer
-        concatenated_packets.extend(analysis_queue.pop())
+        concatenated_packets.extend(analysis_queue.popleft())
     current_idx = 0
     if len(concatenated_packets) < 6:
         return tm_list
@@ -472,6 +474,8 @@ def __handle_packet_id_match(
     )
     # Might be part of packet. Put back into analysis queue as whole
     if current_idx + total_packet_len > len(concatenated_packets):
+        # Clear the queue first. We are done with parsing
+        analysis_queue.clear()
         analysis_queue.append(concatenated_packets[current_idx:])
         return -1, current_idx
     else:

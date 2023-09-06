@@ -33,9 +33,9 @@ class TestSpParser(TestCase):
             time_provider=CdsShortTimestamp.empty(),
         )
         other_larger_packet_raw = other_larger_packet.pack()
-        self.packet_deque.appendleft(self.tm_packet_raw)
-        self.packet_deque.appendleft(bytearray(8))
-        self.packet_deque.appendleft(other_larger_packet_raw)
+        self.packet_deque.append(self.tm_packet_raw)
+        self.packet_deque.append(bytearray(8))
+        self.packet_deque.append(other_larger_packet_raw)
         sp_list = parse_space_packets(
             analysis_queue=self.packet_deque, packet_ids=self.packet_ids
         )
@@ -64,7 +64,7 @@ class TestSpParser(TestCase):
         )
         self.assertEqual(len(sp_list), 0)
         self.assertEqual(len(self.packet_deque), 1)
-        self.packet_deque.appendleft(tm_packet_second_half)
+        self.packet_deque.append(tm_packet_second_half)
         sp_list = parse_space_packets(
             analysis_queue=self.packet_deque, packet_ids=self.packet_ids
         )
@@ -73,10 +73,10 @@ class TestSpParser(TestCase):
         self.assertEqual(sp_list[0], self.tm_packet_raw)
 
     def test_broken_packet_at_end(self):
-        self.packet_deque.appendleft(self.tm_packet_raw)
+        self.packet_deque.append(self.tm_packet_raw)
         # slice TM packet in half
         tm_packet_first_half = self.tm_packet_raw[:10]
-        self.packet_deque.appendleft(tm_packet_first_half)
+        self.packet_deque.append(tm_packet_first_half)
         sp_list = parse_space_packets(
             analysis_queue=self.packet_deque, packet_ids=self.packet_ids
         )
