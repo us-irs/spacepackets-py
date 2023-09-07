@@ -13,24 +13,25 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-    - uses: chartboost/ruff-action@v1
 
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
 
-    - name: Install dependencies
+    - name: Install package and dependencies
       run: |
         python3 -m pip install --upgrade pip setuptools wheel
-        pip install ruff
-        pip install -r docs/requirements.txt
         pip install .
  
     - name: Build documentation and examples
       run: |
+        pip install -r docs/requirements.txt
         sphinx-build -b html docs docs/_build
         sphinx-build -b doctest docs docs/_build
+
+    - name: Lint with Ruff
+      uses: chartboost/ruff-action@v1
 
     - name: Run tests and generate coverage data
       run: |
