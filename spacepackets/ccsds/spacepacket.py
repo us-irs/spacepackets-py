@@ -2,7 +2,6 @@
 of all CCSDS packets."""
 from __future__ import annotations
 
-import logging
 from abc import abstractmethod, ABC
 import enum
 import struct
@@ -101,8 +100,8 @@ class PacketId:
     def __str__(self):
         pstr = "TM" if self.ptype == PacketType.TM else "TC"
         return (
-            f"Packet ID: [Packet Type: {pstr}, Sec Header Flag: {self.sec_header_flag}, "
-            f"APID: {self.apid:#05x}]"
+            f"Packet ID: [Packet Type: {pstr}, Sec Header Flag: {self.sec_header_flag},"
+            f" APID: {self.apid:#05x}]"
         )
 
     def raw(self) -> int:
@@ -173,7 +172,8 @@ class SpacePacketHeader(AbstractSpacePacket):
         """
         if data_len > pow(2, 16) - 1 or data_len < 0:
             raise ValueError(
-                f"Invalid data length value, exceeds maximum value of {pow(2, 16) - 1} or negative"
+                "Invalid data length value, exceeds maximum value of"
+                f" {pow(2, 16) - 1} or negative"
             )
         self.ccsds_version = ccsds_version
         self.packet_id = PacketId(
@@ -289,10 +289,10 @@ class SpacePacketHeader(AbstractSpacePacket):
 
     def __repr__(self):
         return (
-            f"{self.__class__.__name__}(packet_version={self.ccsds_version!r}, "
-            f"packet_type={self.packet_type!r}, apid={self.apid!r}, seq_cnt={self.seq_count!r}, "
-            f"data_len={self.data_len!r}, sec_header_flag={self.sec_header_flag!r}, "
-            f"seq_flags={self.seq_flags!r})"
+            f"{self.__class__.__name__}(packet_version={self.ccsds_version!r},"
+            f" packet_type={self.packet_type!r}, apid={self.apid!r},"
+            f" seq_cnt={self.seq_count!r}, data_len={self.data_len!r},"
+            f" sec_header_flag={self.sec_header_flag!r}, seq_flags={self.seq_flags!r})"
         )
 
     def __eq__(self, other: SpacePacketHeader):

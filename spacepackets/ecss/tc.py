@@ -87,8 +87,8 @@ class PusTcDataFieldHeader:
 
     def __repr__(self):
         return (
-            f"{self.__class__.__name__}(service={self.service!r}, subservice={self.subservice!r},"
-            f" ack_flags={self.ack_flags!r} "
+            f"{self.__class__.__name__}(service={self.service!r},"
+            f" subservice={self.subservice!r}, ack_flags={self.ack_flags!r} "
         )
 
     def __eq__(self, other: PusTcDataFieldHeader):
@@ -216,8 +216,8 @@ class PusTelecommand:
     def __repr__(self):
         """Returns the representation of a class instance."""
         return (
-            f"{self.__class__.__name__}.from_composite_fields(sp_header={self.sp_header!r}, "
-            f"sec_header={self.pus_tc_sec_header!r}, app_data={self.app_data!r})"
+            f"{self.__class__.__name__}.from_composite_fields(sp_header={self.sp_header!r},"
+            f" sec_header={self.pus_tc_sec_header!r}, app_data={self.app_data!r})"
         )
 
     def __str__(self):
@@ -225,9 +225,10 @@ class PusTelecommand:
         from .req_id import RequestId
 
         return (
-            f"PUS TC[{self.pus_tc_sec_header.service}, {self.pus_tc_sec_header.subservice}] with "
-            f"Request ID {RequestId.from_sp_header(self.sp_header).as_u32():#08x}"
-            f", APID {self.apid:#05x}, SSC {self.sp_header.seq_count}"
+            f"PUS TC[{self.pus_tc_sec_header.service},"
+            f" {self.pus_tc_sec_header.subservice}] with Request ID"
+            f" {RequestId.from_sp_header(self.sp_header).as_u32():#08x}, APID"
+            f" {self.apid:#05x}, SSC {self.sp_header.seq_count}"
         )
 
     def __eq__(self, other: PusTelecommand):

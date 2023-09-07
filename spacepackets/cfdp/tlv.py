@@ -223,7 +223,8 @@ class CfdpTlv(AbstractTlvBase):
             tlv_type = TlvType(data[0])
         except ValueError:
             raise ValueError(
-                f"TLV field invalid, found value {data[0]} is not a possible TLV parameter"
+                f"TLV field invalid, found value {data[0]} is not a possible TLV"
+                " parameter"
             )
 
         value = bytearray()
@@ -239,12 +240,15 @@ class CfdpTlv(AbstractTlvBase):
         return self.MINIMAL_LEN + len(self._value)
 
     def __repr__(self):
-        return f"{self.__class__.__name__}(tlv_type={self.tlv_type!r}, value={self.value!r})"
+        return (
+            f"{self.__class__.__name__}(tlv_type={self.tlv_type!r},"
+            f" value={self.value!r})"
+        )
 
     def __str__(self):
         return (
-            f"CFDP TLV with type {self.tlv_type} and data 0x[{self._value.hex(sep=',')}] with "
-            f"length {len(self._value)}"
+            f"CFDP TLV with type {self.tlv_type} and data"
+            f" 0x[{self._value.hex(sep=',')}] with length {len(self._value)}"
         )
 
 
@@ -517,7 +521,8 @@ class FileStoreRequestBase:
             action_code = FilestoreActionCode(action_code_as_int)
         except ValueError:
             raise ValueError(
-                f"Invalid action code in file store response with value {action_code_as_int}"
+                "Invalid action code in file store response with value"
+                f" {action_code_as_int}"
             )
         status_code_as_int = raw_bytes[value_idx] & 0x0F
         value_idx += 1
@@ -701,8 +706,8 @@ class FileStoreResponseTlv(FileStoreRequestBase, AbstractTlvBase):
             )
         except ValueError:
             raise ValueError(
-                f"Invalid status code in file store response with value {status_code} for "
-                f"action code {action_code}"
+                "Invalid status code in file store response with value"
+                f" {status_code} for action code {action_code}"
             )
         instance.status_code = status_code_named
         if second_name is not None:
