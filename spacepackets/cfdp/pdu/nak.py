@@ -160,7 +160,7 @@ class NakPdu(AbstractFileDirectiveBase):
             packet_size_check = (len(data) - current_idx) % (struct_arg_tuple[1] * 2)
             if packet_size_check != 0:
                 raise ValueError(
-                    f"Invalid size for remaining data, "
+                    "Invalid size for remaining data, "
                     f"which should be a multiple of {struct_arg_tuple[1] * 2}"
                 )
             segment_requests = []
@@ -192,6 +192,7 @@ class NakPdu(AbstractFileDirectiveBase):
     def __repr__(self):
         return (
             f"{self.__class__.__name__}(start_of_scope={self.start_of_scope!r}, "
-            f"end_of_scope={self.end_of_scope!r}, pdu_conf={self.pdu_file_directive.pdu_conf!r}"
+            f"end_of_scope={self.end_of_scope!r},"
+            f" pdu_conf={self.pdu_file_directive.pdu_conf!r}"
             f"segment_requests={self.segment_requests!r})"
         )

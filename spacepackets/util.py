@@ -169,8 +169,8 @@ class UnsignedByteField:
     def _verify_int_value(self, val: int):
         if val > pow(2, self.byte_len * 8) - 1 or val < 0:
             raise ValueError(
-                f"Passed value {val} larger than allowed {pow(2, self.byte_len * 8) - 1} or "
-                f"negative"
+                f"Passed value {val} larger than allowed"
+                f" {pow(2, self.byte_len * 8) - 1} or negative"
             )
 
     def _verify_bytes_value(self, val: bytes) -> (int, bytes):
@@ -198,8 +198,7 @@ class UnsignedByteField:
 
     def __repr__(self):
         return (
-            f"{self.__class__.__name__}(val={self.value!r}, "
-            f"byte_len={self.byte_len!r})"
+            f"{self.__class__.__name__}(val={self.value!r}, byte_len={self.byte_len!r})"
         )
 
     def __str__(self):

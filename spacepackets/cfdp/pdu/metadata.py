@@ -226,8 +226,8 @@ class MetadataPdu(AbstractFileDirectiveBase):
 
     def __repr__(self):
         return (
-            f"{self.__class__.__name__}(params={self.params!r}, options={self.options!r}, "
-            f"pdu_conf={self.pdu_file_directive.pdu_conf})"
+            f"{self.__class__.__name__}(params={self.params!r},"
+            f" options={self.options!r}, pdu_conf={self.pdu_file_directive.pdu_conf})"
         )
 
     def __eq__(self, other: MetadataPdu):

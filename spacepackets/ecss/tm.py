@@ -191,10 +191,11 @@ class PusTmSecondaryHeader:
 
     def __repr__(self):
         return (
-            f"{self.__class__.__name__}(service={self.service!r}, subservice={self.subservice!r}, "
-            f"time={self.time_provider!r}, message_counter={self.message_counter!r}, "
-            f"dest_id={self.dest_id!r}, spacecraft_time_ref={self.spacecraft_time_ref!r}, "
-            f"pus_version={self.pus_version!r})"
+            f"{self.__class__.__name__}(service={self.service!r},"
+            f" subservice={self.subservice!r}, time={self.time_provider!r},"
+            f" message_counter={self.message_counter!r}, dest_id={self.dest_id!r},"
+            f" spacecraft_time_ref={self.spacecraft_time_ref!r},"
+            f" pus_version={self.pus_version!r})"
         )
 
     def __eq__(self, other: PusTmSecondaryHeader):
@@ -398,9 +399,8 @@ class PusTelemetry(AbstractPusTm):
 
     def __repr__(self):
         return (
-            f"{self.__class__.__name__}.from_composite_fields({self.__class__.__name__}"
-            f"(sp_header={self.space_packet_header!r}, sec_header={self.pus_tm_sec_header!r}, "
-            f"tm_data={self.tm_data!r}"
+            f"{self.__class__.__name__}.from_composite_fields({self.__class__.__name__}(sp_header={self.space_packet_header!r},"
+            f" sec_header={self.pus_tm_sec_header!r}, tm_data={self.tm_data!r}"
         )
 
     def __eq__(self, other: PusTelemetry):
@@ -513,7 +513,10 @@ class PusTelemetry(AbstractPusTm):
     @deprecation.deprecated(
         deprecated_in="0.14.0rc3",
         current_version=get_version(),
-        details="use pack and get_printable_data_string or the hex method on bytearray instead",
+        details=(
+            "use pack and get_printable_data_string or the hex method on bytearray"
+            " instead"
+        ),
     )
     def get_full_packet_string(
         self, print_format: PrintFormats = PrintFormats.HEX
@@ -524,7 +527,10 @@ class PusTelemetry(AbstractPusTm):
     @deprecation.deprecated(
         deprecated_in="0.14.0rc3",
         current_version=get_version(),
-        details="use pack and get_printable_data_string or the hex method on bytearray instead",
+        details=(
+            "use pack and get_printable_data_string or the hex method on bytearray"
+            " instead"
+        ),
     )
     def print_full_packet_string(self, print_format: PrintFormats = PrintFormats.HEX):
         """Print the full TM packet in a clean format."""
@@ -533,7 +539,10 @@ class PusTelemetry(AbstractPusTm):
     @deprecation.deprecated(
         deprecated_in="0.14.0rc3",
         current_version=get_version(),
-        details="use print, the source_data property and the hex method on bytearray instead",
+        details=(
+            "use print, the source_data property and the hex method on bytearray"
+            " instead"
+        ),
     )
     def print_source_data(self, print_format: PrintFormats = PrintFormats.HEX):
         """Prints the TM source data in a clean format"""

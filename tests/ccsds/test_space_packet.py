@@ -73,13 +73,11 @@ class TestSpacePacket(TestCase):
     def test_repr(self):
         self.assertEqual(
             f"{self.sp_header!r}",
-            (
-                f"SpacePacketHeader(packet_version=0, packet_type={PacketType.TC!r}, "
-                f"apid={self.sp_header.apid}, seq_cnt={self.sp_header.seq_count}, "
-                f"data_len={self.sp_header.data_len}, "
-                f"sec_header_flag={self.sp_header.sec_header_flag}, "
-                f"seq_flags={self.sp_header.seq_flags!r})"
-            ),
+            f"SpacePacketHeader(packet_version=0, packet_type={PacketType.TC!r}, "
+            f"apid={self.sp_header.apid}, seq_cnt={self.sp_header.seq_count}, "
+            f"data_len={self.sp_header.data_len}, "
+            f"sec_header_flag={self.sp_header.sec_header_flag}, "
+            f"seq_flags={self.sp_header.seq_flags!r})",
         )
 
     def test_apid_from_raw(self):

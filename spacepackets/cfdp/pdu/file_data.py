@@ -154,7 +154,8 @@ class FileDataPdu(AbstractPduBase):
             len_metadata = len(self._params.segment_metadata)
             if len_metadata > 63:
                 raise ValueError(
-                    f"Segment metadata length {len_metadata} invalid, larger than 63 bytes"
+                    f"Segment metadata length {len_metadata} invalid, larger than 63"
+                    " bytes"
                 )
             file_data_pdu.append(self._params.record_cont_state << 6 | len_metadata)
             if len_metadata > 0:
