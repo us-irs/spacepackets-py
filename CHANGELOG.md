@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 # [unreleased]
 
+# [v0.18.0] 2023-09-08
+
 ## Changed
 
 - The `parse_space_packets` function analysis queue argument is now expected to be filled
