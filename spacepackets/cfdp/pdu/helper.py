@@ -1,6 +1,8 @@
 from __future__ import annotations
 from typing import cast, Union, Type, Optional
 
+import deprecation
+
 from spacepackets.cfdp import PduType
 from spacepackets.cfdp.pdu import (
     MetadataPdu,
@@ -15,6 +17,7 @@ from spacepackets.cfdp.pdu import (
 )
 from spacepackets.cfdp.pdu.file_data import FileDataPdu
 from spacepackets.cfdp.pdu.header import AbstractPduBase
+from spacepackets.version import get_version
 
 GenericPduPacket = Union[AbstractFileDirectiveBase, AbstractPduBase]
 
@@ -22,8 +25,8 @@ GenericPduPacket = Union[AbstractFileDirectiveBase, AbstractPduBase]
 class PduHolder:
     """Helper type to store arbitrary PDU types and cast them to a concrete PDU type conveniently"""
 
-    def __init__(self, base: Optional[GenericPduPacket]):
-        self.base = base
+    def __init__(self, packet: Optional[GenericPduPacket]):
+        self.packet = packet
 
     def pack(self) -> bytearray:
         if self.base is None:
@@ -31,14 +34,23 @@ class PduHolder:
         return self.base.pack()
 
     @property
+    @deprecation.deprecated(
+        deprecated_in="0.19.0",
+        current_version=get_version(),
+        details="use packet member instead",
+    )
+    def base(self):
+        return self.packet
+
+    @property
     def packet_len(self) -> int:
-        if self.base is None:
+        if self.packet is None:
             return 0
-        return self.base.packet_len
+        return self.packet.packet_len
 
     @property
     def pdu_type(self) -> PduType:
-        return self.base.pdu_header.pdu_type
+        return self.packet.pdu_header.pdu_type
 
     @property
     def is_file_directive(self):
@@ -51,33 +63,33 @@ class PduHolder:
         """
         if not self.is_file_directive:
             return None
-        directive_base = cast(AbstractFileDirectiveBase, self.base)
+        directive_base = cast(AbstractFileDirectiveBase, self.packet)
         return directive_base.directive_type
 
     def __repr__(self):
-        return f"{self.__class__.__name__}(base={self.base!r}"
+        return f"{self.__class__.__name__}(base={self.packet!r}"
 
     def _raise_not_target_exception(self, pdu_type: Type[any]):
-        raise TypeError(f"Stored PDU is not {pdu_type.__name__!r}: {self.base!r}")
+        raise TypeError(f"Stored PDU is not {pdu_type.__name__!r}: {self.packet!r}")
 
     def _cast_to_concrete_file_directive(
         self, pdu_type: Type[any], dir_type: DirectiveType
     ):
         if (
             isinstance(self.base, AbstractFileDirectiveBase)
-            and self.base.pdu_type == PduType.FILE_DIRECTIVE
+            and self.packet.pdu_type == PduType.FILE_DIRECTIVE
         ):
-            pdu_base = cast(AbstractFileDirectiveBase, self.base)
+            pdu_base = cast(AbstractFileDirectiveBase, self.packet)
             if pdu_base.directive_type == dir_type:
-                return cast(pdu_type, self.base)
+                return cast(pdu_type, self.packet)
         self._raise_not_target_exception(pdu_type)
 
     def to_file_data_pdu(self) -> FileDataPdu:
         if (
-            isinstance(self.base, AbstractPduBase)
-            and self.base.pdu_type == PduType.FILE_DATA
+            isinstance(self.packet, AbstractPduBase)
+            and self.packet.pdu_type == PduType.FILE_DATA
         ):
-            return cast(FileDataPdu, self.base)
+            return cast(FileDataPdu, self.packet)
         else:
             self._raise_not_target_exception(FileDataPdu)
 
