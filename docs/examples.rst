@@ -56,7 +56,7 @@ small file transfer.
 
 .. testcode:: cfdp
 
-  from typing import Deque
+  from collections import deque
   from spacepackets.cfdp.conf import ByteFieldU8
   from spacepackets.cfdp.defs import ChecksumType, TransmissionMode
   from spacepackets.cfdp.pdu import (
@@ -72,7 +72,7 @@ small file transfer.
   LOCAL_ID = ByteFieldU8(1)
   REMOTE_ID = ByteFieldU8(2)
 
-  file_transfer_queue = Deque()
+  file_transfer_queue = deque()
   src_name = "/tmp/src-file.txt"
   dest_name = "/tmp/dest-file.txt"
   file_data = "Hello World!"
