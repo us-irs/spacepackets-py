@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 # [unreleased]
 
+## Changed
+
+- Renamed `TlvHolder` field `base` to `tlv` and `PduHolder` field `base` to `pdu`.
+
 # [v0.18.0] 2023-09-08
 
 ## Changed

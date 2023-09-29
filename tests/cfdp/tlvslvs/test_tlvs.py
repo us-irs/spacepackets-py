@@ -58,10 +58,10 @@ class TestTlvs(TestCase):
         )
         self.assertEqual(action_code, FilestoreActionCode.APPEND_FILE_SNP)
         self.assertEqual(status_code, 0b1111)
-        action_code, status_code = map_enum_status_code_to_action_status_code(
-            FilestoreResponseStatusCode.INVALID
-        )
-        self.assertEqual(action_code, -1)
+        with self.assertRaises(ValueError):
+            map_enum_status_code_to_action_status_code(
+                FilestoreResponseStatusCode.INVALID
+            )
         status_code = map_int_status_code_to_enum(
             action_code=FilestoreActionCode.APPEND_FILE_SNP, status_code=0b1111
         )
