@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 - Renamed `TlvHolder` field `base` to `tlv` and `PduHolder` field `base` to `pdu`.
 
+## Added
+
+- Added `direction` abstract method for `AbstractPduBase`.
+
 # [v0.18.0] 2023-09-08
 
 ## Changed
