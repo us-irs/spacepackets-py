@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## Fixed
 
 - Set the `direction` field of the PDU classes correctly depending on the PDU type. This field
-  was previously always to to `Direction.TOWARDS_RECEIVER`.
+  was previously always set to `Direction.TOWARDS_RECEIVER`.
 
 ## Changed
 
