@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 # [unreleased]
 
+## Changed
+
+- Moved `pdu_header` abstract property from `AbstractFileDirectiveBase` to `AbstractPduBase`
+  class
+
 # [v0.18.0] 2023-09-08
 
 ## Changed
