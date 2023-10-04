@@ -57,13 +57,17 @@ class FileDataPdu(AbstractPduBase):
             and params.record_cont_state is None
         ):
             raise ValueError("Record continuation state must be specified")
-        self.pdu_header = PduHeader(
+        self._pdu_header = PduHeader(
             segment_metadata_flag=self._params.segment_metadata_flag,
             pdu_type=PduType.FILE_DATA,
             pdu_conf=pdu_conf,
             pdu_data_field_len=0,
         )
         self._calculate_pdu_data_field_len()
+
+    @property
+    def pdu_header(self) -> PduHeader:
+        return self._pdu_header
 
     @classmethod
     def __empty(cls) -> FileDataPdu:
@@ -137,7 +141,7 @@ class FileDataPdu(AbstractPduBase):
 
     def _calculate_pdu_data_field_len(self):
         pdu_data_field_len = 0
-        if self._params.segment_metadata_flag:
+        if self._params.segment_metadata_flag and self._params.segment_metadata is not None:
             pdu_data_field_len = 1 + len(self._params.segment_metadata)
         if self.pdu_header.large_file_flag_set:
             pdu_data_field_len += 8
@@ -151,6 +155,8 @@ class FileDataPdu(AbstractPduBase):
     def pack(self) -> bytearray:
         file_data_pdu = self.pdu_header.pack()
         if self.pdu_header.segment_metadata_flag:
+            assert self._params.segment_metadata is not None
+            assert self._params.record_cont_state is not None
             len_metadata = len(self._params.segment_metadata)
             if len_metadata > 63:
                 raise ValueError(
@@ -178,8 +184,8 @@ class FileDataPdu(AbstractPduBase):
         :return:
         """
         file_data_packet = cls.__empty()
-        file_data_packet.pdu_header = PduHeader.unpack(data=data)
-        file_data_packet.pdu_header.verify_length_and_checksum(data)
+        file_data_packet._pdu_header = PduHeader.unpack(data=data)
+        file_data_packet._pdu_header.verify_length_and_checksum(data)
         current_idx = file_data_packet.pdu_header.header_len
         if file_data_packet.pdu_header.segment_metadata_flag:
             file_data_packet._params.record_cont_state = RecordContinuationState(
