@@ -10,7 +10,7 @@ from spacepackets.cfdp.pdu.header import (
     SegmentMetadataFlag,
     AbstractPduBase,
 )
-from spacepackets.cfdp.defs import LargeFileFlag, CrcFlag
+from spacepackets.cfdp.defs import Direction, LargeFileFlag, CrcFlag
 from spacepackets.cfdp.conf import PduConfig
 from spacepackets.exceptions import BytesTooShortError
 from spacepackets.util import UnsignedByteField
@@ -41,6 +41,10 @@ class AbstractFileDirectiveBase(AbstractPduBase):
         # Could return abstract class here but I think returning the concrete implementation
         # provided here is ok..
         pass
+
+    @property
+    def direction(self) -> Direction:
+        return self.pdu_header.direction
 
     @property
     def pdu_type(self) -> PduType:

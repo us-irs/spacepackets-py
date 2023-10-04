@@ -47,6 +47,11 @@ class AbstractPduBase(abc.ABC):
 
     @property
     @abc.abstractmethod
+    def direction(self) -> Direction:
+        pass
+
+    @property
+    @abc.abstractmethod
     def file_flag(self) -> LargeFileFlag:
         pass
 
