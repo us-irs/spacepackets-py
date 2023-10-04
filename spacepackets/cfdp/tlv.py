@@ -3,7 +3,7 @@ from __future__ import annotations
 import dataclasses
 import struct
 from abc import ABC, abstractmethod
-from typing import Tuple, Optional, Type, Union, List, Any, cast
+from typing import Tuple, Optional, Type, List, Any, cast
 import enum
 from spacepackets.cfdp.lv import CfdpLv
 from spacepackets.cfdp.defs import ConditionCode, FaultHandlerCode
@@ -106,13 +106,11 @@ def map_enum_status_code_to_action_status_code(
 ) -> Tuple[FilestoreActionCode, int]:
     """Map a given file store response status code to the action code and the corresponding
     4 bit status code. the status code will be 0x00 for a SUCCESS operation and 0b1111 if the
-    operation was not performed"""
-    try:
-        status_code = FilestoreActionCode((status_code_enum & 0xF0) >> 4)
-    except ValueError:
-        # Invalid status code
-        status_code = -1
-    return status_code, status_code_enum & 0x0F
+    operation was not performed.
+
+    :raise ValueError: Invalid filestore action code detected.
+    """
+    return FilestoreActionCode((status_code_enum & 0xF0) >> 4), status_code_enum & 0x0F
 
 
 def map_int_status_code_to_enum(
@@ -133,12 +131,10 @@ def map_int_status_code_to_enum(
 
 
 class TlvTypeMissmatch(Exception):
-    def __init__(self, found: TlvType, expected: TlvType, *args, **kwards):
+    def __init__(self, found: TlvType, expected: TlvType):
         self.found = found
         self.expected = expected
-
-    def __str__(self):
-        return f"Expected TLV {self.expected}, found {self.found}"
+        super().__init__(f"Expected TLV {self.expected}, found {self.found}")
 
 
 class AbstractTlvBase(ABC):
@@ -569,7 +565,7 @@ class FileStoreRequestTlv(FileStoreRequestBase, AbstractTlvBase):
 
     def pack(self) -> bytearray:
         self.generate_tlv()
-        return self.tlv.pack()
+        return self.tlv.pack()  # type: ignore
 
     @property
     def packet_len(self):
@@ -578,7 +574,7 @@ class FileStoreRequestTlv(FileStoreRequestBase, AbstractTlvBase):
     @property
     def value(self) -> bytes:
         self.generate_tlv()
-        return self.tlv.value
+        return self.tlv.value  # type: ignore
 
     @property
     def tlv_type(self) -> TlvType:
@@ -613,7 +609,7 @@ class FileStoreRequestTlv(FileStoreRequestBase, AbstractTlvBase):
 
     @classmethod
     def _set_fields(cls, instance: FileStoreRequestTlv, raw_data: bytes):
-        action_code, first_name, status_code, _, second_name = cls._common_unpacker(
+        action_code, first_name, _, _, second_name = cls._common_unpacker(
             raw_bytes=raw_data
         )
         instance.action_code = action_code
@@ -648,12 +644,12 @@ class FileStoreResponseTlv(FileStoreRequestBase, AbstractTlvBase):
 
     def pack(self) -> bytearray:
         self.generate_tlv()
-        return self.tlv.pack()
+        return self.tlv.pack()  # type: ignore
 
     @property
     def value(self) -> bytes:
         self.generate_tlv()
-        return self.tlv.value
+        return self.tlv.value  # type: ignore
 
     @property
     def packet_len(self):
@@ -715,7 +711,7 @@ class FileStoreResponseTlv(FileStoreRequestBase, AbstractTlvBase):
         instance.filestore_msg = CfdpLv.unpack(data[idx:])
 
 
-TlvList = List[Union[AbstractTlvBase]]
+TlvList = List[AbstractTlvBase]
 
 
 class ProxyMessageType(enum.IntEnum):
@@ -826,50 +822,51 @@ class ProxyPutRequest(ReservedCfdpMessage):
 
 
 class TlvHolder:
-    def __init__(self, tlv_base: Optional[AbstractTlvBase]):
-        self.base = tlv_base
+    def __init__(self, tlv: Optional[AbstractTlvBase]):
+        self.tlv = tlv
 
     @property
     def tlv_type(self):
-        if self.base is not None:
-            return self.base.tlv_type
+        if self.tlv is not None:
+            return self.tlv.tlv_type
 
     def __cast_internally(
         self,
         obj_type: Type[AbstractTlvBase],
         expected_type: TlvType,
     ) -> Any:
-        if self.base.tlv_type != expected_type:
-            raise TypeError(f"Invalid object {self.base} for type {self.base.tlv_type}")
-        return cast(obj_type, self.base)
+        assert self.tlv is not None
+        if self.tlv.tlv_type != expected_type:
+            raise TypeError(f"Invalid object {self.tlv} for type {self.tlv.tlv_type}")
+        return cast(obj_type, self.tlv)
 
     def to_fs_request(self) -> FileStoreRequestTlv:
         # Check this type first. It's a concrete type where we can not just use a simple cast
-        if isinstance(self.base, CfdpTlv):
-            return FileStoreRequestTlv.from_tlv(self.base)
+        if isinstance(self.tlv, CfdpTlv):
+            return FileStoreRequestTlv.from_tlv(self.tlv)
         return self.__cast_internally(FileStoreRequestTlv, TlvType.FILESTORE_REQUEST)
 
     def to_fs_response(self) -> FileStoreResponseTlv:
-        if isinstance(self.base, CfdpTlv):
-            return FileStoreResponseTlv.from_tlv(self.base)
+        if isinstance(self.tlv, CfdpTlv):
+            return FileStoreResponseTlv.from_tlv(self.tlv)
         return self.__cast_internally(FileStoreResponseTlv, TlvType.FILESTORE_RESPONSE)
 
     def to_msg_to_user(self) -> MessageToUserTlv:
-        if isinstance(self.base, CfdpTlv):
-            return MessageToUserTlv.from_tlv(self.base)
+        if isinstance(self.tlv, CfdpTlv):
+            return MessageToUserTlv.from_tlv(self.tlv)
         return self.__cast_internally(MessageToUserTlv, TlvType.MESSAGE_TO_USER)
 
     def to_fault_handler_override(self) -> FaultHandlerOverrideTlv:
-        if isinstance(self.base, CfdpTlv):
-            return FaultHandlerOverrideTlv.from_tlv(self.base)
+        if isinstance(self.tlv, CfdpTlv):
+            return FaultHandlerOverrideTlv.from_tlv(self.tlv)
         return self.__cast_internally(FaultHandlerOverrideTlv, TlvType.FAULT_HANDLER)
 
     def to_flow_label(self) -> FlowLabelTlv:
-        if isinstance(self.base, CfdpTlv):
-            return FlowLabelTlv.from_tlv(self.base)
+        if isinstance(self.tlv, CfdpTlv):
+            return FlowLabelTlv.from_tlv(self.tlv)
         return self.__cast_internally(FlowLabelTlv, TlvType.FLOW_LABEL)
 
     def to_entity_id(self) -> EntityIdTlv:
-        if isinstance(self.base, CfdpTlv):
-            return EntityIdTlv.from_tlv(self.base)
+        if isinstance(self.tlv, CfdpTlv):
+            return EntityIdTlv.from_tlv(self.tlv)
         return self.__cast_internally(EntityIdTlv, TlvType.ENTITY_ID)

@@ -38,7 +38,7 @@ class TestPduHolder(TestCase):
             segment_metadata_flag=False,
         )
         file_data_pdu = FileDataPdu(pdu_conf=self.pdu_conf, params=fd_params)
-        self.pdu_wrapper.base = file_data_pdu
+        self.pdu_wrapper.pdu = file_data_pdu
         pdu_casted_back = self.pdu_wrapper.to_file_data_pdu()
         self.assertEqual(pdu_casted_back, file_data_pdu)
         self.assertEqual(self.pdu_wrapper.pdu_directive_type, None)

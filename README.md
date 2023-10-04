@@ -26,7 +26,7 @@ Currently, this includes the following components:
 It also contains various helper modules
 
 - `PusVerificator` module to track the verification of sent telecommands
-- PTC and PFC definitions for ECSS packets
+- [PTC and PFC definitions](https://spacepackets.readthedocs.io/en/latest/api/ecss.html#module-spacepackets.ecss.fields) for ECSS packets
 
 # Install
 
