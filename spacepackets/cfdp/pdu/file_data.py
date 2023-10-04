@@ -58,6 +58,7 @@ class FileDataPdu(AbstractPduBase):
             and params.record_cont_state is None
         ):
             raise ValueError("Record continuation state must be specified")
+        pdu_conf.direction = Direction.TOWARDS_RECEIVER
         self._pdu_header = PduHeader(
             segment_metadata_flag=self._params.segment_metadata_flag,
             pdu_type=PduType.FILE_DATA,
@@ -146,7 +147,10 @@ class FileDataPdu(AbstractPduBase):
 
     def _calculate_pdu_data_field_len(self):
         pdu_data_field_len = 0
-        if self._params.segment_metadata_flag and self._params.segment_metadata is not None:
+        if (
+            self._params.segment_metadata_flag
+            and self._params.segment_metadata is not None
+        ):
             pdu_data_field_len = 1 + len(self._params.segment_metadata)
         if self.pdu_header.large_file_flag_set:
             pdu_data_field_len += 8

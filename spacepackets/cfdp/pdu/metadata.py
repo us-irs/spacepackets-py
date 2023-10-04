@@ -13,7 +13,7 @@ from spacepackets.cfdp.pdu.file_directive import (
 from spacepackets.cfdp.conf import PduConfig, LargeFileFlag
 from spacepackets.cfdp.tlv import CfdpTlv, TlvList
 from spacepackets.cfdp.lv import CfdpLv
-from spacepackets.cfdp.defs import ChecksumType, CrcFlag
+from spacepackets.cfdp.defs import ChecksumType, CrcFlag, Direction
 from spacepackets.crc import CRC16_CCITT_FUNC
 from spacepackets.exceptions import BytesTooShortError
 
@@ -48,7 +48,8 @@ class MetadataPdu(AbstractFileDirectiveBase):
             dest_file_name_as_bytes = params.dest_file_name.encode("utf-8")
             self._dest_file_name_lv = CfdpLv(value=dest_file_name_as_bytes)
         self._options = options
-        self.pdu_conf = pdu_conf
+        # This is the only correct value here.
+        pdu_conf.direction = Direction.TOWARDS_RECEIVER
         self.pdu_file_directive = FileDirectivePduBase(
             directive_code=DirectiveType.METADATA_PDU,
             pdu_conf=pdu_conf,
@@ -92,7 +93,7 @@ class MetadataPdu(AbstractFileDirectiveBase):
         return self._options
 
     @options.setter
-    def options(self, options: Optional[List[CfdpTlv]]):
+    def options(self, options: Optional[TlvList]):
         self._options = options
         self._calculate_directive_field_len()
 
@@ -165,7 +166,7 @@ class MetadataPdu(AbstractFileDirectiveBase):
         packet.extend(self._source_file_name_lv.pack())
         packet.extend(self._dest_file_name_lv.pack())
         if self._options is not None:
-            for option in self.options:
+            for option in self._options:
                 packet.extend(option.pack())
         if self.pdu_file_directive.pdu_conf.crc_flag == CrcFlag.WITH_CRC:
             packet.extend(struct.pack("!H", CRC16_CCITT_FUNC(packet)))

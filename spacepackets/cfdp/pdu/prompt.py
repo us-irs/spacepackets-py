@@ -3,6 +3,7 @@ import enum
 import struct
 
 from spacepackets.cfdp import CrcFlag
+from spacepackets.cfdp.defs import Direction
 from spacepackets.cfdp.pdu.file_directive import FileDirectivePduBase, DirectiveType
 from spacepackets.cfdp.conf import PduConfig
 from spacepackets.cfdp.pdu import AbstractFileDirectiveBase, PduHeader
@@ -19,6 +20,7 @@ class PromptPdu(AbstractFileDirectiveBase):
     """Encapsulates the Prompt file directive PDU, see CCSDS 727.0-B-5 p.84"""
 
     def __init__(self, pdu_conf: PduConfig, response_required: ResponseRequired):
+        pdu_conf.direction = Direction.TOWARDS_RECEIVER
         self.pdu_file_directive = FileDirectivePduBase(
             directive_code=DirectiveType.PROMPT_PDU,
             pdu_conf=pdu_conf,

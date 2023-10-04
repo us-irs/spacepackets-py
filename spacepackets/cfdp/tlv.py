@@ -144,7 +144,7 @@ class AbstractTlvBase(ABC):
 
     @property
     @abstractmethod
-    def packet_len(self):
+    def packet_len(self) -> int:
         pass
 
     @property

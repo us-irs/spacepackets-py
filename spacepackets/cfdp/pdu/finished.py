@@ -10,7 +10,7 @@ from spacepackets.cfdp.pdu.file_directive import (
     DirectiveType,
     AbstractFileDirectiveBase,
 )
-from spacepackets.cfdp.defs import ConditionCode, CrcFlag
+from spacepackets.cfdp.defs import ConditionCode, CrcFlag, Direction
 from spacepackets.cfdp.conf import PduConfig
 from spacepackets.cfdp.tlv import TlvType, FileStoreResponseTlv, EntityIdTlv
 from spacepackets.crc import CRC16_CCITT_FUNC
@@ -54,6 +54,7 @@ class FinishedPdu(AbstractFileDirectiveBase):
         pdu_conf: PduConfig,
         params: FinishedParams,
     ):
+        pdu_conf.direction = Direction.TOWARDS_SENDER
         self.pdu_file_directive = FileDirectivePduBase(
             directive_code=DirectiveType.FINISHED_PDU,
             pdu_conf=pdu_conf,

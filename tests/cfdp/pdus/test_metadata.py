@@ -7,7 +7,7 @@ from spacepackets.cfdp import (
     ConditionCode,
 )
 from spacepackets.cfdp.conf import PduConfig
-from spacepackets.cfdp.defs import FaultHandlerCode, LargeFileFlag, CrcFlag
+from spacepackets.cfdp.defs import Direction, FaultHandlerCode, LargeFileFlag, CrcFlag
 from spacepackets.cfdp.pdu import MetadataPdu
 from spacepackets.cfdp.pdu.metadata import MetadataParams
 from spacepackets.cfdp.tlv import TlvHolder, FaultHandlerOverrideTlv
@@ -77,7 +77,8 @@ class TestMetadata(TestCase):
         pdu_with_option_raw = pdu_with_option.pack()
         self.assertEqual(len(pdu_with_option_raw), expected_len)
         pdu_with_option_unpacked = MetadataPdu.unpack(data=pdu_with_option_raw)
-        tlv_wrapper = TlvHolder(pdu_with_option_unpacked.options[0])
+        self.assertIsNotNone(pdu_with_option_unpacked.options)
+        tlv_wrapper = TlvHolder(pdu_with_option_unpacked.options[0])  # type: ignore
         tlv_typed = tlv_wrapper.to_fs_request()
         self.assertIsNotNone(tlv_typed)
         self.assertEqual(tlv_typed.pack(), option_0.pack())
@@ -141,6 +142,7 @@ class TestMetadata(TestCase):
 
     def check_metadata_fields_0(self, metadata_pdu: MetadataPdu):
         self.assertEqual(metadata_pdu.params.closure_requested, False)
+        self.assertEqual(metadata_pdu.direction, Direction.TOWARDS_RECEIVER)
         self.assertEqual(metadata_pdu.params.file_size, 2)
         self.assertEqual(metadata_pdu.source_file_name, "test.txt")
         self.assertEqual(metadata_pdu.dest_file_name, "test2.txt")

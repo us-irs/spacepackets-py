@@ -8,7 +8,7 @@ from spacepackets.cfdp.pdu.file_directive import (
     DirectiveType,
     AbstractFileDirectiveBase,
 )
-from spacepackets.cfdp.defs import ConditionCode, CrcFlag
+from spacepackets.cfdp.defs import ConditionCode, CrcFlag, Direction
 from spacepackets.cfdp.conf import PduConfig
 from spacepackets.crc import CRC16_CCITT_FUNC
 
@@ -40,11 +40,6 @@ class AckPdu(AbstractFileDirectiveBase):
         :param pdu_conf: PDU configuration parameters
         :raises ValueError: Directive code invalid. Only EOF and Finished PDUs can be acknowledged
         """
-        self.pdu_file_directive = FileDirectivePduBase(
-            directive_code=DirectiveType.ACK_PDU,
-            directive_param_field_len=2,
-            pdu_conf=pdu_conf,
-        )
         if directive_code_of_acked_pdu not in [
             DirectiveType.FINISHED_PDU,
             DirectiveType.EOF_PDU,
@@ -55,9 +50,16 @@ class AckPdu(AbstractFileDirectiveBase):
         self.directive_code_of_acked_pdu = directive_code_of_acked_pdu
         self.directive_subtype_code = 0
         if self.directive_code_of_acked_pdu == DirectiveType.FINISHED_PDU:
+            pdu_conf.direction = Direction.TOWARDS_RECEIVER
             self.directive_subtype_code = 0b0001
         else:
+            pdu_conf.direction = Direction.TOWARDS_SENDER
             self.directive_subtype_code = 0b0000
+        self.pdu_file_directive = FileDirectivePduBase(
+            directive_code=DirectiveType.ACK_PDU,
+            directive_param_field_len=2,
+            pdu_conf=pdu_conf,
+        )
         self.condition_code_of_acked_pdu = condition_code_of_acked_pdu
         self.transaction_status = transaction_status
         self._calculate_directive_field_len()

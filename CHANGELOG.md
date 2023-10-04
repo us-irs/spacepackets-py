@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 # [unreleased]
 
+## Fixed
+
+- Set the `direction` field of the PDU classes correctly depending on the PDU type. This field
+  was previously always to to `Direction.TOWARDS_RECEIVER`.
+
 ## Changed
 
 - Moved `pdu_header` abstract property from `AbstractFileDirectiveBase` to `AbstractPduBase`
