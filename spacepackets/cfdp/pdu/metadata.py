@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import dataclasses
 import struct
-from typing import List, Optional
+from typing import Optional
 
 from spacepackets.cfdp.pdu import PduHeader
 from spacepackets.cfdp.pdu.file_directive import (
