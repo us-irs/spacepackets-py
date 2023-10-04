@@ -5,6 +5,7 @@ from typing import Union, Optional
 import struct
 
 from spacepackets.cfdp import LargeFileFlag, CrcFlag
+from spacepackets.cfdp.defs import Direction
 from spacepackets.cfdp.pdu.file_directive import SegmentMetadataFlag, PduType
 from spacepackets.cfdp.conf import PduConfig
 from spacepackets.cfdp.pdu.header import PduHeader, AbstractPduBase
@@ -88,6 +89,10 @@ class FileDataPdu(AbstractPduBase):
     @property
     def pdu_type(self) -> PduType:
         return self.pdu_header.pdu_type
+
+    @property
+    def direction(self) -> Direction:
+        return self.pdu_header.direction
 
     @property
     def file_flag(self) -> LargeFileFlag:
