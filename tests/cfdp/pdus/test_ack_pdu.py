@@ -2,6 +2,7 @@ from unittest import TestCase
 
 from spacepackets.cfdp import CrcFlag, TransmissionMode, LargeFileFlag, ConditionCode
 from spacepackets.cfdp.conf import PduConfig
+from spacepackets.cfdp.defs import Direction
 from spacepackets.cfdp.pdu import AckPdu, DirectiveType, TransactionStatus
 from spacepackets.util import ByteFieldU16, ByteFieldU32
 
@@ -80,7 +81,7 @@ class TestAckPdu(TestCase):
             # Positive Ack Limit Reached Condition Code
             bytes(
                 [
-                    0x26,
+                    0x2E,
                     0x00,
                     0x05,
                     0x33,
@@ -119,6 +120,7 @@ class TestAckPdu(TestCase):
         )
         self.assertEqual(ack_pdu.condition_code_of_acked_pdu, ConditionCode.NO_ERROR)
         self.assertEqual(ack_pdu.transaction_status, TransactionStatus.TERMINATED)
+        self.assertEqual(ack_pdu.direction, Direction.TOWARDS_RECEIVER)
         self.assertEqual(
             ack_pdu.pdu_file_directive.pdu_header.pdu_conf.transaction_seq_num,
             ByteFieldU16(1),
@@ -143,6 +145,7 @@ class TestAckPdu(TestCase):
             ack_pdu.condition_code_of_acked_pdu,
             ConditionCode.POSITIVE_ACK_LIMIT_REACHED,
         )
+        self.assertEqual(ack_pdu.direction, Direction.TOWARDS_SENDER)
         self.assertEqual(ack_pdu.transaction_status, TransactionStatus.ACTIVE)
         self.assertEqual(
             ack_pdu.pdu_file_directive.pdu_header.transaction_seq_num,

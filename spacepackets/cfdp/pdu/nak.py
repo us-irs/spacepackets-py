@@ -3,6 +3,7 @@ import struct
 from typing import List, Tuple, Optional
 
 from spacepackets.cfdp import CrcFlag
+from spacepackets.cfdp.defs import Direction
 from spacepackets.cfdp.pdu import PduHeader
 from spacepackets.cfdp.pdu.file_directive import (
     AbstractFileDirectiveBase,
@@ -33,6 +34,7 @@ class NakPdu(AbstractFileDirectiveBase):
             list element is the start offset and the second entry is the end offset. If the
             start and end offset are both 0, the metadata is re-requested.
         """
+        pdu_conf.direction = Direction.TOWARDS_SENDER
         self.pdu_file_directive = FileDirectivePduBase(
             directive_code=DirectiveType.ACK_PDU,
             directive_param_field_len=8,

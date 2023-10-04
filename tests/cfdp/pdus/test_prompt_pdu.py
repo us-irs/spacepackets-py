@@ -1,6 +1,7 @@
 from unittest import TestCase
 
 from spacepackets.cfdp.conf import PduConfig
+from spacepackets.cfdp.defs import Direction
 from spacepackets.cfdp.pdu import PromptPdu
 from spacepackets.cfdp.pdu.prompt import ResponseRequired
 
@@ -19,6 +20,7 @@ class TestPromptPdu(TestCase):
         )
         self.assertEqual(prompt_pdu.packet_len, 9)
         prompt_pdu_unpacked = PromptPdu.unpack(data=prompt_pdu_raw)
+        self.assertEqual(prompt_pdu.direction, Direction.TOWARDS_RECEIVER)
         self.assertEqual(prompt_pdu.pdu_file_directive.pdu_data_field_len, 2)
         self.assertEqual(prompt_pdu.pdu_file_directive.header_len, 8)
         self.assertEqual(

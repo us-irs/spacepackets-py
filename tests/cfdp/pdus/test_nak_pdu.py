@@ -18,7 +18,7 @@ class TestNakPdu(TestCase):
         nak_pdu = NakPdu(start_of_scope=0, end_of_scope=200, pdu_conf=pdu_conf)
         self.assertEqual(nak_pdu.segment_requests, [])
         pdu_header = nak_pdu.pdu_file_directive.pdu_header
-        self.assertEqual(pdu_header.direction, Direction.TOWARDS_RECEIVER)
+        self.assertEqual(pdu_header.direction, Direction.TOWARDS_SENDER)
         # Start of scope (4) + end of scope (4) + directive code
         self.assertEqual(pdu_header.pdu_data_field_len, 8 + 1)
         self.assertEqual(pdu_header.file_flag, LargeFileFlag.NORMAL)

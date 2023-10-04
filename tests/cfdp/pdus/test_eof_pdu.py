@@ -2,6 +2,7 @@ from unittest import TestCase
 
 from spacepackets.cfdp import LargeFileFlag, EntityIdTlv, NULL_CHECKSUM_U32, CrcFlag
 from spacepackets.cfdp.conf import PduConfig
+from spacepackets.cfdp.defs import Direction
 from spacepackets.cfdp.pdu import EofPdu
 
 
@@ -14,6 +15,7 @@ class TestEofPdu(TestCase):
             file_checksum=NULL_CHECKSUM_U32, file_size=0, pdu_conf=self.pdu_conf
         )
         self.assertEqual(eof_pdu.pdu_file_directive.header_len, 8)
+        self.assertEqual(eof_pdu.direction, Direction.TOWARDS_RECEIVER)
         expected_packet_len = 8 + 1 + 4 + 4
         self.assertEqual(eof_pdu.packet_len, expected_packet_len)
         eof_pdu_raw = eof_pdu.pack()
@@ -50,6 +52,7 @@ class TestEofPdu(TestCase):
         eof_pdu_large_file = EofPdu(
             file_checksum=NULL_CHECKSUM_U32, file_size=0, pdu_conf=self.pdu_conf
         )
+        self.assertEqual(eof_pdu_large_file.direction, Direction.TOWARDS_RECEIVER)
         self.assertEqual(eof_pdu_large_file.packet_len, expected_packet_len)
         eof_pdu_large_file_raw = eof_pdu_large_file.pack()
         self.assertEqual(len(eof_pdu_large_file_raw), expected_packet_len)

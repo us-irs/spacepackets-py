@@ -9,6 +9,7 @@ from spacepackets.cfdp import (
     TlvType,
 )
 from spacepackets.cfdp.conf import PduConfig
+from spacepackets.cfdp.defs import Direction
 from spacepackets.cfdp.pdu import FinishedPdu
 from spacepackets.cfdp.pdu.finished import (
     DeliveryCode,
@@ -17,7 +18,7 @@ from spacepackets.cfdp.pdu.finished import (
 )
 
 
-class TestFinishPdu(TestCase):
+class TestFinishedPdu(TestCase):
     def setUp(self) -> None:
         self.pdu_conf = PduConfig.default()
         self.params = FinishedParams(
@@ -37,6 +38,7 @@ class TestFinishPdu(TestCase):
             params=self.params,
             pdu_conf=self.pdu_conf,
         )
+        self.assertEqual(finish_pdu.direction, Direction.TOWARDS_SENDER)
         self.assertEqual(finish_pdu.delivery_code, DeliveryCode.DATA_COMPLETE)
         self.assertEqual(
             finish_pdu.delivery_status, FileDeliveryStatus.FILE_STATUS_UNREPORTED
@@ -48,7 +50,7 @@ class TestFinishPdu(TestCase):
         # delivery status
         self.assertEqual(
             finish_pdu_raw,
-            bytes([0x20, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x05, 0x03]),
+            bytes([0x28, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x05, 0x03]),
         )
 
     def test_unpack_basic(self):
@@ -59,6 +61,7 @@ class TestFinishPdu(TestCase):
         finish_pdu_raw = finish_pdu.pack()
         finish_pdu_unpacked = FinishedPdu.unpack(data=finish_pdu_raw)
         self.assertEqual(finish_pdu_unpacked.delivery_code, DeliveryCode.DATA_COMPLETE)
+        self.assertEqual(finish_pdu_unpacked.direction, Direction.TOWARDS_SENDER)
         self.assertEqual(
             finish_pdu_unpacked.delivery_status,
             FileDeliveryStatus.FILE_STATUS_UNREPORTED,
@@ -154,7 +157,7 @@ class TestFinishPdu(TestCase):
         self.assertEqual(pdu_with_response.packet_len, 22)
         pdu_with_response_raw = pdu_with_response.pack()
         expected_array = bytearray(
-            [0x20, 0x00, 0x0F, 0x00, 0x00, 0x00, 0x00, 0x05, 0x44]
+            [0x28, 0x00, 0x0F, 0x00, 0x00, 0x00, 0x00, 0x05, 0x44]
         )
         expected_array.extend(filestore_response_1_packed)
         self.assertEqual(expected_array, pdu_with_response_raw)

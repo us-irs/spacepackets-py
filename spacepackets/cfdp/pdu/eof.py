@@ -8,7 +8,7 @@ from spacepackets.cfdp.pdu.file_directive import (
     DirectiveType,
     AbstractFileDirectiveBase,
 )
-from spacepackets.cfdp.defs import ConditionCode, CrcFlag
+from spacepackets.cfdp.defs import ConditionCode, CrcFlag, Direction
 from spacepackets.cfdp.conf import PduConfig
 from spacepackets.cfdp.tlv import EntityIdTlv
 from spacepackets.crc import CRC16_CCITT_FUNC
@@ -39,6 +39,7 @@ class EofPdu(AbstractFileDirectiveBase):
             raise ValueError
         self.condition_code = condition_code
         self.file_checksum = file_checksum
+        pdu_conf.direction = Direction.TOWARDS_RECEIVER
         self.pdu_file_directive = FileDirectivePduBase(
             directive_code=DirectiveType.EOF_PDU,
             pdu_conf=pdu_conf,
