@@ -42,6 +42,13 @@ class AbstractPduBase(abc.ABC):
 
     @property
     @abc.abstractmethod
+    def pdu_header(self) -> PduHeader:
+        # Could return abstract class here but I think returning the concrete implementation
+        # provided here is ok for now.
+        pass
+
+    @property
+    @abc.abstractmethod
     def pdu_type(self) -> PduType:
         pass
 
@@ -153,6 +160,10 @@ class PduHeader(AbstractPduBase):
         )
         self.transaction_seq_num = pdu_conf.transaction_seq_num
         self.segment_metadata_flag = segment_metadata_flag
+
+    @property
+    def pdu_header(self) -> PduHeader:
+        return self
 
     @property
     def pdu_type(self) -> PduType:

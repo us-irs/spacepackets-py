@@ -36,13 +36,6 @@ class AbstractFileDirectiveBase(AbstractPduBase):
         pass
 
     @property
-    @abc.abstractmethod
-    def pdu_header(self) -> PduHeader:
-        # Could return abstract class here but I think returning the concrete implementation
-        # provided here is ok..
-        pass
-
-    @property
     def direction(self) -> Direction:
         return self.pdu_header.direction
 

@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Changed
 
+- Moved `pdu_header` abstract property from `AbstractFileDirectiveBase` to `AbstractPduBase`
+  class
 - Renamed `TlvHolder` field `base` to `tlv` and `PduHolder` field `base` to `pdu`.
 
 ## Added
