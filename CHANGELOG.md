@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 # [unreleased]
 
+# [v0.19.0] 2023-10-05
+
 ## Fixed
 
 - Set the `direction` field of the PDU classes correctly depending on the PDU type. This field
