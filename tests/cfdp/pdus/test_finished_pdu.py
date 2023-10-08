@@ -38,6 +38,7 @@ class TestFinishedPdu(TestCase):
             params=self.params,
             pdu_conf=self.pdu_conf,
         )
+        self.assertEqual(finish_pdu.finished_params, self.params)
         self.assertEqual(finish_pdu.direction, Direction.TOWARDS_SENDER)
         self.assertEqual(finish_pdu.delivery_code, DeliveryCode.DATA_COMPLETE)
         self.assertEqual(
@@ -60,6 +61,7 @@ class TestFinishedPdu(TestCase):
         )
         finish_pdu_raw = finish_pdu.pack()
         finish_pdu_unpacked = FinishedPdu.unpack(data=finish_pdu_raw)
+        self.assertEqual(finish_pdu_unpacked.finished_params, self.params)
         self.assertEqual(finish_pdu_unpacked.delivery_code, DeliveryCode.DATA_COMPLETE)
         self.assertEqual(finish_pdu_unpacked.direction, Direction.TOWARDS_SENDER)
         self.assertEqual(
