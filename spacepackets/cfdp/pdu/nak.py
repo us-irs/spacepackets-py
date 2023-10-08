@@ -83,7 +83,7 @@ class NakPdu(AbstractFileDirectiveBase):
         self.pdu_file_directive.directive_param_field_len = directive_param_field_len
 
     @property
-    def segment_requests(self):
+    def segment_requests(self) -> List[Tuple[int, int]]:
         """An optional list of segment request pair tuples, where the first entry of
         list element is the start offset and the second entry is the end offset. If the
         start and end offset are both 0, the metadata is re-requested.
@@ -94,10 +94,10 @@ class NakPdu(AbstractFileDirectiveBase):
     def segment_requests(self, segment_requests: Optional[List[Tuple[int, int]]]):
         """Update the segment requests. This changes the length of the packet when packed as well
         which is handled by this function."""
-        self._segment_requests = segment_requests
-        if self._segment_requests is None:
+        if segment_requests is None:
             self._segment_requests = []
-            return
+        else:
+            self._segment_requests: List[Tuple[int, int]] = segment_requests # type: ignore
         self._calculate_directive_field_len()
 
     def pack(self) -> bytearray:
