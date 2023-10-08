@@ -87,7 +87,7 @@ class PduHolder:
         self, pdu_type: Type[Any], dir_type: DirectiveType
     ) -> Any:
         if (
-            isinstance(self.base, AbstractFileDirectiveBase)
+            isinstance(self.pdu, AbstractFileDirectiveBase)
             and self.pdu.pdu_type == PduType.FILE_DIRECTIVE  # type: ignore
         ):
             pdu_base = cast(AbstractFileDirectiveBase, self.pdu)

@@ -97,7 +97,7 @@ class NakPdu(AbstractFileDirectiveBase):
         if segment_requests is None:
             self._segment_requests = []
         else:
-            self._segment_requests: List[Tuple[int, int]] = segment_requests # type: ignore
+            self._segment_requests: List[Tuple[int, int]] = segment_requests  # type: ignore
         self._calculate_directive_field_len()
 
     def pack(self) -> bytearray:
