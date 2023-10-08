@@ -45,7 +45,7 @@ class TestPduHolder(TestCase):
 
     def test_holder_print(self):
         nak_pdu = NakPdu(start_of_scope=0, end_of_scope=200, pdu_conf=self.pdu_conf)
-        self.pdu_wrapper.base = nak_pdu
+        self.pdu_wrapper.pdu = nak_pdu
         print(self.pdu_wrapper)
 
     def test_invalid_to_file_data(self):
@@ -57,7 +57,7 @@ class TestPduHolder(TestCase):
             checksum_type=ChecksumType.MODULAR,
         )
         metadata_pdu = MetadataPdu(pdu_conf=self.pdu_conf, params=params)
-        self.pdu_wrapper.base = metadata_pdu
+        self.pdu_wrapper.pdu = metadata_pdu
         with self.assertRaises(TypeError) as cm:
             self.pdu_wrapper.to_file_data_pdu()
         exception = cm.exception
@@ -72,7 +72,7 @@ class TestPduHolder(TestCase):
             checksum_type=ChecksumType.MODULAR,
         )
         metadata_pdu = MetadataPdu(pdu_conf=self.pdu_conf, params=params)
-        self.pdu_wrapper.base = metadata_pdu
+        self.pdu_wrapper.pdu = metadata_pdu
         metadata_casted_back = self.pdu_wrapper.to_metadata_pdu()
         self.assertEqual(metadata_casted_back, metadata_pdu)
 
@@ -83,7 +83,7 @@ class TestPduHolder(TestCase):
             segment_metadata_flag=False,
         )
         file_data_pdu = FileDataPdu(pdu_conf=self.pdu_conf, params=fd_params)
-        self.pdu_wrapper.base = file_data_pdu
+        self.pdu_wrapper.pdu = file_data_pdu
         with self.assertRaises(TypeError) as cm:
             self.pdu_wrapper.to_metadata_pdu()
         exception = cm.exception
@@ -96,13 +96,13 @@ class TestPduHolder(TestCase):
             transaction_status=TransactionStatus.TERMINATED,
             pdu_conf=self.pdu_conf,
         )
-        self.pdu_wrapper.base = ack_pdu
+        self.pdu_wrapper.pdu = ack_pdu
         ack_pdu_converted = self.pdu_wrapper.to_ack_pdu()
         self.assertEqual(ack_pdu_converted, ack_pdu)
 
     def test_nak_cast(self):
         nak_pdu = NakPdu(start_of_scope=0, end_of_scope=200, pdu_conf=self.pdu_conf)
-        self.pdu_wrapper.base = nak_pdu
+        self.pdu_wrapper.pdu = nak_pdu
         nak_pdu_converted = self.pdu_wrapper.to_nak_pdu()
         self.assertEqual(nak_pdu_converted, nak_pdu)
 
@@ -110,7 +110,7 @@ class TestPduHolder(TestCase):
         prompt_pdu = PromptPdu(
             pdu_conf=self.pdu_conf, response_required=ResponseRequired.KEEP_ALIVE
         )
-        self.pdu_wrapper.base = prompt_pdu
+        self.pdu_wrapper.pdu = prompt_pdu
         prompt_pdu_converted = self.pdu_wrapper.to_prompt_pdu()
         self.assertEqual(prompt_pdu_converted, prompt_pdu)
 
@@ -119,7 +119,7 @@ class TestPduHolder(TestCase):
         eof_pdu = EofPdu(
             file_checksum=zero_checksum, file_size=0, pdu_conf=self.pdu_conf
         )
-        self.pdu_wrapper.base = eof_pdu
+        self.pdu_wrapper.pdu = eof_pdu
         eof_pdu_converted = self.pdu_wrapper.to_eof_pdu()
         self.assertEqual(eof_pdu_converted, eof_pdu)
 
@@ -133,12 +133,12 @@ class TestPduHolder(TestCase):
             params=params,
             pdu_conf=self.pdu_conf,
         )
-        self.pdu_wrapper.base = finish_pdu
+        self.pdu_wrapper.pdu = finish_pdu
         finish_pdu_converted = self.pdu_wrapper.to_finished_pdu()
         self.assertEqual(finish_pdu_converted, finish_pdu)
 
     def test_keep_alive_cast(self):
         keep_alive_pdu = KeepAlivePdu(progress=0, pdu_conf=self.pdu_conf)
-        self.pdu_wrapper.base = keep_alive_pdu
+        self.pdu_wrapper.pdu = keep_alive_pdu
         keep_alive_pdu_converted = self.pdu_wrapper.to_keep_alive_pdu()
         self.assertEqual(keep_alive_pdu_converted, keep_alive_pdu)

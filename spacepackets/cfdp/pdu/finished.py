@@ -1,7 +1,7 @@
 from __future__ import annotations
 import enum
 import struct
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import List, Optional
 
 from spacepackets.cfdp.pdu import PduHeader
@@ -34,7 +34,7 @@ class FinishedParams:
     delivery_code: DeliveryCode
     delivery_status: FileDeliveryStatus
     condition_code: ConditionCode
-    file_store_responses: Optional[List[FileStoreResponseTlv]] = None
+    file_store_responses: List[FileStoreResponseTlv] = field(default_factory=lambda: [])
     fault_location: Optional[EntityIdTlv] = None
 
     @classmethod
@@ -97,6 +97,10 @@ class FinishedPdu(AbstractFileDirectiveBase):
     @property
     def file_store_responses(self) -> List[FileStoreResponseTlv]:
         return self._params.file_store_responses
+
+    @property
+    def finished_params(self) -> FinishedParams:
+        return self._params
 
     @property
     def might_have_fault_location(self):

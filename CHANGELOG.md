@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 # [unreleased]
 
+## Added
+
+- Added a `finished_params` property for the `FinishedPdu` class.
+
 # [v0.19.0] 2023-10-05
 
 ## Fixed
