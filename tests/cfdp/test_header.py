@@ -43,7 +43,12 @@ class TestHeader(TestCase):
         self.assertEqual(self.pdu_header.pdu_type, PduType.FILE_DIRECTIVE)
         self.assertEqual(self.pdu_header.source_entity_id, ByteFieldU8(0))
         self.assertEqual(self.pdu_header.source_entity_id.byte_len, 1)
-        self.assertEqual(self.pdu_header.trans_mode, TransmissionMode.ACKNOWLEDGED)
+        self.assertEqual(
+            self.pdu_header.transmission_mode, TransmissionMode.ACKNOWLEDGED
+        )
+        self.assertEqual(
+            self.pdu_header.transmission_mode, TransmissionMode.ACKNOWLEDGED
+        )
         self.assertEqual(self.pdu_header.direction, Direction.TOWARDS_RECEIVER)
         self.assertEqual(
             self.pdu_header.segment_metadata_flag, SegmentMetadataFlag.NOT_PRESENT

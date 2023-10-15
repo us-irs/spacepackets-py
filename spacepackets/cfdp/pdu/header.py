@@ -227,12 +227,8 @@ class PduHeader(AbstractPduBase):
     def crc_flag(self, crc_flag: CrcFlag):
         self.pdu_conf.crc_flag = crc_flag
 
-    @property
-    def trans_mode(self):
-        return self.pdu_conf.trans_mode
-
-    @trans_mode.setter
-    def trans_mode(self, trans_mode: TransmissionMode):
+    @transmission_mode.setter
+    def transmission_mode(self, trans_mode: TransmissionMode):
         self.pdu_conf.trans_mode = trans_mode
 
     @property
