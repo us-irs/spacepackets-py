@@ -45,9 +45,28 @@ class FinishedParams:
             condition_code=ConditionCode.NO_ERROR,
         )
 
+    @classmethod
+    def success_params(cls) -> FinishedParams:
+        """Generate the finished parameters to generate a full success :py:class:`FinishedPdu`
+        PDU."""
+        return cls(
+            delivery_code=DeliveryCode.DATA_COMPLETE,
+            delivery_status=FileDeliveryStatus.FILE_RETAINED,
+            condition_code=ConditionCode.NO_ERROR,
+        )
+
 
 class FinishedPdu(AbstractFileDirectiveBase):
-    """Encapsulates the Finished file directive PDU, see CCSDS 727.0-B-5 p.80"""
+    """Encapsulates the Finished file directive PDU, see CCSDS 727.0-B-5 p.80.
+
+    >>> finished_pdu = FinishedPdu.success_pdu(PduConfig.empty())
+    >>> finished_pdu.condition_code
+    <ConditionCode.NO_ERROR: 0>
+    >>> finished_pdu.delivery_code
+    <DeliveryCode.DATA_COMPLETE: 0>
+    >>> finished_pdu.delivery_status
+    <FileDeliveryStatus.FILE_RETAINED: 2>
+    """
 
     def __init__(
         self,
@@ -65,6 +84,10 @@ class FinishedPdu(AbstractFileDirectiveBase):
             self.fault_location = self._params.fault_location
         if params.file_store_responses is not None:
             self.file_store_responses = self._params.file_store_responses
+
+    @classmethod
+    def success_pdu(cls, pdu_conf: PduConfig) -> FinishedPdu:
+        return cls(pdu_conf=pdu_conf, params=FinishedParams.success_params())
 
     @property
     def directive_type(self) -> DirectiveType:

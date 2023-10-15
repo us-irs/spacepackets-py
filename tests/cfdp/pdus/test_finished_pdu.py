@@ -33,6 +33,24 @@ class TestFinishedPdu(TestCase):
         )
         self.fault_location_tlv = EntityIdTlv(entity_id=bytes([0x00, 0x02]))
 
+    def all_success_assert(self, success_params: FinishedParams):
+        self.assertEqual(success_params.delivery_code, DeliveryCode.DATA_COMPLETE)
+        self.assertEqual(success_params.condition_code, ConditionCode.NO_ERROR)
+        self.assertEqual(
+            success_params.delivery_status, FileDeliveryStatus.FILE_RETAINED
+        )
+        self.assertEqual(success_params.file_store_responses, [])
+        self.assertIsNone(success_params.fault_location)
+
+    def test_success_params(self):
+        success_params = FinishedParams.success_params()
+        self.all_success_assert(success_params)
+
+    def test_success_pdu(self):
+        finish_pdu = FinishedPdu.success_pdu(pdu_conf=self.pdu_conf)
+        finished_params = finish_pdu.finished_params
+        self.all_success_assert(finished_params)
+
     def test_basic(self):
         finish_pdu = FinishedPdu(
             params=self.params,

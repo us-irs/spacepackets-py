@@ -28,7 +28,25 @@ class MetadataParams:
 
 
 class MetadataPdu(AbstractFileDirectiveBase):
-    """Encapsulates the Metadata file directive PDU, see CCSDS 727.0-B-5 p.83"""
+    """Encapsulates the Metadata file directive PDU, see CCSDS 727.0-B-5 p.83
+
+    >>> metadata_params = MetadataParams(
+    ...     closure_requested=True,
+    ...     checksum_type=ChecksumType.CRC_32,
+    ...     file_size=0,
+    ...     source_file_name="/tmp/test_source_file.txt",
+    ...     dest_file_name="/tmp/test_dest_file.txt"
+    ... )
+    >>> metadata_pdu = MetadataPdu(PduConfig.empty(), metadata_params)
+    >>> metadata_pdu.closure_requested
+    True
+    >>> metadata_pdu.checksum_type
+    <ChecksumType.CRC_32: 3>
+    >>> metadata_pdu.source_file_name
+    '/tmp/test_source_file.txt'
+    >>> metadata_pdu.dest_file_name
+    '/tmp/test_dest_file.txt'
+    """
 
     def __init__(
         self,
