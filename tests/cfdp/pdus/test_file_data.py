@@ -1,6 +1,7 @@
 from unittest import TestCase
 
 from spacepackets.cfdp import CrcFlag
+from spacepackets.cfdp.defs import TransmissionMode
 from spacepackets.cfdp.pdu.file_data import (
     FileDataPdu,
     SegmentMetadataFlag,
@@ -27,6 +28,7 @@ class TestFileDataPdu(TestCase):
         self.assertEqual(self.pdu.file_data, self.file_data_bytes)
         self.assertEqual(self.pdu.has_segment_metadata, False)
         self.assertEqual(self.pdu.offset, 0)
+        self.assertEqual(self.pdu.transmission_mode, TransmissionMode.ACKNOWLEDGED)
         file_data_pdu_raw = self.pdu.pack()
         expected_bytes = bytearray([0x30, 0x00, 0x0F, 0x00, 0x00, 0x00, 0x00])
         expected_bytes.extend(bytes([0x00, 0x00, 0x00, 0x00]))
