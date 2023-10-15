@@ -57,7 +57,16 @@ class FinishedParams:
 
 
 class FinishedPdu(AbstractFileDirectiveBase):
-    """Encapsulates the Finished file directive PDU, see CCSDS 727.0-B-5 p.80"""
+    """Encapsulates the Finished file directive PDU, see CCSDS 727.0-B-5 p.80.
+
+    >>> finished_pdu = FinishedPdu.success_pdu(PduConfig.empty())
+    >>> finished_pdu.condition_code
+    <ConditionCode.NO_ERROR: 0>
+    >>> finished_pdu.delivery_code
+    <DeliveryCode.DATA_COMPLETE: 0>
+    >>> finished_pdu.delivery_status
+    <FileDeliveryStatus.FILE_RETAINED: 2>
+    """
 
     def __init__(
         self,
