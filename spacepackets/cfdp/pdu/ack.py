@@ -1,5 +1,6 @@
 from __future__ import annotations
 import enum
+import copy
 import struct
 
 from spacepackets.cfdp.pdu import PduHeader
@@ -40,6 +41,7 @@ class AckPdu(AbstractFileDirectiveBase):
         :param pdu_conf: PDU configuration parameters
         :raises ValueError: Directive code invalid. Only EOF and Finished PDUs can be acknowledged
         """
+        pdu_conf = copy.copy(pdu_conf)
         if directive_code_of_acked_pdu not in [
             DirectiveType.FINISHED_PDU,
             DirectiveType.EOF_PDU,

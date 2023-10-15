@@ -1,5 +1,6 @@
 from __future__ import annotations
 import struct
+import copy
 from typing import Optional
 
 from spacepackets.cfdp.pdu import PduHeader
@@ -35,6 +36,7 @@ class EofPdu(AbstractFileDirectiveBase):
         :param condition_code:
         :raise ValueError: Invalid input, file checksum not 4 bytes long
         """
+        pdu_conf = copy.copy(pdu_conf)
         if len(file_checksum) != 4:
             raise ValueError
         self.condition_code = condition_code
