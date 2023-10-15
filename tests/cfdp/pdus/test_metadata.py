@@ -7,7 +7,13 @@ from spacepackets.cfdp import (
     ConditionCode,
 )
 from spacepackets.cfdp.conf import PduConfig
-from spacepackets.cfdp.defs import Direction, FaultHandlerCode, LargeFileFlag, CrcFlag
+from spacepackets.cfdp.defs import (
+    Direction,
+    FaultHandlerCode,
+    LargeFileFlag,
+    CrcFlag,
+    TransmissionMode,
+)
 from spacepackets.cfdp.pdu import MetadataPdu
 from spacepackets.cfdp.pdu.metadata import MetadataParams
 from spacepackets.cfdp.tlv import TlvHolder, FaultHandlerOverrideTlv
@@ -144,6 +150,7 @@ class TestMetadata(TestCase):
         self.assertEqual(metadata_pdu.params.closure_requested, False)
         self.assertEqual(metadata_pdu.direction, Direction.TOWARDS_RECEIVER)
         self.assertEqual(metadata_pdu.params.file_size, 2)
+        self.assertEqual(metadata_pdu.transmission_mode, TransmissionMode.ACKNOWLEDGED)
         self.assertEqual(metadata_pdu.source_file_name, "test.txt")
         self.assertEqual(metadata_pdu.dest_file_name, "test2.txt")
         self.assertEqual(metadata_pdu.pdu_file_directive.header_len, 8)

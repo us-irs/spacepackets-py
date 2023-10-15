@@ -22,7 +22,7 @@ class TestNakPdu(TestCase):
         # Start of scope (4) + end of scope (4) + directive code
         self.assertEqual(pdu_header.pdu_data_field_len, 8 + 1)
         self.assertEqual(pdu_header.file_flag, LargeFileFlag.NORMAL)
-        self.assertEqual(pdu_header.trans_mode, TransmissionMode.ACKNOWLEDGED)
+        self.assertEqual(pdu_header.transmission_mode, TransmissionMode.ACKNOWLEDGED)
         self.assertEqual(nak_pdu.file_flag, LargeFileFlag.NORMAL)
         self.assertEqual(nak_pdu.packet_len, 19)
         nak_packed = nak_pdu.pack()

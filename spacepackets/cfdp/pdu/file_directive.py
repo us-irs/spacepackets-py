@@ -10,7 +10,7 @@ from spacepackets.cfdp.pdu.header import (
     SegmentMetadataFlag,
     AbstractPduBase,
 )
-from spacepackets.cfdp.defs import Direction, LargeFileFlag, CrcFlag
+from spacepackets.cfdp.defs import Direction, LargeFileFlag, CrcFlag, TransmissionMode
 from spacepackets.cfdp.conf import PduConfig
 from spacepackets.exceptions import BytesTooShortError
 from spacepackets.util import UnsignedByteField
@@ -46,6 +46,10 @@ class AbstractFileDirectiveBase(AbstractPduBase):
     @property
     def file_flag(self) -> LargeFileFlag:
         return self.pdu_header.file_flag
+
+    @property
+    def transmission_mode(self) -> TransmissionMode:
+        return self.pdu_header.transmission_mode
 
     @file_flag.setter
     def file_flag(self, field_len: LargeFileFlag):

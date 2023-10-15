@@ -43,7 +43,9 @@ class TestHeader(TestCase):
         self.assertEqual(self.pdu_header.pdu_type, PduType.FILE_DIRECTIVE)
         self.assertEqual(self.pdu_header.source_entity_id, ByteFieldU8(0))
         self.assertEqual(self.pdu_header.source_entity_id.byte_len, 1)
-        self.assertEqual(self.pdu_header.trans_mode, TransmissionMode.ACKNOWLEDGED)
+        self.assertEqual(
+            self.pdu_header.transmission_mode, TransmissionMode.ACKNOWLEDGED
+        )
         self.assertEqual(self.pdu_header.direction, Direction.TOWARDS_RECEIVER)
         self.assertEqual(
             self.pdu_header.segment_metadata_flag, SegmentMetadataFlag.NOT_PRESENT
@@ -74,7 +76,7 @@ class TestHeader(TestCase):
             source_entity_id=ByteFieldU16(0), dest_entity_id=ByteFieldU16(1)
         )
         self.pdu_header.transaction_seq_num = ByteFieldU16(300)
-        self.pdu_header.trans_mode = TransmissionMode.UNACKNOWLEDGED
+        self.pdu_header.transmission_mode = TransmissionMode.UNACKNOWLEDGED
         self.pdu_header.direction = Direction.TOWARDS_SENDER
         self.pdu_header.crc_flag = CrcFlag.WITH_CRC
         self.pdu_header.file_flag = LargeFileFlag.LARGE
@@ -110,6 +112,7 @@ class TestHeader(TestCase):
             response_required=ResponseRequired.KEEP_ALIVE, pdu_conf=self.pdu_conf
         )
         self.assertEqual(prompt_pdu.pdu_file_directive.header_len, 9)
+        self.assertEqual(prompt_pdu.transmission_mode, TransmissionMode.UNACKNOWLEDGED)
         self.assertEqual(prompt_pdu.packet_len, 12)
         self.assertEqual(prompt_pdu.crc_flag, CrcFlag.WITH_CRC)
         self.assertEqual(prompt_pdu.source_entity_id, ByteFieldU8(0))
