@@ -82,8 +82,8 @@ class TestFileDataPdu(TestCase):
             record_cont_state=RecordContinuationState.START_AND_END,
             segment_metadata=bytes([0xAA, 0xBB]),
         )
-        fd_pdu_with_metadata = FileDataPdu(pdu_conf=self.pdu_conf, params=fd_params)
         self.pdu_conf.file_flag = LargeFileFlag.LARGE
+        fd_pdu_with_metadata = FileDataPdu(pdu_conf=self.pdu_conf, params=fd_params)
         fd_params = FileDataParams(
             file_data=self.file_data_bytes,
             offset=0,

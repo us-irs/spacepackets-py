@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import dataclasses
 import struct
+import copy
 from typing import Optional
 
 from spacepackets.cfdp.pdu import PduHeader
@@ -54,6 +55,7 @@ class MetadataPdu(AbstractFileDirectiveBase):
         params: MetadataParams,
         options: Optional[TlvList] = None,
     ):
+        pdu_conf = copy.copy(pdu_conf)
         self.params = params
         if params.source_file_name is None:
             self._source_file_name_lv = CfdpLv(value=bytes())

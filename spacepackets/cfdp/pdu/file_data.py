@@ -1,5 +1,6 @@
 from __future__ import annotations
 import enum
+import copy
 from dataclasses import dataclass
 from typing import Union, Optional
 import struct
@@ -58,6 +59,7 @@ class FileDataPdu(AbstractPduBase):
             and params.record_cont_state is None
         ):
             raise ValueError("Record continuation state must be specified")
+        pdu_conf = copy.copy(pdu_conf)
         pdu_conf.direction = Direction.TOWARDS_RECEIVER
         self._pdu_header = PduHeader(
             segment_metadata_flag=self._params.segment_metadata_flag,

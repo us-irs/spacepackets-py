@@ -1,5 +1,6 @@
 from __future__ import annotations
 import enum
+import copy
 import struct
 from dataclasses import dataclass, field
 from typing import List, Optional
@@ -73,6 +74,7 @@ class FinishedPdu(AbstractFileDirectiveBase):
         pdu_conf: PduConfig,
         params: FinishedParams,
     ):
+        pdu_conf = copy.copy(pdu_conf)
         pdu_conf.direction = Direction.TOWARDS_SENDER
         self.pdu_file_directive = FileDirectivePduBase(
             directive_code=DirectiveType.FINISHED_PDU,

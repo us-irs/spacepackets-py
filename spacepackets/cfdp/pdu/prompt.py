@@ -1,5 +1,6 @@
 from __future__ import annotations
 import enum
+import copy
 import struct
 
 from spacepackets.cfdp import CrcFlag
@@ -20,6 +21,7 @@ class PromptPdu(AbstractFileDirectiveBase):
     """Encapsulates the Prompt file directive PDU, see CCSDS 727.0-B-5 p.84"""
 
     def __init__(self, pdu_conf: PduConfig, response_required: ResponseRequired):
+        pdu_conf = copy.copy(pdu_conf)
         pdu_conf.direction = Direction.TOWARDS_RECEIVER
         self.pdu_file_directive = FileDirectivePduBase(
             directive_code=DirectiveType.PROMPT_PDU,

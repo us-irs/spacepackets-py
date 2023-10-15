@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import struct
+import copy
 
 from spacepackets.cfdp import CrcFlag
 from spacepackets.cfdp.defs import Direction
@@ -18,6 +19,7 @@ class KeepAlivePdu(AbstractFileDirectiveBase):
     """Encapsulates the Keep Alive file directive PDU, see CCSDS 727.0-B-5 p.85"""
 
     def __init__(self, pdu_conf: PduConfig, progress: int):
+        pdu_conf = copy.copy(pdu_conf)
         directive_param_field_len = 4
         if pdu_conf.file_flag == LargeFileFlag.LARGE:
             directive_param_field_len = 8
