@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## Added
 
 - Added a `finished_params` property for the `FinishedPdu` class.
+- Added a `transmission_mode` property for the `AbstractPduBase` class.
 
 # [v0.19.0] 2023-10-05
 

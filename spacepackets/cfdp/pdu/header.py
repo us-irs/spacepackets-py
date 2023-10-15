@@ -84,6 +84,11 @@ class AbstractPduBase(abc.ABC):
 
     @property
     @abc.abstractmethod
+    def transmission_mode(self) -> TransmissionMode:
+        pass
+
+    @property
+    @abc.abstractmethod
     def transaction_seq_num(self) -> UnsignedByteField:
         pass
 
@@ -180,6 +185,10 @@ class PduHeader(AbstractPduBase):
     @property
     def dest_entity_id(self):
         return self.pdu_conf.dest_entity_id
+
+    @property
+    def transmission_mode(self):
+        return self.pdu_conf.trans_mode
 
     def set_entity_ids(
         self, source_entity_id: UnsignedByteField, dest_entity_id: UnsignedByteField
