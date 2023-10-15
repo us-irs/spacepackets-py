@@ -321,13 +321,13 @@ class PduHeader(AbstractPduBase):
         version_raw = (data[0] >> 5) & 0b111
         if version_raw != CFDP_VERSION_2:
             raise UnsupportedCfdpVersion(version_raw)
-        pdu_header._pdu_type = (data[0] & 0x10) >> 4
-        pdu_header.direction = (data[0] & 0x08) >> 3
-        pdu_header.trans_mode = (data[0] & 0x04) >> 2
-        pdu_header.crc_flag = (data[0] & 0x02) >> 1
+        pdu_header._pdu_type = PduType((data[0] & 0x10) >> 4)
+        pdu_header.direction = Direction((data[0] & 0x08) >> 3)
+        pdu_header.transmission_mode = TransmissionMode((data[0] & 0x04) >> 2)
+        pdu_header.crc_flag = CrcFlag((data[0] & 0x02) >> 1)
         pdu_header.file_flag = LargeFileFlag(data[0] & 0x01)
         pdu_header.pdu_data_field_len = data[1] << 8 | data[2]
-        pdu_header.segmentation_control = SegmentationControl((data[3] & 0x80) >> 7)
+        pdu_header.seg_ctrl = SegmentationControl((data[3] & 0x80) >> 7)
         expected_len_entity_ids = cls.check_len_in_bytes(((data[3] >> 4) & 0b111) + 1)
         pdu_header.segment_metadata_flag = SegmentMetadataFlag((data[3] >> 3) & 0b1)
         expected_len_seq_num = cls.check_len_in_bytes((data[3] & 0b111) + 1)

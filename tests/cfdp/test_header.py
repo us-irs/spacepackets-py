@@ -46,9 +46,6 @@ class TestHeader(TestCase):
         self.assertEqual(
             self.pdu_header.transmission_mode, TransmissionMode.ACKNOWLEDGED
         )
-        self.assertEqual(
-            self.pdu_header.transmission_mode, TransmissionMode.ACKNOWLEDGED
-        )
         self.assertEqual(self.pdu_header.direction, Direction.TOWARDS_RECEIVER)
         self.assertEqual(
             self.pdu_header.segment_metadata_flag, SegmentMetadataFlag.NOT_PRESENT
@@ -79,7 +76,7 @@ class TestHeader(TestCase):
             source_entity_id=ByteFieldU16(0), dest_entity_id=ByteFieldU16(1)
         )
         self.pdu_header.transaction_seq_num = ByteFieldU16(300)
-        self.pdu_header.trans_mode = TransmissionMode.UNACKNOWLEDGED
+        self.pdu_header.transmission_mode = TransmissionMode.UNACKNOWLEDGED
         self.pdu_header.direction = Direction.TOWARDS_SENDER
         self.pdu_header.crc_flag = CrcFlag.WITH_CRC
         self.pdu_header.file_flag = LargeFileFlag.LARGE
