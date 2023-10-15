@@ -112,6 +112,7 @@ class TestHeader(TestCase):
             response_required=ResponseRequired.KEEP_ALIVE, pdu_conf=self.pdu_conf
         )
         self.assertEqual(prompt_pdu.pdu_file_directive.header_len, 9)
+        self.assertEqual(prompt_pdu.transmission_mode, TransmissionMode.UNACKNOWLEDGED)
         self.assertEqual(prompt_pdu.packet_len, 12)
         self.assertEqual(prompt_pdu.crc_flag, CrcFlag.WITH_CRC)
         self.assertEqual(prompt_pdu.source_entity_id, ByteFieldU8(0))
