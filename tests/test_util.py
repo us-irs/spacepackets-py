@@ -15,10 +15,13 @@ class TestUtility(TestCase):
     def test_basic_bytefields(self):
         byte_field = ByteFieldU8(22)
         self.assertEqual(int(byte_field), 22)
+        self.assertEqual(len(byte_field), 1)
         byte_field = ByteFieldU16(5292)
         self.assertEqual(int(byte_field), 5292)
+        self.assertEqual(len(byte_field), 2)
         byte_field = ByteFieldU32(129302)
         self.assertEqual(struct.unpack("!I", byte_field.as_bytes)[0], 129302)
+        self.assertEqual(len(byte_field), 4)
         with self.assertRaises(ValueError):
             ByteFieldU8(900)
 
