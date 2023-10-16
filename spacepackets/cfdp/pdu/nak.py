@@ -23,15 +23,15 @@ class NakPdu(AbstractFileDirectiveBase):
     but might consist of multiple ones if one NAK PDU is not sufficient to send all missing
     segment requests while staying below a maximum allowed packet size for one PDU.
 
-    The start of scope of a NAK sequence (not individual PDU) can be one of the following:
+    The start of scope of a NAK sequence (not individual PDU!) can be one of the following:
 
     - 0 if this is the first NAK sequence.
     - 0 if the event which causes an issuance of the NAK PDU is the NAK timer expiry.
     - The end-of-scope of the previous NAK sequence for this file transaction.
 
-    The end of scope of a NAK sequence (not individual PDU) can be one of the following:
+    The end of scope of a NAK sequence (not individual PDU!) can be one of the following:
 
-    - The whole file size if an EOF (No Error) PDU was already receiver.
+    - The whole file size if an EOF (No Error) PDU was already received.
     - The current reception progress at the time of the event that causes issuance of a NAK
       sequence.
 
