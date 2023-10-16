@@ -21,7 +21,10 @@ class TestFileDataPdu(TestCase):
         )
         self.pdu = FileDataPdu(pdu_conf=self.pdu_conf, params=self.fd_params)
 
-    def test_file_data_pdu(self):
+    def test_max_file_seg_calculator(self):
+        pass
+
+    def test_state(self):
         self.assertEqual(self.pdu.pdu_header.header_len, 7)
         # 15: 'hello world' encoded + 4 bytes offset
         self.assertEqual(self.pdu.packet_len, 7 + 15)
@@ -29,6 +32,8 @@ class TestFileDataPdu(TestCase):
         self.assertEqual(self.pdu.has_segment_metadata, False)
         self.assertEqual(self.pdu.offset, 0)
         self.assertEqual(self.pdu.transmission_mode, TransmissionMode.ACKNOWLEDGED)
+
+    def test_pack_unpack(self):
         file_data_pdu_raw = self.pdu.pack()
         expected_bytes = bytearray([0x30, 0x00, 0x0F, 0x00, 0x00, 0x00, 0x00])
         expected_bytes.extend(bytes([0x00, 0x00, 0x00, 0x00]))
@@ -38,6 +43,7 @@ class TestFileDataPdu(TestCase):
         self.assertEqual(file_data_pdu_unpacked.offset, 0)
         self.assertEqual(file_data_pdu_unpacked.file_data, self.file_data_bytes)
 
+    def test_with_seg_metadata(self):
         fd_params = FileDataParams(
             file_data=self.file_data_bytes,
             offset=0,

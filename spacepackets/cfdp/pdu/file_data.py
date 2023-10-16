@@ -15,6 +15,29 @@ from spacepackets.exceptions import BytesTooShortError
 from spacepackets.util import UnsignedByteField
 
 
+def get_max_file_seg_len_for_max_packet_len_and_pdu_cfg(
+    pdu_conf: PduConfig,
+    max_packet_len: int,
+    segment_metadata: Optional[SegmentMetadata] = None,
+):
+    """This function can be used to calculate the maximum allowed file segment size for
+    a given maximum packet length and the segment metadata if there is any."""
+    subtract = pdu_conf.header_len()
+    if segment_metadata is not None:
+        subtract += 1 + len(segment_metadata.metadata)
+    if pdu_conf.file_flag == LargeFileFlag.LARGE:
+        subtract -= 8
+    else:
+        subtract -= 4
+    if pdu_conf.crc_flag == CrcFlag.WITH_CRC:
+        subtract -= 2
+    if max_packet_len < subtract:
+        raise ValueError(
+            f"max packet length {max_packet_len} can not even hold base packet"
+        )
+    return max_packet_len - subtract
+
+
 class RecordContinuationState(enum.IntEnum):
     # If the PDU header's segmentation control flag is 1, this value indicates that the file
     # data is the continuation of a record begun in a prior PDU
@@ -74,32 +97,11 @@ class FileDataPdu(AbstractPduBase):
             pdu_conf=empty_conf,
         )
 
-    @staticmethod
-    def get_max_file_seg_len_for_max_packet_len_and_pdu_cfg(
-        pdu_conf: PduConfig, max_packet_len: int, segment_metadata_len: int = 0
-    ):
-        """This function can be used to calculate the maximum allowed file segment size for
-        a given maximum packet length. The user has to pass the expected segment metadata length
-        as well."""
-        subtract = pdu_conf.header_len() + segment_metadata_len
-        if pdu_conf.file_flag == LargeFileFlag.LARGE:
-            subtract -= 8
-        else:
-            subtract -= 4
-        if pdu_conf.crc_flag == CrcFlag.WITH_CRC:
-            subtract -= 2
-        if max_packet_len < subtract:
-            raise ValueError(
-                f"max packet length {max_packet_len} can not even hold base packet"
-            )
-        return max_packet_len - subtract
-
     def get_max_file_seg_len_for_max_packet_len(self, max_packet_len: int) -> int:
-        segment_metadata_len = 0
-        if self.segment_metadata is not None:
-            segment_metadata_len = 1 + len(self.segment_metadata.metadata)
-        return FileDataPdu.get_max_file_seg_len_for_max_packet_len_and_pdu_cfg(
-            self._pdu_header.pdu_conf, max_packet_len, segment_metadata_len
+        """This simply calls :py:func:`get_max_file_seg_len_for_max_packet_len_and_pdu_cfg` with
+        the correct arguments derived from the internal fields."""
+        return get_max_file_seg_len_for_max_packet_len_and_pdu_cfg(
+            self._pdu_header.pdu_conf, max_packet_len, self.segment_metadata
         )
 
     @property
