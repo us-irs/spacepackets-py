@@ -15,6 +15,37 @@ from spacepackets.cfdp.conf import PduConfig
 from spacepackets.crc import CRC16_CCITT_FUNC
 
 
+def get_max_seg_reqs_for_max_packet_size_and_pdu_cfg(
+    max_packet_size: int, pdu_conf: PduConfig
+) -> int:
+    """This function can be used to retrieve the maximum amount of segment request given
+    a PDU configuration to stay below a certain maximum packet size. This is useful
+    to calculate how many NAK PDUs are required inside a NAK sequence.
+
+    Raises
+    ------
+    ValueError
+        Invalid large file flag derived from the PDU configuration, or maximum packet size
+        is not even large enough to hold the base packet without any segment requests.
+
+    """
+    base_decrement = pdu_conf.header_len() + 1
+    if pdu_conf.crc_flag:
+        base_decrement += 2
+    if pdu_conf.file_flag == LargeFileFlag.NORMAL:
+        base_decrement += 8
+    elif pdu_conf.file_flag == LargeFileFlag.LARGE:
+        base_decrement += 16
+    if max_packet_size < base_decrement:
+        raise ValueError("maximum packet size too small to hold base packet")
+    max_packet_size -= base_decrement
+    if pdu_conf.file_flag == LargeFileFlag.NORMAL:
+        return max_packet_size // 8
+    elif pdu_conf.file_flag == LargeFileFlag.LARGE:
+        return max_packet_size // 16
+    raise ValueError("Invalid large file flag argument")
+
+
 class NakPdu(AbstractFileDirectiveBase):
     """Encapsulates the NAK file directive PDU, see CCSDS 727.0-B-5 p.84.
 
@@ -76,14 +107,20 @@ class NakPdu(AbstractFileDirectiveBase):
     ):
         """Create a NAK PDU object instance.
 
-        :param pdu_conf: Common PDU configuration.
-        :param start_of_scope: The value of this parameter depends on the start of the scope
+        Arguments
+        ----------
+        pdu_conf:
+            Common PDU configuration.
+        start_of_scope:
+            The value of this parameter depends on the start of the scope
             of the whole NAK sequence and on the position of this PDU inside the NAK sequence.
             See the class documentation for more details.
-        :param end_of_scope: The value of this parameter depends on the end of the scope
+        end_of_scope:
+            The value of this parameter depends on the end of the scope
             of the whole NAK sequence and on the position of this PDU inside the NAK sequence.
             See the class documentation for more details.
-        :param segment_requests: A list of segment request pair tuples, where the first entry of
+        segment_requests:
+            A list of segment request pair tuples, where the first entry of
             list element is the start offset and the second entry is the end offset. If the
             start and end offset are both 0, the metadata is re-requested.
         """
@@ -105,33 +142,10 @@ class NakPdu(AbstractFileDirectiveBase):
             start_of_scope=0, end_of_scope=0, segment_requests=[], pdu_conf=empty_conf
         )
 
-    @staticmethod
-    def get_max_seg_reqs_for_max_packet_size_and_pdu_cfg(
-        max_packet_size: int, pdu_conf: PduConfig
-    ):
-        """This function can be used to retrieve the maximum amount of segment request given
-        a PDU configuration to stay below a certain maximum packet size. This is useful
-        to calculate how many NAK PDUs are required inside a NAK sequence."""
-        base_decrement = pdu_conf.header_len() + 1
-        if pdu_conf.crc_flag:
-            base_decrement += 2
-        if pdu_conf.file_flag == LargeFileFlag.NORMAL:
-            base_decrement += 8
-        elif pdu_conf.file_flag == LargeFileFlag.LARGE:
-            base_decrement += 16
-        if max_packet_size < base_decrement:
-            raise ValueError("maximum packet size too small to hold base packet")
-        max_packet_size -= base_decrement
-        if pdu_conf.file_flag == LargeFileFlag.NORMAL:
-            return max_packet_size // 8
-        elif pdu_conf.file_flag == LargeFileFlag.LARGE:
-            return max_packet_size // 16
-        raise ValueError("Invalid large file flag argument")
-
     def get_max_seg_reqs_for_max_packet_size(self, max_packet_size: int) -> int:
         """Member method which forwards to :py:meth:`get_max_seg_reqs_for_max_packet_size_and_pdu_cfg`,
         passing the internal PDU configuration field."""
-        return NakPdu.get_max_seg_reqs_for_max_packet_size_and_pdu_cfg(
+        return get_max_seg_reqs_for_max_packet_size_and_pdu_cfg(
             max_packet_size, self.pdu_file_directive.pdu_conf
         )
 
