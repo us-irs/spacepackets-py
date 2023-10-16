@@ -111,7 +111,7 @@ Output
     --- PDU 0 RAW ---
     0x[24,00,2b,00,01,00,02,07,43,00,00,00,0c,11,2f,74,6d,70,2f,73,72,63,2d,66,69,6c,65,2e,74,78,74,12,2f,74,6d,70,2f,64,65,73,74,2d,66,69,6c,65,2e,74,78,74]
     --- PDU 1 REPR ---
-    FileDataPdu(params=FileDataParams(file_data=b'Hello World!', offset=0, segment_metadata_flag=<SegmentMetadataFlag.NOT_PRESENT: 0>, record_cont_state=None, segment_metadata=None), pdu_conf=PduConfig(source_entity_id=ByteFieldU8(val=1, byte_len=1), dest_entity_id=ByteFieldU8(val=2, byte_len=1), transaction_seq_num=ByteFieldU8(val=0, byte_len=1), trans_mode=<TransmissionMode.UNACKNOWLEDGED: 1>, file_flag=<LargeFileFlag.NORMAL: 0>, crc_flag=<CrcFlag.NO_CRC: 0>, direction=<Direction.TOWARDS_RECEIVER: 0>, seg_ctrl=<SegmentationControl.NO_RECORD_BOUNDARIES_PRESERVATION: 0>))
+    FileDataPdu(params=FileDataParams(file_data=b'Hello World!', offset=0, segment_metadata=None), pdu_conf=PduConfig(source_entity_id=ByteFieldU8(val=1, byte_len=1), dest_entity_id=ByteFieldU8(val=2, byte_len=1), transaction_seq_num=ByteFieldU8(val=0, byte_len=1), trans_mode=<TransmissionMode.UNACKNOWLEDGED: 1>, file_flag=<LargeFileFlag.NORMAL: 0>, crc_flag=<CrcFlag.NO_CRC: 0>, direction=<Direction.TOWARDS_RECEIVER: 0>, seg_ctrl=<SegmentationControl.NO_RECORD_BOUNDARIES_PRESERVATION: 0>))
     --- PDU 1 RAW ---
     0x[34,00,10,00,01,00,02,00,00,00,00,48,65,6c,6c,6f,20,57,6f,72,6c,64,21]
     --- PDU 2 REPR ---
