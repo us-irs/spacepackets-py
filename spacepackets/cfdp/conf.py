@@ -58,6 +58,14 @@ class PduConfig:
             crc_flag=CrcFlag.NO_CRC,
         )
 
+    def header_len_for_cfg(self) -> int:
+        return (
+            4
+            + len(self.source_entity_id)
+            + len(self.dest_entity_id)
+            + len(self.transaction_seq_num)
+        )
+
 
 class CfdpDict(TypedDict):
     source_dest_entity_ids: Tuple[bytes, bytes]

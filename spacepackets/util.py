@@ -1,7 +1,7 @@
 from __future__ import annotations
 import enum
 import struct
-from typing import Union
+from typing import Tuple, Union
 
 
 class PrintFormats(enum.IntEnum):
@@ -173,7 +173,7 @@ class UnsignedByteField:
                 f" {pow(2, self.byte_len * 8) - 1} or negative"
             )
 
-    def _verify_bytes_value(self, val: bytes) -> (int, bytes):
+    def _verify_bytes_value(self, val: bytes) -> Tuple[int, bytes]:
         if len(val) < self.byte_len:
             raise ValueError(
                 f"Passed byte object {val} smaller than byte length {self.byte_len}"
@@ -206,6 +206,9 @@ class UnsignedByteField:
 
     def __int__(self):
         return self.value
+
+    def __len__(self):
+        return self._byte_len
 
     def __eq__(self, other: Union[UnsignedByteField, bytes]):
         if isinstance(other, UnsignedByteField):
