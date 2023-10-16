@@ -38,7 +38,7 @@ class MetadataPdu(AbstractFileDirectiveBase):
     ...     source_file_name="/tmp/test_source_file.txt",
     ...     dest_file_name="/tmp/test_dest_file.txt"
     ... )
-    >>> metadata_pdu = MetadataPdu(PduConfig.empty(), metadata_params)
+    >>> metadata_pdu = MetadataPdu(PduConfig.default(), metadata_params)
     >>> metadata_pdu.closure_requested
     True
     >>> metadata_pdu.checksum_type

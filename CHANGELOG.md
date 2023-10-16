@@ -13,6 +13,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Added a `finished_params` property for the `FinishedPdu` class.
 - Added a `transmission_mode` property for the `AbstractPduBase` class.
 - Renamed `trans_mode` setter and getter properties to `transmission_mode`.
+- Filedata PDU: New `SegmentMetadata` dataclass for better modelling of the filedata PDU.
+- Filedata PDU: New API to retrieve the maximum allowed file segment size for a given maximum
+  packet size.
+- NAK PDU: New API to retrieve the maximum amount of segment requests for a given maximum packet
+  size.
+
+## Changed
+
+- Filedata PDU: The `FileDataParams` dataclass now is composed of an `Optional[SegmentMetadata]`.
 
 # [v0.19.0] 2023-10-05
 
