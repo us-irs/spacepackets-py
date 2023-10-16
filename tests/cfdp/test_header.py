@@ -39,6 +39,14 @@ class TestHeader(TestCase):
             pdu_conf=self.pdu_conf,
         )
 
+    def test_cfg(self):
+        self.assertEqual(self.pdu_conf.header_len(), 7)
+        self.pdu_conf.transaction_seq_num = ByteFieldU16(5)
+        self.assertEqual(self.pdu_conf.header_len(), 8)
+        self.pdu_conf.source_entity_id = ByteFieldU16(0)
+        self.pdu_conf.dest_entity_id = ByteFieldU16(1)
+        self.assertEqual(self.pdu_conf.header_len(), 10)
+
     def test_pdu_header(self):
         self.assertEqual(self.pdu_header.pdu_type, PduType.FILE_DIRECTIVE)
         self.assertEqual(self.pdu_header.source_entity_id, ByteFieldU8(0))

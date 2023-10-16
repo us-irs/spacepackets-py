@@ -112,7 +112,7 @@ class NakPdu(AbstractFileDirectiveBase):
         """This function can be used to retrieve the maximum amount of segment request given
         a PDU configuration to stay below a certain maximum packet size. This is useful
         to calculate how many NAK PDUs are required inside a NAK sequence."""
-        base_decrement = pdu_conf.header_len_for_cfg() - 1
+        base_decrement = pdu_conf.header_len() - 1
         if pdu_conf.crc_flag:
             base_decrement += 2
         if pdu_conf.file_flag == LargeFileFlag.NORMAL:

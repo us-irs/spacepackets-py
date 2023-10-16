@@ -58,7 +58,7 @@ class PduConfig:
             crc_flag=CrcFlag.NO_CRC,
         )
 
-    def header_len_for_cfg(self) -> int:
+    def header_len(self) -> int:
         return (
             4
             + len(self.source_entity_id)
