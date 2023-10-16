@@ -45,6 +45,16 @@ class TestFileDataPdu(TestCase):
         fd_pdu = FileDataPdu(pdu_conf, FileDataParams(bytes(), 0))
         self.assertEqual(fd_pdu.get_max_file_seg_len_for_max_packet_len(64), 49)
 
+    def test_max_file_seg_calculator_error(self):
+        pdu_conf = PduConfig.default()
+        file_seg_len = get_max_file_seg_len_for_max_packet_len_and_pdu_cfg(pdu_conf, 11)
+        self.assertEqual(file_seg_len, 0)
+        with self.assertRaises(ValueError):
+            file_seg_len = get_max_file_seg_len_for_max_packet_len_and_pdu_cfg(pdu_conf, 10)
+        fd_pdu = FileDataPdu(pdu_conf, FileDataParams(bytes(), 0))
+        with self.assertRaises(ValueError):
+            fd_pdu.get_max_file_seg_len_for_max_packet_len(10)
+
     def test_state(self):
         self.assertEqual(self.pdu.pdu_header.header_len, 7)
         # 15: 'hello world' encoded + 4 bytes offset
