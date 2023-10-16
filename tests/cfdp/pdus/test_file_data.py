@@ -7,6 +7,7 @@ from spacepackets.cfdp.pdu.file_data import (
     SegmentMetadata,
     RecordContinuationState,
     FileDataParams,
+    get_max_file_seg_len_for_max_packet_len_and_pdu_cfg,
 )
 from spacepackets.cfdp.conf import PduConfig, LargeFileFlag
 
@@ -21,7 +22,42 @@ class TestFileDataPdu(TestCase):
         )
         self.pdu = FileDataPdu(pdu_conf=self.pdu_conf, params=self.fd_params)
 
-    def test_file_data_pdu(self):
+    def test_max_file_seg_calculator_0(self):
+        pdu_conf = PduConfig.default()
+        file_seg_len = get_max_file_seg_len_for_max_packet_len_and_pdu_cfg(pdu_conf, 64)
+        self.assertEqual(file_seg_len, 53)
+        fd_pdu = FileDataPdu(pdu_conf, FileDataParams(bytes(), 0))
+        self.assertEqual(fd_pdu.get_max_file_seg_len_for_max_packet_len(64), 53)
+
+    def test_max_file_seg_calculator_1(self):
+        pdu_conf = PduConfig.default()
+        pdu_conf.crc_flag = CrcFlag.WITH_CRC
+        file_seg_len = get_max_file_seg_len_for_max_packet_len_and_pdu_cfg(pdu_conf, 64)
+        self.assertEqual(file_seg_len, 51)
+        fd_pdu = FileDataPdu(pdu_conf, FileDataParams(bytes(), 0))
+        self.assertEqual(fd_pdu.get_max_file_seg_len_for_max_packet_len(64), 51)
+
+    def test_max_file_seg_calculator_2(self):
+        pdu_conf = PduConfig.default()
+        pdu_conf.file_flag = LargeFileFlag.LARGE
+        file_seg_len = get_max_file_seg_len_for_max_packet_len_and_pdu_cfg(pdu_conf, 64)
+        self.assertEqual(file_seg_len, 49)
+        fd_pdu = FileDataPdu(pdu_conf, FileDataParams(bytes(), 0))
+        self.assertEqual(fd_pdu.get_max_file_seg_len_for_max_packet_len(64), 49)
+
+    def test_max_file_seg_calculator_error(self):
+        pdu_conf = PduConfig.default()
+        file_seg_len = get_max_file_seg_len_for_max_packet_len_and_pdu_cfg(pdu_conf, 11)
+        self.assertEqual(file_seg_len, 0)
+        with self.assertRaises(ValueError):
+            file_seg_len = get_max_file_seg_len_for_max_packet_len_and_pdu_cfg(
+                pdu_conf, 10
+            )
+        fd_pdu = FileDataPdu(pdu_conf, FileDataParams(bytes(), 0))
+        with self.assertRaises(ValueError):
+            fd_pdu.get_max_file_seg_len_for_max_packet_len(10)
+
+    def test_state(self):
         self.assertEqual(self.pdu.pdu_header.header_len, 7)
         # 15: 'hello world' encoded + 4 bytes offset
         self.assertEqual(self.pdu.packet_len, 7 + 15)
@@ -29,6 +65,8 @@ class TestFileDataPdu(TestCase):
         self.assertEqual(self.pdu.has_segment_metadata, False)
         self.assertEqual(self.pdu.offset, 0)
         self.assertEqual(self.pdu.transmission_mode, TransmissionMode.ACKNOWLEDGED)
+
+    def test_pack_unpack(self):
         file_data_pdu_raw = self.pdu.pack()
         expected_bytes = bytearray([0x30, 0x00, 0x0F, 0x00, 0x00, 0x00, 0x00])
         expected_bytes.extend(bytes([0x00, 0x00, 0x00, 0x00]))
@@ -38,6 +76,7 @@ class TestFileDataPdu(TestCase):
         self.assertEqual(file_data_pdu_unpacked.offset, 0)
         self.assertEqual(file_data_pdu_unpacked.file_data, self.file_data_bytes)
 
+    def test_with_seg_metadata(self):
         fd_params = FileDataParams(
             file_data=self.file_data_bytes,
             offset=0,

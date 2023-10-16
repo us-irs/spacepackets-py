@@ -4,6 +4,7 @@ from spacepackets.cfdp import TransmissionMode
 from spacepackets.cfdp.conf import PduConfig
 from spacepackets.cfdp.defs import CrcFlag, Direction, LargeFileFlag
 from spacepackets.cfdp.pdu import NakPdu
+from spacepackets.cfdp.pdu.nak import get_max_seg_reqs_for_max_packet_size_and_pdu_cfg
 from spacepackets.util import ByteFieldU16
 
 
@@ -38,28 +39,28 @@ class TestNakPdu(TestCase):
         # 6 segment requests (6 bytes each)
         self.assertEqual(
             6,
-            NakPdu.get_max_seg_reqs_for_max_packet_size_and_pdu_cfg(
+            get_max_seg_reqs_for_max_packet_size_and_pdu_cfg(
                 max_packet_size=64, pdu_conf=PduConfig.default()
             ),
         )
         self.assertEqual(nak_pdu.get_max_seg_reqs_for_max_packet_size(64), 6)
         self.assertEqual(
             6,
-            NakPdu.get_max_seg_reqs_for_max_packet_size_and_pdu_cfg(
+            get_max_seg_reqs_for_max_packet_size_and_pdu_cfg(
                 max_packet_size=65, pdu_conf=PduConfig.default()
             ),
         )
         self.assertEqual(nak_pdu.get_max_seg_reqs_for_max_packet_size(65), 6)
         self.assertEqual(
             5,
-            NakPdu.get_max_seg_reqs_for_max_packet_size_and_pdu_cfg(
+            get_max_seg_reqs_for_max_packet_size_and_pdu_cfg(
                 max_packet_size=63, pdu_conf=PduConfig.default()
             ),
         )
         self.assertEqual(nak_pdu.get_max_seg_reqs_for_max_packet_size(63), 5)
         self.assertEqual(
             7,
-            NakPdu.get_max_seg_reqs_for_max_packet_size_and_pdu_cfg(
+            get_max_seg_reqs_for_max_packet_size_and_pdu_cfg(
                 max_packet_size=72, pdu_conf=PduConfig.default()
             ),
         )
@@ -73,28 +74,28 @@ class TestNakPdu(TestCase):
         nak_pdu = NakPdu(pdu_conf, start_of_scope=0, end_of_scope=0)
         self.assertEqual(
             3,
-            NakPdu.get_max_seg_reqs_for_max_packet_size_and_pdu_cfg(
+            get_max_seg_reqs_for_max_packet_size_and_pdu_cfg(
                 max_packet_size=72, pdu_conf=pdu_conf
             ),
         )
         self.assertEqual(nak_pdu.get_max_seg_reqs_for_max_packet_size(72), 3)
         self.assertEqual(
             3,
-            NakPdu.get_max_seg_reqs_for_max_packet_size_and_pdu_cfg(
+            get_max_seg_reqs_for_max_packet_size_and_pdu_cfg(
                 max_packet_size=73, pdu_conf=pdu_conf
             ),
         )
         self.assertEqual(nak_pdu.get_max_seg_reqs_for_max_packet_size(73), 3)
         self.assertEqual(
             2,
-            NakPdu.get_max_seg_reqs_for_max_packet_size_and_pdu_cfg(
+            get_max_seg_reqs_for_max_packet_size_and_pdu_cfg(
                 max_packet_size=71, pdu_conf=pdu_conf
             ),
         )
         self.assertEqual(nak_pdu.get_max_seg_reqs_for_max_packet_size(71), 2)
         self.assertEqual(
             4,
-            NakPdu.get_max_seg_reqs_for_max_packet_size_and_pdu_cfg(
+            get_max_seg_reqs_for_max_packet_size_and_pdu_cfg(
                 max_packet_size=88, pdu_conf=pdu_conf
             ),
         )
@@ -109,25 +110,45 @@ class TestNakPdu(TestCase):
         nak_pdu = NakPdu(pdu_conf, start_of_scope=0, end_of_scope=0)
         self.assertEqual(
             3,
-            NakPdu.get_max_seg_reqs_for_max_packet_size_and_pdu_cfg(
+            get_max_seg_reqs_for_max_packet_size_and_pdu_cfg(
                 max_packet_size=74, pdu_conf=pdu_conf
             ),
         )
         self.assertEqual(nak_pdu.get_max_seg_reqs_for_max_packet_size(74), 3)
         self.assertEqual(
             2,
-            NakPdu.get_max_seg_reqs_for_max_packet_size_and_pdu_cfg(
+            get_max_seg_reqs_for_max_packet_size_and_pdu_cfg(
                 max_packet_size=73, pdu_conf=pdu_conf
             ),
         )
         self.assertEqual(nak_pdu.get_max_seg_reqs_for_max_packet_size(73), 2)
         self.assertEqual(
             4,
-            NakPdu.get_max_seg_reqs_for_max_packet_size_and_pdu_cfg(
+            get_max_seg_reqs_for_max_packet_size_and_pdu_cfg(
                 max_packet_size=90, pdu_conf=pdu_conf
             ),
         )
         self.assertEqual(nak_pdu.get_max_seg_reqs_for_max_packet_size(90), 4)
+
+    def test_segment_req_for_packet_error(self):
+        pdu_conf = PduConfig.default()
+        nak_pdu = NakPdu(pdu_conf, start_of_scope=0, end_of_scope=0)
+        self.assertEqual(
+            0,
+            get_max_seg_reqs_for_max_packet_size_and_pdu_cfg(
+                max_packet_size=16, pdu_conf=PduConfig.default()
+            ),
+        )
+        self.assertEqual(nak_pdu.get_max_seg_reqs_for_max_packet_size(16), 0)
+        with self.assertRaises(ValueError):
+            self.assertEqual(
+                0,
+                get_max_seg_reqs_for_max_packet_size_and_pdu_cfg(
+                    max_packet_size=15, pdu_conf=PduConfig.default()
+                ),
+            )
+        with self.assertRaises(ValueError):
+            self.assertEqual(nak_pdu.get_max_seg_reqs_for_max_packet_size(15), 0)
 
     def test_packing_0(self):
         nak_packed = self.nak_pdu.pack()
