@@ -50,7 +50,9 @@ class TestFileDataPdu(TestCase):
         file_seg_len = get_max_file_seg_len_for_max_packet_len_and_pdu_cfg(pdu_conf, 11)
         self.assertEqual(file_seg_len, 0)
         with self.assertRaises(ValueError):
-            file_seg_len = get_max_file_seg_len_for_max_packet_len_and_pdu_cfg(pdu_conf, 10)
+            file_seg_len = get_max_file_seg_len_for_max_packet_len_and_pdu_cfg(
+                pdu_conf, 10
+            )
         fd_pdu = FileDataPdu(pdu_conf, FileDataParams(bytes(), 0))
         with self.assertRaises(ValueError):
             fd_pdu.get_max_file_seg_len_for_max_packet_len(10)
