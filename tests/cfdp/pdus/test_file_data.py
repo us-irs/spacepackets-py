@@ -4,7 +4,7 @@ from spacepackets.cfdp import CrcFlag
 from spacepackets.cfdp.defs import TransmissionMode
 from spacepackets.cfdp.pdu.file_data import (
     FileDataPdu,
-    SegmentMetadataFlag,
+    SegmentMetadata,
     RecordContinuationState,
     FileDataParams,
 )
@@ -17,7 +17,7 @@ class TestFileDataPdu(TestCase):
         file_data = "hello world"
         self.file_data_bytes = file_data.encode()
         self.fd_params = FileDataParams(
-            file_data=self.file_data_bytes, offset=0, segment_metadata_flag=False
+            file_data=self.file_data_bytes, offset=0, segment_metadata=None
         )
         self.pdu = FileDataPdu(pdu_conf=self.pdu_conf, params=self.fd_params)
 
@@ -41,9 +41,9 @@ class TestFileDataPdu(TestCase):
         fd_params = FileDataParams(
             file_data=self.file_data_bytes,
             offset=0,
-            segment_metadata_flag=SegmentMetadataFlag.PRESENT,
-            record_cont_state=RecordContinuationState.START_AND_END,
-            segment_metadata=bytes([0xAA, 0xBB]),
+            segment_metadata=SegmentMetadata(
+                RecordContinuationState.START_AND_END, bytes([0xAA, 0xBB])
+            ),
         )
         fd_pdu_with_metadata = FileDataPdu(pdu_conf=self.pdu_conf, params=fd_params)
         expected_packet_len = 7 + 15 + 1 + 2
@@ -59,7 +59,10 @@ class TestFileDataPdu(TestCase):
             fd_pdu_with_metadata_unpacked.record_cont_state,
             RecordContinuationState.START_AND_END,
         )
-        self.assertEqual(fd_pdu_with_metadata.segment_metadata, bytes([0xAA, 0xBB]))
+        assert fd_pdu_with_metadata.segment_metadata is not None
+        self.assertEqual(
+            fd_pdu_with_metadata.segment_metadata.metadata, bytes([0xAA, 0xBB])
+        )
 
     def test_invalid_metadata(self):
         invalid_metadata = bytes(70)
@@ -67,9 +70,9 @@ class TestFileDataPdu(TestCase):
             fd_params = FileDataParams(
                 file_data=self.file_data_bytes,
                 offset=0,
-                segment_metadata_flag=SegmentMetadataFlag.PRESENT,
-                record_cont_state=RecordContinuationState.START_AND_END,
-                segment_metadata=invalid_metadata,
+                segment_metadata=SegmentMetadata(
+                    RecordContinuationState.START_AND_END, invalid_metadata
+                ),
             )
             invalid_pdu = FileDataPdu(pdu_conf=self.pdu_conf, params=fd_params)
             invalid_pdu.pack()
@@ -78,18 +81,18 @@ class TestFileDataPdu(TestCase):
         fd_params = FileDataParams(
             file_data=self.file_data_bytes,
             offset=0,
-            segment_metadata_flag=SegmentMetadataFlag.PRESENT,
-            record_cont_state=RecordContinuationState.START_AND_END,
-            segment_metadata=bytes([0xAA, 0xBB]),
+            segment_metadata=SegmentMetadata(
+                RecordContinuationState.START_AND_END, bytes([0xAA, 0xBB])
+            ),
         )
         self.pdu_conf.file_flag = LargeFileFlag.LARGE
         fd_pdu_with_metadata = FileDataPdu(pdu_conf=self.pdu_conf, params=fd_params)
         fd_params = FileDataParams(
             file_data=self.file_data_bytes,
             offset=0,
-            segment_metadata_flag=SegmentMetadataFlag.PRESENT,
-            record_cont_state=RecordContinuationState.START_AND_END,
-            segment_metadata=bytes([0xAA, 0xBB]),
+            segment_metadata=SegmentMetadata(
+                RecordContinuationState.START_AND_END, bytes([0xAA, 0xBB])
+            ),
         )
         fd_pdu_large_offset = FileDataPdu(pdu_conf=self.pdu_conf, params=fd_params)
         expected_packet_len = 7 + 19 + 1 + 2
@@ -97,8 +100,9 @@ class TestFileDataPdu(TestCase):
         fd_pdu_large_offset_raw = fd_pdu_with_metadata.pack()
         self.assertEqual(len(fd_pdu_large_offset_raw), expected_packet_len)
         fd_pdu_large_offset_unpacked = FileDataPdu.unpack(data=fd_pdu_large_offset_raw)
+        assert fd_pdu_large_offset_unpacked.segment_metadata is not None
         self.assertEqual(
-            fd_pdu_large_offset_unpacked.segment_metadata, bytes([0xAA, 0xBB])
+            fd_pdu_large_offset_unpacked.segment_metadata.metadata, bytes([0xAA, 0xBB])
         )
         self.assertEqual(fd_pdu_large_offset_unpacked.offset, 0)
         fd_pdu_large_offset.file_data = bytes()

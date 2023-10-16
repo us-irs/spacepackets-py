@@ -2,7 +2,7 @@ from __future__ import annotations
 import enum
 import copy
 from dataclasses import dataclass
-from typing import Union, Optional
+from typing import Optional
 import struct
 
 from spacepackets.cfdp import LargeFileFlag, CrcFlag
@@ -30,15 +30,16 @@ class RecordContinuationState(enum.IntEnum):
 
 
 @dataclass
+class SegmentMetadata:
+    record_cont_state: RecordContinuationState
+    metadata: bytes
+
+
+@dataclass
 class FileDataParams:
     file_data: bytes
     offset: int
-    segment_metadata_flag: Union[
-        SegmentMetadataFlag, bool
-    ] = SegmentMetadataFlag.NOT_PRESENT
-    # These fields will only be present if the segment metadata flag is set
-    record_cont_state: Optional[RecordContinuationState] = None
-    segment_metadata: Optional[bytes] = None
+    segment_metadata: Optional[SegmentMetadata] = None
 
     @classmethod
     def empty(cls) -> FileDataParams:
@@ -48,21 +49,13 @@ class FileDataParams:
 class FileDataPdu(AbstractPduBase):
     def __init__(self, pdu_conf: PduConfig, params: FileDataParams):
         self._params = params
-        if isinstance(params.segment_metadata_flag, bool):
-            self._params.segment_metadata_flag = SegmentMetadataFlag(
-                params.segment_metadata_flag
-            )
-        else:
-            self._params.segment_metadata_flag = params.segment_metadata_flag
-        if (
-            self._params.segment_metadata_flag == SegmentMetadataFlag.PRESENT
-            and params.record_cont_state is None
-        ):
-            raise ValueError("Record continuation state must be specified")
         pdu_conf = copy.copy(pdu_conf)
         pdu_conf.direction = Direction.TOWARDS_RECEIVER
+        seg_metadata_flag = SegmentMetadataFlag.NOT_PRESENT
+        if self._params.segment_metadata is not None:
+            seg_metadata_flag = SegmentMetadataFlag.PRESENT
         self._pdu_header = PduHeader(
-            segment_metadata_flag=self._params.segment_metadata_flag,
+            segment_metadata_flag=seg_metadata_flag,
             pdu_type=PduType.FILE_DATA,
             pdu_conf=pdu_conf,
             pdu_data_field_len=0,
@@ -79,6 +72,34 @@ class FileDataPdu(AbstractPduBase):
         return cls(
             params=FileDataParams.empty(),
             pdu_conf=empty_conf,
+        )
+
+    @staticmethod
+    def get_max_file_seg_len_for_max_packet_len_and_pdu_cfg(
+        pdu_conf: PduConfig, max_packet_len: int, segment_metadata_len: int = 0
+    ):
+        """This function can be used to calculate the maximum allowed file segment size for
+        a given maximum packet length. The user has to pass the expected segment metadata length
+        as well."""
+        subtract = pdu_conf.header_len() + segment_metadata_len
+        if pdu_conf.file_flag == LargeFileFlag.LARGE:
+            subtract -= 8
+        else:
+            subtract -= 4
+        if pdu_conf.crc_flag == CrcFlag.WITH_CRC:
+            subtract -= 2
+        if max_packet_len < subtract:
+            raise ValueError(
+                f"max packet length {max_packet_len} can not even hold base packet"
+            )
+        return max_packet_len - subtract
+
+    def get_max_file_seg_len_for_max_packet_len(self, max_packet_len: int) -> int:
+        segment_metadata_len = 0
+        if self.segment_metadata is not None:
+            segment_metadata_len = 1 + len(self.segment_metadata.metadata)
+        return FileDataPdu.get_max_file_seg_len_for_max_packet_len_and_pdu_cfg(
+            self._pdu_header.pdu_conf, max_packet_len, segment_metadata_len
         )
 
     @property
@@ -119,7 +140,9 @@ class FileDataPdu(AbstractPduBase):
 
     @property
     def record_cont_state(self) -> Optional[RecordContinuationState]:
-        return self._params.record_cont_state
+        if self._params.segment_metadata is None:
+            return None
+        return self._params.segment_metadata.record_cont_state
 
     @property
     def offset(self):
@@ -131,15 +154,19 @@ class FileDataPdu(AbstractPduBase):
 
     @property
     def has_segment_metadata(self) -> bool:
-        return self._params.segment_metadata_flag == SegmentMetadataFlag.PRESENT
+        return self._pdu_header.segment_metadata_flag == SegmentMetadataFlag.PRESENT
 
     @property
-    def segment_metadata(self):
+    def segment_metadata(self) -> Optional[SegmentMetadata]:
         return self._params.segment_metadata
 
     @segment_metadata.setter
-    def segment_metadata(self, segment_metadata: bytes):
+    def segment_metadata(self, segment_metadata: Optional[SegmentMetadata]):
         self._params.segment_metadata = segment_metadata
+        if segment_metadata is None:
+            self._pdu_header.segment_metadata_flag = SegmentMetadataFlag.NOT_PRESENT
+        else:
+            self._pdu_header.segment_metadata_flag = SegmentMetadataFlag.PRESENT
         self._calculate_pdu_data_field_len()
 
     @property
@@ -153,11 +180,8 @@ class FileDataPdu(AbstractPduBase):
 
     def _calculate_pdu_data_field_len(self):
         pdu_data_field_len = 0
-        if (
-            self._params.segment_metadata_flag
-            and self._params.segment_metadata is not None
-        ):
-            pdu_data_field_len = 1 + len(self._params.segment_metadata)
+        if self.segment_metadata is not None:
+            pdu_data_field_len = 1 + len(self.segment_metadata.metadata)
         if self.pdu_header.large_file_flag_set:
             pdu_data_field_len += 8
         else:
@@ -169,18 +193,18 @@ class FileDataPdu(AbstractPduBase):
 
     def pack(self) -> bytearray:
         file_data_pdu = self.pdu_header.pack()
-        if self.pdu_header.segment_metadata_flag:
-            assert self._params.segment_metadata is not None
-            assert self._params.record_cont_state is not None
-            len_metadata = len(self._params.segment_metadata)
+        if self.segment_metadata is not None:
+            len_metadata = len(self.segment_metadata.metadata)
             if len_metadata > 63:
                 raise ValueError(
                     f"Segment metadata length {len_metadata} invalid, larger than 63"
                     " bytes"
                 )
-            file_data_pdu.append(self._params.record_cont_state << 6 | len_metadata)
+            file_data_pdu.append(
+                self.segment_metadata.record_cont_state << 6 | len_metadata
+            )
             if len_metadata > 0:
-                file_data_pdu.extend(self._params.segment_metadata)
+                file_data_pdu.extend(self.segment_metadata.metadata)
         if not self.pdu_header.large_file_flag_set:
             file_data_pdu.extend(struct.pack("!I", self._params.offset))
         else:
@@ -203,17 +227,16 @@ class FileDataPdu(AbstractPduBase):
         file_data_packet._pdu_header.verify_length_and_checksum(data)
         current_idx = file_data_packet.pdu_header.header_len
         if file_data_packet.pdu_header.segment_metadata_flag:
-            file_data_packet._params.record_cont_state = RecordContinuationState(
-                (data[current_idx] & 0xC0) >> 6
-            )
+            rec_cont_state = RecordContinuationState((data[current_idx] & 0xC0) >> 6)
             segment_metadata_len = data[current_idx] & 0x3F
             current_idx += 1
             if current_idx + segment_metadata_len >= len(data):
                 raise BytesTooShortError(current_idx + segment_metadata_len, len(data))
-            file_data_packet._params.segment_metadata = data[
-                current_idx : current_idx + segment_metadata_len
-            ]
+            metadata = data[current_idx : current_idx + segment_metadata_len]
             current_idx += segment_metadata_len
+            file_data_packet.segment_metadata = SegmentMetadata(
+                record_cont_state=rec_cont_state, metadata=metadata
+            )
         if not file_data_packet.pdu_header.large_file_flag_set:
             struct_arg_tuple = ("!I", 4)
         else:

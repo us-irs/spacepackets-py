@@ -33,9 +33,7 @@ class TestPduHolder(TestCase):
 
     def test_file_data(self):
         fd_params = FileDataParams(
-            file_data=self.file_data_bytes,
-            offset=0,
-            segment_metadata_flag=False,
+            file_data=self.file_data_bytes, offset=0, segment_metadata=None
         )
         file_data_pdu = FileDataPdu(pdu_conf=self.pdu_conf, params=fd_params)
         self.pdu_wrapper.pdu = file_data_pdu
@@ -78,9 +76,7 @@ class TestPduHolder(TestCase):
 
     def test_invalid_cast(self):
         fd_params = FileDataParams(
-            file_data=self.file_data_bytes,
-            offset=0,
-            segment_metadata_flag=False,
+            file_data=self.file_data_bytes, offset=0, segment_metadata=None
         )
         file_data_pdu = FileDataPdu(pdu_conf=self.pdu_conf, params=fd_params)
         self.pdu_wrapper.pdu = file_data_pdu

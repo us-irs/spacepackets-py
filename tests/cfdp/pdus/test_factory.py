@@ -90,7 +90,7 @@ class TestPduHolder(TestCase):
         file_data = "hello world"
         file_data_bytes = file_data.encode()
         fd_params = FileDataParams(
-            file_data=file_data_bytes, offset=0, segment_metadata_flag=False
+            file_data=file_data_bytes, offset=0, segment_metadata=None
         )
 
         file_data_pdu = FileDataPdu(pdu_conf=self.pdu_conf, params=fd_params)

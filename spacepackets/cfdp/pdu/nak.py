@@ -48,7 +48,7 @@ class NakPdu(AbstractFileDirectiveBase):
 
     Re-request metadata NAK PDU:
 
-    >>> nak_pdu = NakPdu(PduConfig.empty(), 0, 0, [(0, 0)])
+    >>> nak_pdu = NakPdu(PduConfig.default(), 0, 0, [(0, 0)])
     >>> nak_pdu.start_of_scope
     0
     >>> nak_pdu.end_of_scope
@@ -58,7 +58,7 @@ class NakPdu(AbstractFileDirectiveBase):
 
     Re-request two file segments NAK PDU:
 
-    >>> nak_pdu = NakPdu(PduConfig.empty(), 0, 640, [(0, 128), (512, 640)])
+    >>> nak_pdu = NakPdu(PduConfig.default(), 0, 640, [(0, 128), (512, 640)])
     >>> nak_pdu.start_of_scope
     0
     >>> nak_pdu.end_of_scope
