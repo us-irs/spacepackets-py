@@ -26,11 +26,11 @@ def get_max_file_seg_len_for_max_packet_len_and_pdu_cfg(
     if segment_metadata is not None:
         subtract += 1 + len(segment_metadata.metadata)
     if pdu_conf.file_flag == LargeFileFlag.LARGE:
-        subtract -= 8
+        subtract += 8
     else:
-        subtract -= 4
+        subtract += 4
     if pdu_conf.crc_flag == CrcFlag.WITH_CRC:
-        subtract -= 2
+        subtract += 2
     if max_packet_len < subtract:
         raise ValueError(
             f"max packet length {max_packet_len} can not even hold base packet"
