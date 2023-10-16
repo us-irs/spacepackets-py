@@ -2,7 +2,7 @@ from unittest import TestCase
 
 from spacepackets.cfdp import TransmissionMode
 from spacepackets.cfdp.conf import PduConfig
-from spacepackets.cfdp.defs import Direction, LargeFileFlag
+from spacepackets.cfdp.defs import CrcFlag, Direction, LargeFileFlag
 from spacepackets.cfdp.pdu import NakPdu
 from spacepackets.util import ByteFieldU16
 
@@ -99,6 +99,35 @@ class TestNakPdu(TestCase):
             ),
         )
         self.assertEqual(nak_pdu.get_max_seg_reqs_for_max_packet_size(88), 4)
+
+    def test_segment_req_for_packet_size_large_file_with_crc(self):
+        # 7 byte header, 1 byte directive, 16 bytes start and end of segment, leaves 48 bytes for
+        # 3 large segment requests (16 bytes each)
+        pdu_conf = PduConfig.default()
+        pdu_conf.file_flag = LargeFileFlag.LARGE
+        pdu_conf.crc_flag = CrcFlag.WITH_CRC
+        nak_pdu = NakPdu(pdu_conf, start_of_scope=0, end_of_scope=0)
+        self.assertEqual(
+            3,
+            NakPdu.get_max_seg_reqs_for_max_packet_size_and_pdu_cfg(
+                max_packet_size=74, pdu_conf=pdu_conf
+            ),
+        )
+        self.assertEqual(nak_pdu.get_max_seg_reqs_for_max_packet_size(74), 3)
+        self.assertEqual(
+            2,
+            NakPdu.get_max_seg_reqs_for_max_packet_size_and_pdu_cfg(
+                max_packet_size=73, pdu_conf=pdu_conf
+            ),
+        )
+        self.assertEqual(nak_pdu.get_max_seg_reqs_for_max_packet_size(73), 2)
+        self.assertEqual(
+            4,
+            NakPdu.get_max_seg_reqs_for_max_packet_size_and_pdu_cfg(
+                max_packet_size=90, pdu_conf=pdu_conf
+            ),
+        )
+        self.assertEqual(nak_pdu.get_max_seg_reqs_for_max_packet_size(90), 4)
 
     def test_packing_0(self):
         nak_packed = self.nak_pdu.pack()
