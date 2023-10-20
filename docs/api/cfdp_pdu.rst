@@ -1,4 +1,4 @@
-cfdp.pdu package
+CFDP PDU Subpackage
 ===============================
 
 The Protocol Data Unit (PDU) subpackage contains the CFDP data units
@@ -29,7 +29,7 @@ The helper module :py:mod:`spacepackets.cfdp.pdu.helper` contains components lik
 :py:class:`spacepackets.cfdp.pdu.helper.PduWrapper` class which stores PDUs as a generic base type
 and allows typed conversion in to the concrete PDU type
 
-spacepackets.cfdp.pdu.helper module
+PDU Helper Submodule
 -----------------------------------------
 
 .. automodule:: spacepackets.cfdp.pdu.helper
@@ -37,11 +37,8 @@ spacepackets.cfdp.pdu.helper module
    :undoc-members:
    :show-inheritance:
 
-File Data Submodules
+File Data Submodule
 ------------------------
-
-spacepackets.cfdp.pdu.file_data module
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. automodule:: spacepackets.cfdp.pdu.file_data
    :members:
@@ -51,7 +48,7 @@ spacepackets.cfdp.pdu.file_data module
 File Directive Submodules
 ------------------------------
 
-spacepackets.cfdp.pdu.ack module
+ACK PDU Submodule
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. automodule:: spacepackets.cfdp.pdu.ack
@@ -59,7 +56,7 @@ spacepackets.cfdp.pdu.ack module
    :undoc-members:
    :show-inheritance:
 
-spacepackets.cfdp.pdu.nak module
+NAK PDU Submodule
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. automodule:: spacepackets.cfdp.pdu.nak
@@ -67,7 +64,7 @@ spacepackets.cfdp.pdu.nak module
    :undoc-members:
    :show-inheritance:
 
-spacepackets.cfdp.pdu.eof module
+EOF PDU Submodule
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. automodule:: spacepackets.cfdp.pdu.eof
@@ -75,15 +72,7 @@ spacepackets.cfdp.pdu.eof module
    :undoc-members:
    :show-inheritance:
 
-spacepackets.cfdp.pdu.keep_alive module
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-.. automodule:: spacepackets.cfdp.pdu.keep_alive
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-spacepackets.cfdp.pdu.metadata module
+Metadata PDU Submodule
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. automodule:: spacepackets.cfdp.pdu.metadata
@@ -91,7 +80,7 @@ spacepackets.cfdp.pdu.metadata module
    :undoc-members:
    :show-inheritance:
 
-spacepackets.cfdp.pdu.finished module
+Finished PDU Submodule
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. automodule:: spacepackets.cfdp.pdu.finished
@@ -99,13 +88,31 @@ spacepackets.cfdp.pdu.finished module
    :undoc-members:
    :show-inheritance:
 
-spacepackets.cfdp.pdu.header module
+Keep Alive PDU Submodule
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. automodule:: spacepackets.cfdp.pdu.keep_alive
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Prompt PDU Module
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. automodule:: spacepackets.cfdp.pdu.prompt
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+
+PDU Header Submodule
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. automodule:: spacepackets.cfdp.pdu.header
    :members:
    :undoc-members:
    :show-inheritance:
+
 
 spacepackets.cfdp.pdu.file_directive module
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

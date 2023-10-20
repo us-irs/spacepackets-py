@@ -1,4 +1,4 @@
-cfdp package
+CFDP Package
 ==========================
 
 Module contents

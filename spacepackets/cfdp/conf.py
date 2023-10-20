@@ -14,12 +14,7 @@ from spacepackets.util import UnsignedByteField, ByteFieldU8, ByteFieldEmpty
 
 @dataclass
 class PduConfig:
-    """Common configuration fields for a PDU.
-
-    Setting the GLOBAL_CONFIG property or creating an empty configuration will automatically
-    determine the flag values of the respective fields from the global configuration to avoid
-    specifying parameter which rarely change repeatedly
-    """
+    """Common configuration fields for a PDU."""
 
     source_entity_id: UnsignedByteField
     dest_entity_id: UnsignedByteField
