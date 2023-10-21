@@ -1,4 +1,4 @@
-ecss.tc package
+ECSS Telecommand Module
 ===============================
 
 .. automodule:: spacepackets.ecss.tc

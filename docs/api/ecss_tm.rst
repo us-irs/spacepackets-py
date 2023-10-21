@@ -1,12 +1,12 @@
-ecss.tm package
-====================
+ECSS Telemetry Module
+========================
 
 .. automodule:: spacepackets.ecss.tm
    :members:
    :undoc-members:
    :show-inheritance:
 
-spacepackets.ecss.pus\_verificator
+PUS Verificator Module
 -------------------------------------
 
 .. automodule:: spacepackets.ecss.pus_verificator

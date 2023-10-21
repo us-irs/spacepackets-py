@@ -1,10 +1,10 @@
-Generic Components
+Generic Modules
 ==========================
 
 This package contains generic components like exceptions or shared components like
 common CRCs.
 
-spacepackets.crc
+CRC Submodule
 ----------------------------------
 
 .. automodule:: spacepackets.crc
@@ -12,7 +12,7 @@ spacepackets.crc
    :undoc-members:
    :show-inheritance:
 
-spacepackets.exception
+Exception Submodule
 ----------------------------------
 
 .. automodule:: spacepackets.exceptions
@@ -20,7 +20,7 @@ spacepackets.exception
    :undoc-members:
    :show-inheritance:
 
-spacepackets.version
+Version Submodule
 ----------------------------------
 
 .. automodule:: spacepackets.version
