@@ -1,4 +1,4 @@
-ccsds.time package
+CCSDS Time Package
 ================================
 
 .. automodule:: spacepackets.ccsds.time
@@ -6,7 +6,7 @@ ccsds.time package
    :undoc-members:
    :show-inheritance:
 
-spacepackets.ccsds.time.common module
+Common Time Submodule
 ---------------------------------------
 
 .. automodule:: spacepackets.ccsds.time.common
@@ -14,7 +14,7 @@ spacepackets.ccsds.time.common module
    :undoc-members:
    :show-inheritance:
 
-spacepackets.ccsds.time.cds module
+CDS Time Submodule
 ------------------------------------
 
 .. automodule:: spacepackets.ccsds.time.cds

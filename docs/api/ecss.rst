@@ -1,4 +1,4 @@
-ecss package
+Generic ECSS Module
 =======================
 
 .. automodule:: spacepackets.ecss
@@ -6,7 +6,7 @@ ecss package
    :undoc-members:
    :show-inheritance:
 
-spacepackets.ecss.conf module
+ECSS Configuration Submodule
 ----------------------------------
 
 This module can be used to configure common default values so these don't have to be specified
@@ -17,7 +17,7 @@ each time anymore when creating ECSS packets
    :undoc-members:
    :show-inheritance:
 
-spacepackets.ecss.fields
+ECSS Fields Submodule
 ----------------------------------
 
 .. automodule:: spacepackets.ecss.fields
@@ -25,7 +25,7 @@ spacepackets.ecss.fields
    :undoc-members:
    :show-inheritance:
 
-spacepackets.ecss.req\_id
+ECSS Request ID Submodule
 ----------------------------------
 
 .. automodule:: spacepackets.ecss.req_id
@@ -33,16 +33,16 @@ spacepackets.ecss.req\_id
    :undoc-members:
    :show-inheritance:
 
-spacepackets.ecss.pus\_1\_verification
-----------------------------------------
+ECSS PUS 1 Verification Service Submodule
+-------------------------------------------
 
 .. automodule:: spacepackets.ecss.pus_1_verification
    :members:
    :undoc-members:
    :show-inheritance:
 
-spacepackets.ecss.pus\_3\_hk
-----------------------------------------
+ECSS PUS 3 Housekeeping Service Submodule
+-------------------------------------------
 
 .. automodule:: spacepackets.ecss.pus_3_hk
    :members:

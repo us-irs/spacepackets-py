@@ -57,7 +57,10 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 # for source files.
 exclude_trees = ["_build"]
 
-intersphinx_mapping = {"python": ("https://docs.python.org/3", None)}
+intersphinx_mapping = {
+    "python": ("https://docs.python.org/3", None),
+    "crcmod": ("https://crcmod.sourceforge.net/", None),
+}
 
 # -- Options for HTML output -------------------------------------------------
 

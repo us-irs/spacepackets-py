@@ -1,4 +1,4 @@
-util package
+Utility Module
 ================
 
 .. automodule:: spacepackets.util
