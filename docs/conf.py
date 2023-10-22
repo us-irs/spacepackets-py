@@ -28,6 +28,7 @@ version = release = get_version()
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
+    "sphinx.ext.autosectionlabel",
     "sphinx.ext.napoleon",
     "sphinx.ext.autodoc",
     "sphinx.ext.intersphinx",
@@ -39,6 +40,8 @@ extensions = [
 # of imports. The doctests inside the source code are covered by pytest, using the --doctest-modules
 # configuration option.
 doctest_test_doctest_blocks = ""
+
+autosectionlabel_prefix_document = True
 
 autoclass_content = "both"
 

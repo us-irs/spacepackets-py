@@ -66,6 +66,7 @@ class FixedFrameProperties(FramePropertiesBase):
         """Contains properties required when unpacking fixed USLP frames. These properties
         can not be determined by parsing the frame. The standard refers to these properties
         as managed parameters.
+
         :param has_insert_zone:
         :param has_fecf:
         :param insert_zone_len:
@@ -92,6 +93,7 @@ class VarFrameProperties(FramePropertiesBase):
         """Contains properties required when unpacking variable USLP frames. These properties
         can not be determined by parsing the frame. The standard refers to these properties
         as managed parameters.
+
         :param has_insert_zone:
         :param insert_zone_len:
         :param has_fecf:
@@ -154,6 +156,7 @@ class TransferFrameDataField:
     if present.
 
     The data field has a header varying from 1 to 3 bytes as well.
+
     """
 
     def __init__(
@@ -165,6 +168,7 @@ class TransferFrameDataField:
     ):
         """
         Notes on the FHP or LVOP field. For more details, refer to CCSDS 732.1-B-2. p.92:
+
          - If the TFDZ construction rule is equal to '000' (TFDZ spanning multiple frames), this
            field is designated as FHP. It then contains the offset within the TFDZ to the first
            octet of the first packet header. If no packet starts nor ends
@@ -178,7 +182,9 @@ class TransferFrameDataField:
            the remaining octets composed of a project specific idle data pattern. If the MAPA_SDU
            does not complete within this fixed-length TFDZ, then the value contained within the LVOP
            shall be set to binary all ones.
+
         The FHP/LVOP field is only required when the frame type is set to a fixed length.
+
         :param tfdz_cnstr_rules: 3 bits, identifies how the protocol organizes data within the TFDZ
             in order to transport it.
         :param uslp_ident: 5 bits, Identifies the CCSDS recognized protocol,
@@ -402,6 +408,7 @@ class TransferFrame:
     ) -> TransferFrame:
         """Unpack a USLP transfer frame from a raw bytearray. All managed parameters have
         to be passed explicitly.
+
         :param raw_frame:
         :param frame_type:
         :param frame_properties:
@@ -484,7 +491,8 @@ class TransferFrame:
         properties: FramePropertiesT,
     ):
         """This helper function calculates the initial value for expected TFDF length and subtracts
-        all (optional) fields lengths if they are present
+        all (optional) fields lengths if they are present.
+
         :param frame_type:
         :param header_type:
         :param raw_frame_len:

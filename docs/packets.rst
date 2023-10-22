@@ -46,6 +46,8 @@ The example below has a source sequence count of 25 and an APID of 0x73.
 
 The second part is the packet data field which also includes a PUS data field header.
 
+.. _PUS C Telecommands:
+
 PUS C
 """"""
 
@@ -60,6 +62,8 @@ PUS C
     b| 0010       1111     |  00010001 | 00000001    | 0..0 | 0..0 |        |       |        |       |         |
     d|   2          15     |    17     |     1       |  0   |  0   |        |       |        |       |         |
       ----------------------------------------------------------------------------------------------------------
+
+.. _PUS A Telecommands:
 
 PUS A
 """"""
@@ -104,6 +108,8 @@ packets. The packet length is an unsigned integer C = Number of Octets in Packet
 
 The second part is the packet data field which also includes a PUS data field header.
 
+.. _PUS C Telemetry:
+
 PUS C
 """"""
 
@@ -117,6 +123,8 @@ PUS C
     b|    0010     0000        |00010001   | 00000010    | 0..0 | 0..0  |0..0|0..0 |         |        |    |     |   Calc.  |
     d|     2         0         |    17     |     2       |      0       |     0    |         |        |    |     |   Calc.  |
       ----------------------------------------------------------------------------------------------------------------------
+
+.. _PUS A Telemetry:
 
 PUS A
 """"""

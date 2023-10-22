@@ -1,4 +1,4 @@
-CFDP Package
+CFDP Module
 ==========================
 
 Module contents
@@ -9,7 +9,12 @@ Module contents
    :undoc-members:
    :show-inheritance:
 
-spacepackets.cfdp.conf module
+PDU Submodule
+----------------
+
+:ref:`api/cfdp_pdu:CFDP PDU Subpackage`
+
+Configuration Submodule
 -------------------------------------
 
 .. automodule:: spacepackets.cfdp.conf
@@ -17,15 +22,7 @@ spacepackets.cfdp.conf module
    :undoc-members:
    :show-inheritance:
 
-spacepackets.cfdp.defs module
--------------------------------------
-
-.. automodule:: spacepackets.cfdp.defs
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-spacepackets.cfdp.tlv module
+Type-Length-Value (TLV) Submodule
 -------------------------------------
 
 .. automodule:: spacepackets.cfdp.tlv
@@ -33,10 +30,18 @@ spacepackets.cfdp.tlv module
    :undoc-members:
    :show-inheritance:
 
-spacepackets.cfdp.lv module
+Length-Value (LV) Submodule
 -------------------------------------
 
 .. automodule:: spacepackets.cfdp.lv
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Common Definitions
+-------------------------------------
+
+.. automodule:: spacepackets.cfdp.defs
    :members:
    :undoc-members:
    :show-inheritance:
