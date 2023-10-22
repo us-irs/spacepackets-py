@@ -20,9 +20,9 @@ Currently, this includes the following components:
   `ECSS-E-ST-70-41C standard`_: :ref:`TC API <api/ecss_tc:ECSS Telecommand Module>` and
   :ref:`TM API <api/ecss_tm:ECSS Telemetry Module>`.
 - CCSDS File Delivery Protcol (CFDP) packet implementations according to
-  `CCSDS Blue Book 727.0-B-5`_: :ref:`API <api/cfdp:CFDP Module>`
+  `CCSDS Blue Book 727.0-B-5`_: :ref:`API <api/cfdp:CFDP Package>`
 - Unified Space Data Link Protocol (USLP) frame implementations according to
-  `CCSDS Blue Book 732.1-B-2`_: :ref:`API <api/uslp:Unified Space Data Link (USLP) Module>`
+  `CCSDS Blue Book 732.1-B-2`_: :ref:`API <api/uslp:Unified Space Data Link (USLP) Package>`
 
 It also contains various helper modules
 

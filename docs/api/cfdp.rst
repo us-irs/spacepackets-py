@@ -1,7 +1,7 @@
-CFDP Module
+CFDP Package 
 ==========================
 
-Module contents
+Package Contents
 -----------------
 
 .. automodule:: spacepackets.cfdp

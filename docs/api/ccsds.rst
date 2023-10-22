@@ -6,7 +6,7 @@ CCSDS Package
    :undoc-members:
    :show-inheritance:
 
-Spacepacket Submodule
+Spacepacket Module
 -------------------------------------
 
 .. automodule:: spacepackets.ccsds.spacepacket

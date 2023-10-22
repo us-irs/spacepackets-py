@@ -1,6 +1,6 @@
 .. _USLP Module:
 
-Unified Space Data Link (USLP) Module
+Unified Space Data Link (USLP) Package 
 =======================================
 
 Module
