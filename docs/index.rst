@@ -12,14 +12,17 @@ This package contains generic implementations for various CCSDS
 
 Currently, this includes the following components:
 
-- Space Packet implementation according to `CCSDS Blue Book 133.0-B-2`_.
-- CCSDS CDS short timestamp implementation according to `CCSDS 301.0-B-4 3.3`_.
+- Space Packet implementation according to `CCSDS Blue Book 133.0-B-2`_:
+  :ref:`API <api/ccsds:CCSDS Package>`.
+- CCSDS CDS short timestamp implementation according to `CCSDS 301.0-B-4 3.3`_:
+  :ref:`API <api/ccsds_time:CDS Time Submodule>`.
 - PUS Telecommand and PUS Telemetry implementation according to the
-  `ECSS-E-ST-70-41C standard`_.
+  `ECSS-E-ST-70-41C standard`_: :ref:`TC API <api/ecss_tc:ECSS Telecommand Module>` and
+  :ref:`TM API <api/ecss_tm:ECSS Telemetry Module>`.
 - CCSDS File Delivery Protcol (CFDP) packet implementations according to
-  `CCSDS Blue Book 727.0-B-5`_.
+  `CCSDS Blue Book 727.0-B-5`_: :ref:`API <api/cfdp:CFDP Package>`
 - Unified Space Data Link Protocol (USLP) frame implementations according to
-  `CCSDS Blue Book 732.1-B-2`_ .
+  `CCSDS Blue Book 732.1-B-2`_: :ref:`API <api/uslp:Unified Space Data Link (USLP) Package>`
 
 It also contains various helper modules
 
@@ -44,13 +47,11 @@ Other pages (online)
 .. _`CCSDS 301.0-B-4 3.3`: https://public.ccsds.org/Pubs/301x0b4e1.pdf
 
 .. toctree::
-   :maxdepth: 4
+   :maxdepth: 3
 
    examples
-   packets
    api
-
-
+   packets
 
 Indices and tables
 ==================
