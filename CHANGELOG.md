@@ -8,8 +8,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 # [unreleased]
 
-# [v0.20.0] 2023-11-02
-
 ## Added
 
 - Added `__repr__` for `AckPdu` class.
