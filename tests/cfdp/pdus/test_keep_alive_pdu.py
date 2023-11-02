@@ -63,3 +63,10 @@ class TestKeepAlivePdu(TestCase):
 
     def test_print(self):
         print(self.keep_alive_pdu)
+        self.assertEqual(
+            self.keep_alive_pdu.__repr__(),
+            (
+                f"KeepAlivePdu(pdu_conf={self.keep_alive_pdu.pdu_file_directive.pdu_conf!r}, "
+                f"progress=0)"
+            ),
+        )

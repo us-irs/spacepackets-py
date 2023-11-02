@@ -7,26 +7,38 @@ from spacepackets.cfdp.pdu.prompt import ResponseRequired
 
 
 class TestPromptPdu(TestCase):
-    def test_prompt_pdu(self):
-        pdu_conf = PduConfig.default()
-        prompt_pdu = PromptPdu(
-            pdu_conf=pdu_conf, response_required=ResponseRequired.KEEP_ALIVE
+    def setUp(self):
+        self.pdu_conf = PduConfig.default()
+        self.prompt_pdu = PromptPdu(
+            pdu_conf=self.pdu_conf, response_required=ResponseRequired.KEEP_ALIVE
         )
-        print(prompt_pdu.pack().hex(sep=","))
-        prompt_pdu_raw = prompt_pdu.pack()
+
+    def test_prompt_pdu(self):
+        print(self.prompt_pdu.pack().hex(sep=","))
+        prompt_pdu_raw = self.prompt_pdu.pack()
         self.assertEqual(
             prompt_pdu_raw,
             bytes([0x20, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x09, 0x80]),
         )
-        self.assertEqual(prompt_pdu.packet_len, 9)
+        self.assertEqual(self.prompt_pdu.packet_len, 9)
         prompt_pdu_unpacked = PromptPdu.unpack(data=prompt_pdu_raw)
-        self.assertEqual(prompt_pdu.direction, Direction.TOWARDS_RECEIVER)
-        self.assertEqual(prompt_pdu.pdu_file_directive.pdu_data_field_len, 2)
-        self.assertEqual(prompt_pdu.pdu_file_directive.header_len, 8)
+        self.assertEqual(self.prompt_pdu.direction, Direction.TOWARDS_RECEIVER)
+        self.assertEqual(self.prompt_pdu.pdu_file_directive.pdu_data_field_len, 2)
+        self.assertEqual(self.prompt_pdu.pdu_file_directive.header_len, 8)
         self.assertEqual(
             prompt_pdu_unpacked.response_required, ResponseRequired.KEEP_ALIVE
         )
-        self.assertEqual(prompt_pdu.pdu_file_directive.large_file_flag_set, False)
+        self.assertEqual(self.prompt_pdu.pdu_file_directive.large_file_flag_set, False)
         prompt_pdu_raw = prompt_pdu_raw[:-1]
         with self.assertRaises(ValueError):
             PromptPdu.unpack(data=prompt_pdu_raw)
+
+    def test_print(self):
+        print(self.prompt_pdu)
+        self.assertEqual(
+            self.prompt_pdu.__repr__(),
+            (
+                f"PromptPdu(pdu_conf={self.prompt_pdu.pdu_file_directive.pdu_conf!r}, "
+                f"response_required={ResponseRequired.KEEP_ALIVE!r})"
+            ),
+        )
