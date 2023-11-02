@@ -108,6 +108,6 @@ class KeepAlivePdu(AbstractFileDirectiveBase):
 
     def __repr__(self):
         return (
-            f"{self.__class__.__name__}(progress={self.progress!r}, "
-            f"pdu_conf={self.pdu_file_directive.pdu_conf!r})"
+            f"{self.__class__.__name__}(pdu_conf={self.pdu_file_directive.pdu_conf!r}, "
+            f"progress={self.progress!r})"
         )

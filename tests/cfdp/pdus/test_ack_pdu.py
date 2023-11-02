@@ -8,8 +8,8 @@ from spacepackets.util import ByteFieldU16, ByteFieldU32
 
 
 class TestAckPdu(TestCase):
-    def test_ack_pdu(self):
-        pdu_conf = PduConfig(
+    def setUp(self):
+        self.pdu_conf = PduConfig(
             transaction_seq_num=ByteFieldU16(1),
             source_entity_id=ByteFieldU16(2),
             dest_entity_id=ByteFieldU16(3),
@@ -17,14 +17,16 @@ class TestAckPdu(TestCase):
             trans_mode=TransmissionMode.ACKNOWLEDGED,
             file_flag=LargeFileFlag.NORMAL,
         )
-        ack_pdu = AckPdu(
+        self.ack_pdu = AckPdu(
             directive_code_of_acked_pdu=DirectiveType.FINISHED_PDU,
             condition_code_of_acked_pdu=ConditionCode.NO_ERROR,
             transaction_status=TransactionStatus.TERMINATED,
-            pdu_conf=pdu_conf,
+            pdu_conf=self.pdu_conf,
         )
-        self.check_fields_packet_0(ack_pdu=ack_pdu)
-        ack_pdu_raw = ack_pdu.pack()
+
+    def test_ack_pdu(self):
+        self.check_fields_packet_0(ack_pdu=self.ack_pdu)
+        ack_pdu_raw = self.ack_pdu.pack()
         self.assertEqual(len(ack_pdu_raw), 13)
         self.assertEqual(
             ack_pdu_raw,
@@ -167,3 +169,15 @@ class TestAckPdu(TestCase):
             self.assertEqual(ack_pdu.packet_len, 21)
         else:
             self.assertEqual(ack_pdu.packet_len, 19)
+
+    def test_print(self):
+        print(self.ack_pdu)
+        self.assertEqual(
+            self.ack_pdu.__repr__(),
+            (
+                f"AckPdu(pdu_conf={self.ack_pdu.pdu_file_directive.pdu_conf!r}, "
+                f"directive_code_of_acked_pdu={self.ack_pdu.directive_code_of_acked_pdu!r}, "
+                f"condition_code_of_acked_pdu={self.ack_pdu.condition_code_of_acked_pdu!r}, "
+                f"transaction_status={self.ack_pdu.transaction_status!r})"
+            ),
+        )

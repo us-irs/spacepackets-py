@@ -112,10 +112,10 @@ class AckPdu(AbstractFileDirectiveBase):
 
     def __repr__(self):
         return (
-            f"{self.__class__.__name__}(pdu_conf={self.pdu_file_directive.pdu_conf}, "
-            f"directive_code_of_acked_pdu={self.directive_code_of_acked_pdu}, "
-            f"condition_code_of_acked_pdu={self.condition_code_of_acked_pdu}, "
-            f"transaction_status={self.transaction_status})"
+            f"{self.__class__.__name__}(pdu_conf={self.pdu_file_directive.pdu_conf!r}, "
+            f"directive_code_of_acked_pdu={self.directive_code_of_acked_pdu!r}, "
+            f"condition_code_of_acked_pdu={self.condition_code_of_acked_pdu!r}, "
+            f"transaction_status={self.transaction_status!r})"
         )
 
     @classmethod

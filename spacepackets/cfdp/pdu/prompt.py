@@ -52,6 +52,12 @@ class PromptPdu(AbstractFileDirectiveBase):
             prompt_pdu.extend(struct.pack("!H", CRC16_CCITT_FUNC(prompt_pdu)))
         return prompt_pdu
 
+    def __repr__(self):
+        return (
+            f"{self.__class__.__name__}(pdu_conf={self.pdu_file_directive.pdu_conf!r}, "
+            f"response_required={self.response_required!r})"
+        )
+
     @classmethod
     def unpack(cls, data: bytes) -> PromptPdu:
         """
