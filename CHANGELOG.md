@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Added
 
+- Added `__repr__` for `AckPdu` class.
 - Added a `finished_params` property for the `FinishedPdu` class.
 - Added a `transmission_mode` property for the `AbstractPduBase` class.
 - Renamed `trans_mode` setter and getter properties to `transmission_mode`.
