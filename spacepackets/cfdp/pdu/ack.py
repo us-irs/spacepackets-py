@@ -110,6 +110,14 @@ class AckPdu(AbstractFileDirectiveBase):
             directive_param_field_len += 2
         self.pdu_file_directive.directive_param_field_len = directive_param_field_len
 
+    def __repr__(self):
+        return (
+            f"{self.__class__.__name__}(pdu_conf={self.pdu_file_directive.pdu_conf}, "
+            f"directive_code_of_acked_pdu={self.directive_code_of_acked_pdu}, "
+            f"condition_code_of_acked_pdu={self.condition_code_of_acked_pdu}, "
+            f"transaction_status={self.transaction_status})"
+        )
+
     @classmethod
     def unpack(cls, data: bytes) -> AckPdu:
         """
