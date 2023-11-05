@@ -16,8 +16,9 @@ class TestDirParamsClass(TestCase):
         self.dir_param_from_strs = DirectoryParams.from_strs(
             self.dir_path, self.dir_file_name
         )
+        # As POSIX to ensure this works on Windows as well.
         self.dir_param_from_paths = DirectoryParams.from_paths(
-            Path(self.dir_path), Path(self.dir_file_name)
+            Path(self.dir_path).as_posix(), Path(self.dir_file_name).as_posix()
         )
 
     def test_apis(self):
