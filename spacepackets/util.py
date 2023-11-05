@@ -67,7 +67,9 @@ class IntByteConversion:
     @staticmethod
     def unsigned_struct_specifier(byte_num: int) -> str:
         if byte_num not in [1, 2, 4, 8]:
-            raise ValueError("Invalid byte number, must be one of [1, 2, 4, 8]")
+            raise ValueError(
+                f"invalid byte number {byte_num}, must be one of [1, 2, 4, 8]"
+            )
         if byte_num == 1:
             return "!B"
         elif byte_num == 2:

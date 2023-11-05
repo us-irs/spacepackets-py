@@ -15,6 +15,7 @@ from spacepackets.cfdp.tlv import (
     DirectoryListingResponse,
     DirectoryListingParameters,
     DirectoryOperationMessageType,
+    ProxyCancelRequest,
     ConditionCode,
     FileStatus,
     DeliveryCode,
@@ -58,6 +59,8 @@ class TestReservedMsg(TestCase):
             TransmissionMode.UNACKNOWLEDGED
         )
 
+        self.proxy_cancel_request = ProxyCancelRequest()
+
         self.dir_path_lv = CfdpLv.from_str("/tmp")
         self.dir_listing_name_lv = CfdpLv.from_str("/tmp/listing.txt")
         self.dir_params = DirectoryParams(self.dir_path_lv, self.dir_listing_name_lv)
@@ -77,7 +80,7 @@ class TestReservedMsg(TestCase):
     ):
         self.assertEqual(data[0], TlvType.MESSAGE_TO_USER)
         # Lenght must hold at least "cfdp" string and message type.
-        self.assertTrue(data[1] > 5)
+        self.assertTrue(data[1] >= 5)
         self.assertEqual(data[1], 5 + expected_custom_len)
         self.assertEqual(data[2:6].decode(), "cfdp")
         self.assertEqual(data[6], expected_msg_type)
@@ -335,3 +338,28 @@ class TestReservedMsg(TestCase):
         ).to_reserved_msg_tlv()
         listing_opts_from_raw = generic_reserved_msg.get_dir_listing_options()
         self.assertEqual(listing_opts_from_raw, self.dir_listing_options)
+
+    def test_proxy_cancel_request_state(self):
+        self.assertFalse(self.proxy_cancel_request.is_originating_transaction_id())
+        self.assertFalse(self.proxy_cancel_request.is_directory_operation())
+        self.assertTrue(self.proxy_cancel_request.is_cfdp_proxy_operation())
+        self.assertEqual(
+            self.proxy_cancel_request.get_cfdp_proxy_message_type(),
+            ProxyMessageType.PUT_CANCEL,
+        )
+
+    def test_proxy_cancel_request_pack(self):
+        proxy_put_cancel_raw = self.proxy_cancel_request.pack()
+        self._generic_raw_data_verification(
+            proxy_put_cancel_raw, 0, ProxyMessageType.PUT_CANCEL
+        )
+
+    def test_proxy_cancel_request_unpack(self):
+        proxy_put_cancel_raw = self.proxy_cancel_request.pack()
+        generic_reserved_msg = MessageToUserTlv.unpack(
+            proxy_put_cancel_raw
+        ).to_reserved_msg_tlv()
+        self.assertEqual(
+            generic_reserved_msg.get_cfdp_proxy_message_type(),
+            ProxyMessageType.PUT_CANCEL,
+        )

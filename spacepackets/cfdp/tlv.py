@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import dataclasses
-import struct
 from pathlib import Path
 from abc import ABC, abstractmethod
 from typing import Tuple, Optional, Type, List, Any, cast
@@ -16,7 +15,7 @@ from spacepackets.cfdp.defs import (
     TransmissionMode,
 )
 from spacepackets.exceptions import BytesTooShortError
-from spacepackets.util import UnsignedByteField
+from spacepackets.util import UnsignedByteField 
 
 
 class TlvType(enum.IntEnum):
@@ -860,18 +859,8 @@ class ReservedCfdpMessage(AbstractTlvBase):
         if current_idx >= len(self.value):
             return None
         dest_name_lv = CfdpLv.unpack(self.value[current_idx:])
-        if len(dest_id_lv.value) == 1:
-            dest_id = dest_id_lv.value[0]
-        elif len(dest_id_lv.value) == 2:
-            dest_id = struct.unpack("!H", dest_id_lv.value[0:2])[0]
-        elif len(dest_id_lv.value) == 4:
-            dest_id = struct.unpack("!I", dest_id_lv.value[0:4])[0]
-        elif len(dest_id_lv.value) == 8:
-            dest_id = struct.unpack("!Q", dest_id_lv.value[0:8])[0]
-        else:
-            return None
         return ProxyPutRequestParams(
-            UnsignedByteField(dest_id, len(dest_id_lv.value)),
+            UnsignedByteField.from_bytes(dest_id_lv.value),
             source_name_lv,
             dest_name_lv,
         )
