@@ -75,10 +75,18 @@ class KeepAlivePdu(AbstractFileDirectiveBase):
 
     @classmethod
     def unpack(cls, data: bytes) -> KeepAlivePdu:
-        """
-        :param data:
-        :raises BytesTooShortError:
-        :return:
+        """Generate an object instance from raw data. Care should be taken to check whether
+        the raw bytestream really contains a Keep Alive PDU.
+
+        Raises
+        --------
+
+        BytesTooShortError
+            Raw data too short for expected object.
+        ValueError
+            Invalid directive type or data format.
+        InvalidCrc
+            PDU has a 16 bit CRC and the CRC check failed.
         """
         keep_alive_pdu = cls.__empty()
         keep_alive_pdu.pdu_file_directive = FileDirectivePduBase.unpack(raw_packet=data)

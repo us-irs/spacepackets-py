@@ -211,11 +211,18 @@ class FinishedPdu(AbstractFileDirectiveBase):
 
     @classmethod
     def unpack(cls, data: bytes) -> FinishedPdu:
-        """Unpack a raw packet into a PDU object.
+        """Generate an object instance from raw data. Care should be taken to check whether
+        the raw bytestream really contains a Finished PDU.
 
-        :param data:
-        :raise BytesTooShortError: If packet is too short
-        :return:
+        Raises
+        --------
+
+        BytesTooShortError
+            Raw data too short for expected object.
+        ValueError
+            Invalid directive type or data format.
+        InvalidCrc
+            PDU has a 16 bit CRC and the CRC check failed.
         """
         finished_pdu = cls.__empty()
         finished_pdu.pdu_file_directive = FileDirectivePduBase.unpack(raw_packet=data)

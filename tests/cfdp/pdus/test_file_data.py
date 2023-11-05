@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from spacepackets.cfdp import CrcFlag
+from spacepackets.cfdp import CrcFlag, PduFactory
 from spacepackets.cfdp.defs import TransmissionMode
 from spacepackets.cfdp.pdu.file_data import (
     FileDataPdu,
@@ -165,3 +165,11 @@ class TestFileDataPdu(TestCase):
         pdu_raw = pdu.pack()
         self.assertEqual(pdu.packet_len, 7 + 15 + 2)
         self.assertEqual(len(pdu_raw), 7 + 15 + 2)
+
+    def test_from_factory(self):
+        fd_pdu_raw = self.pdu.pack()
+        pdu_holder = PduFactory.from_raw_to_holder(fd_pdu_raw)
+        self.assertIsNotNone(pdu_holder.pdu)
+        fd_pdu = pdu_holder.to_file_data_pdu()
+        self.assertIsNotNone(fd_pdu)
+        self.assertEqual(fd_pdu, self.pdu)

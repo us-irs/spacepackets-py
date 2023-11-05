@@ -159,6 +159,10 @@ class PduFactory:
         return None
 
     @staticmethod
+    def from_raw_to_holder(data: bytes) -> PduHolder:
+        return PduHolder(PduFactory.from_raw(data))
+
+    @staticmethod
     def pdu_type(data: bytes) -> PduType:
         return PduType((data[0] >> 4) & 0x01)
 

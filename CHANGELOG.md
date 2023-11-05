@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 # [unreleased]
 
+## Fixed
+
+- Directive code for the NAK PDU was set to the ACK PDU directive code.
+
 ## Changed
 
 - Renamed `FileDeliveryStatus` to `FileStatus` to be closer to the CFDP name.

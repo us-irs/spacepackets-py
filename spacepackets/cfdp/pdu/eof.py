@@ -27,14 +27,27 @@ class EofPdu(AbstractFileDirectiveBase):
         fault_location: Optional[EntityIdTlv] = None,
         condition_code: ConditionCode = ConditionCode.NO_ERROR,
     ):
-        """Constructor for an EOF PDU
+        """Constructor for an EOF PDU.
 
-        :param file_checksum: 4 byte checksum
-        :param file_size:
-        :param pdu_conf:
-        :param fault_location:
-        :param condition_code:
-        :raise ValueError: Invalid input, file checksum not 4 bytes long
+        Parameters
+        -------------
+
+        pdu_conf
+            PDU Configuration.
+        file_checksum
+            4 byte checksum.
+        file_size
+            File Size
+        fault_location
+            Optional fault location TLV.
+        condition_code
+            Optional Condition Code
+
+        Raises
+        --------
+
+        ValueError
+            Invalid input, file checksum not 4 bytes long.
         """
         pdu_conf = copy.copy(pdu_conf)
         if len(file_checksum) != 4:
@@ -107,11 +120,18 @@ class EofPdu(AbstractFileDirectiveBase):
 
     @classmethod
     def unpack(cls, data: bytes) -> EofPdu:
-        """Deserialize raw EOF PDU packet.
+        """Generate an object instance from raw data. Care should be taken to check whether
+        the raw bytestream really contains an EOF PDU.
 
-        :param data:
-        :raise BytesTooShortError: If raw packet is too short
-        :return:
+        Raises
+        --------
+
+        BytesTooShortError
+            Raw data too short for expected object.
+        ValueError
+            Invalid directive type or data format.
+        InvalidCrc
+            PDU has a 16 bit CRC and the CRC check failed.
         """
         eof_pdu = cls.__empty()
         eof_pdu.pdu_file_directive = FileDirectivePduBase.unpack(raw_packet=data)

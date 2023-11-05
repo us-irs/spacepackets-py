@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from spacepackets.cfdp import TransmissionMode
+from spacepackets.cfdp import TransmissionMode, PduFactory, DirectiveType
 from spacepackets.cfdp.conf import PduConfig
 from spacepackets.cfdp.defs import CrcFlag, Direction, LargeFileFlag
 from spacepackets.cfdp.pdu import NakPdu
@@ -25,6 +25,7 @@ class TestNakPdu(TestCase):
         self.assertEqual(self.nak_pdu.segment_requests, [])
         pdu_header = self.nak_pdu.pdu_header
         self.assertEqual(pdu_header.direction, Direction.TOWARDS_SENDER)
+        self.assertEqual(self.nak_pdu.directive_type, DirectiveType.NAK_PDU)
         # Start of scope (4) + end of scope (4) + directive code
         self.assertEqual(pdu_header.pdu_data_field_len, 8 + 1)
         self.assertEqual(pdu_header.file_flag, LargeFileFlag.NORMAL)
@@ -222,3 +223,11 @@ class TestNakPdu(TestCase):
         segment_requests = [(pow(2, 32) + 1, 40), (60, 80)]
         self.nak_pdu.segment_requests = segment_requests
         self.assertRaises(ValueError, self.nak_pdu.pack)
+
+    def test_from_factory(self):
+        nak_pdu_raw = self.nak_pdu.pack()
+        pdu_holder = PduFactory.from_raw_to_holder(nak_pdu_raw)
+        self.assertIsNotNone(pdu_holder.pdu)
+        nak_pdu = pdu_holder.to_nak_pdu()
+        self.assertIsNotNone(nak_pdu)
+        self.assertEqual(nak_pdu, self.nak_pdu)

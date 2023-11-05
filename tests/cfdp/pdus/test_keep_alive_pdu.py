@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from spacepackets.cfdp import LargeFileFlag
+from spacepackets.cfdp import LargeFileFlag, PduFactory
 from spacepackets.cfdp.conf import PduConfig
 from spacepackets.cfdp.defs import Direction
 from spacepackets.cfdp.pdu import KeepAlivePdu, DirectiveType
@@ -70,3 +70,11 @@ class TestKeepAlivePdu(TestCase):
                 f"progress=0)"
             ),
         )
+
+    def test_from_factory(self):
+        keep_alive_raw = self.keep_alive_pdu.pack()
+        pdu_holder = PduFactory.from_raw_to_holder(keep_alive_raw)
+        self.assertIsNotNone(pdu_holder.pdu)
+        keep_alive_pdu = pdu_holder.to_keep_alive_pdu()
+        self.assertIsNotNone(keep_alive_pdu)
+        self.assertEqual(keep_alive_pdu, self.keep_alive_pdu)

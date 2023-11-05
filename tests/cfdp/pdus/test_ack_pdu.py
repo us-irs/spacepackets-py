@@ -5,6 +5,7 @@ from spacepackets.cfdp.conf import PduConfig
 from spacepackets.cfdp.defs import Direction
 from spacepackets.cfdp.pdu import AckPdu, DirectiveType, TransactionStatus
 from spacepackets.util import ByteFieldU16, ByteFieldU32
+from spacepackets.cfdp.pdu import PduFactory
 
 
 class TestAckPdu(TestCase):
@@ -181,3 +182,11 @@ class TestAckPdu(TestCase):
                 f"transaction_status={self.ack_pdu.transaction_status!r})"
             ),
         )
+
+    def test_from_factory(self):
+        ack_pdu_raw = self.ack_pdu.pack()
+        pdu_holder = PduFactory.from_raw_to_holder(ack_pdu_raw)
+        self.assertIsNotNone(pdu_holder.pdu)
+        ack_pdu = pdu_holder.to_ack_pdu()
+        self.assertIsNotNone(ack_pdu)
+        self.assertEqual(ack_pdu, self.ack_pdu)

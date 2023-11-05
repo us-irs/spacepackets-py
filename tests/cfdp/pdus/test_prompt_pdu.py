@@ -2,7 +2,7 @@ from unittest import TestCase
 
 from spacepackets.cfdp.conf import PduConfig
 from spacepackets.cfdp.defs import Direction
-from spacepackets.cfdp.pdu import PromptPdu
+from spacepackets.cfdp.pdu import PromptPdu, PduFactory
 from spacepackets.cfdp.pdu.prompt import ResponseRequired
 
 
@@ -42,3 +42,11 @@ class TestPromptPdu(TestCase):
                 f"response_required={ResponseRequired.KEEP_ALIVE!r})"
             ),
         )
+
+    def test_from_factory(self):
+        prompt_raw = self.prompt_pdu.pack()
+        pdu_holder = PduFactory.from_raw_to_holder(prompt_raw)
+        self.assertIsNotNone(pdu_holder.pdu)
+        prompt_pdu = pdu_holder.to_prompt_pdu()
+        self.assertIsNotNone(prompt_pdu)
+        self.assertEqual(prompt_pdu, self.prompt_pdu)

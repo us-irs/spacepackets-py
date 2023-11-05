@@ -218,11 +218,18 @@ class FileDataPdu(AbstractPduBase):
 
     @classmethod
     def unpack(cls, data: bytes) -> FileDataPdu:
-        """Create from raw bytes.
+        """Generate an object instance from raw data. Care should be taken to check whether
+        the raw bytestream really contains a File Data PDU.
 
-        :param data:
-        :raises BytesTooShortError:
-        :return:
+        Raises
+        --------
+
+        BytesTooShortError
+            Raw data too short for expected object.
+        ValueError
+            Invalid PDU type or data format.
+        InvalidCrc
+            PDU has a 16 bit CRC and the CRC check failed.
         """
         file_data_packet = cls.__empty()
         file_data_packet._pdu_header = PduHeader.unpack(data=data)

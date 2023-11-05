@@ -8,6 +8,7 @@ from spacepackets.cfdp import (
     FilestoreResponseStatusCode,
     TlvType,
 )
+from spacepackets.cfdp.pdu.helper import PduFactory
 from spacepackets.cfdp.conf import PduConfig
 from spacepackets.cfdp.defs import Direction, DeliveryCode, FileStatus
 from spacepackets.cfdp.pdu import FinishedPdu
@@ -225,3 +226,10 @@ class TestFinishedPdu(TestCase):
         complex_pdu_raw[-5] = TlvType.FILESTORE_RESPONSE
         with self.assertRaises(ValueError):
             FinishedPdu.unpack(data=complex_pdu_raw)
+
+    def test_from_factory(self):
+        finish_pdu = FinishedPdu.success_pdu(pdu_conf=self.pdu_conf)
+        finished_pdu_raw = finish_pdu.pack()
+        pdu_holder = PduFactory.from_raw(finished_pdu_raw)
+        self.assertIsNotNone(pdu_holder)
+        self.assertIsInstance(pdu_holder, FinishedPdu)

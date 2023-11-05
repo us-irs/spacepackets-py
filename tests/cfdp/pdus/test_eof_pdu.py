@@ -3,22 +3,22 @@ from unittest import TestCase
 from spacepackets.cfdp import LargeFileFlag, EntityIdTlv, NULL_CHECKSUM_U32, CrcFlag
 from spacepackets.cfdp.conf import PduConfig
 from spacepackets.cfdp.defs import Direction
-from spacepackets.cfdp.pdu import EofPdu
+from spacepackets.cfdp.pdu import EofPdu, PduFactory
 
 
 class TestEofPdu(TestCase):
     def setUp(self) -> None:
         self.pdu_conf = PduConfig.default()
-
-    def test_eof_pdu(self):
-        eof_pdu = EofPdu(
+        self.eof_pdu = EofPdu(
             file_checksum=NULL_CHECKSUM_U32, file_size=0, pdu_conf=self.pdu_conf
         )
-        self.assertEqual(eof_pdu.pdu_file_directive.header_len, 8)
-        self.assertEqual(eof_pdu.direction, Direction.TOWARDS_RECEIVER)
+
+    def test_eof_pdu(self):
+        self.assertEqual(self.eof_pdu.pdu_file_directive.header_len, 8)
+        self.assertEqual(self.eof_pdu.direction, Direction.TOWARDS_RECEIVER)
         expected_packet_len = 8 + 1 + 4 + 4
-        self.assertEqual(eof_pdu.packet_len, expected_packet_len)
-        eof_pdu_raw = eof_pdu.pack()
+        self.assertEqual(self.eof_pdu.packet_len, expected_packet_len)
+        eof_pdu_raw = self.eof_pdu.pack()
         expected_header = bytearray([0x20, 0x00, 0x0A, 0x00, 0x00, 0x00, 0x00, 0x04])
         expected_header.append(0)
         expected_header.extend(NULL_CHECKSUM_U32)
@@ -33,9 +33,9 @@ class TestEofPdu(TestCase):
 
         fault_loc_tlv = EntityIdTlv(entity_id=bytes([0x00, 0x01]))
         self.assertEqual(fault_loc_tlv.packet_len, 4)
-        eof_pdu.fault_location = fault_loc_tlv
-        self.assertEqual(eof_pdu.packet_len, expected_packet_len + 4)
-        eof_pdu_with_fault_loc = eof_pdu
+        self.eof_pdu.fault_location = fault_loc_tlv
+        self.assertEqual(self.eof_pdu.packet_len, expected_packet_len + 4)
+        eof_pdu_with_fault_loc = self.eof_pdu
         eof_pdu_with_fault_loc_raw = eof_pdu_with_fault_loc.pack()
         self.assertEqual(len(eof_pdu_with_fault_loc_raw), expected_packet_len + 4)
         eof_pdu_with_fault_loc_unpacked = EofPdu.unpack(data=eof_pdu_with_fault_loc_raw)
@@ -66,3 +66,11 @@ class TestEofPdu(TestCase):
         self.assertEqual(eof.packet_len, expected_packet_len)
         eof_raw = eof.pack()
         self.assertEqual(len(eof_raw), expected_packet_len)
+
+    def test_from_factory(self):
+        eof_pdu_raw = self.eof_pdu.pack()
+        pdu_holder = PduFactory.from_raw_to_holder(eof_pdu_raw)
+        self.assertIsNotNone(pdu_holder.pdu)
+        eof_pdu = pdu_holder.to_eof_pdu()
+        self.assertIsNotNone(eof_pdu)
+        self.assertEqual(eof_pdu, self.eof_pdu)
