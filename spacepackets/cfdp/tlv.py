@@ -15,7 +15,7 @@ from spacepackets.cfdp.defs import (
     TransmissionMode,
 )
 from spacepackets.exceptions import BytesTooShortError
-from spacepackets.util import UnsignedByteField 
+from spacepackets.util import UnsignedByteField
 
 
 class TlvType(enum.IntEnum):

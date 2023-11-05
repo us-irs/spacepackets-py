@@ -120,10 +120,19 @@ class AckPdu(AbstractFileDirectiveBase):
 
     @classmethod
     def unpack(cls, data: bytes) -> AckPdu:
-        """
-        :param data:
-        :raise BytesTooShortError:
-        :return:
+        """Generate an object instance from raw data. Care should be taken to check whether
+        the raw bytestream really contains an ACK PDU.
+
+        Raises
+        --------
+
+        BytesTooShortError
+            Raw data too short for expected object.
+        ValueError
+            Invalid directive type or data format.
+        InvalidCrc
+            PDU has a 16 bit CRC and the CRC check failed.
+
         """
         ack_packet = cls.__empty()
         ack_packet.pdu_file_directive = FileDirectivePduBase.unpack(raw_packet=data)

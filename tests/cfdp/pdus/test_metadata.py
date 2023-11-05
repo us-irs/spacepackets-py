@@ -14,8 +14,7 @@ from spacepackets.cfdp.defs import (
     CrcFlag,
     TransmissionMode,
 )
-from spacepackets.cfdp.pdu import MetadataPdu
-from spacepackets.cfdp.pdu.metadata import MetadataParams
+from spacepackets.cfdp.pdu import MetadataPdu, MetadataParams
 from spacepackets.cfdp.tlv import TlvHolder, FaultHandlerOverrideTlv
 
 

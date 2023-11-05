@@ -45,3 +45,11 @@ Common Definitions
    :members:
    :undoc-members:
    :show-inheritance:
+
+Exceptions
+-------------------------------------
+
+.. automodule:: spacepackets.cfdp.exceptions
+   :members:
+   :undoc-members:
+   :show-inheritance:

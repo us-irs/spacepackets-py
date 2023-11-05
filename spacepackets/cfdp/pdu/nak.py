@@ -126,7 +126,7 @@ class NakPdu(AbstractFileDirectiveBase):
         """
         pdu_conf.direction = Direction.TOWARDS_SENDER
         self.pdu_file_directive = FileDirectivePduBase(
-            directive_code=DirectiveType.ACK_PDU,
+            directive_code=DirectiveType.NAK_PDU,
             directive_param_field_len=8,
             pdu_conf=pdu_conf,
         )
@@ -232,14 +232,27 @@ class NakPdu(AbstractFileDirectiveBase):
 
     @classmethod
     def unpack(cls, data: bytes) -> NakPdu:
-        """
-        :param data:
-        :raises BytesTooShortError:
-        :return:
+        """Generate an object instance from raw data. The user should take care to check whether
+        the raw bytestream really contains a NAK PDU.
+
+        Raises
+        --------
+
+        BytesTooShortError
+            Raw data too short for expected object.
+        ValueError
+            Invalid directive type or data format.
+        InvalidCrc
+            PDU has a 16 bit CRC and the CRC check failed.
         """
         nak_pdu = cls.__empty()
         nak_pdu.pdu_file_directive = FileDirectivePduBase.unpack(raw_packet=data)
         nak_pdu.pdu_file_directive.verify_length_and_checksum(data)
+        if nak_pdu.pdu_file_directive.directive_type != DirectiveType.NAK_PDU:
+            raise ValueError(
+                f"invalid PDU directive type for NAK PDU: "
+                f"{nak_pdu.pdu_file_directive.directive_type}"
+            )
         current_idx = nak_pdu.pdu_file_directive.header_len
         if not nak_pdu.pdu_file_directive.pdu_header.large_file_flag_set:
             struct_arg_tuple = ("!I", 4)
