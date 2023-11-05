@@ -8,8 +8,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 # [unreleased]
 
-<<<<<<< Updated upstream
-=======
 ## Changed
 
 - Renamed `FileDeliveryStatus` to `FileStatus` to be closer to the CFDP name.
@@ -36,7 +34,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 - USLP configuration module.
 
->>>>>>> Stashed changes
 # [v0.20.0] 2023-11-04
 
 ## Added
@@ -342,7 +339,7 @@ Refactored `logging` module usage to be more pythonic.
 # [v0.12.0] 2022-06-30
 
 - Added `PusVerificator` module which can track the verification status of sent telecommands
-- Added several magic method implementations, notably `__eq__` and `__hash__` where 
+- Added several magic method implementations, notably `__eq__` and `__hash__` where
   applicable
 - Removed PUS A support completely. PUS A is relatively old, and specialicing on one packet version
   makes the code a lot simpler

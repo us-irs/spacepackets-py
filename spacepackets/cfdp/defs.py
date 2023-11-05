@@ -1,4 +1,5 @@
 from __future__ import annotations
+from spacepackets.util import UnsignedByteField
 import enum
 
 
@@ -105,6 +106,49 @@ class ChecksumType(enum.IntEnum):
     # Polynomial: 0x4C11DB7. This is the preferred checksum for now.
     CRC_32 = 3
     NULL_CHECKSUM = 15
+
+
+class DeliveryCode(enum.IntEnum):
+    DATA_COMPLETE = 0
+    DATA_INCOMPLETE = 1
+
+
+class FileStatus(enum.IntEnum):
+    DISCARDED_DELIBERATELY = 0
+    DISCARDED_FILESTORE_REJECTION = 1
+    FILE_RETAINED = 2
+    FILE_STATUS_UNREPORTED = 3
+
+
+class TransactionId:
+    def __init__(
+        self,
+        source_entity_id: UnsignedByteField,
+        transaction_seq_num: UnsignedByteField,
+    ):
+        self.source_id = source_entity_id
+        self.seq_num = transaction_seq_num
+
+    def __repr__(self):
+        return (
+            f"{self.__class__.__name__}(source_entity_id={self.source_id!r}, "
+            f"transaction_seq_num={self.seq_num!r})"
+        )
+
+    def __str__(self):
+        return (
+            f"Transaction {{ Source ID {{{self.source_id}}}, Sequence "
+            f"number {self.seq_num.value} }}"
+        )
+
+    def __eq__(self, other: TransactionId):
+        return (
+            self.source_id.value == other.source_id.value
+            and self.seq_num.value == other.seq_num.value
+        )
+
+    def __hash__(self):
+        return hash((self.source_id.value, self.seq_num.value))
 
 
 NULL_CHECKSUM_U32 = bytes([0x00, 0x00, 0x00, 0x00])
