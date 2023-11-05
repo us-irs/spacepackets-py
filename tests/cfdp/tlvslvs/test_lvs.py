@@ -55,5 +55,5 @@ class TestLvs(TestCase):
     def test_from_str_and_from_path(self):
         string = "/tmp/hello.txt"
         str_lv = CfdpLv.from_str(string)
-        str_lv_from_path = CfdpLv.from_path(Path(string))
+        str_lv_from_path = CfdpLv.from_path(Path(string).as_posix())
         self.assertEqual(str_lv, str_lv_from_path)
