@@ -16,9 +16,9 @@ class TestTransactionId(TestCase):
 
     def test_eq(self):
         self.assertNotEqual(self.transaction_id_0, self.transaction_id_1)
-    
+
     def test_repr(self):
-        repr =  self.transaction_id_0.__repr__()
+        repr = self.transaction_id_0.__repr__()
         self.assertTrue("TransactionId" in repr)
         self.assertTrue("source_entity_id=" in repr)
         self.assertTrue("transaction_seq_num=" in repr)

@@ -813,9 +813,9 @@ class ReservedCfdpMessage(AbstractTlvBase):
             return None
         if len(self.value) < 1:
             raise ValueError("originating transaction ID value field to small")
-        source_id_len = (self.value[0] >> 4) & 0b111
-        seq_num_len = self.value[0] & 0b111
-        current_idx = 1
+        source_id_len = ((self.value[5] >> 4) & 0b111) + 1
+        seq_num_len = (self.value[5] & 0b111) + 1
+        current_idx = 6
         if len(self.value) < source_id_len + seq_num_len + 1:
             raise ValueError("originating transaction ID value field to small")
         source_id = self.value[current_idx : current_idx + source_id_len]
@@ -829,6 +829,11 @@ class ReservedCfdpMessage(AbstractTlvBase):
     def get_proxy_put_request_params(self) -> Optional[ProxyPutRequestParams]:
         """This function extract the proxy put request parameters from the raw value if
         applicable. If the value format is invalid, this function will return None."""
+        if (
+            not self.is_cfdp_proxy_operation()
+            or self.get_cfdp_proxy_message_type() != ProxyMessageType.PUT_REQUEST
+        ):
+            return None
         current_idx = 5
         dest_id_lv = CfdpLv.unpack(self.value[current_idx:])
         current_idx += dest_id_lv.packet_len
@@ -854,6 +859,17 @@ class ReservedCfdpMessage(AbstractTlvBase):
             source_name_lv,
             dest_name_lv,
         )
+
+    def get_proxy_put_response_params(self) -> Optional[ProxyPutResponseParams]:
+        if (
+            not self.is_cfdp_proxy_operation()
+            or self.get_cfdp_proxy_message_type() != ProxyMessageType.PUT_RESPONSE
+        ):
+            return None
+        condition_code = (self.value[5] >> 4) & 0b1111
+        delivery_code = (self.value[5] >> 2) & 0b1
+        file_status = self.value[5] & 0b11
+        return ProxyPutResponseParams(condition_code, delivery_code, file_status)
 
 
 @dataclasses.dataclass

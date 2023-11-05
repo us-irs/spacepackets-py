@@ -25,8 +25,11 @@ class TestReservedMsg(TestCase):
         self.proxy_put_request = ProxyPutRequest(self.proxy_put_req_params)
         self.originating_id_source_id = ByteFieldU16(1)
         self.originating_id_seq_num = ByteFieldU16(5)
-        self.originating_transaction_id = OriginatingTransactionId(
-            TransactionId(self.originating_id_source_id, self.originating_id_seq_num)
+        self.originating_transaction_id = TransactionId(
+            self.originating_id_source_id, self.originating_id_seq_num
+        )
+        self.originating_transaction_id_msg = OriginatingTransactionId(
+            self.originating_transaction_id
         )
 
     def _generic_raw_data_verification(
@@ -77,12 +80,36 @@ class TestReservedMsg(TestCase):
         self.assertEqual(self.proxy_put_request.packet_len, reserved_msg.packet_len)
 
     def test_originating_transaction_id_state(self):
-        self.assertTrue(self.originating_transaction_id.is_originating_transaction_id())
-        self.assertFalse(self.originating_transaction_id.is_cfdp_proxy_operation())
-        self.assertFalse(self.originating_transaction_id.is_directory_operation())
+        self.assertTrue(
+            self.originating_transaction_id_msg.is_originating_transaction_id()
+        )
+        self.assertFalse(self.originating_transaction_id_msg.is_cfdp_proxy_operation())
+        self.assertFalse(self.originating_transaction_id_msg.is_directory_operation())
 
     def test_originating_transaction_id_pack(self):
-        raw_originating_id = self.originating_transaction_id.pack()
+        raw_originating_id = self.originating_transaction_id_msg.pack()
         self._generic_raw_data_verification(
             raw_originating_id, 1 + 2 + 2, ORIGINATING_TRANSACTION_ID_MSG_TYPE_ID
         )
+        self.assertEqual((raw_originating_id[7] >> 4) & 0b111, 1)
+        self.assertEqual(raw_originating_id[7] & 0b111, 1)
+        self.assertEqual(raw_originating_id[8], 0x00)
+        self.assertEqual(raw_originating_id[9], 0x01)
+        self.assertEqual(raw_originating_id[10], 0x00)
+        self.assertEqual(raw_originating_id[11], 0x05)
+
+    def test_originating_transaction_id_unpack(self):
+        id = self.originating_transaction_id_msg.get_originating_transaction_id_param()
+        self.assertEqual(self.originating_transaction_id, id)
+
+    def test_put_reponse_state(self):
+        # TODO: Implement
+        pass
+
+    def test_put_reponse_pack(self):
+        # TODO: Implement
+        pass
+
+    def test_put_reponse_unpack(self):
+        # TODO: Implement
+        pass
