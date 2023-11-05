@@ -20,6 +20,9 @@ from .defs import (
     TransmissionMode,
     ConditionCode,
     FaultHandlerCode,
+    TransactionId,
+    FileStatus,
+    DeliveryCode,
     NULL_CHECKSUM_U32,
 )
 from .tlv import (

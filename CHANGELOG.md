@@ -8,6 +8,22 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 # [unreleased]
 
+## Changed
+
+- Renamed `FileDeliveryStatus` to `FileStatus` to be closer to the CFDP name.
+- Moved `spacepackets.cfdp.pdu.finished.FileDeliveryStatus` to `spacepackets.cfdp.defs.FileStatus`.
+  The new enumeration is also re-exported in `spacepackets.cfdp`.
+- Moved `spacepackets.cfdp.pdu.finished.DeliveryCode` to `spacepackets.cfdp.defs.DeliveryCode`.
+  The new enumeration is also re-exported in `spacepackets.cfdp`.
+
+## Added
+
+- New `TransactionId` class used for unique identification of CFDP transfers.
+- `UnsignedByteField.from_bytes` constructor.
+- `DirectoryOperationMessageType` enumeration for CFDP.
+- `OriginatingTransactionId` reserved CFDP message abstraction.
+- `ProxyPutResponse` reserved CFDP message abstraction.
+
 # [v0.20.0] 2023-11-04
 
 ## Added
@@ -313,7 +329,7 @@ Refactored `logging` module usage to be more pythonic.
 # [v0.12.0] 2022-06-30
 
 - Added `PusVerificator` module which can track the verification status of sent telecommands
-- Added several magic method implementations, notably `__eq__` and `__hash__` where 
+- Added several magic method implementations, notably `__eq__` and `__hash__` where
   applicable
 - Removed PUS A support completely. PUS A is relatively old, and specialicing on one packet version
   makes the code a lot simpler

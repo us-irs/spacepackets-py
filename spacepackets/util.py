@@ -130,6 +130,15 @@ class UnsignedByteField:
         self.value = val
         self._val_as_bytes = IntByteConversion.to_unsigned(self.byte_len, self.value)
 
+    @classmethod
+    def from_bytes(cls, raw: bytes):
+        return cls(
+            struct.unpack(IntByteConversion.unsigned_struct_specifier(len(raw)), raw)[
+                0
+            ],
+            len(raw),
+        )
+
     @property
     def byte_len(self):
         return self._byte_len

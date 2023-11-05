@@ -21,7 +21,7 @@ from spacepackets.cfdp.pdu.file_data import FileDataParams
 from spacepackets.cfdp.pdu.finished import (
     FinishedParams,
     DeliveryCode,
-    FileDeliveryStatus,
+    FileStatus,
     FinishedPdu,
 )
 from spacepackets.cfdp.pdu.prompt import ResponseRequired, PromptPdu
@@ -75,7 +75,7 @@ class TestPduHolder(TestCase):
     def test_finished_pdu_creation(self):
         params = FinishedParams(
             delivery_code=DeliveryCode.DATA_COMPLETE,
-            delivery_status=FileDeliveryStatus.FILE_STATUS_UNREPORTED,
+            file_status=FileStatus.FILE_STATUS_UNREPORTED,
             condition_code=ConditionCode.NO_ERROR,
         )
         finish_pdu = FinishedPdu(

@@ -1,5 +1,4 @@
 from __future__ import annotations
-import enum
 import copy
 import struct
 from dataclasses import dataclass, field
@@ -11,29 +10,23 @@ from spacepackets.cfdp.pdu.file_directive import (
     DirectiveType,
     AbstractFileDirectiveBase,
 )
-from spacepackets.cfdp.defs import ConditionCode, CrcFlag, Direction
+from spacepackets.cfdp.defs import (
+    ConditionCode,
+    CrcFlag,
+    Direction,
+    DeliveryCode,
+    FileStatus,
+)
 from spacepackets.cfdp.conf import PduConfig
 from spacepackets.cfdp.tlv import TlvType, FileStoreResponseTlv, EntityIdTlv
 from spacepackets.crc import CRC16_CCITT_FUNC
 from spacepackets.exceptions import BytesTooShortError
 
 
-class DeliveryCode(enum.IntEnum):
-    DATA_COMPLETE = 0
-    DATA_INCOMPLETE = 1
-
-
-class FileDeliveryStatus(enum.IntEnum):
-    DISCARDED_DELIBERATELY = 0
-    DISCARDED_FILESTORE_REJECTION = 1
-    FILE_RETAINED = 2
-    FILE_STATUS_UNREPORTED = 3
-
-
 @dataclass
 class FinishedParams:
     delivery_code: DeliveryCode
-    delivery_status: FileDeliveryStatus
+    file_status: FileStatus
     condition_code: ConditionCode
     file_store_responses: List[FileStoreResponseTlv] = field(default_factory=lambda: [])
     fault_location: Optional[EntityIdTlv] = None
@@ -42,7 +35,7 @@ class FinishedParams:
     def empty(cls) -> FinishedParams:
         return cls(
             delivery_code=DeliveryCode.DATA_COMPLETE,
-            delivery_status=FileDeliveryStatus.DISCARDED_DELIBERATELY,
+            file_status=FileStatus.DISCARDED_DELIBERATELY,
             condition_code=ConditionCode.NO_ERROR,
         )
 
@@ -52,7 +45,7 @@ class FinishedParams:
         PDU."""
         return cls(
             delivery_code=DeliveryCode.DATA_COMPLETE,
-            delivery_status=FileDeliveryStatus.FILE_RETAINED,
+            file_status=FileStatus.FILE_RETAINED,
             condition_code=ConditionCode.NO_ERROR,
         )
 
@@ -65,8 +58,8 @@ class FinishedPdu(AbstractFileDirectiveBase):
     <ConditionCode.NO_ERROR: 0>
     >>> finished_pdu.delivery_code
     <DeliveryCode.DATA_COMPLETE: 0>
-    >>> finished_pdu.delivery_status
-    <FileDeliveryStatus.FILE_RETAINED: 2>
+    >>> finished_pdu.file_status
+    <FileStatus.FILE_RETAINED: 2>
     """
 
     def __init__(
@@ -112,8 +105,8 @@ class FinishedPdu(AbstractFileDirectiveBase):
         return self._params.delivery_code
 
     @property
-    def delivery_status(self) -> FileDeliveryStatus:
-        return self._params.delivery_status
+    def file_status(self) -> FileStatus:
+        return self._params.file_status
 
     @property
     def packet_len(self) -> int:
@@ -205,7 +198,7 @@ class FinishedPdu(AbstractFileDirectiveBase):
         packet.append(
             (self._params.condition_code << 4)
             | (self._params.delivery_code << 2)
-            | self._params.delivery_status
+            | self._params.file_status
         )
         if self.file_store_responses is not None:
             for file_store_reponse in self.file_store_responses:
@@ -236,7 +229,7 @@ class FinishedPdu(AbstractFileDirectiveBase):
         params = FinishedParams(
             condition_code=ConditionCode((first_param_byte & 0xF0) >> 4),
             delivery_code=DeliveryCode((first_param_byte & 0x04) >> 2),
-            delivery_status=FileDeliveryStatus(first_param_byte & 0b11),
+            file_status=FileStatus(first_param_byte & 0b11),
         )
         finished_pdu.condition_code = params.condition_code
         finished_pdu._params = params

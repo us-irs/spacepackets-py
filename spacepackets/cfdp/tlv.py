@@ -6,7 +6,13 @@ from abc import ABC, abstractmethod
 from typing import Tuple, Optional, Type, List, Any, cast
 import enum
 from spacepackets.cfdp.lv import CfdpLv
-from spacepackets.cfdp.defs import ConditionCode, FaultHandlerCode
+from spacepackets.cfdp.defs import (
+    ConditionCode,
+    FaultHandlerCode,
+    DeliveryCode,
+    FileStatus,
+    TransactionId,
+)
 from spacepackets.exceptions import BytesTooShortError
 from spacepackets.util import UnsignedByteField
 
@@ -728,6 +734,14 @@ class ProxyMessageType(enum.IntEnum):
     CLOSURE_REQUEST = 0x0B
 
 
+ORIGINATING_TRANSACTION_ID_MSG_TYPE_ID = 0x0A
+
+
+class DirectoryOperationMessageType(enum.IntEnum):
+    LISTING_REQUEST = 0x10
+    LISTING_RESPONSE = 0x10
+
+
 class ReservedCfdpMessage(AbstractTlvBase):
     """Reserved CFDP message implementation as specified in CCSDS 727.0-B-5 6.1"""
 
@@ -766,15 +780,51 @@ class ReservedCfdpMessage(AbstractTlvBase):
         try:
             ProxyMessageType(self.get_reserved_cfdp_message_type())
             return True
-        except IndexError:
-            # TODO: Once a directory msg type was added, test this.
+        except ValueError:
             return False
 
+    def is_directory_operation(self) -> bool:
+        try:
+            DirectoryOperationMessageType(self.get_reserved_cfdp_message_type())
+            return True
+        except ValueError:
+            return False
+
+    def is_originating_transaction_id(self) -> bool:
+        return (
+            self.get_reserved_cfdp_message_type()
+            == ORIGINATING_TRANSACTION_ID_MSG_TYPE_ID
+        )
+
     def get_cfdp_proxy_message_type(self) -> Optional[ProxyMessageType]:
-        # TODO: Once a directory msg type was added, test this.
         if not self.is_cfdp_proxy_operation():
             return None
         return ProxyMessageType(self.get_reserved_cfdp_message_type())
+
+    def get_directory_operation_type(self) -> Optional[DirectoryOperationMessageType]:
+        if not self.is_directory_operation():
+            return None
+        return DirectoryOperationMessageType(self.get_reserved_cfdp_message_type())
+
+    def get_originating_transaction_id_param(
+        self,
+    ) -> Optional[TransactionId]:
+        if not self.is_originating_transaction_id():
+            return None
+        if len(self.value) < 1:
+            raise ValueError("originating transaction ID value field to small")
+        source_id_len = (self.value[0] >> 4) & 0b111
+        seq_num_len = self.value[0] & 0b111
+        current_idx = 1
+        if len(self.value) < source_id_len + seq_num_len + 1:
+            raise ValueError("originating transaction ID value field to small")
+        source_id = self.value[current_idx : current_idx + source_id_len]
+        current_idx += source_id_len
+        seq_num = self.value[current_idx : current_idx + seq_num_len]
+        return TransactionId(
+            UnsignedByteField.from_bytes(source_id),
+            UnsignedByteField.from_bytes(seq_num),
+        )
 
     def get_proxy_put_request_params(self) -> Optional[ProxyPutRequestParams]:
         """This function extract the proxy put request parameters from the raw value if
@@ -819,6 +869,46 @@ class ProxyPutRequest(ReservedCfdpMessage):
         value.extend(params.source_file_name.pack())
         value.extend(params.dest_file_name.pack())
         super().__init__(ProxyMessageType.PUT_REQUEST, value)
+
+
+@dataclasses.dataclass
+class ProxyPutResponseParams:
+    condition_code: ConditionCode
+    delivery_code: DeliveryCode
+    file_status: FileStatus
+
+
+class ProxyPutResponse(ReservedCfdpMessage):
+    def __init__(self, params: ProxyPutResponseParams):
+        value = (
+            (params.condition_code << 4)
+            | (params.delivery_code << 2)
+            | params.file_status
+        )
+        super().__init__(ProxyMessageType.PUT_RESPONSE, value)
+
+
+class OriginatingTransactionId(ReservedCfdpMessage):
+    def __init__(self, transaction_id: TransactionId):
+        if transaction_id.source_id.byte_len not in [
+            1,
+            2,
+            4,
+            8,
+        ] or transaction_id.seq_num.byte_len not in [1, 2, 4, 8]:
+            raise ValueError(
+                "only byte length [1, 2, 4, 8] are allowed for the source ID or the transaction "
+                "sequence number"
+            )
+        value = bytearray(
+            [
+                ((transaction_id.source_id.byte_len - 1) << 4)
+                | (transaction_id.seq_num.byte_len - 1)
+            ]
+        )
+        value.extend(transaction_id.source_id.as_bytes)
+        value.extend(transaction_id.seq_num.as_bytes)
+        super().__init__(ORIGINATING_TRANSACTION_ID_MSG_TYPE_ID, value)
 
 
 class TlvHolder:

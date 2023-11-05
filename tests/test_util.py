@@ -31,6 +31,30 @@ class TestUtility(TestCase):
         one_byte_test = ByteFieldGenerator.from_bytes(1, one_byte_test.as_bytes)
         self.assertEqual(ByteFieldU8(0x42), one_byte_test)
 
+    def test_raw_to_object_one_byte(self):
+        raw_bytefield = bytes([0x42])
+        byte_field = UnsignedByteField.from_bytes(raw_bytefield)
+        self.assertEqual(byte_field.value, 0x42)
+        self.assertEqual(byte_field.byte_len, 1)
+
+    def test_raw_to_object_two_bytes(self):
+        raw_bytefield = bytes([0x07, 0xFF])
+        byte_field = UnsignedByteField.from_bytes(raw_bytefield)
+        self.assertEqual(byte_field.value, 0x07FF)
+        self.assertEqual(byte_field.byte_len, 2)
+
+    def test_raw_to_object_four(self):
+        raw_bytefield = bytes([0x01, 0x02, 0x03, 0x04])
+        byte_field = UnsignedByteField.from_bytes(raw_bytefield)
+        self.assertEqual(byte_field.value, 0x01020304)
+        self.assertEqual(byte_field.byte_len, 4)
+
+    def test_raw_to_object_eight(self):
+        raw_bytefield = bytes([0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08])
+        byte_field = UnsignedByteField.from_bytes(raw_bytefield)
+        self.assertEqual(byte_field.value, 0x0102030405060708)
+        self.assertEqual(byte_field.byte_len, 8)
+
     def test_one_byte_invalid_gen(self):
         with self.assertRaises(ValueError) as cm:
             ByteFieldGenerator.from_int(byte_len=1, val=0x4217)
