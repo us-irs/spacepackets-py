@@ -4,11 +4,13 @@ from pathlib import Path
 
 class CfdpLv:
     def __init__(self, value: bytes):
-        """This class encapsulates CFDP LV fields
+        """This class encapsulates CFDP Length-Value (LV) fields.
 
-        :raise ValueError: If value is invalid and serilization is enabled or if length of bytearray
-            is too large
-        :param value:
+        Raises
+        -------
+
+        ValueError
+            If value is invalid and serilization is enabled or if length of bytearray is too large.
         """
         if len(value) > 255:
             raise ValueError("Length too large for LV field")

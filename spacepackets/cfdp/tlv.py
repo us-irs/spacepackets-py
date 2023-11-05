@@ -174,7 +174,7 @@ class AbstractTlvBase(ABC):
 
 
 class CfdpTlv(AbstractTlvBase):
-    """Encapsulates the CFDP TLV (type-length-value) format.
+    """Encapsulates the CFDP Type-Length-Value (TLV) format.
     For more information, refer to CCSDS 727.0-B-5 p.77
     """
 
@@ -183,9 +183,11 @@ class CfdpTlv(AbstractTlvBase):
     def __init__(self, tlv_type: TlvType, value: bytes):
         """Constructor for TLV field.
 
-        :param tlv_type:
-        :param value:
-        :raise ValueError: Length invalid or value length not equal to specified length
+        Raises
+        -------
+
+        ValueError
+            Length invalid or value length not equal to specified length.
         """
         self.value_len = len(value)
         if self.value_len > pow(2, 8) - 1:
@@ -1042,17 +1044,7 @@ class DirectoryParams:
 
 class DirectoryListingRequest(ReservedCfdpMessage):
     def __init__(self, params: DirectoryParams):
-        """Create a directory listing request.
-
-        Parameters
-        -----------
-
-        dir_path:
-            The path of the directory to create a listing for.
-        dir_file_name:
-            The local path at the requesting CFDP entity for the file which will contain the
-            directory listing.
-        """
+        """Create a directory listing request."""
         value = params.dir_path.pack() + params.dir_file_name.pack()
         super().__init__(DirectoryOperationMessageType.LISTING_REQUEST, value)
 
@@ -1066,11 +1058,8 @@ class DirectoryListingResponse(ReservedCfdpMessage):
 
         listing_reponse:
             True if the respondent CFDP user is able to proive a directory listing file.
-        dir_path:
-            The path of the directory to create a listing for.
-        dir_file_name:
-            The local path at the requesting CFDP entity for the file which will contain the
-            directory listing.
+        dir_params:
+            Parameters specified by the corresponding listing request.
         """
         value = (
             bytes([listing_success << 7])
