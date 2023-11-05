@@ -144,7 +144,7 @@ class MetadataPdu(AbstractFileDirectiveBase):
         """If there is no associated source file, for example for messages used for Proxy
         Operations, this function will return None
         """
-        if self._source_file_name_lv.len == 0:
+        if self._source_file_name_lv.value_len == 0:
             return None
         return self._source_file_name_lv.value.decode()
 
@@ -162,7 +162,7 @@ class MetadataPdu(AbstractFileDirectiveBase):
         """If there is no associated source file, for example for messages used for Proxy
         Operations, this function will return None
         """
-        if self._dest_file_name_lv.len == 0:
+        if self._dest_file_name_lv.value_len == 0:
             return None
         return self._dest_file_name_lv.value.decode()
 

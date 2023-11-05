@@ -16,7 +16,7 @@ from spacepackets.cfdp.pdu import (
 from spacepackets.cfdp.pdu.file_data import FileDataPdu, FileDataParams
 from spacepackets.cfdp.pdu.finished import (
     DeliveryCode,
-    FileDeliveryStatus,
+    FileStatus,
     FinishedParams,
 )
 from spacepackets.cfdp.pdu.metadata import MetadataParams
@@ -122,7 +122,7 @@ class TestPduHolder(TestCase):
     def test_finished_cast(self):
         params = FinishedParams(
             delivery_code=DeliveryCode.DATA_COMPLETE,
-            delivery_status=FileDeliveryStatus.FILE_STATUS_UNREPORTED,
+            file_status=FileStatus.FILE_STATUS_UNREPORTED,
             condition_code=ConditionCode.NO_ERROR,
         )
         finish_pdu = FinishedPdu(

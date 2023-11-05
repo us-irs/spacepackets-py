@@ -15,7 +15,7 @@ class TestTlvs(TestCase):
             tlv_type=TlvType.FILESTORE_REQUEST, value=bytes([0, 1, 2, 3, 4])
         )
         self.assertEqual(test_tlv.tlv_type, TlvType.FILESTORE_REQUEST)
-        self.assertEqual(test_tlv.length, 5)
+        self.assertEqual(test_tlv.value_len, 5)
         self.assertEqual(test_tlv.value, bytes([0, 1, 2, 3, 4]))
         self.assertEqual(test_tlv.packet_len, 7)
 
@@ -26,14 +26,14 @@ class TestTlvs(TestCase):
         test_tlv_package = test_tlv.pack()
         test_tlv_unpacked = CfdpTlv.unpack(data=test_tlv_package)
         self.assertEqual(test_tlv_unpacked.tlv_type, TlvType.FILESTORE_REQUEST)
-        self.assertEqual(test_tlv_unpacked.length, 5)
+        self.assertEqual(test_tlv_unpacked.value_len, 5)
         self.assertEqual(test_tlv_unpacked.value, bytes([0, 1, 2, 3, 4]))
 
     def test_length_field_missmatch(self):
         another_tlv = bytes([TlvType.ENTITY_ID, 1, 3, 4])
         another_tlv_unpacked = CfdpTlv.unpack(data=another_tlv)
         self.assertEqual(another_tlv_unpacked.value, bytes([3]))
-        self.assertEqual(another_tlv_unpacked.length, 1)
+        self.assertEqual(another_tlv_unpacked.value_len, 1)
 
         faulty_tlv = bytes([TlvType.FILESTORE_REQUEST, 200, 2, 3])
         self.assertRaises(ValueError, CfdpTlv.unpack, faulty_tlv)
