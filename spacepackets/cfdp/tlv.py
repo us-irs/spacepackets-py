@@ -937,6 +937,19 @@ class ReservedCfdpMessage(AbstractTlvBase):
         dir_file_name_lv = CfdpLv.unpack(self.value[6 + dir_path_lv.packet_len :])
         return listing_success, DirectoryParams(dir_path_lv, dir_file_name_lv)
 
+    def get_dir_listing_options(self) -> Optional[DirListingOptions]:
+        if (
+            not self.is_directory_operation()
+            or self.get_directory_operation_type()
+            != DirectoryOperationMessageType.CUSTOM_LISTING_PARAMETERS
+        ):
+            return None
+        if len(self.value) < 1:
+            raise ValueError(
+                f"value with length {len(self.value)} too small for dir listing options."
+            )
+        return DirListingOptions((self.value[5] >> 1) & 0b1, self.value[5] & 0b1)
+
 
 @dataclasses.dataclass
 class ProxyPutRequestParams:
@@ -1042,6 +1055,12 @@ class DirectoryParams:
         return Path(self.dir_file_name_as_str)
 
 
+@dataclasses.dataclass
+class DirListingOptions:
+    recursive: bool
+    all: bool
+
+
 class DirectoryListingRequest(ReservedCfdpMessage):
     def __init__(self, params: DirectoryParams):
         """Create a directory listing request."""
@@ -1070,13 +1089,13 @@ class DirectoryListingResponse(ReservedCfdpMessage):
 
 
 class DirectoryListingParameters(ReservedCfdpMessage):
-    def __init__(self, recursive_option: bool, all_option: bool):
+    def __init__(self, options: DirListingOptions):
         """This is a custom reserved CFDP message to address a shortcoming of the CFDP standard
         for directory listings.The all option could translate to something like the ``-a`` option
         for the ``ls`` command to also display hidden files."""
         super().__init__(
             DirectoryOperationMessageType.CUSTOM_LISTING_PARAMETERS,
-            bytes([(recursive_option << 1) | all_option]),
+            bytes([(options.recursive << 1) | options.all]),
         )
 
 

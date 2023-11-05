@@ -10,8 +10,10 @@ from spacepackets.cfdp.tlv import (
     ProxyClosureRequest,
     ProxyTransmissionMode,
     DirectoryParams,
+    DirListingOptions,
     DirectoryListingRequest,
     DirectoryListingResponse,
+    DirectoryListingParameters,
     DirectoryOperationMessageType,
     ConditionCode,
     FileStatus,
@@ -58,12 +60,16 @@ class TestReservedMsg(TestCase):
 
         self.dir_path_lv = CfdpLv.from_str("/tmp")
         self.dir_listing_name_lv = CfdpLv.from_str("/tmp/listing.txt")
-        self.dir_listing_params = DirectoryParams(
-            self.dir_path_lv, self.dir_listing_name_lv
+        self.dir_params = DirectoryParams(self.dir_path_lv, self.dir_listing_name_lv)
+        self.dir_listing_req = DirectoryListingRequest(self.dir_params)
+        self.dir_listing_response = DirectoryListingResponse(True, self.dir_params)
+        self.dir_lst_opt_recursive = True
+        self.dir_lst_opt_all = True
+        self.dir_listing_options = DirListingOptions(
+            self.dir_lst_opt_recursive, self.dir_lst_opt_all
         )
-        self.dir_listing_req = DirectoryListingRequest(self.dir_listing_params)
-        self.dir_listing_response = DirectoryListingResponse(
-            True, self.dir_listing_params
+        self.dir_listing_options_msg = DirectoryListingParameters(
+            self.dir_listing_options
         )
 
     def _generic_raw_data_verification(
@@ -250,14 +256,14 @@ class TestReservedMsg(TestCase):
 
     def test_dir_listing_req_unpack(self):
         dir_listing_req_params = self.dir_listing_req.get_dir_listing_request_params()
-        self.assertEqual(dir_listing_req_params, self.dir_listing_params)
+        self.assertEqual(dir_listing_req_params, self.dir_params)
         dir_listing_raw = self.dir_listing_req.pack()
         generic_reserved_msg = MessageToUserTlv.unpack(
             dir_listing_raw
         ).to_reserved_msg_tlv()
         self.assertEqual(
             generic_reserved_msg.get_dir_listing_request_params(),
-            self.dir_listing_params,
+            self.dir_params,
         )
 
     def test_dir_listing_response_state(self):
@@ -289,7 +295,7 @@ class TestReservedMsg(TestCase):
         dir_listing_response_params = (
             self.dir_listing_req.get_dir_listing_request_params()
         )
-        self.assertEqual(dir_listing_response_params, self.dir_listing_params)
+        self.assertEqual(dir_listing_response_params, self.dir_params)
         dir_listing_raw = self.dir_listing_response.pack()
         generic_reserved_msg = MessageToUserTlv.unpack(
             dir_listing_raw
@@ -299,4 +305,33 @@ class TestReservedMsg(TestCase):
             dir_listing_params,
         ) = generic_reserved_msg.get_dir_listing_response_params()
         self.assertTrue(success_response)
-        self.assertEqual(dir_listing_params, self.dir_listing_params)
+        self.assertEqual(dir_listing_params, self.dir_params)
+
+    def test_dir_listing_options_state(self):
+        self.assertFalse(self.dir_listing_options_msg.is_originating_transaction_id())
+        self.assertFalse(self.dir_listing_options_msg.is_cfdp_proxy_operation())
+        self.assertTrue(self.dir_listing_options_msg.is_directory_operation())
+        self.assertEqual(
+            self.dir_listing_options_msg.get_directory_operation_type(),
+            DirectoryOperationMessageType.CUSTOM_LISTING_PARAMETERS,
+        )
+
+    def test_dir_listing_options_pack(self):
+        dir_listing_req_params_raw = self.dir_listing_options_msg.pack()
+        self._generic_raw_data_verification(
+            dir_listing_req_params_raw,
+            1,
+            DirectoryOperationMessageType.CUSTOM_LISTING_PARAMETERS,
+        )
+        self.assertTrue((dir_listing_req_params_raw[7] >> 1) & 0b1)
+        self.assertTrue(dir_listing_req_params_raw[7] & 0b1)
+
+    def test_dir_listing_options_unpack(self):
+        dir_listing_options = self.dir_listing_options_msg.get_dir_listing_options()
+        self.assertEqual(dir_listing_options, self.dir_listing_options)
+        dir_listing_opt_raw = self.dir_listing_options_msg.pack()
+        generic_reserved_msg = MessageToUserTlv.unpack(
+            dir_listing_opt_raw
+        ).to_reserved_msg_tlv()
+        listing_opts_from_raw = generic_reserved_msg.get_dir_listing_options()
+        self.assertEqual(listing_opts_from_raw, self.dir_listing_options)
