@@ -27,14 +27,6 @@ Frame Submodule
    :undoc-members:
    :show-inheritance:
 
-Configuration Submodule
-------------------------
-
-.. automodule:: spacepackets.uslp.conf 
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 Definitions Submodule
 ------------------------
 
