@@ -42,3 +42,4 @@ from .tlv import (
 from .lv import CfdpLv
 from .conf import PduConfig
 from .pdu import DirectiveType, PduHolder, PduFactory, GenericPduPacket
+from .pdu.finished import FinishedParams
