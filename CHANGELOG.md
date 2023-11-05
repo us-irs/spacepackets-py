@@ -30,6 +30,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - `DirectoryListingRequest` reserved CFDP message abstraction.
 - `DirectoryListingResponse` reserved CFDP message abstraction.
 
+## Removed
+
+- USLP configuration module.
+
 # [v0.20.0] 2023-11-04
 
 ## Added
