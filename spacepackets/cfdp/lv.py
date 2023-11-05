@@ -1,4 +1,5 @@
 from __future__ import annotations
+from pathlib import Path
 
 
 class CfdpLv:
@@ -11,22 +12,26 @@ class CfdpLv:
         """
         if len(value) > 255:
             raise ValueError("Length too large for LV field")
-        self.len = len(value)
+        self.value_len = len(value)
         self.value = value
 
     @classmethod
-    def from_str(cls, string: str):
+    def from_str(cls, string: str) -> CfdpLv:
         return cls(string.encode())
+
+    @classmethod
+    def from_path(cls, path: Path) -> CfdpLv:
+        return cls.from_str(str(path))
 
     @property
     def packet_len(self):
         """Returns length of full LV packet"""
-        return self.len + 1
+        return self.value_len + 1
 
     def pack(self) -> bytearray:
         packet = bytearray()
-        packet.append(self.len)
-        if self.len > 0:
+        packet.append(self.value_len)
+        if self.value_len > 0:
             packet.extend(self.value)
         return packet
 

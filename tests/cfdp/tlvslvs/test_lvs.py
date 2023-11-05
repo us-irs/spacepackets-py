@@ -1,4 +1,5 @@
 from unittest import TestCase
+from pathlib import Path
 
 from spacepackets.cfdp.lv import CfdpLv
 from spacepackets.cfdp.tlv import CfdpTlv
@@ -9,7 +10,7 @@ class TestLvs(TestCase):
         test_values = bytes([0, 1, 2])
         test_lv = CfdpLv(value=test_values)
         self.assertEqual(test_lv.value, test_values)
-        self.assertEqual(test_lv.len, 3)
+        self.assertEqual(test_lv.value_len, 3)
         self.assertEqual(test_lv.packet_len, 4)
         test_lv_packed = test_lv.pack()
         self.assertEqual(len(test_lv_packed), 4)
@@ -18,7 +19,7 @@ class TestLvs(TestCase):
 
         CfdpLv.unpack(raw_bytes=test_lv_packed)
         self.assertEqual(test_lv.value, test_values)
-        self.assertEqual(test_lv.len, 3)
+        self.assertEqual(test_lv.value_len, 3)
         self.assertEqual(test_lv.packet_len, 4)
 
         # Too much too pack
@@ -50,3 +51,9 @@ class TestLvs(TestCase):
         raw_bytes = str_lv.pack()
         self.assertEqual(raw_bytes[0], len(string))
         self.assertEqual(raw_bytes[1:].decode(), string)
+
+    def test_from_str_and_from_path(self):
+        string = "/tmp/hello.txt"
+        str_lv = CfdpLv.from_str(string)
+        str_lv_from_path = CfdpLv.from_path(Path(string))
+        self.assertEqual(str_lv, str_lv_from_path)

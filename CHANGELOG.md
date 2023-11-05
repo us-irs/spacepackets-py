@@ -15,6 +15,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   The new enumeration is also re-exported in `spacepackets.cfdp`.
 - Moved `spacepackets.cfdp.pdu.finished.DeliveryCode` to `spacepackets.cfdp.defs.DeliveryCode`.
   The new enumeration is also re-exported in `spacepackets.cfdp`.
+- Renamed `len` field of CFDP LV to `value_len` to avoid confusion and for consistency.
+- Renamed `length` field of CFDP TLV to `value_len` to avoid confusion and for consistency.
 
 ## Added
 
@@ -23,6 +25,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - `DirectoryOperationMessageType` enumeration for CFDP.
 - `OriginatingTransactionId` reserved CFDP message abstraction.
 - `ProxyPutResponse` reserved CFDP message abstraction.
+- `ProxyTransmissionMode` reserved CFDP message abstraction.
+- `ProxyClosureRequested` reserved CFDP message abstraction.
+- `DirectoryListingRequest` reserved CFDP message abstraction.
+- `DirectoryListingResponse` reserved CFDP message abstraction.
 
 # [v0.20.0] 2023-11-04
 

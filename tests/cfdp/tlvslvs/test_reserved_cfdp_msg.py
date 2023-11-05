@@ -1,10 +1,24 @@
+import struct
 from unittest import TestCase
 
 from spacepackets.cfdp import CfdpLv, TransactionId
 from spacepackets.cfdp.tlv import (
     ProxyPutRequest,
     ProxyPutRequestParams,
+    ProxyPutResponseParams,
+    ProxyPutResponse,
+    ProxyClosureRequest,
+    ProxyTransmissionMode,
+    DirectoryParams,
+    DirectoryListingRequest,
+    DirectoryListingResponse,
+    DirectoryOperationMessageType,
+    ConditionCode,
+    FileStatus,
+    DeliveryCode,
     OriginatingTransactionId,
+    TransmissionMode,
+    MessageToUserTlv,
     ORIGINATING_TRANSACTION_ID_MSG_TYPE_ID,
     ProxyMessageType,
     TlvType,
@@ -23,6 +37,7 @@ class TestReservedMsg(TestCase):
             self.dest_entity_id, self.src_name, self.dest_name
         )
         self.proxy_put_request = ProxyPutRequest(self.proxy_put_req_params)
+
         self.originating_id_source_id = ByteFieldU16(1)
         self.originating_id_seq_num = ByteFieldU16(5)
         self.originating_transaction_id = TransactionId(
@@ -30,6 +45,25 @@ class TestReservedMsg(TestCase):
         )
         self.originating_transaction_id_msg = OriginatingTransactionId(
             self.originating_transaction_id
+        )
+
+        self.proxy_put_response_params = ProxyPutResponseParams(
+            ConditionCode.NO_ERROR, DeliveryCode.DATA_COMPLETE, FileStatus.FILE_RETAINED
+        )
+        self.proxy_put_response = ProxyPutResponse(self.proxy_put_response_params)
+        self.proxy_closure_requested = ProxyClosureRequest(True)
+        self.proxy_transmission_mode = ProxyTransmissionMode(
+            TransmissionMode.UNACKNOWLEDGED
+        )
+
+        self.dir_path_lv = CfdpLv.from_str("/tmp")
+        self.dir_listing_name_lv = CfdpLv.from_str("/tmp/listing.txt")
+        self.dir_listing_params = DirectoryParams(
+            self.dir_path_lv, self.dir_listing_name_lv
+        )
+        self.dir_listing_req = DirectoryListingRequest(self.dir_listing_params)
+        self.dir_listing_response = DirectoryListingResponse(
+            True, self.dir_listing_params
         )
 
     def _generic_raw_data_verification(
@@ -93,23 +127,176 @@ class TestReservedMsg(TestCase):
         )
         self.assertEqual((raw_originating_id[7] >> 4) & 0b111, 1)
         self.assertEqual(raw_originating_id[7] & 0b111, 1)
-        self.assertEqual(raw_originating_id[8], 0x00)
-        self.assertEqual(raw_originating_id[9], 0x01)
-        self.assertEqual(raw_originating_id[10], 0x00)
-        self.assertEqual(raw_originating_id[11], 0x05)
+        source_id = struct.unpack("!H", raw_originating_id[8:10])[0]
+        self.assertEqual(source_id, 1)
+        seq_num = struct.unpack("!H", raw_originating_id[10:12])[0]
+        self.assertEqual(seq_num, 5)
 
     def test_originating_transaction_id_unpack(self):
-        id = self.originating_transaction_id_msg.get_originating_transaction_id_param()
+        id = self.originating_transaction_id_msg.get_originating_transaction_id()
         self.assertEqual(self.originating_transaction_id, id)
+        id_raw = self.originating_transaction_id_msg.pack()
+        generic_reserved_msg = MessageToUserTlv.unpack(id_raw).to_reserved_msg_tlv()
+        self.assertIsNotNone(generic_reserved_msg)
+        id_2 = generic_reserved_msg.get_originating_transaction_id()
+        self.assertEqual(id_2, self.originating_transaction_id)
 
     def test_put_reponse_state(self):
-        # TODO: Implement
-        pass
+        self.assertFalse(self.proxy_put_response.is_originating_transaction_id())
+        self.assertTrue(self.proxy_put_response.is_cfdp_proxy_operation())
+        self.assertFalse(self.proxy_put_response.is_directory_operation())
+        self.assertEqual(
+            self.proxy_put_response.get_cfdp_proxy_message_type(),
+            ProxyMessageType.PUT_RESPONSE,
+        )
 
     def test_put_reponse_pack(self):
-        # TODO: Implement
-        pass
+        put_response_raw = self.proxy_put_response.pack()
+        self._generic_raw_data_verification(
+            put_response_raw, 1, ProxyMessageType.PUT_RESPONSE
+        )
+        self.assertEqual((put_response_raw[7] >> 4) & 0b1111, ConditionCode.NO_ERROR)
+        self.assertEqual((put_response_raw[7] >> 2) & 0b1, DeliveryCode.DATA_COMPLETE)
+        self.assertEqual(put_response_raw[7] & 0b11, FileStatus.FILE_RETAINED)
 
     def test_put_reponse_unpack(self):
-        # TODO: Implement
-        pass
+        put_reponse_params = self.proxy_put_response.get_proxy_put_response_params()
+        self.assertEqual(put_reponse_params, self.proxy_put_response_params)
+        put_response_raw = self.proxy_put_response.pack()
+        generic_reserved_msg = MessageToUserTlv.unpack(
+            put_response_raw
+        ).to_reserved_msg_tlv()
+        self.assertIsNotNone(generic_reserved_msg)
+        put_reponse_params_2 = self.proxy_put_response.get_proxy_put_response_params()
+        self.assertEqual(put_reponse_params_2, self.proxy_put_response_params)
+
+    def test_proxy_closure_requested_state(self):
+        self.assertFalse(self.proxy_closure_requested.is_originating_transaction_id())
+        self.assertFalse(self.proxy_closure_requested.is_directory_operation())
+        self.assertTrue(self.proxy_closure_requested.is_cfdp_proxy_operation())
+        self.assertEqual(
+            self.proxy_closure_requested.get_cfdp_proxy_message_type(),
+            ProxyMessageType.CLOSURE_REQUEST,
+        )
+
+    def test_proxy_closure_requested_pack(self):
+        proxy_closure_raw = self.proxy_closure_requested.pack()
+        self._generic_raw_data_verification(
+            proxy_closure_raw, 1, ProxyMessageType.CLOSURE_REQUEST
+        )
+        self.assertTrue(proxy_closure_raw[7] & 0b1)
+
+    def test_proxy_closure_requested_unpack(self):
+        closure_requested = self.proxy_closure_requested.get_proxy_closure_requested()
+        self.assertTrue(closure_requested)
+        proxy_closure_raw = self.proxy_closure_requested.pack()
+        generic_reserved_msg = MessageToUserTlv.unpack(
+            proxy_closure_raw
+        ).to_reserved_msg_tlv()
+        self.assertTrue(generic_reserved_msg.get_proxy_closure_requested())
+
+    def test_proxy_transmission_mode_state(self):
+        self.assertFalse(self.proxy_transmission_mode.is_originating_transaction_id())
+        self.assertFalse(self.proxy_transmission_mode.is_directory_operation())
+        self.assertTrue(self.proxy_transmission_mode.is_cfdp_proxy_operation())
+        self.assertEqual(
+            self.proxy_transmission_mode.get_cfdp_proxy_message_type(),
+            ProxyMessageType.TRANSMISSION_MODE,
+        )
+
+    def test_proxy_transmission_mode_pack(self):
+        proxy_transmission_mode_raw = self.proxy_transmission_mode.pack()
+        self._generic_raw_data_verification(
+            proxy_transmission_mode_raw, 1, ProxyMessageType.TRANSMISSION_MODE
+        )
+        self.assertEqual(
+            proxy_transmission_mode_raw[7] & 0b1, TransmissionMode.UNACKNOWLEDGED
+        )
+
+    def test_proxy_transmission_mode_unpack(self):
+        transmission_mode = self.proxy_transmission_mode.get_proxy_transmission_mode()
+        self.assertEqual(transmission_mode, TransmissionMode.UNACKNOWLEDGED)
+        transmission_mode_raw = self.proxy_transmission_mode.pack()
+        generic_reserved_msg = MessageToUserTlv.unpack(
+            transmission_mode_raw
+        ).to_reserved_msg_tlv()
+        self.assertEqual(
+            generic_reserved_msg.get_proxy_transmission_mode(),
+            TransmissionMode.UNACKNOWLEDGED,
+        )
+
+    def test_dir_listing_req_state(self):
+        self.assertFalse(self.dir_listing_req.is_originating_transaction_id())
+        self.assertFalse(self.dir_listing_req.is_cfdp_proxy_operation())
+        self.assertTrue(self.dir_listing_req.is_directory_operation())
+        self.assertEqual(
+            self.dir_listing_req.get_directory_operation_type(),
+            DirectoryOperationMessageType.LISTING_REQUEST,
+        )
+
+    def test_dir_listing_req_pack(self):
+        dir_listing_req_raw = self.dir_listing_req.pack()
+        self._generic_raw_data_verification(
+            dir_listing_req_raw,
+            self.dir_path_lv.packet_len + self.dir_listing_name_lv.packet_len,
+            DirectoryOperationMessageType.LISTING_REQUEST,
+        )
+        dir_path_lv = CfdpLv.unpack(dir_listing_req_raw[7:])
+        dir_listing_name_lv = CfdpLv.unpack(
+            dir_listing_req_raw[7 + dir_path_lv.packet_len :]
+        )
+        self.assertEqual(dir_path_lv, self.dir_path_lv)
+        self.assertEqual(dir_listing_name_lv, self.dir_listing_name_lv)
+
+    def test_dir_listing_req_unpack(self):
+        dir_listing_req_params = self.dir_listing_req.get_dir_listing_request_params()
+        self.assertEqual(dir_listing_req_params, self.dir_listing_params)
+        dir_listing_raw = self.dir_listing_req.pack()
+        generic_reserved_msg = MessageToUserTlv.unpack(
+            dir_listing_raw
+        ).to_reserved_msg_tlv()
+        self.assertEqual(
+            generic_reserved_msg.get_dir_listing_request_params(),
+            self.dir_listing_params,
+        )
+
+    def test_dir_listing_response_state(self):
+        self.assertFalse(self.dir_listing_response.is_originating_transaction_id())
+        self.assertFalse(self.dir_listing_response.is_cfdp_proxy_operation())
+        self.assertTrue(self.dir_listing_response.is_directory_operation())
+        self.assertEqual(
+            self.dir_listing_response.get_directory_operation_type(),
+            DirectoryOperationMessageType.LISTING_RESPONSE,
+        )
+
+    def test_dir_listing_response_pack(self):
+        dir_listing_response_raw = self.dir_listing_response.pack()
+        self._generic_raw_data_verification(
+            dir_listing_response_raw,
+            1 + self.dir_path_lv.packet_len + self.dir_listing_name_lv.packet_len,
+            DirectoryOperationMessageType.LISTING_RESPONSE,
+        )
+        success_response = (dir_listing_response_raw[7] >> 7) & 0b1
+        dir_path_lv = CfdpLv.unpack(dir_listing_response_raw[8:])
+        dir_listing_name_lv = CfdpLv.unpack(
+            dir_listing_response_raw[8 + dir_path_lv.packet_len :]
+        )
+        self.assertTrue(success_response)
+        self.assertEqual(self.dir_path_lv, dir_path_lv)
+        self.assertEqual(self.dir_listing_name_lv, dir_listing_name_lv)
+
+    def test_dir_listing_response_unpack(self):
+        dir_listing_response_params = (
+            self.dir_listing_req.get_dir_listing_request_params()
+        )
+        self.assertEqual(dir_listing_response_params, self.dir_listing_params)
+        dir_listing_raw = self.dir_listing_response.pack()
+        generic_reserved_msg = MessageToUserTlv.unpack(
+            dir_listing_raw
+        ).to_reserved_msg_tlv()
+        (
+            success_response,
+            dir_listing_params,
+        ) = generic_reserved_msg.get_dir_listing_response_params()
+        self.assertTrue(success_response)
+        self.assertEqual(dir_listing_params, self.dir_listing_params)
