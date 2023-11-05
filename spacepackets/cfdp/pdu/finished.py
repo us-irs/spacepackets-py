@@ -4,7 +4,7 @@ import struct
 from dataclasses import dataclass, field
 from typing import List, Optional
 
-from spacepackets.cfdp.pdu import PduHeader
+from spacepackets.cfdp.pdu.header import PduHeader
 from spacepackets.cfdp.pdu.file_directive import (
     FileDirectivePduBase,
     DirectiveType,
