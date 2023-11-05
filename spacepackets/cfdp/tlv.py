@@ -1081,7 +1081,7 @@ class DirectoryListingResponse(ReservedCfdpMessage):
 
 
 class DirectoryListingParameters(ReservedCfdpMessage):
-    def __init__(recursive_option: bool, all_option: bool):
+    def __init__(self, recursive_option: bool, all_option: bool):
         """This is a custom reserved CFDP message to address a shortcoming of the CFDP standard
         for directory listings.The all option could translate to something like the ``-a`` option
         for the ``ls`` command to also display hidden files."""
