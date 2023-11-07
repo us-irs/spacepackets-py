@@ -1,6 +1,7 @@
 from unittest import TestCase
 
-from spacepackets.cfdp import LargeFileFlag, EntityIdTlv, NULL_CHECKSUM_U32, CrcFlag
+from spacepackets.cfdp import LargeFileFlag, NULL_CHECKSUM_U32, CrcFlag
+from spacepackets.cfdp.tlv import EntityIdTlv
 from spacepackets.cfdp.conf import PduConfig
 from spacepackets.cfdp.defs import Direction
 from spacepackets.cfdp.pdu import EofPdu, PduFactory

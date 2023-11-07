@@ -3,7 +3,7 @@ import struct
 import copy
 from typing import Optional
 
-from spacepackets.cfdp.pdu import PduHeader
+from spacepackets.cfdp.pdu.header import PduHeader
 from spacepackets.cfdp.pdu.file_directive import (
     FileDirectivePduBase,
     DirectiveType,
@@ -11,7 +11,7 @@ from spacepackets.cfdp.pdu.file_directive import (
 )
 from spacepackets.cfdp.defs import ConditionCode, CrcFlag, Direction
 from spacepackets.cfdp.conf import PduConfig
-from spacepackets.cfdp.tlv import EntityIdTlv
+from spacepackets.cfdp.tlv.tlv import EntityIdTlv
 from spacepackets.crc import CRC16_CCITT_FUNC
 from spacepackets.exceptions import BytesTooShortError
 

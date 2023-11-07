@@ -3,7 +3,7 @@ import enum
 import copy
 import struct
 
-from spacepackets.cfdp.pdu import PduHeader
+from spacepackets.cfdp.pdu.header import PduHeader
 from spacepackets.cfdp.pdu.file_directive import (
     FileDirectivePduBase,
     DirectiveType,
