@@ -283,6 +283,22 @@ class ProxyPutRequestParams:
     source_file_name: CfdpLv
     dest_file_name: CfdpLv
 
+    @property
+    def source_file_as_str(self) -> str:
+        return self.source_file_name.value.decode()
+
+    @property
+    def source_file_as_path(self) -> str:
+        return Path(self.source_file_as_str)
+
+    @property
+    def dest_file_as_str(self) -> str:
+        return self.dest_file_name.value.decode()
+
+    @property
+    def dest_file_as_path(self) -> str:
+        return Path(self.dest_file_as_str)
+
 
 class ProxyPutRequest(ReservedCfdpMessage):
     def __init__(self, params: ProxyPutRequestParams):
