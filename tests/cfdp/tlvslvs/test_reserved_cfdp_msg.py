@@ -1,4 +1,5 @@
 import struct
+from pathlib import Path
 from unittest import TestCase
 
 from spacepackets.cfdp import (
@@ -385,3 +386,16 @@ class TestReservedMsg(TestCase):
         self.assertEqual(
             self.proxy_put_response_params.file_status, finished_params.file_status
         )
+
+    def test_proxy_put_req_param_api(self):
+        src_as_str = "/tmp/test.txt"
+        dest_as_str = "/tmp/test2.txt"
+        proxy_put_req_param_api = ProxyPutRequestParams(
+            ByteFieldU16(5),
+            CfdpLv.from_str(src_as_str),
+            CfdpLv.from_str(dest_as_str),
+        )
+        self.assertEqual(proxy_put_req_param_api.source_file_as_str, src_as_str)
+        self.assertEqual(proxy_put_req_param_api.dest_file_as_str, dest_as_str)
+        self.assertEqual(proxy_put_req_param_api.source_file_as_path, Path(src_as_str))
+        self.assertEqual(proxy_put_req_param_api.dest_file_as_path, Path(dest_as_str))
