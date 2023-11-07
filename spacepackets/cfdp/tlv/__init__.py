@@ -29,6 +29,7 @@ from .base import TlvList
 from .holder import TlvHolder
 from .msg_to_user import (
     MessageToUserTlv,
+    ReservedCfdpMessage,
     ProxyPutRequestParams,
     ProxyPutRequest,
     ProxyCancelRequest,
