@@ -1,5 +1,5 @@
-Type-Length-Value (TLV) Subpackage
-====================================
+CFDP Type-Length-Value (TLV) Subpackage
+========================================
 
 .. automodule:: spacepackets.cfdp.tlv
    :members:

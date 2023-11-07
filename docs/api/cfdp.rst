@@ -17,7 +17,7 @@ PDU Submodule
 Type-Length-Value (TLV) Submodule
 -------------------------------------
 
-:ref:`api/cfdp_tlv:Type-Length-Value (TLV) Subpackage`
+:ref:`api/cfdp_tlv:CFDP Type-Length-Value (TLV) Subpackage`
 
 Configuration Submodule
 -------------------------------------

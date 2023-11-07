@@ -4,7 +4,7 @@ This also includes the message to user type TLV and the reserved CFDP message ab
 which are a subtype of the message to user TLV.
 
 Please note that most of the submodules of the TLV submodule are re-exported, so usually you
-can import everything from :py:module:`spacepackets.cfdp.tlv`"""
+can import everything from :py:mod:`spacepackets.cfdp.tlv`"""
 from .tlv import (
     CfdpTlv,
     EntityIdTlv,
