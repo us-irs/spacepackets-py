@@ -1,7 +1,15 @@
 import struct
 from unittest import TestCase
 
-from spacepackets.cfdp import CfdpLv, TransactionId
+from spacepackets.cfdp import (
+    CfdpLv,
+    TransactionId,
+    ConditionCode,
+    FileStatus,
+    DeliveryCode,
+    FinishedParams,
+    TransmissionMode,
+)
 from spacepackets.cfdp.tlv import (
     ProxyPutRequest,
     ProxyPutRequestParams,
@@ -16,11 +24,7 @@ from spacepackets.cfdp.tlv import (
     DirectoryListingParameters,
     DirectoryOperationMessageType,
     ProxyCancelRequest,
-    ConditionCode,
-    FileStatus,
-    DeliveryCode,
     OriginatingTransactionId,
-    TransmissionMode,
     MessageToUserTlv,
     ORIGINATING_TRANSACTION_ID_MSG_TYPE_ID,
     ProxyMessageType,
@@ -362,4 +366,22 @@ class TestReservedMsg(TestCase):
         self.assertEqual(
             generic_reserved_msg.get_cfdp_proxy_message_type(),
             ProxyMessageType.PUT_CANCEL,
+        )
+
+    def test_proxy_put_response_params_from_finished_params(self):
+        finished_params = FinishedParams(
+            ConditionCode.NO_ERROR, DeliveryCode.DATA_COMPLETE, FileStatus.FILE_RETAINED
+        )
+        self.proxy_put_response_params = ProxyPutResponseParams.from_finished_params(
+            finished_params
+        )
+        self.assertEqual(
+            self.proxy_put_response_params.condition_code,
+            finished_params.condition_code,
+        )
+        self.assertEqual(
+            self.proxy_put_response_params.delivery_code, finished_params.delivery_code
+        )
+        self.assertEqual(
+            self.proxy_put_response_params.file_status, finished_params.file_status
         )
