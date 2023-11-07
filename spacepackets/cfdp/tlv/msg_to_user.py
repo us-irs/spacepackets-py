@@ -208,9 +208,9 @@ class ReservedCfdpMessage(AbstractTlvBase):
             or self.get_cfdp_proxy_message_type() != ProxyMessageType.PUT_RESPONSE
         ):
             return None
-        condition_code = (self.value[5] >> 4) & 0b1111
-        delivery_code = (self.value[5] >> 2) & 0b1
-        file_status = self.value[5] & 0b11
+        condition_code = ConditionCode((self.value[5] >> 4) & 0b1111)
+        delivery_code = DeliveryCode((self.value[5] >> 2) & 0b1)
+        file_status = FileStatus(self.value[5] & 0b11)
         return ProxyPutResponseParams(condition_code, delivery_code, file_status)
 
     def get_proxy_closure_requested(self) -> Optional[bool]:
