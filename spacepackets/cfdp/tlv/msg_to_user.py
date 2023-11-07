@@ -1,47 +1,31 @@
+"""This submodule contains the Message To User TLV abstractions. It also contains
+the Reserved CFDP Message abstractions which are a subtype of the Message To User TLV.
+"""
 from __future__ import annotations
+
+import dataclasses
+from pathlib import Path
 from typing import Optional, Tuple
 
-from spacepackets.cfdp.exceptions import TlvTypeMissmatch
-from spacepackets.cfdp.tlv.base import AbstractTlvBase
-from spacepackets.cfdp.tlv.defs import TlvType
-from spacepackets.cfdp.tlv.tlv import CfdpTlv
-
-from pathlib import Path
-import dataclasses
-import enum
 from spacepackets.cfdp.defs import (
     TransactionId,
     TransmissionMode,
+    ConditionCode,
+    DeliveryCode,
+    FileStatus,
 )
+from spacepackets.cfdp.exceptions import TlvTypeMissmatch
 from spacepackets.cfdp.lv import CfdpLv
-from spacepackets.util import UnsignedByteField
-from spacepackets.cfdp.defs import ConditionCode, DeliveryCode, FileStatus
 from spacepackets.cfdp.pdu.finished import FinishedParams
-
-
-class ProxyMessageType(enum.IntEnum):
-    PUT_REQUEST = 0x00
-    MSG_TO_USER = 0x01
-    FS_REQUEST = 0x02
-    FAULT_HANDLER_OVERRIDE = 0x03
-    TRANSMISSION_MODE = 0x04
-    FLOW_LABEL = 0x05
-    SEGMENTATION_CTRL = 0x06
-    PUT_RESPONSE = 0x07
-    FS_RESPONSE = 0x08
-    PUT_CANCEL = 0x09
-    CLOSURE_REQUEST = 0x0B
-
-
-ORIGINATING_TRANSACTION_ID_MSG_TYPE_ID = 0x0A
-
-
-class DirectoryOperationMessageType(enum.IntEnum):
-    LISTING_REQUEST = 0x10
-    LISTING_RESPONSE = 0x11
-    CUSTOM_LISTING_PARAMETERS = 0x15
-    """Custom message type not specified by the standard. Used to supply parameters like the
-    recursive and the all option to the directory listing."""
+from spacepackets.cfdp.tlv.base import AbstractTlvBase
+from spacepackets.cfdp.tlv.defs import (
+    ORIGINATING_TRANSACTION_ID_MSG_TYPE_ID,
+    DirectoryOperationMessageType,
+    ProxyMessageType,
+    TlvType,
+)
+from spacepackets.cfdp.tlv.tlv import CfdpTlv
+from spacepackets.util import UnsignedByteField
 
 
 class MessageToUserTlv(AbstractTlvBase):

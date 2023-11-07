@@ -26,5 +26,6 @@ This package also uses the :py:mod:`logging` package to emit warnings.
    api/ecss_tm
    api/cfdp
    api/cfdp_pdu
+   api/cfdp_tlv
    api/uslp
    api/util

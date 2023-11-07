@@ -86,3 +86,28 @@ class FilestoreResponseStatusCode(enum.IntEnum):
     DENY_DIR_DEL_NOT_ALLOWED = FilestoreActionCode.DENY_DIR_SNN << 4 | 0b0010
     DENY_DIR_DEL_NOT_PERFORMED = FilestoreActionCode.DENY_DIR_SNN << 4 | NOT_PERFORMED
     INVALID = -1
+
+
+class ProxyMessageType(enum.IntEnum):
+    PUT_REQUEST = 0x00
+    MSG_TO_USER = 0x01
+    FS_REQUEST = 0x02
+    FAULT_HANDLER_OVERRIDE = 0x03
+    TRANSMISSION_MODE = 0x04
+    FLOW_LABEL = 0x05
+    SEGMENTATION_CTRL = 0x06
+    PUT_RESPONSE = 0x07
+    FS_RESPONSE = 0x08
+    PUT_CANCEL = 0x09
+    CLOSURE_REQUEST = 0x0B
+
+
+ORIGINATING_TRANSACTION_ID_MSG_TYPE_ID = 0x0A
+
+
+class DirectoryOperationMessageType(enum.IntEnum):
+    LISTING_REQUEST = 0x10
+    LISTING_RESPONSE = 0x11
+    CUSTOM_LISTING_PARAMETERS = 0x15
+    """Custom message type not specified by the standard. Used to supply parameters like the
+    recursive and the all option to the directory listing."""
