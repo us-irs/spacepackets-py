@@ -4,19 +4,19 @@ from typing import Optional, Type, Union, cast, Any
 
 import deprecation
 
-from spacepackets.cfdp import PduType
+from spacepackets.cfdp.defs import PduType
 from spacepackets.cfdp.pdu import (
     AbstractFileDirectiveBase,
-    AckPdu,
     DirectiveType,
-    EofPdu,
-    FinishedPdu,
-    KeepAlivePdu,
-    MetadataPdu,
-    NakPdu,
-    PromptPdu,
 )
+from spacepackets.cfdp.pdu.ack import AckPdu
+from spacepackets.cfdp.pdu.eof import EofPdu
+from spacepackets.cfdp.pdu.keep_alive import KeepAlivePdu
+from spacepackets.cfdp.pdu.finished import FinishedPdu
+from spacepackets.cfdp.pdu.metadata import MetadataPdu
 from spacepackets.cfdp.pdu.file_data import FileDataPdu
+from spacepackets.cfdp.pdu.nak import NakPdu
+from spacepackets.cfdp.pdu.prompt import PromptPdu
 from spacepackets.cfdp.pdu.header import AbstractPduBase
 from spacepackets.version import get_version
 
