@@ -16,7 +16,7 @@ from spacepackets.cfdp.defs import (
 from spacepackets.cfdp.lv import CfdpLv
 from spacepackets.util import UnsignedByteField
 from spacepackets.cfdp.defs import ConditionCode, DeliveryCode, FileStatus
-from spacepackets.cfdp.pdu.finished_params import FinishedParams
+from spacepackets.cfdp.pdu.finished import FinishedParams
 
 
 class ProxyMessageType(enum.IntEnum):

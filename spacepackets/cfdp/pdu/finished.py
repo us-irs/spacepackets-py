@@ -1,8 +1,12 @@
 from __future__ import annotations
 import copy
 import struct
+from typing import Optional, List
+from dataclasses import dataclass, field
+from spacepackets.cfdp.defs import DeliveryCode, FileStatus, ConditionCode
+from spacepackets.cfdp.tlv.tlv import FileStoreResponseTlv
+from spacepackets.cfdp.tlv.entity_id_tlv import EntityIdTlv
 
-from typing import List, Optional
 
 from spacepackets.cfdp.pdu.header import PduHeader
 from spacepackets.cfdp.pdu.file_directive import (
@@ -11,19 +15,40 @@ from spacepackets.cfdp.pdu.file_directive import (
     AbstractFileDirectiveBase,
 )
 from spacepackets.cfdp.defs import (
-    ConditionCode,
     CrcFlag,
     Direction,
-    DeliveryCode,
-    FileStatus,
 )
 from spacepackets.cfdp.conf import PduConfig
 from spacepackets.cfdp.tlv.defs import TlvType
-from spacepackets.cfdp.tlv.entity_id_tlv import EntityIdTlv
-from spacepackets.cfdp.tlv.tlv import FileStoreResponseTlv
 from spacepackets.crc import CRC16_CCITT_FUNC
 from spacepackets.exceptions import BytesTooShortError
-from spacepackets.cfdp.pdu.finished_params import FinishedParams
+
+
+@dataclass
+class FinishedParams:
+    delivery_code: DeliveryCode
+    file_status: FileStatus
+    condition_code: ConditionCode
+    file_store_responses: List[FileStoreResponseTlv] = field(default_factory=lambda: [])
+    fault_location: Optional[EntityIdTlv] = None
+
+    @classmethod
+    def empty(cls) -> FinishedParams:
+        return cls(
+            delivery_code=DeliveryCode.DATA_COMPLETE,
+            file_status=FileStatus.DISCARDED_DELIBERATELY,
+            condition_code=ConditionCode.NO_ERROR,
+        )
+
+    @classmethod
+    def success_params(cls) -> FinishedParams:
+        """Generate the finished parameters to generate a full success :py:class:`FinishedPdu`
+        PDU."""
+        return cls(
+            delivery_code=DeliveryCode.DATA_COMPLETE,
+            file_status=FileStatus.FILE_RETAINED,
+            condition_code=ConditionCode.NO_ERROR,
+        )
 
 
 class FinishedPdu(AbstractFileDirectiveBase):

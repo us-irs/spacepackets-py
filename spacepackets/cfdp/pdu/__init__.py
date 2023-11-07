@@ -10,11 +10,10 @@ from .file_directive import (
     DirectiveType,
     AbstractFileDirectiveBase,
 )
-from .finished import FinishedPdu
+from .finished import FinishedPdu, FinishedParams
 from .keep_alive import KeepAlivePdu
 from .metadata import MetadataPdu, MetadataParams
 from .nak import NakPdu
 from .prompt import PromptPdu
 from .helper import PduHolder, PduFactory, GenericPduPacket
 from .file_data import FileDataPdu
-from .finished_params import FinishedParams

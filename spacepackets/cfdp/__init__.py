@@ -40,6 +40,5 @@ from .tlv import (
 )
 from .lv import CfdpLv
 from .conf import PduConfig
-from .pdu import DirectiveType, PduHolder, PduFactory, GenericPduPacket
-from .pdu.finished_params import FinishedParams
+from .pdu import DirectiveType, PduHolder, PduFactory, GenericPduPacket, FinishedParams
 from .exceptions import TlvTypeMissmatch, InvalidCrc
