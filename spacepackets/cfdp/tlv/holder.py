@@ -2,13 +2,13 @@ from typing import Optional, Type, Any, cast
 from spacepackets.cfdp.tlv.base import TlvType
 from spacepackets.cfdp.tlv.tlv import (
     CfdpTlv,
+    EntityIdTlv,
     AbstractTlvBase,
     FileStoreRequestTlv,
     FileStoreResponseTlv,
     FlowLabelTlv,
     FaultHandlerOverrideTlv,
 )
-from spacepackets.cfdp.tlv.entity_id_tlv import EntityIdTlv
 from spacepackets.cfdp.tlv.msg_to_user import MessageToUserTlv
 
 

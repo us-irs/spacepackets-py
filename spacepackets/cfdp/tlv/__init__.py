@@ -1,5 +1,6 @@
 from .tlv import (
     CfdpTlv,
+    EntityIdTlv,
     FileStoreRequestTlv,
     FileStoreResponseTlv,
     FlowLabelTlv,
@@ -11,7 +12,6 @@ from .tlv import (
 )
 from .defs import TlvType, FilestoreActionCode, FilestoreResponseStatusCode
 from .base import TlvList
-from .entity_id_tlv import EntityIdTlv
 from .holder import TlvHolder
 from .msg_to_user import (
     MessageToUserTlv,
