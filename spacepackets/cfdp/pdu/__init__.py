@@ -7,7 +7,7 @@ from spacepackets.cfdp.defs import (
 
 from .ack import AckPdu, TransactionStatus
 from .eof import EofPdu
-from .file_data import FileDataPdu
+from .file_data import FileDataPdu, FileDataParams
 from .file_directive import (
     AbstractFileDirectiveBase,
     DirectiveType,
