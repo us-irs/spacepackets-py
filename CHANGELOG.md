@@ -16,6 +16,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Changed
 
+- Reordered argument order for `FinishedParams` to be in line with the CFDP standard. This might
+  break code not using keyword arguments.
 - Renamed `FileDeliveryStatus` to `FileStatus` to be closer to the CFDP name.
 - Moved `spacepackets.cfdp.pdu.finished.FileDeliveryStatus` to `spacepackets.cfdp.defs.FileStatus`.
   The new enumeration is also re-exported in `spacepackets.cfdp`.

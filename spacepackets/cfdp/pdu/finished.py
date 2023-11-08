@@ -27,9 +27,9 @@ from spacepackets.exceptions import BytesTooShortError
 
 @dataclass
 class FinishedParams:
+    condition_code: ConditionCode
     delivery_code: DeliveryCode
     file_status: FileStatus
-    condition_code: ConditionCode
     file_store_responses: List[FileStoreResponseTlv] = field(default_factory=lambda: [])
     fault_location: Optional[EntityIdTlv] = None
 
