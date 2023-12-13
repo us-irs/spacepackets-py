@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 # [unreleased]
 
+## Fixed
+
+- Metadata PDU typing correction.
+
 # [v0.21.0] 2023-11-10
 
 ## Fixed

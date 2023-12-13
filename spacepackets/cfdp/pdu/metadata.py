@@ -3,7 +3,7 @@ from __future__ import annotations
 import dataclasses
 import struct
 import copy
-from typing import Optional
+from typing import Optional, List
 
 from spacepackets.cfdp.pdu import PduHeader
 from spacepackets.cfdp.pdu.file_directive import (
@@ -12,7 +12,7 @@ from spacepackets.cfdp.pdu.file_directive import (
     AbstractFileDirectiveBase,
 )
 from spacepackets.cfdp.conf import PduConfig, LargeFileFlag
-from spacepackets.cfdp.tlv import CfdpTlv, TlvList
+from spacepackets.cfdp.tlv import CfdpTlv
 from spacepackets.cfdp.lv import CfdpLv
 from spacepackets.cfdp.defs import ChecksumType, CrcFlag, Direction
 from spacepackets.crc import CRC16_CCITT_FUNC
@@ -53,7 +53,7 @@ class MetadataPdu(AbstractFileDirectiveBase):
         self,
         pdu_conf: PduConfig,
         params: MetadataParams,
-        options: Optional[TlvList] = None,
+        options: Optional[List[CfdpTlv]] = None,
     ):
         pdu_conf = copy.copy(pdu_conf)
         self.params = params
@@ -109,11 +109,11 @@ class MetadataPdu(AbstractFileDirectiveBase):
         )
 
     @property
-    def options(self) -> Optional[TlvList]:
+    def options(self) -> Optional[List[CfdpTlv]]:
         return self._options
 
     @options.setter
-    def options(self, options: Optional[TlvList]):
+    def options(self, options: Optional[List[CfdpTlv]]):
         self._options = options
         self._calculate_directive_field_len()
 
