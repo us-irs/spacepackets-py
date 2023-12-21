@@ -127,6 +127,10 @@ class AbstractSpacePacket(ABC):
     def seq_count(self) -> int:
         pass
 
+    @abstractmethod
+    def pack(self) -> bytearray:
+        pass
+
 
 class SpacePacketHeader(AbstractSpacePacket):
     """This class encapsulates the space packet header.
