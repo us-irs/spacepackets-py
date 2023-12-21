@@ -1,4 +1,5 @@
 from __future__ import annotations
+from typing import Tuple
 
 import abc
 import enum
@@ -198,7 +199,7 @@ class FileDirectivePduBase(AbstractFileDirectiveBase):
         ):
             raise ValueError(f"File size {file_size} larger than 32 bit field")
 
-    def parse_fss_field(self, raw_packet: bytes, current_idx: int) -> (int, int):
+    def parse_fss_field(self, raw_packet: bytes, current_idx: int) -> Tuple[int, int]:
         """Parse the FSS field, which has different size depending on the large file flag being
         set or not. Returns the current index incremented and the parsed file size.
 
