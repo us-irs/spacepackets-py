@@ -17,6 +17,7 @@ from spacepackets.ccsds.spacepacket import (
     PacketType,
     SPACE_PACKET_HEADER_SIZE,
     SpacePacket,
+    AbstractSpacePacket,
     PacketId,
     PacketSeqCtrl,
     SequenceFlags,
@@ -104,7 +105,7 @@ class InvalidTcCrc16(Exception):
         self.tc = tc
 
 
-class PusTelecommand:
+class PusTelecommand(AbstractSpacePacket):
     """Class representation of a PUS telecommand. Can be converted to the raw byte representation
     but also unpacked from a raw byte stream. Only PUS C telecommands are supported.
 
