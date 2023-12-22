@@ -8,9 +8,21 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 # [unreleased]
 
+## Changed
+
+- Extended `AbstractSpacePacket` with the following abstract properties:
+  - `ccsds_version`
+  - `packet_id`
+  - `packet_seq_control`
+  - The following properties were added but use the abstract properties:
+    - `packet_type`
+    - `sec_header_flag`
+    - `seq_flags`
+
 ## Fixed
 
 - Metadata PDU typing correction.
+- More robust `__eq__` implementations which check the type compared against.
 
 # [v0.21.0] 2023-11-10
 

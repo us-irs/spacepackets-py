@@ -114,7 +114,7 @@ class Service1TmTest(TestCase):
             Service1Tm(
                 subservice=subservice,
                 verif_params=VerificationParams(
-                    req_id=RequestId(pus_tc.packet_id, pus_tc.packet_seq_ctrl),
+                    req_id=RequestId(pus_tc.packet_id, pus_tc.packet_seq_control),
                     step_id=step_id,
                 ),
                 time_provider=CdsShortTimestamp.empty(),
@@ -145,7 +145,7 @@ class Service1TmTest(TestCase):
     ):
         self.assertEqual(srv_1_tm.pus_tm.subservice, subservice)
         self.assertEqual(srv_1_tm.tc_req_id.tc_packet_id, pus_tc.packet_id)
-        self.assertEqual(srv_1_tm.tc_req_id.tc_psc, pus_tc.packet_seq_ctrl)
+        self.assertEqual(srv_1_tm.tc_req_id.tc_psc, pus_tc.packet_seq_control)
         srv_1_tm_raw = srv_1_tm.pack()
         srv_1_tm_unpacked = Service1Tm.unpack(
             srv_1_tm_raw, UnpackParams(self.time_stamp_provider)
@@ -154,7 +154,7 @@ class Service1TmTest(TestCase):
             srv_1_tm_unpacked.tc_req_id.tc_packet_id.raw(), pus_tc.packet_id.raw()
         )
         self.assertEqual(
-            srv_1_tm_unpacked.tc_req_id.tc_psc.raw(), pus_tc.packet_seq_ctrl.raw()
+            srv_1_tm_unpacked.tc_req_id.tc_psc.raw(), pus_tc.packet_seq_control.raw()
         )
         if step_id is not None and subservice == Subservice.TM_STEP_SUCCESS:
             self.assertEqual(srv_1_tm_unpacked.step_id, step_id)
@@ -191,7 +191,7 @@ class Service1TmTest(TestCase):
             Service1Tm(
                 subservice=subservice,
                 verif_params=VerificationParams(
-                    req_id=RequestId(pus_tc.packet_id, pus_tc.packet_seq_ctrl),
+                    req_id=RequestId(pus_tc.packet_id, pus_tc.packet_seq_control),
                     failure_notice=failure_notice,
                     step_id=step_id,
                 ),
@@ -220,7 +220,7 @@ class Service1TmTest(TestCase):
     ):
         self.assertEqual(srv_1_tm.pus_tm.subservice, subservice)
         self.assertEqual(srv_1_tm.tc_req_id.tc_packet_id, pus_tc.packet_id)
-        self.assertEqual(srv_1_tm.tc_req_id.tc_psc, pus_tc.packet_seq_ctrl)
+        self.assertEqual(srv_1_tm.tc_req_id.tc_psc, pus_tc.packet_seq_control)
         srv_1_tm_raw = srv_1_tm.pack()
         unpack_params = UnpackParams(self.time_stamp_provider)
         if failure_notice is not None:
@@ -233,7 +233,7 @@ class Service1TmTest(TestCase):
             srv_1_tm_unpacked.tc_req_id.tc_packet_id.raw(), pus_tc.packet_id.raw()
         )
         self.assertEqual(
-            srv_1_tm_unpacked.tc_req_id.tc_psc.raw(), pus_tc.packet_seq_ctrl.raw()
+            srv_1_tm_unpacked.tc_req_id.tc_psc.raw(), pus_tc.packet_seq_control.raw()
         )
         if failure_notice is not None:
             self.assertEqual(

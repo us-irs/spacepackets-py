@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from typing import Optional
 
 from spacepackets.ccsds import SpacePacketHeader
+from spacepackets.ccsds.spacepacket import PacketId, PacketSeqCtrl
 from spacepackets.ccsds.time import CcsdsTimeProvider
 from spacepackets.ecss import PusTelecommand
 from spacepackets.ecss.conf import FETCH_GLOBAL_APID
@@ -184,6 +185,18 @@ class Service1Tm(AbstractPusTm):
     @property
     def time_provider(self) -> Optional[CcsdsTimeProvider]:
         return self.pus_tm.time_provider
+
+    @property
+    def ccsds_version(self) -> int:
+        return self.pus_tm.space_packet_header.ccsds_version
+
+    @property
+    def packet_seq_control(self) -> PacketSeqCtrl:
+        return self.pus_tm.space_packet_header.packet_seq_control
+
+    @property
+    def packet_id(self) -> PacketId:
+        return self.pus_tm.space_packet_header.packet_id
 
     @property
     def sp_header(self) -> SpacePacketHeader:

@@ -3,6 +3,7 @@ import enum
 from typing import Optional
 
 from spacepackets import SpacePacketHeader
+from spacepackets.ccsds.spacepacket import PacketId, PacketSeqCtrl
 from spacepackets.ccsds.time import CcsdsTimeProvider
 from spacepackets.ecss.conf import FETCH_GLOBAL_APID
 from spacepackets.ecss.defs import PusService
@@ -41,6 +42,18 @@ class Service17Tm(AbstractPusTm):
     @property
     def sp_header(self) -> SpacePacketHeader:
         return self.pus_tm.space_packet_header
+
+    @property
+    def ccsds_version(self) -> int:
+        return self.pus_tm.ccsds_version
+
+    @property
+    def packet_id(self) -> PacketId:
+        return self.pus_tm.packet_id
+
+    @property
+    def packet_seq_control(self) -> PacketSeqCtrl:
+        return self.pus_tm.packet_seq_control
 
     @property
     def service(self) -> int:

@@ -3,6 +3,7 @@ from unittest import TestCase
 import crcmod
 
 from spacepackets import SpacePacketHeader, PacketType
+from spacepackets.ccsds.spacepacket import SequenceFlags
 from spacepackets.ecss import PusTelecommand, PusTcDataFieldHeader, check_pus_crc
 from spacepackets.ecss.conf import get_default_tc_apid, set_default_tc_apid, PusVersion
 from spacepackets.ecss.tc import generate_crc, generate_packet_crc, InvalidTcCrc16
@@ -23,12 +24,17 @@ class TestTelecommand(TestCase):
         # 6 bytes CCSDS header, 5 bytes secondary header, 2 bytes CRC
         self.assertEqual(self.ping_tc.packet_len, 13)
         self.assertTrue(isinstance(self.ping_tc.crc16, bytes))
+        assert self.ping_tc.crc16 is not None
         self.assertTrue(len(self.ping_tc.crc16), 2)
         # The data length field is the full packet length minus the primary header minus 1
         self.assertEqual(self.ping_tc.sp_header.data_len, 6)
         self.assertEqual(self.ping_tc.packet_id.raw(), (0x18 << 8 | 0x02))
         self.assertEqual(self.ping_tc.app_data, bytearray())
         self.assertEqual(self.ping_tc.apid, 0x02)
+        self.assertEqual(self.ping_tc.packet_type, PacketType.TC)
+        self.assertEqual(self.ping_tc.seq_flags, SequenceFlags.UNSEGMENTED)
+        self.assertEqual(self.ping_tc.seq_count, 0x34)
+        self.assertTrue(self.ping_tc.sec_header_flag, True)
 
     def test_valid_crc(self):
         self.assertTrue(check_pus_crc(self.ping_tc_raw))

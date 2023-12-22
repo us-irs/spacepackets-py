@@ -55,7 +55,7 @@ tc_psc=PacketSeqCtrl(seq_flags=<SequenceFlags.UNSEGMENTED: 3>, seq_count=17), cc
         return cls(
             ccsds_version=header.ccsds_version,
             tc_packet_id=header.packet_id,
-            tc_psc=header.psc,
+            tc_psc=header._psc,
         )
 
     def pack(self) -> bytes:

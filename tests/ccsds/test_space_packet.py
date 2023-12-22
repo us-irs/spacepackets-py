@@ -26,6 +26,11 @@ class TestSpacePacket(TestCase):
         self.assertEqual(self.sp_header.apid, 0x02)
         self.assertEqual(self.sp_header.seq_flags, SequenceFlags.FIRST_SEGMENT)
         self.assertEqual(self.sp_header.ccsds_version, 0b000)
+        self.assertEqual(self.sp_header.packet_id, PacketId(PacketType.TC, True, 0x02))
+        self.assertEqual(
+            self.sp_header.packet_seq_control,
+            PacketSeqCtrl(SequenceFlags.FIRST_SEGMENT, 0x34),
+        )
         self.assertEqual(self.sp_header.seq_count, 0x34)
         self.assertEqual(self.sp_header.data_len, 0x16)
         self.assertEqual(self.sp_header.packet_type, PacketType.TC)
@@ -148,6 +153,10 @@ class TestSpacePacket(TestCase):
         )
         self.assertEqual(packet_id_as_num, packet_id.raw())
         self.assertEqual(packet_id_as_num, packet_id_raw)
+        self.assertFalse(
+            packet_id
+            == PacketSeqCtrl(seq_flags=SequenceFlags.UNSEGMENTED, seq_count=0x22)
+        )
 
     def test_packet_seq_ctrl(self):
         psc = PacketSeqCtrl(seq_count=0x22, seq_flags=SequenceFlags.UNSEGMENTED)
@@ -162,6 +171,9 @@ class TestSpacePacket(TestCase):
             get_sp_psc_raw,
             seq_count=0xFFFF,
             seq_flags=SequenceFlags.UNSEGMENTED,
+        )
+        self.assertFalse(
+            psc == PacketId(ptype=PacketType.TC, apid=0x3FF, sec_header_flag=True)
         )
 
     def test_from_composite_field(self):

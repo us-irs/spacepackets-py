@@ -16,6 +16,7 @@ from spacepackets.ccsds.time.common import read_p_field
 from spacepackets.exceptions import BytesTooShortError
 from spacepackets.util import PrintFormats, get_printable_data_string
 from spacepackets.ccsds.spacepacket import (
+    PacketSeqCtrl,
     SpacePacketHeader,
     SPACE_PACKET_HEADER_SIZE,
     get_total_space_packet_len_from_len_field,
@@ -63,14 +64,6 @@ class AbstractPusTm(AbstractSpacePacket):
     @abstractmethod
     def subservice(self) -> int:
         pass
-
-    @property
-    def apid(self) -> int:
-        return self.sp_header.apid
-
-    @property
-    def seq_count(self) -> int:
-        return self.sp_header.seq_count
 
     @property
     @abstractmethod
@@ -198,8 +191,10 @@ class PusTmSecondaryHeader:
             f" pus_version={self.pus_version!r})"
         )
 
-    def __eq__(self, other: PusTmSecondaryHeader):
-        return self.pack() == other.pack()
+    def __eq__(self, other: object):
+        if isinstance(other, PusTmSecondaryHeader):
+            return self.pack() == other.pack()
+        return False
 
     @property
     def header_size(self) -> int:
@@ -385,7 +380,7 @@ class PusTelemetry(AbstractPusTm):
         before converting the PUS TC to a generic Space Packet"""
         self.calc_crc()
         user_data = bytearray(self._source_data)
-        user_data.extend(self.crc16)
+        user_data.extend(self.crc16)  # type: ignore
         return SpacePacket(
             self.space_packet_header, self.pus_tm_sec_header.pack(), user_data
         )
@@ -404,16 +399,26 @@ class PusTelemetry(AbstractPusTm):
             f" sec_header={self.pus_tm_sec_header!r}, tm_data={self.tm_data!r}"
         )
 
-    def __eq__(self, other: PusTelemetry):
-        return (
-            self.space_packet_header == other.space_packet_header
-            and self.pus_tm_sec_header == other.pus_tm_sec_header
-            and self._source_data == other._source_data
-        )
+    def __eq__(self, other: object):
+        if isinstance(other, PusTelemetry):
+            return (
+                self.space_packet_header == other.space_packet_header
+                and self.pus_tm_sec_header == other.pus_tm_sec_header
+                and self._source_data == other._source_data
+            )
+        return False
+
+    @property
+    def packet_seq_control(self) -> PacketSeqCtrl:
+        return self.space_packet_header.packet_seq_control
 
     @property
     def sp_header(self) -> SpacePacketHeader:
         return self.space_packet_header
+
+    @property
+    def ccsds_version(self) -> int:
+        return self.space_packet_header.ccsds_version
 
     @property
     def time_provider(self) -> Optional[CcsdsTimeProvider]:
