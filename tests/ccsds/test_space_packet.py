@@ -26,6 +26,11 @@ class TestSpacePacket(TestCase):
         self.assertEqual(self.sp_header.apid, 0x02)
         self.assertEqual(self.sp_header.seq_flags, SequenceFlags.FIRST_SEGMENT)
         self.assertEqual(self.sp_header.ccsds_version, 0b000)
+        self.assertEqual(self.sp_header.packet_id, PacketId(PacketType.TC, True, 0x02))
+        self.assertEqual(
+            self.sp_header.packet_seq_control,
+            PacketSeqCtrl(SequenceFlags.FIRST_SEGMENT, 0x34),
+        )
         self.assertEqual(self.sp_header.seq_count, 0x34)
         self.assertEqual(self.sp_header.data_len, 0x16)
         self.assertEqual(self.sp_header.packet_type, PacketType.TC)

@@ -16,6 +16,7 @@ from spacepackets.ccsds.time.common import read_p_field
 from spacepackets.exceptions import BytesTooShortError
 from spacepackets.util import PrintFormats, get_printable_data_string
 from spacepackets.ccsds.spacepacket import (
+    PacketSeqCtrl,
     SpacePacketHeader,
     SPACE_PACKET_HEADER_SIZE,
     get_total_space_packet_len_from_len_field,
@@ -412,8 +413,16 @@ class PusTelemetry(AbstractPusTm):
         )
 
     @property
+    def packet_seq_control(self) -> PacketSeqCtrl:
+        return self.space_packet_header.packet_seq_control
+
+    @property
     def sp_header(self) -> SpacePacketHeader:
         return self.space_packet_header
+
+    @property
+    def ccsds_version(self) -> int:
+        return self.space_packet_header.ccsds_version
 
     @property
     def time_provider(self) -> Optional[CcsdsTimeProvider]:

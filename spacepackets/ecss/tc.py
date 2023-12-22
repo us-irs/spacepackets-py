@@ -344,6 +344,10 @@ class PusTelecommand(AbstractSpacePacket):
         self.pus_tc_sec_header.source_id = source_id
 
     @property
+    def ccsds_version(self) -> int:
+        return self.sp_header.ccsds_version
+
+    @property
     def seq_count(self) -> int:
         return self.sp_header.seq_count
 
@@ -356,8 +360,8 @@ class PusTelecommand(AbstractSpacePacket):
         return self.sp_header.packet_id
 
     @property
-    def packet_seq_ctrl(self) -> PacketSeqCtrl:
-        return self.sp_header.psc
+    def packet_seq_control(self) -> PacketSeqCtrl:
+        return self.sp_header._psc
 
     @property
     def app_data(self) -> bytes:

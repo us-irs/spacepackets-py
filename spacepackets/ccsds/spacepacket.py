@@ -67,6 +67,11 @@ class PacketSeqCtrl:
     def empty(cls):
         return cls(seq_flags=SequenceFlags.CONTINUATION_SEGMENT, seq_count=0)
 
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, PacketSeqCtrl):
+            return self.raw() == other.raw()
+        return False
+
     @classmethod
     def from_raw(cls, raw: int):
         return cls(
@@ -107,6 +112,11 @@ class PacketId:
     def raw(self) -> int:
         return self.ptype << 12 | self.sec_header_flag << 11 | self.apid
 
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, PacketId):
+            return self.raw() == other.raw()
+        return False
+
     @classmethod
     def from_raw(cls, raw: int) -> PacketId:
         return cls(
@@ -119,13 +129,38 @@ class PacketId:
 class AbstractSpacePacket(ABC):
     @property
     @abstractmethod
-    def apid(self) -> int:
+    def ccsds_version(self) -> int:
         pass
 
     @property
     @abstractmethod
-    def seq_count(self) -> int:
+    def packet_id(self) -> PacketId:
         pass
+
+    @property
+    @abstractmethod
+    def packet_seq_control(self) -> PacketSeqCtrl:
+        pass
+
+    @property
+    def packet_type(self) -> PacketType:
+        return self.packet_id.ptype
+
+    @property
+    def apid(self) -> int:
+        return self.packet_id.apid
+
+    @property
+    def sec_header_flag(self) -> bool:
+        return self.packet_id.sec_header_flag
+
+    @property
+    def seq_count(self) -> int:
+        return self.packet_seq_control.seq_count
+
+    @property
+    def seq_flags(self) -> SequenceFlags:
+        return self.packet_seq_control.seq_flags
 
     @abstractmethod
     def pack(self) -> bytearray:
@@ -159,7 +194,7 @@ class SpacePacketHeader(AbstractSpacePacket):
         19
         >>> sph.packet_id
         PacketId(ptype=<PacketType.TC: 1>, sec_header_flag=False, apid=66)
-        >>> sph.psc
+        >>> sph.packet_seq_control
         PacketSeqCtrl(seq_flags=<SequenceFlags.UNSEGMENTED: 3>, seq_count=0)
 
         :param packet_type: 0 for Telemetery, 1 for Telecommands
@@ -179,11 +214,11 @@ class SpacePacketHeader(AbstractSpacePacket):
                 "Invalid data length value, exceeds maximum value of"
                 f" {pow(2, 16) - 1} or negative"
             )
-        self.ccsds_version = ccsds_version
-        self.packet_id = PacketId(
+        self._ccsds_version = ccsds_version
+        self._packet_id = PacketId(
             ptype=packet_type, sec_header_flag=sec_header_flag, apid=apid
         )
-        self.psc = PacketSeqCtrl(seq_flags=seq_flags, seq_count=seq_count)
+        self._psc = PacketSeqCtrl(seq_flags=seq_flags, seq_count=seq_count)
         self.data_len = data_len
 
     @classmethod
@@ -210,12 +245,20 @@ class SpacePacketHeader(AbstractSpacePacket):
         header = bytearray()
         packet_id_with_version = self.ccsds_version << 13 | self.packet_id.raw()
         header.extend(struct.pack("!H", packet_id_with_version))
-        header.extend(struct.pack("!H", self.psc.raw()))
+        header.extend(struct.pack("!H", self._psc.raw()))
         header.extend(struct.pack("!H", self.data_len))
         return header
 
     @property
-    def packet_type(self):
+    def ccsds_version(self) -> int:
+        return self._ccsds_version
+
+    @property
+    def packet_id(self) -> PacketId:
+        return self._packet_id
+
+    @property
+    def packet_type(self) -> PacketType:
         return self.packet_id.ptype
 
     @packet_type.setter
@@ -223,32 +266,36 @@ class SpacePacketHeader(AbstractSpacePacket):
         self.packet_id.ptype = packet_type
 
     @property
-    def apid(self):
-        return self.packet_id.apid
+    def apid(self) -> int:
+        return self._packet_id.apid
 
     @property
-    def sec_header_flag(self):
-        return self.packet_id.sec_header_flag
+    def packet_seq_control(self) -> PacketSeqCtrl:
+        return self._psc
+
+    @property
+    def sec_header_flag(self) -> bool:
+        return self._packet_id.sec_header_flag
 
     @sec_header_flag.setter
     def sec_header_flag(self, value):
-        self.packet_id.sec_header_flag = value
+        self._packet_id.sec_header_flag = value
 
     @property
     def seq_count(self):
-        return self.psc.seq_count
+        return self._psc.seq_count
 
     @seq_count.setter
     def seq_count(self, seq_cnt):
-        self.psc.seq_count = seq_cnt
+        self._psc.seq_count = seq_cnt
 
     @property
     def seq_flags(self):
-        return self.psc.seq_flags
+        return self._psc.seq_flags
 
     @seq_flags.setter
     def seq_flags(self, value):
-        self.psc.seq_flags = value
+        self._psc.seq_flags = value
 
     @property
     def header_len(self) -> int:
