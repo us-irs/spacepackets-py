@@ -66,14 +66,6 @@ class AbstractPusTm(AbstractSpacePacket):
         pass
 
     @property
-    def apid(self) -> int:
-        return self.sp_header.apid
-
-    @property
-    def seq_count(self) -> int:
-        return self.sp_header.seq_count
-
-    @property
     @abstractmethod
     def source_data(self) -> bytes:
         pass

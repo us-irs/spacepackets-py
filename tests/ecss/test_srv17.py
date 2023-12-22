@@ -1,6 +1,7 @@
 from unittest import TestCase
 
 from spacepackets.ccsds import CdsShortTimestamp
+from spacepackets.ccsds.spacepacket import PacketType, SequenceFlags
 from spacepackets.ecss import PusService
 from spacepackets.ecss.pus_17_test import Service17Tm
 from .common import generic_time_provider_mock, TEST_STAMP
@@ -20,6 +21,10 @@ class TestSrv17Tm(TestCase):
         self.assertEqual(self.srv17_tm.subservice, 1)
         self.assertEqual(self.srv17_tm.time_provider, None)
         self.assertEqual(self.srv17_tm.apid, 0x72)
+        self.assertEqual(self.srv17_tm.seq_count, 0)
+        self.assertEqual(self.srv17_tm.seq_flags, SequenceFlags.UNSEGMENTED)
+        self.assertEqual(self.srv17_tm.packet_type, PacketType.TM)
+        self.assertTrue(self.srv17_tm.sec_header_flag)
         self.assertEqual(self.srv17_tm.source_data, bytes())
 
     def test_other_state(self):
