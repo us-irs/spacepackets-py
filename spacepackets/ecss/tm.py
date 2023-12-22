@@ -191,8 +191,10 @@ class PusTmSecondaryHeader:
             f" pus_version={self.pus_version!r})"
         )
 
-    def __eq__(self, other: PusTmSecondaryHeader):
-        return self.pack() == other.pack()
+    def __eq__(self, other: object):
+        if isinstance(other, PusTmSecondaryHeader):
+            return self.pack() == other.pack()
+        return False
 
     @property
     def header_size(self) -> int:
@@ -378,7 +380,7 @@ class PusTelemetry(AbstractPusTm):
         before converting the PUS TC to a generic Space Packet"""
         self.calc_crc()
         user_data = bytearray(self._source_data)
-        user_data.extend(self.crc16)
+        user_data.extend(self.crc16)  # type: ignore
         return SpacePacket(
             self.space_packet_header, self.pus_tm_sec_header.pack(), user_data
         )
@@ -397,12 +399,14 @@ class PusTelemetry(AbstractPusTm):
             f" sec_header={self.pus_tm_sec_header!r}, tm_data={self.tm_data!r}"
         )
 
-    def __eq__(self, other: PusTelemetry):
-        return (
-            self.space_packet_header == other.space_packet_header
-            and self.pus_tm_sec_header == other.pus_tm_sec_header
-            and self._source_data == other._source_data
-        )
+    def __eq__(self, other: object):
+        if isinstance(other, PusTelemetry):
+            return (
+                self.space_packet_header == other.space_packet_header
+                and self.pus_tm_sec_header == other.pus_tm_sec_header
+                and self._source_data == other._source_data
+            )
+        return False
 
     @property
     def packet_seq_control(self) -> PacketSeqCtrl:

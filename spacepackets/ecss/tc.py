@@ -92,8 +92,10 @@ class PusTcDataFieldHeader:
             f" subservice={self.subservice!r}, ack_flags={self.ack_flags!r} "
         )
 
-    def __eq__(self, other: PusTcDataFieldHeader):
-        return self.pack() == other.pack()
+    def __eq__(self, other: object):
+        if isinstance(other, PusTcDataFieldHeader):
+            return self.pack() == other.pack()
+        return False
 
     @classmethod
     def get_header_size(cls):
@@ -232,19 +234,21 @@ class PusTelecommand(AbstractSpacePacket):
             f" {self.apid:#05x}, SSC {self.sp_header.seq_count}"
         )
 
-    def __eq__(self, other: PusTelecommand):
-        return (
-            self.sp_header == other.sp_header
-            and self.pus_tc_sec_header == other.pus_tc_sec_header
-            and self._app_data == other._app_data
-        )
+    def __eq__(self, other: object):
+        if isinstance(other, PusTelecommand):
+            return (
+                self.sp_header == other.sp_header
+                and self.pus_tc_sec_header == other.pus_tc_sec_header
+                and self._app_data == other._app_data
+            )
+        return False
 
     def to_space_packet(self) -> SpacePacket:
         """Retrieve the generic CCSDS space packet representation. This also calculates the CRC16
         before converting the PUS TC to a generic Space Packet"""
         self.calc_crc()
         user_data = bytearray(self._app_data)
-        user_data.extend(self._crc16)
+        user_data.extend(self._crc16)  # type: ignore
         return SpacePacket(self.sp_header, self.pus_tc_sec_header.pack(), user_data)
 
     def calc_crc(self):

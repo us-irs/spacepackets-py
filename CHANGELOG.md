@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## Fixed
 
 - Metadata PDU typing correction.
+- More robust `__eq__` implementations which check the type compared against.
 
 # [v0.21.0] 2023-11-10
 

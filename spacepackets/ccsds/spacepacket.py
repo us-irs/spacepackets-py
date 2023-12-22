@@ -346,8 +346,10 @@ class SpacePacketHeader(AbstractSpacePacket):
             f" sec_header_flag={self.sec_header_flag!r}, seq_flags={self.seq_flags!r})"
         )
 
-    def __eq__(self, other: SpacePacketHeader):
-        return self.pack() == other.pack()
+    def __eq__(self, other: object):
+        if isinstance(other, SpacePacketHeader):
+            return self.pack() == other.pack()
+        return False
 
 
 class SpacePacket:
@@ -404,12 +406,14 @@ class SpacePacket:
     def sec_header_flag(self):
         return self.sp_header.sec_header_flag
 
-    def __eq__(self, other: SpacePacket):
-        return (
-            self.sp_header == other.sp_header
-            and self.sec_header == other.sec_header
-            and self.user_data == other.user_data
-        )
+    def __eq__(self, other: object):
+        if isinstance(other, SpacePacket):
+            return (
+                self.sp_header == other.sp_header
+                and self.sec_header == other.sec_header
+                and self.user_data == other.user_data
+            )
+        return False
 
 
 def get_space_packet_id_bytes(
