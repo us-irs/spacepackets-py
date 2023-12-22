@@ -4,7 +4,7 @@ import enum
 import math
 import struct
 import time
-from typing import Optional
+from typing import Optional, Tuple
 
 import deprecation
 
@@ -145,7 +145,7 @@ class CdsShortTimestamp(CcsdsTimeProvider):
         self._setup()
 
     @staticmethod
-    def unpack_from_raw(data: bytes) -> (int, int):
+    def unpack_from_raw(data: bytes) -> Tuple[int, int]:
         if len(data) < CdsShortTimestamp.TIMESTAMP_SIZE:
             raise BytesTooShortError(CdsShortTimestamp.TIMESTAMP_SIZE, len(data))
         p_field = data[0]

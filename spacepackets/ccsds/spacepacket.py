@@ -367,7 +367,7 @@ class SpacePacket:
 
 def get_space_packet_id_bytes(
     packet_type: PacketType,
-    secondary_header_flag: True,
+    secondary_header_flag: bool,
     apid: int,
     version: int = 0b000,
 ) -> Tuple[int, int]:
@@ -472,7 +472,7 @@ def __handle_packet_id_match(
     analysis_queue: Deque[bytearray],
     current_idx: int,
     tm_list: List[bytearray],
-) -> (int, int):
+) -> Tuple[int, int]:
     total_packet_len = get_total_space_packet_len_from_len_field(
         struct.unpack("!H", concatenated_packets[current_idx + 4 : current_idx + 6])[0]
     )

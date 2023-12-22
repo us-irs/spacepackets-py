@@ -10,12 +10,12 @@ class PrintFormats(enum.IntEnum):
     BIN = 2
 
 
-def get_dec_data_string(data: bytes):
+def get_dec_data_string(data: bytes) -> str:
     if len(data) == 0:
         return "dec []"
     elif len(data) == 1:
         return f"dec [{data[0]}]"
-    elif len(data) >= 2:
+    else:
         string_to_print = "dec ["
         for idx in range(len(data) - 1):
             string_to_print += f"{data[idx]},"
@@ -23,12 +23,12 @@ def get_dec_data_string(data: bytes):
         return string_to_print
 
 
-def get_bin_data_string(data: bytes):
+def get_bin_data_string(data: bytes) -> str:
     if len(data) == 0:
         return "bin []"
     elif len(data) == 1:
         return f"bin [0:{data[0]:08b}]"
-    elif len(data) >= 2:
+    else:
         string_to_print = "bin [\n"
         for idx in range(len(data)):
             string_to_print += f"{idx}:{data[idx]:08b}\n"
