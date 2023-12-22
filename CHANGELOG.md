@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 # [unreleased]
 
+# [v0.22.0] 2023-12-22
+
 ## Changed
 
 - Extended `AbstractSpacePacket` with the following abstract properties:
@@ -23,6 +25,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 - Metadata PDU typing correction.
 - More robust `__eq__` implementations which check the type compared against.
+- Some minor typing corrections.
+
+## Added
+
+- The `PusTelecommand` class now implements `AbstractSpacePacket`.
 
 # [v0.21.0] 2023-11-10
 
