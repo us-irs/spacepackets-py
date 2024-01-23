@@ -60,7 +60,9 @@ class TestAckPdu(TestCase):
             transaction_seq_num=ByteFieldU32.from_u32_bytes(
                 bytes([0x50, 0x00, 0x10, 0x01])
             ),
-            source_entity_id=ByteFieldU32.from_u32_bytes(bytes([0x10, 0x00, 0x01, 0x02])),
+            source_entity_id=ByteFieldU32.from_u32_bytes(
+                bytes([0x10, 0x00, 0x01, 0x02])
+            ),
             dest_entity_id=ByteFieldU32.from_u32_bytes(bytes([0x30, 0x00, 0x01, 0x03])),
             crc_flag=CrcFlag.WITH_CRC,
             trans_mode=TransmissionMode.UNACKNOWLEDGED,

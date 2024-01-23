@@ -115,7 +115,9 @@ class TestHeader(TestCase):
         self._switch_cfg()
         self.pdu_conf.source_entity_id = ByteFieldU8(0)
         self.pdu_conf.dest_entity_id = ByteFieldU8(0)
-        self.pdu_conf.transaction_seq_num = ByteFieldU16.from_u16_bytes(bytes([0x00, 0x2C]))
+        self.pdu_conf.transaction_seq_num = ByteFieldU16.from_u16_bytes(
+            bytes([0x00, 0x2C])
+        )
         prompt_pdu = PromptPdu(
             response_required=ResponseRequired.KEEP_ALIVE, pdu_conf=self.pdu_conf
         )

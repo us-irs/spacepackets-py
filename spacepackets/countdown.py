@@ -5,10 +5,14 @@ from typing import Optional
 
 
 def time_ms() -> int:
+    """Returns the current :py:func:`time.time` as milliseconds."""
     return round(time.time() * 1000)
 
 
 class Countdown:
+    """Utility class for counting down time. Exposes a simple API to initiate
+    it with an initial timeout and to check whether is has expired."""
+
     def __init__(self, init_timeout: Optional[timedelta]):
         if init_timeout is not None:
             self._timeout_ms = int(init_timeout / timedelta(milliseconds=1))
