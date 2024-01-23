@@ -14,7 +14,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 - Explicitely disambigute `ByteFieldU<[8, 16, 32, 64]>.from_bytes` from
   `UnsignedByteField.from_bytes` by renaming them to
-  `ByteFieldU<[8, 16, 32, 64].from_<[8, 16, 32, 64]>_bytes`.
+  `ByteFieldU<[8, 16, 32, 64].from_<[8, 16, 32, 64]>_bytes`. This might break calling code which
+  might now call `UnsignedByteField.from_bytes`.
 - Improve `ByteFieldGenerator.from_int` and `ByteFieldGenerator.from_bytes` method. These
   will now raise an exception if the passed value width in not in [1, 2, 4, 8].
 
