@@ -85,6 +85,14 @@ class TestUtility(TestCase):
         with self.assertRaises(ValueError):
             ByteFieldU64.from_u64_bytes(bytes([1, 2, 3, 4, 5]))
 
+    def test_byte_field_generator_invalid_unpack(self):
+        with self.assertRaises(ValueError):
+            ByteFieldGenerator.from_bytes(3, bytes([1, 2, 3, 4]))
+
+    def test_byte_field_generator_invalid_unpack_2(self):
+        with self.assertRaises(ValueError):
+            ByteFieldGenerator.from_int(3, 25)
+
     def test_two_byte_field_gen(self):
         two_byte_test = ByteFieldGenerator.from_int(byte_len=2, val=0x1842)
         self.assertEqual(ByteFieldU16(0x1842), two_byte_test)
