@@ -1,7 +1,7 @@
 import time
 from datetime import timedelta
 from unittest import TestCase
-from spacepackets.util import Countdown
+from spacepackets.countdown import Countdown
 
 
 class CountdownTest(TestCase):

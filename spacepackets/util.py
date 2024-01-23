@@ -337,7 +337,7 @@ class ByteFieldGenerator:
             return ByteFieldU32(val)
         elif byte_len == 8:
             return ByteFieldU64(val)
-        raise ValueError("invalid byte length")
+        raise ValueError(f"invalid byte length {byte_len}")
 
     @staticmethod
     def from_bytes(byte_len: int, stream: bytes) -> UnsignedByteField:
@@ -352,7 +352,7 @@ class ByteFieldGenerator:
             return ByteFieldU32.from_u32_bytes(stream)
         elif byte_len == 8:
             return ByteFieldU64.from_u64_bytes(stream)
-        raise ValueError("invalid byte length")
+        raise ValueError(f"invalid byte length {byte_len}")
 
 
 if __name__ == "__main__":
