@@ -6,6 +6,7 @@ from spacepackets.util import (
     ByteFieldU8,
     ByteFieldU16,
     ByteFieldU32,
+    ByteFieldU64,
     UnsignedByteField,
     IntByteConversion,
 )
@@ -70,15 +71,19 @@ class TestUtility(TestCase):
 
     def test_byte_field_u8_invalid_unpack(self):
         with self.assertRaises(ValueError):
-            ByteFieldU8.from_bytes(bytes())
+            ByteFieldU8.from_u8_bytes(bytes())
 
     def test_byte_field_u16_invalid_unpack(self):
         with self.assertRaises(ValueError):
-            ByteFieldU16.from_bytes(bytes([1]))
+            ByteFieldU16.from_u16_bytes(bytes([1]))
 
     def test_byte_field_u32_invalid_unpack(self):
         with self.assertRaises(ValueError):
-            ByteFieldU32.from_bytes(bytes([1, 2, 3]))
+            ByteFieldU32.from_u32_bytes(bytes([1, 2, 3]))
+
+    def test_byte_field_u64_invalid_unpack(self):
+        with self.assertRaises(ValueError):
+            ByteFieldU64.from_u64_bytes(bytes([1, 2, 3, 4, 5]))
 
     def test_two_byte_field_gen(self):
         two_byte_test = ByteFieldGenerator.from_int(byte_len=2, val=0x1842)
@@ -91,6 +96,12 @@ class TestUtility(TestCase):
         self.assertEqual(ByteFieldU32(0x10101010), four_byte_test)
         four_byte_test = ByteFieldGenerator.from_bytes(4, four_byte_test.as_bytes)
         self.assertEqual(ByteFieldU32(0x10101010), four_byte_test)
+
+    def test_eight_byte_field_gen(self):
+        eight_byte_test = ByteFieldGenerator.from_int(byte_len=8, val=0x1010101010)
+        self.assertEqual(ByteFieldU64(0x1010101010), eight_byte_test)
+        eight_byte_test = ByteFieldGenerator.from_bytes(8, eight_byte_test.as_bytes)
+        self.assertEqual(ByteFieldU64(0x1010101010), eight_byte_test)
 
     def test_setting_from_raw(self):
         one_byte_test = ByteFieldGenerator.from_int(byte_len=1, val=0x42)
@@ -115,6 +126,10 @@ class TestUtility(TestCase):
     def test_byte_int_converter_signed_four_byte(self):
         raw = IntByteConversion.to_signed(byte_num=4, val=-7329093)
         self.assertEqual(struct.unpack("!i", raw)[0], -7329093)
+
+    def test_byte_int_converter_signed_eight_byte(self):
+        raw = IntByteConversion.to_signed(byte_num=8, val=-7329093032932932)
+        self.assertEqual(struct.unpack("!q", raw)[0], -7329093032932932)
 
     def test_one_byte_str(self):
         byte_field = ByteFieldU8(22)
@@ -148,3 +163,7 @@ class TestUtility(TestCase):
     def test_four_byte_hex_str(self):
         byte_field = ByteFieldU32(255532)
         self.assertEqual(byte_field.hex_str, f"{byte_field.value:#010x}")
+
+    def test_eight_byte_hex_str(self):
+        byte_field = ByteFieldU64(0x1010101010)
+        self.assertEqual(byte_field.hex_str, f"{byte_field.value:#018x}")

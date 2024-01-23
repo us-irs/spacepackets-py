@@ -57,11 +57,11 @@ class TestAckPdu(TestCase):
         self.check_fields_packet_0(ack_pdu=ack_pdu_unpacked)
 
         pdu_conf = PduConfig(
-            transaction_seq_num=ByteFieldU32.from_bytes(
+            transaction_seq_num=ByteFieldU32.from_u32_bytes(
                 bytes([0x50, 0x00, 0x10, 0x01])
             ),
-            source_entity_id=ByteFieldU32.from_bytes(bytes([0x10, 0x00, 0x01, 0x02])),
-            dest_entity_id=ByteFieldU32.from_bytes(bytes([0x30, 0x00, 0x01, 0x03])),
+            source_entity_id=ByteFieldU32.from_u32_bytes(bytes([0x10, 0x00, 0x01, 0x02])),
+            dest_entity_id=ByteFieldU32.from_u32_bytes(bytes([0x30, 0x00, 0x01, 0x03])),
             crc_flag=CrcFlag.WITH_CRC,
             trans_mode=TransmissionMode.UNACKNOWLEDGED,
             file_flag=LargeFileFlag.NORMAL,
@@ -152,15 +152,15 @@ class TestAckPdu(TestCase):
         self.assertEqual(ack_pdu.transaction_status, TransactionStatus.ACTIVE)
         self.assertEqual(
             ack_pdu.pdu_file_directive.pdu_header.transaction_seq_num,
-            ByteFieldU32.from_bytes(bytes([0x50, 0x00, 0x10, 0x01])),
+            ByteFieldU32.from_u32_bytes(bytes([0x50, 0x00, 0x10, 0x01])),
         )
         self.assertEqual(
             ack_pdu.pdu_file_directive.pdu_header.pdu_conf.source_entity_id,
-            ByteFieldU32.from_bytes(bytes([0x10, 0x00, 0x01, 0x02])),
+            ByteFieldU32.from_u32_bytes(bytes([0x10, 0x00, 0x01, 0x02])),
         )
         self.assertEqual(
             ack_pdu.pdu_file_directive.pdu_header.pdu_conf.dest_entity_id,
-            ByteFieldU32.from_bytes(bytes([0x30, 0x00, 0x01, 0x03])),
+            ByteFieldU32.from_u32_bytes(bytes([0x30, 0x00, 0x01, 0x03])),
         )
         self.assertEqual(
             ack_pdu.pdu_file_directive.pdu_header.pdu_conf.trans_mode,

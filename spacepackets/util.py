@@ -53,8 +53,6 @@ def get_printable_data_string(print_format: PrintFormats, data: bytes) -> str:
 class IntByteConversion:
     @staticmethod
     def signed_struct_specifier(byte_num: int) -> str:
-        if byte_num not in [1, 2, 4, 8]:
-            raise ValueError("Invalid byte number, must be one of [1, 2, 4, 8]")
         if byte_num == 1:
             return "!b"
         elif byte_num == 2:
@@ -63,13 +61,10 @@ class IntByteConversion:
             return "!i"
         elif byte_num == 8:
             return "!q"
+        raise ValueError("Invalid byte number, must be one of [1, 2, 4, 8]")
 
     @staticmethod
     def unsigned_struct_specifier(byte_num: int) -> str:
-        if byte_num not in [1, 2, 4, 8]:
-            raise ValueError(
-                f"invalid byte number {byte_num}, must be one of [1, 2, 4, 8]"
-            )
         if byte_num == 1:
             return "!B"
         elif byte_num == 2:
@@ -78,6 +73,7 @@ class IntByteConversion:
             return "!I"
         elif byte_num == 8:
             return "!Q"
+        raise ValueError(f"invalid byte number {byte_num}, must be one of [1, 2, 4, 8]")
 
     @staticmethod
     def to_signed(byte_num: int, val: int) -> bytes:
@@ -221,11 +217,12 @@ class UnsignedByteField:
     def __len__(self):
         return self._byte_len
 
-    def __eq__(self, other: Union[UnsignedByteField, bytes]):
+    def __eq__(self, other: object) -> bool:
         if isinstance(other, UnsignedByteField):
             return self.value == other.value and self.byte_len == other.byte_len
         elif isinstance(other, bytes):
             return self._val_as_bytes == other
+        raise TypeError(f"Cannot compare {self.__class__.__name__} to {other}")
 
     def __hash__(self):
         """Makes all unsigned byte fields usable as dictionary keys"""
@@ -247,7 +244,7 @@ class ByteFieldU8(UnsignedByteField):
         super().__init__(val, 1)
 
     @classmethod
-    def from_bytes(cls, stream: bytes) -> ByteFieldU8:
+    def from_u8_bytes(cls, stream: bytes) -> ByteFieldU8:
         if len(stream) < 1:
             raise ValueError(
                 "Passed stream not large enough, should be at least 1 byte"
@@ -265,7 +262,7 @@ class ByteFieldU16(UnsignedByteField):
         super().__init__(val, 2)
 
     @classmethod
-    def from_bytes(cls, stream: bytes) -> ByteFieldU16:
+    def from_u16_bytes(cls, stream: bytes) -> ByteFieldU16:
         if len(stream) < 2:
             raise ValueError(
                 "Passed stream not large enough, should be at least 2 byte"
@@ -287,10 +284,10 @@ class ByteFieldU32(UnsignedByteField):
         super().__init__(val, 4)
 
     @classmethod
-    def from_bytes(cls, stream: bytes) -> ByteFieldU32:
+    def from_u32_bytes(cls, stream: bytes) -> ByteFieldU32:
         if len(stream) < 4:
             raise ValueError(
-                "Passed stream not large enough, should be at least 4 byte"
+                "passed stream not large enough, should be at least 4 bytes"
             )
         return cls(
             struct.unpack(IntByteConversion.unsigned_struct_specifier(4), stream[0:4])[
@@ -302,26 +299,60 @@ class ByteFieldU32(UnsignedByteField):
         return self.default_string("U32")
 
 
+class ByteFieldU64(UnsignedByteField):
+    """Concrete variant of a variable length byte field which has a length of 8 bytes"""
+
+    def __init__(self, val: int):
+        super().__init__(val, 8)
+
+    @classmethod
+    def from_u64_bytes(cls, stream: bytes) -> ByteFieldU64:
+        if len(stream) < 8:
+            raise ValueError(
+                "passed stream not large enough, should be at least 8 byte"
+            )
+        return cls(
+            struct.unpack(IntByteConversion.unsigned_struct_specifier(8), stream[0:8])[
+                0
+            ]
+        )
+
+    def __str__(self):
+        return self.default_string("U64")
+
+
 class ByteFieldGenerator:
     """Static helpers to create the U8, U16 and U32 byte field variants of unsigned byte fields"""
 
     @staticmethod
     def from_int(byte_len: int, val: int) -> UnsignedByteField:
+        """Generate an :py:class:`UnsignedByteField` from the byte length and a value.
+
+        :raise ValueError: Byte length is not one of [1, 2, 4, 8]."""
         if byte_len == 1:
             return ByteFieldU8(val)
         elif byte_len == 2:
             return ByteFieldU16(val)
         elif byte_len == 4:
             return ByteFieldU32(val)
+        elif byte_len == 8:
+            return ByteFieldU64(val)
+        raise ValueError("invalid byte length")
 
     @staticmethod
     def from_bytes(byte_len: int, stream: bytes) -> UnsignedByteField:
+        """Generate an :py:class:`UnsignedByteField` from a raw bytestream and a length.
+
+        :raise ValueError: Byte length is not one of [1, 2, 4, 8]."""
         if byte_len == 1:
-            return ByteFieldU8.from_bytes(stream)
+            return ByteFieldU8.from_u8_bytes(stream)
         elif byte_len == 2:
-            return ByteFieldU16.from_bytes(stream)
+            return ByteFieldU16.from_u16_bytes(stream)
         elif byte_len == 4:
-            return ByteFieldU32.from_bytes(stream)
+            return ByteFieldU32.from_u32_bytes(stream)
+        elif byte_len == 8:
+            return ByteFieldU64.from_u64_bytes(stream)
+        raise ValueError("invalid byte length")
 
 
 if __name__ == "__main__":
