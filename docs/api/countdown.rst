@@ -1,7 +1,7 @@
-Utility Module
+Countdown Module
 ================
 
-.. automodule:: spacepackets.util
+.. automodule:: spacepackets.countdown
  :members:
  :undoc-members:
  :show-inheritance:

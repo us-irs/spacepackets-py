@@ -28,4 +28,5 @@ This package also uses the :py:mod:`logging` package to emit warnings.
    api/cfdp_pdu
    api/cfdp_tlv
    api/uslp
+   api/countdown
    api/util

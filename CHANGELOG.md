@@ -22,6 +22,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## Added
 
 - Added `ByteFieldU64` variant.
+- Added `spacepackets.countdown` utility module. This class was moved from
+  `tmtccmd.util.countdown` and contains the `Countdown` class. It was moved here so it can
+  be re-used more easily.
 
 # [v0.22.0] 2023-12-22
 
