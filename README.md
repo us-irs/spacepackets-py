@@ -1,4 +1,4 @@
-[![ci](https://github.com/robamu-org/py-spacepackets/actions/workflows/ci.yml/badge.svg)](https://github.com/robamu-org/py-spacepackets/actions/workflows/ci.yml)
+[![ci](https://github.com/us-irs/py-spacepackets/actions/workflows/ci.yml/badge.svg)](https://github.com/us-irs/py-spacepackets/actions/workflows/ci.yml)
 [![Documentation Status](https://readthedocs.org/projects/spacepackets/badge/?version=latest)](https://spacepackets.readthedocs.io/en/latest/?badge=latest)
 [![codecov](https://codecov.io/gh/us-irs/spacepackets-py/graph/badge.svg?token=YFLM60LCVI)](https://codecov.io/gh/us-irs/spacepackets-py)
 [![PyPI version](https://badge.fury.io/py/spacepackets.svg)](https://badge.fury.io/py/spacepackets)
