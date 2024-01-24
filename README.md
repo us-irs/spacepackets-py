@@ -54,7 +54,7 @@ You can find all examples [inside the documentation](https://spacepackets.readth
 # Tests
 
 If you want to run the tests, it is recommended to install `pytest` and `coverage` (optional)
-first. You also have to install the package with the optional `test` feature:
+first:
 
 ```sh
 pip install coverage pytest
