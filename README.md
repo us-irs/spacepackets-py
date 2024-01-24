@@ -23,11 +23,12 @@ Currently, this includes the following components:
 - Unified Space Data Link Protocol (USLP) frame implementations according to
   [CCSDS Blue Book 732.1-B-2](https://public.ccsds.org/Pubs/732x1b2.pdf).
 
-It also contains various helper modules
+It also contains various helper modules which are commonly used when working with these standards:
 
 - `PusVerificator` module to track the verification of sent telecommands.
 - [PTC and PFC definitions](https://spacepackets.readthedocs.io/en/latest/api/ecss.html#module-spacepackets.ecss.fields) for ECSS packets.
 - `Countdown` utility class.
+- Sequence counter utility classes.
 
 # Install
 
