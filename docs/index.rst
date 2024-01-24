@@ -29,6 +29,8 @@ It also contains various helper modules
 - :py:class:`spacepackets.ecss.pus_verificator.PusVerificator` class to track the verification of sent telecommands
 - PTC and PFC definitions for ECSS packets inside the :py:mod:`spacepackets.ecss.fields` module
 - :py:class:`spacepackets.countdown.Countdown` utility class
+- :py:mod:`spacepackets.seqcount` utility module which provides various sequence counter
+  classes.
 
 Other pages (online)
 ---------------------

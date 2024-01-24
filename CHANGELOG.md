@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 # [unreleased]
 
-# [v0.23.0] 2024-01-23
+# [v0.23.0] 2024-01-24
 
 ## Changed
 
@@ -25,6 +25,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Added `spacepackets.countdown` utility module. This class was moved from
   `tmtccmd.util.countdown` and contains the `Countdown` class. It was moved here so it can
   be re-used more easily.
+- Added `spacepackets.seqcount` utility module. This class was moved from
+  `tmtccmd.util.seqcnt` and contains sequence counter abstractions and concrete implementations.
+  It was moved here so it can be re-used more easily.
 
 # [v0.22.0] 2023-12-22
 
