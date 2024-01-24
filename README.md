@@ -50,19 +50,26 @@ py -m pip install spacepackets
 
 You can find all examples [inside the documentation](https://spacepackets.readthedocs.io/en/latest/examples.html).
 
+
 # Tests
 
-All tests are provided in the `tests` folder and can be run with coverage information
-by running
+If you want to run the tests, it is recommended to install `pytest` and `coverage` (optional)
+first. You also have to install the package with the optional `test` feature:
+
+```sh
+pip install coverage pytest
+```
+
+Running tests regularly:
+
+```sh
+pytest .
+```
+
+Running tests with coverage:
 
 ```sh
 coverage run -m pytest
-```
-
-provided that `pytest` and `coverage` were installed with
-
-```sh
-python3 -m pip install coverage pytest
 ```
 
 # Documentation
