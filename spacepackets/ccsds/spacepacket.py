@@ -352,6 +352,9 @@ class SpacePacketHeader(AbstractSpacePacket):
         return False
 
 
+SpHeader = SpacePacketHeader
+
+
 class SpacePacket:
     """Generic CCSDS space packet which consists of the primary header and can optionally include
     a secondary header and a user data field.

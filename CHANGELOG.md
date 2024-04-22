@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 # [unreleased]
 
+# [v0.23.1] 2024-04-22
+
+## Added
+
+- PUS TC app data setter method.
+- New `PusTelecommand` alias/shorthand: `PusTc`.
+- New `SpacePacketHeader` alias/shorthand: `SpHeader`.
+- New `PusTelemetry` alias/shorthand: `PusTm`.
+
 # [v0.23.0] 2024-01-24
 
 ## Changed

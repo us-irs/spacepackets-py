@@ -2,7 +2,7 @@ import enum
 from dataclasses import dataclass, field
 from typing import Dict, Optional, List
 
-from spacepackets.ecss import PusTelecommand
+from spacepackets.ecss import PusTc
 from spacepackets.ecss.pus_1_verification import RequestId, Service1Tm, Subservice
 
 
@@ -57,7 +57,7 @@ class PusVerificator:
         self._verif_dict: VerifDictT = dict()
         pass
 
-    def add_tc(self, tc: PusTelecommand) -> bool:
+    def add_tc(self, tc: PusTc) -> bool:
         req_id = RequestId.from_sp_header(tc.sp_header)
         if req_id in self._verif_dict:
             return False

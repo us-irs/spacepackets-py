@@ -1,6 +1,7 @@
 import logging
 from spacepackets.ccsds import (
     SpacePacketHeader,
+    SpHeader,
     SpacePacket,
     PacketType,
     SequenceFlags,

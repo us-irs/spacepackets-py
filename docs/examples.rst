@@ -9,14 +9,14 @@ PUS ping telemetry reply without a timestamp.
 
 .. testcode:: pus
 
-    from spacepackets.ecss.tc import PusTelecommand
-    from spacepackets.ecss.tm import PusTelemetry
+    from spacepackets.ecss.tc import PusTc
+    from spacepackets.ecss.tm import PusTm
 
-    ping_cmd = PusTelecommand(service=17, subservice=1, apid=0x01)
+    ping_cmd = PusTc(service=17, subservice=1, apid=0x01)
     cmd_as_bytes = ping_cmd.pack()
     print(f"Ping telecommand [17,1] (hex): [{cmd_as_bytes.hex(sep=',')}]")
 
-    ping_reply = PusTelemetry(service=17, subservice=2, apid=0x01, time_provider=None)
+    ping_reply = PusTm(service=17, subservice=2, apid=0x01, time_provider=None)
     tm_as_bytes = ping_reply.pack()
     print(f"Ping reply [17,2] (hex): [{tm_as_bytes.hex(sep=',')}]")
 
@@ -34,9 +34,9 @@ The following example shows how to generate a space packet header:
 
 .. testcode:: ccsds
 
-    from spacepackets.ccsds.spacepacket import SpacePacketHeader, PacketType
+    from spacepackets.ccsds.spacepacket import SpHeader, PacketType
 
-    spacepacket_header = SpacePacketHeader(
+    spacepacket_header = SpHeader(
         packet_type=PacketType.TC, apid=0x01, seq_count=0, data_len=0
     )
     header_as_bytes = spacepacket_header.pack()

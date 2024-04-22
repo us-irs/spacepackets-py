@@ -1,5 +1,6 @@
 """This package contains all CCSDS related components"""
 from .spacepacket import (
+    SpHeader,
     SpacePacketHeader,
     SpacePacket,
     PacketType,
