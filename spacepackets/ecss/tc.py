@@ -111,7 +111,7 @@ class PusTc(AbstractSpacePacket):
     """Class representation of a PUS telecommand. Can be converted to the raw byte representation
     but also unpacked from a raw byte stream. Only PUS C telecommands are supported.
 
-    >>> ping_tc = PusTelecommand(service=17, subservice=1, seq_count=22, apid=0x01)
+    >>> ping_tc = PusTc(service=17, subservice=1, seq_count=22, apid=0x01)
     >>> ping_tc.service
     17
     >>> ping_tc.subservice
