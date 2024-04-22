@@ -103,11 +103,11 @@ class PusTcDataFieldHeader:
 
 
 class InvalidTcCrc16(Exception):
-    def __init__(self, tc: PusTelecommand):
+    def __init__(self, tc: PusTc):
         self.tc = tc
 
 
-class PusTelecommand(AbstractSpacePacket):
+class PusTc(AbstractSpacePacket):
     """Class representation of a PUS telecommand. Can be converted to the raw byte representation
     but also unpacked from a raw byte stream. Only PUS C telecommands are supported.
 
@@ -181,7 +181,7 @@ class PusTelecommand(AbstractSpacePacket):
         pus_tc = cls.empty()
         sp_header.packet_type = PacketType.TC
         sp_header.sec_header_flag = True
-        sp_header.data_len = PusTelecommand.get_data_length(
+        sp_header.data_len = PusTc.get_data_length(
             secondary_header_len=PusTcDataFieldHeader.get_header_size(),
             app_data_len=len(app_data),
         )
@@ -201,7 +201,7 @@ class PusTelecommand(AbstractSpacePacket):
         sp_header: SpacePacketHeader,
         sec_header: PusTcDataFieldHeader,
         app_data: bytes = bytes([]),
-    ) -> PusTelecommand:
+    ) -> PusTc:
         pus_tc = cls.empty()
         if sp_header.packet_type == PacketType.TM:
             raise ValueError(
@@ -213,8 +213,8 @@ class PusTelecommand(AbstractSpacePacket):
         return pus_tc
 
     @classmethod
-    def empty(cls) -> PusTelecommand:
-        return PusTelecommand(service=0, subservice=0)
+    def empty(cls) -> PusTc:
+        return PusTc(service=0, subservice=0)
 
     def __repr__(self):
         """Returns the representation of a class instance."""
@@ -235,7 +235,7 @@ class PusTelecommand(AbstractSpacePacket):
         )
 
     def __eq__(self, other: object):
-        if isinstance(other, PusTelecommand):
+        if isinstance(other, PusTc):
             return (
                 self.sp_header == other.sp_header
                 and self.pus_tc_sec_header == other.pus_tc_sec_header
@@ -276,7 +276,7 @@ class PusTelecommand(AbstractSpacePacket):
         return packed_data
 
     @classmethod
-    def unpack(cls, data: bytes) -> PusTelecommand:
+    def unpack(cls, data: bytes) -> PusTc:
         """Create an instance from a raw bytestream.
 
         :raises BytesTooShortError: Passed bytestream too short.
@@ -324,7 +324,7 @@ class PusTelecommand(AbstractSpacePacket):
         current_version=get_version(),
         details="use pack and the class itself to build this instead",
     )
-    def pack_command_tuple(self) -> Tuple[bytearray, PusTelecommand]:
+    def pack_command_tuple(self) -> Tuple[bytearray, PusTc]:
         """Pack a tuple consisting of the raw packet as the first entry and the class representation
         as the second entry
         """
@@ -371,6 +371,10 @@ class PusTelecommand(AbstractSpacePacket):
     def app_data(self) -> bytes:
         return self._app_data
 
+    @app_data.setter
+    def app_data(self, app_data: bytes):
+        self._app_data = app_data
+
     @property
     def crc16(self) -> Optional[bytes]:
         """Will be the raw CRC16 if the telecommand was created using :py:meth:`unpack`,
@@ -385,6 +389,9 @@ class PusTelecommand(AbstractSpacePacket):
     @apid.setter
     def apid(self, apid):
         self.sp_header.apid = apid
+
+
+PusTelecommand = PusTc
 
 
 def generate_packet_crc(tc_packet: bytearray) -> bytes:

@@ -9,11 +9,11 @@ from typing import Optional
 from spacepackets.ccsds import SpacePacketHeader
 from spacepackets.ccsds.spacepacket import PacketId, PacketSeqCtrl
 from spacepackets.ccsds.time import CcsdsTimeProvider
-from spacepackets.ecss import PusTelecommand
+from spacepackets.ecss import PusTc
 from spacepackets.ecss.conf import FETCH_GLOBAL_APID
 from spacepackets.ecss.defs import PusService
 from spacepackets.ecss.fields import PacketFieldEnum
-from spacepackets.ecss.tm import PusTelemetry, AbstractPusTm
+from spacepackets.ecss.tm import PusTm, AbstractPusTm
 from .exceptions import TmSrcDataTooShortError
 
 from .req_id import RequestId
@@ -136,7 +136,7 @@ class Service1Tm(AbstractPusTm):
             self._verif_params = VerificationParams(RequestId.empty())
         else:
             self._verif_params = verif_params
-        self.pus_tm = PusTelemetry(
+        self.pus_tm = PusTm(
             service=PusService.S1_VERIFICATION,
             subservice=subservice,
             time_provider=time_provider,
@@ -158,7 +158,7 @@ class Service1Tm(AbstractPusTm):
         return cls(subservice=Subservice.INVALID, time_provider=time_provider)
 
     @classmethod
-    def from_tm(cls, tm: PusTelemetry, params: UnpackParams) -> Service1Tm:
+    def from_tm(cls, tm: PusTm, params: UnpackParams) -> Service1Tm:
         service_1_tm = cls.__empty(params.time_reader)
         service_1_tm.pus_tm = tm
         cls._unpack_raw_tm(service_1_tm, params)
@@ -176,9 +176,7 @@ class Service1Tm(AbstractPusTm):
         :return:
         """
         service_1_tm = cls.__empty(params.time_reader)
-        service_1_tm.pus_tm = PusTelemetry.unpack(
-            data=data, time_reader=params.time_reader
-        )
+        service_1_tm.pus_tm = PusTm.unpack(data=data, time_reader=params.time_reader)
         cls._unpack_raw_tm(service_1_tm, params)
         return service_1_tm
 
@@ -302,7 +300,7 @@ class Service1Tm(AbstractPusTm):
 
 
 def create_acceptance_success_tm(
-    pus_tc: PusTelecommand, time_provider: Optional[CcsdsTimeProvider]
+    pus_tc: PusTc, time_provider: Optional[CcsdsTimeProvider]
 ) -> Service1Tm:
     return Service1Tm(
         subservice=Subservice.TM_ACCEPTANCE_SUCCESS,
@@ -312,7 +310,7 @@ def create_acceptance_success_tm(
 
 
 def create_acceptance_failure_tm(
-    pus_tc: PusTelecommand,
+    pus_tc: PusTc,
     failure_notice: FailureNotice,
     time_provider: Optional[CcsdsTimeProvider],
 ) -> Service1Tm:
@@ -327,7 +325,7 @@ def create_acceptance_failure_tm(
 
 
 def create_start_success_tm(
-    pus_tc: PusTelecommand, time_provider: Optional[CcsdsTimeProvider]
+    pus_tc: PusTc, time_provider: Optional[CcsdsTimeProvider]
 ) -> Service1Tm:
     return Service1Tm(
         subservice=Subservice.TM_START_SUCCESS,
@@ -337,7 +335,7 @@ def create_start_success_tm(
 
 
 def create_start_failure_tm(
-    pus_tc: PusTelecommand,
+    pus_tc: PusTc,
     failure_notice: FailureNotice,
     time_provider: Optional[CcsdsTimeProvider],
 ) -> Service1Tm:
@@ -352,7 +350,7 @@ def create_start_failure_tm(
 
 
 def create_step_success_tm(
-    pus_tc: PusTelecommand,
+    pus_tc: PusTc,
     step_id: PacketFieldEnum,
     time_provider: Optional[CcsdsTimeProvider],
 ) -> Service1Tm:
@@ -366,7 +364,7 @@ def create_step_success_tm(
 
 
 def create_step_failure_tm(
-    pus_tc: PusTelecommand,
+    pus_tc: PusTc,
     step_id: PacketFieldEnum,
     failure_notice: FailureNotice,
     time_provider: Optional[CcsdsTimeProvider],
@@ -383,7 +381,7 @@ def create_step_failure_tm(
 
 
 def create_completion_success_tm(
-    pus_tc: PusTelecommand, time_provider: Optional[CcsdsTimeProvider]
+    pus_tc: PusTc, time_provider: Optional[CcsdsTimeProvider]
 ) -> Service1Tm:
     return Service1Tm(
         subservice=Subservice.TM_COMPLETION_SUCCESS,
@@ -393,7 +391,7 @@ def create_completion_success_tm(
 
 
 def create_completion_failure_tm(
-    pus_tc: PusTelecommand,
+    pus_tc: PusTc,
     failure_notice: FailureNotice,
     time_provider: Optional[CcsdsTimeProvider],
 ) -> Service1Tm:

@@ -1,7 +1,7 @@
 from crcmod.predefined import mkPredefinedCrcFun
 
-from .tc import PusVersion, PusTelecommand, PusTcDataFieldHeader
-from .tm import PusTelemetry, PusTmSecondaryHeader
+from .tc import PusVersion, PusTelecommand, PusTc, PusTcDataFieldHeader
+from .tm import PusTm, PusTelemetry, PusTmSecondaryHeader
 from .fields import (
     PacketFieldEnum,
     PacketFieldBase,

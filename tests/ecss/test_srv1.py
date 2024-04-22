@@ -3,7 +3,7 @@ from unittest import TestCase
 
 from spacepackets import SpacePacketHeader, PacketType
 from spacepackets.ccsds import CdsShortTimestamp
-from spacepackets.ecss import PusTelecommand, PacketFieldEnum, RequestId
+from spacepackets.ecss import PusTc, PacketFieldEnum, RequestId
 from spacepackets.ecss.pus_1_verification import (
     Service1Tm,
     create_start_success_tm,
@@ -26,7 +26,7 @@ from tests.ecss.common import generic_time_provider_mock, TEST_STAMP
 
 class Service1TmTest(TestCase):
     def setUp(self) -> None:
-        ping_tc = PusTelecommand(service=17, subservice=1)
+        ping_tc = PusTc(service=17, subservice=1)
         self.srv1_tm = create_start_success_tm(ping_tc, None)
         self.time_stamp_provider = generic_time_provider_mock(TEST_STAMP)
 
@@ -91,7 +91,7 @@ class Service1TmTest(TestCase):
         self._generic_test_srv_1_success(Subservice.TM_COMPLETION_SUCCESS)
 
     def _generic_test_srv_1_success(self, subservice: Subservice):
-        pus_tc = PusTelecommand(service=17, subservice=1)
+        pus_tc = PusTc(service=17, subservice=1)
         helper_created = None
         step_id = None
         if subservice == Subservice.TM_ACCEPTANCE_SUCCESS:
@@ -138,7 +138,7 @@ class Service1TmTest(TestCase):
 
     def _test_srv_1_success_tm(
         self,
-        pus_tc: PusTelecommand,
+        pus_tc: PusTc,
         srv_1_tm: Service1Tm,
         subservice: Subservice,
         step_id: Optional[PacketFieldEnum] = None,
@@ -160,7 +160,7 @@ class Service1TmTest(TestCase):
             self.assertEqual(srv_1_tm_unpacked.step_id, step_id)
 
     def _generic_test_srv_1_failure(self, subservice: Subservice):
-        pus_tc = PusTelecommand(service=17, subservice=1)
+        pus_tc = PusTc(service=17, subservice=1)
         failure_notice = FailureNotice(
             code=PacketFieldEnum.with_byte_size(1, 8), data=bytes([2, 4])
         )
@@ -212,7 +212,7 @@ class Service1TmTest(TestCase):
 
     def _test_srv_1_failure_comparison_helper(
         self,
-        pus_tc: PusTelecommand,
+        pus_tc: PusTc,
         srv_1_tm: Service1Tm,
         subservice: Subservice,
         failure_notice: Optional[FailureNotice],

@@ -205,11 +205,11 @@ class PusTmSecondaryHeader:
 
 
 class InvalidTmCrc16(Exception):
-    def __init__(self, tm: PusTelemetry):
+    def __init__(self, tm: PusTm):
         self.tm = tm
 
 
-class PusTelemetry(AbstractPusTm):
+class PusTm(AbstractPusTm):
     """Generic PUS telemetry class representation.
 
     Can be used to generate TM packets using a high level interface with the default constructor,
@@ -275,10 +275,8 @@ class PusTelemetry(AbstractPusTm):
         self._crc16: Optional[bytes] = None
 
     @classmethod
-    def empty(cls) -> PusTelemetry:
-        return PusTelemetry(
-            service=0, subservice=0, time_provider=CdsShortTimestamp.empty()
-        )
+    def empty(cls) -> PusTm:
+        return PusTm(service=0, subservice=0, time_provider=CdsShortTimestamp.empty())
 
     def pack(self, recalc_crc: bool = True) -> bytearray:
         """Serializes the packet into a raw bytearray.
@@ -305,9 +303,7 @@ class PusTelemetry(AbstractPusTm):
         self._crc16 = struct.pack("!H", crc.crcValue)
 
     @classmethod
-    def unpack(
-        cls, data: bytes, time_reader: Optional[CcsdsTimeProvider]
-    ) -> PusTelemetry:
+    def unpack(cls, data: bytes, time_reader: Optional[CcsdsTimeProvider]) -> PusTm:
         """Attempts to construct a generic PusTelemetry class given a raw bytearray.
 
         :param data: Raw bytes containing the PUS telemetry packet.
@@ -364,7 +360,7 @@ class PusTelemetry(AbstractPusTm):
         sp_header: SpacePacketHeader,
         sec_header: PusTmSecondaryHeader,
         tm_data: bytes,
-    ) -> PusTelemetry:
+    ) -> PusTm:
         pus_tm = cls.empty()
         if sp_header.packet_type == PacketType.TC:
             raise ValueError(
@@ -400,7 +396,7 @@ class PusTelemetry(AbstractPusTm):
         )
 
     def __eq__(self, other: object):
-        if isinstance(other, PusTelemetry):
+        if isinstance(other, PusTm):
             return (
                 self.space_packet_header == other.space_packet_header
                 and self.pus_tm_sec_header == other.pus_tm_sec_header
@@ -566,3 +562,6 @@ class PusTelemetry(AbstractPusTm):
         return get_printable_data_string(
             print_format=print_format, data=self._source_data
         )
+
+
+PusTelemetry = PusTm

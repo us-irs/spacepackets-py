@@ -3,12 +3,12 @@ from collections import deque
 
 from spacepackets.ccsds import CdsShortTimestamp
 from spacepackets.ccsds.spacepacket import parse_space_packets
-from spacepackets.ecss.tm import PusTelemetry
+from spacepackets.ecss.tm import PusTm
 
 
 class TestSpParser(TestCase):
     def setUp(self) -> None:
-        self.tm_packet = PusTelemetry(
+        self.tm_packet = PusTm(
             service=17, subservice=2, time_provider=CdsShortTimestamp.empty()
         )
         self.packet_ids = (self.tm_packet.packet_id,)
@@ -26,7 +26,7 @@ class TestSpParser(TestCase):
         self.assertEqual(sp_list[1], self.tm_packet_raw)
 
     def test_sp_parser_crap_data_is_skipped(self):
-        other_larger_packet = PusTelemetry(
+        other_larger_packet = PusTm(
             service=8,
             subservice=128,
             source_data=bytearray(64),

@@ -7,7 +7,7 @@ from spacepackets.ccsds.spacepacket import PacketId, PacketSeqCtrl
 from spacepackets.ccsds.time import CcsdsTimeProvider
 from spacepackets.ecss.conf import FETCH_GLOBAL_APID
 from spacepackets.ecss.defs import PusService
-from spacepackets.ecss.tm import PusTelemetry, AbstractPusTm
+from spacepackets.ecss.tm import PusTm, AbstractPusTm
 
 
 class Subservice(enum.IntEnum):
@@ -27,7 +27,7 @@ class Service17Tm(AbstractPusTm):
         space_time_ref: int = 0b0000,
         destination_id: int = 0,
     ):
-        self.pus_tm = PusTelemetry(
+        self.pus_tm = PusTm(
             service=PusService.S17_TEST,
             subservice=subservice,
             time_provider=time_provider,
@@ -89,5 +89,5 @@ class Service17Tm(AbstractPusTm):
         :raises InvalidTmCrc16: Invalid CRC16.
         """
         service_17_tm = cls.__empty(time_provider=time_reader)
-        service_17_tm.pus_tm = PusTelemetry.unpack(data=data, time_reader=time_reader)
+        service_17_tm.pus_tm = PusTm.unpack(data=data, time_reader=time_reader)
         return service_17_tm

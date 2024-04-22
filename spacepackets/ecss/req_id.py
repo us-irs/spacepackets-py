@@ -4,7 +4,7 @@ import struct
 
 from spacepackets import BytesTooShortError
 from spacepackets.ccsds.spacepacket import PacketId, PacketSeqCtrl, SpacePacketHeader
-from spacepackets.ecss.tc import PusTelecommand
+from spacepackets.ecss.tc import PusTc
 
 
 class RequestId:
@@ -47,7 +47,7 @@ tc_psc=PacketSeqCtrl(seq_flags=<SequenceFlags.UNSEGMENTED: 3>, seq_count=17), cc
         )
 
     @classmethod
-    def from_pus_tc(cls, pus_tc: PusTelecommand):
+    def from_pus_tc(cls, pus_tc: PusTc):
         return cls.from_sp_header(pus_tc.sp_header)
 
     @classmethod
