@@ -28,17 +28,15 @@ class SuccessSet:
     def __init__(self, pus_tc: PusTc):
         self.pus_tc = pus_tc
         self.req_id = RequestId.from_pus_tc(pus_tc)
-        self.time_reader = CdsShortTimestamp.empty()
-        self.acc_suc_tm = create_acceptance_success_tm(pus_tc, self.time_reader)
-        self.sta_suc_tm = create_start_success_tm(pus_tc, self.time_reader)
+        self.empty_stamp = CdsShortTimestamp.empty()
+        self.acc_suc_tm = create_acceptance_success_tm(pus_tc, self.empty_stamp.pack())
+        self.sta_suc_tm = create_start_success_tm(pus_tc, self.empty_stamp.pack())
         self.ste_suc_tm = create_step_success_tm(
             pus_tc=pus_tc,
             step_id=StepId.with_byte_size(1, 1),
-            time_provider=self.time_reader,
+            timestamp=self.empty_stamp.pack(),
         )
-        self.fin_suc_tm = create_completion_success_tm(
-            pus_tc, CdsShortTimestamp.empty()
-        )
+        self.fin_suc_tm = create_completion_success_tm(pus_tc, self.empty_stamp.pack())
 
 
 class FailureSet:
@@ -46,21 +44,21 @@ class FailureSet:
         self.suc_set = SuccessSet(pus_tc)
         self.failure_notice = failure_notice
         self.acc_fail_tm = create_acceptance_failure_tm(
-            pus_tc, self.failure_notice, CdsShortTimestamp.empty()
+            pus_tc, self.failure_notice, CdsShortTimestamp.empty().pack()
         )
         self.sta_fail_tm = create_start_failure_tm(
-            pus_tc, self.failure_notice, CdsShortTimestamp.empty()
+            pus_tc, self.failure_notice, CdsShortTimestamp.empty().pack()
         )
         self.ste_fail_tm = create_step_failure_tm(
             pus_tc,
             failure_notice=self.failure_notice,
             step_id=StepId.with_byte_size(1, 1),
-            time_provider=CdsShortTimestamp.empty(),
+            timestamp=CdsShortTimestamp.empty().pack(),
         )
         self.fin_fail_tm = create_completion_failure_tm(
             failure_notice=self.failure_notice,
             pus_tc=self.suc_set.pus_tc,
-            time_provider=CdsShortTimestamp.empty(),
+            timestamp=CdsShortTimestamp.empty().pack(),
         )
 
     @property

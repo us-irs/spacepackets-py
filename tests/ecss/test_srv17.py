@@ -9,7 +9,7 @@ from .common import generic_time_provider_mock, TEST_STAMP
 
 class TestSrv17Tm(TestCase):
     def setUp(self) -> None:
-        self.srv17_tm = Service17Tm(subservice=1, time_provider=None)
+        self.srv17_tm = Service17Tm(subservice=1, timestamp=bytes())
         self.srv17_tm.pus_tm.apid = 0x72
         self.time_stamp_provider = generic_time_provider_mock(TEST_STAMP)
 
@@ -19,7 +19,7 @@ class TestSrv17Tm(TestCase):
         )
         self.assertEqual(self.srv17_tm.service, PusService.S17_TEST)
         self.assertEqual(self.srv17_tm.subservice, 1)
-        self.assertEqual(self.srv17_tm.time_provider, None)
+        self.assertEqual(self.srv17_tm.timestamp, bytes())
         self.assertEqual(self.srv17_tm.apid, 0x72)
         self.assertEqual(self.srv17_tm.seq_count, 0)
         self.assertEqual(self.srv17_tm.seq_flags, SequenceFlags.UNSEGMENTED)
@@ -30,17 +30,20 @@ class TestSrv17Tm(TestCase):
     def test_other_state(self):
         srv17_with_data = Service17Tm(
             subservice=128,
-            time_provider=CdsShortTimestamp(0, 0),
+            timestamp=CdsShortTimestamp(0, 0).pack(),
             source_data=bytes([0, 1, 2]),
         )
         self.assertEqual(srv17_with_data.source_data, bytes([0, 1, 2]))
-        self.assertEqual(srv17_with_data.time_provider, CdsShortTimestamp(0, 0))
+
+        self.assertEqual(
+            CdsShortTimestamp.unpack(srv17_with_data.timestamp), CdsShortTimestamp(0, 0)
+        )
 
     def test_service_17_tm(self):
-        srv_17_tm = Service17Tm(subservice=2, time_provider=self.time_stamp_provider)
+        srv_17_tm = Service17Tm(subservice=2, timestamp=TEST_STAMP)
         self.assertEqual(srv_17_tm.pus_tm.subservice, 2)
         srv_17_tm_raw = srv_17_tm.pack()
         srv_17_tm_unpacked = Service17Tm.unpack(
-            data=srv_17_tm_raw, time_reader=self.time_stamp_provider
+            data=srv_17_tm_raw, timestamp_len=len(TEST_STAMP)
         )
         self.assertEqual(srv_17_tm_unpacked.pus_tm.subservice, 2)

@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import struct
 from unittest import TestCase
-from unittest.mock import MagicMock
 
 from crcmod.predefined import mkPredefinedCrcFun
 
@@ -25,21 +24,18 @@ from spacepackets.ecss.tm import (
 from spacepackets.ecss.pus_1_verification import (
     RequestId,
 )
-from .common import generic_time_provider_mock, TEST_STAMP
+from .common import TEST_STAMP
 
 
 class TestTelemetry(TestCase):
     def setUp(self) -> None:
-        self.time_stamp_provider = MagicMock(spec=CdsShortTimestamp)
-
-        self.time_stamp_provider = generic_time_provider_mock(TEST_STAMP)
         self.ping_reply = PusTm(
             service=17,
             subservice=2,
             apid=0x123,
             seq_count=0x234,
             source_data=bytearray(),
-            time_provider=self.time_stamp_provider,
+            timestamp=TEST_STAMP,
         )
         self.ping_reply_raw = self.ping_reply.pack()
 
@@ -72,9 +68,9 @@ class TestTelemetry(TestCase):
             apid=0x123,
             seq_count=0x234,
             source_data=bytearray(),
-            time_provider=None,
+            timestamp=bytes(),
         )
-        self.assertEqual(self.ping_reply.pus_tm_sec_header.time_provider, None)
+        self.assertEqual(self.ping_reply.pus_tm_sec_header.timestamp, bytes())
         tm_raw = self.ping_reply.pack()
         self.assertEqual(self.ping_reply.packet_len, 15)
         self.assertEqual(len(tm_raw), 15)
@@ -115,7 +111,8 @@ class TestTelemetry(TestCase):
         self.ping_reply.tm_data = source_data
         self.assertEqual(self.ping_reply.apid, 0x22)
         self.assertTrue(isinstance(self.ping_reply.crc16, bytes))
-        self.assertTrue(len(self.ping_reply.crc16), 2)
+        assert self.ping_reply.crc16 is not None
+        self.assertEqual(len(self.ping_reply.crc16), 2)
         self.assertEqual(
             self.ping_reply.pus_tm_sec_header.pus_version, PusVersion.PUS_C
         )
@@ -162,6 +159,7 @@ class TestTelemetry(TestCase):
         sp_header_as_str = raw_space_packet_header.hex(sep=",")
         raw_secondary_packet_header = self.ping_reply.pus_tm_sec_header.pack()
         second_header_as_str = raw_secondary_packet_header.hex(sep=",")
+        assert crc16 is not None
         expected_printout = (
             f"hex [{sp_header_as_str},{second_header_as_str},{crc16.hex(sep=',')}]"
         )
@@ -185,7 +183,7 @@ class TestTelemetry(TestCase):
         self.ping_reply_raw = self.ping_reply.pack()
         # self.time_stamp_provider.read_from_raw = MagicMock()
         pus_17_tm_unpacked = PusTm.unpack(
-            data=self.ping_reply_raw, time_reader=self.time_stamp_provider
+            data=self.ping_reply_raw, timestamp_len=len(TEST_STAMP)
         )
         self.assertEqual(self.ping_reply.crc16, pus_17_tm_unpacked.crc16)
         self.assertEqual(pus_17_tm_unpacked, self.ping_reply)
@@ -193,10 +191,6 @@ class TestTelemetry(TestCase):
         self.assertEqual(pus_17_tm_unpacked.apid, 0x22)
         self.assertEqual(
             pus_17_tm_unpacked.pus_tm_sec_header.pus_version, PusVersion.PUS_C
-        )
-        pus_17_tm_unpacked.pus_tm_sec_header.time_provider.read_from_raw.assert_called_once()
-        pus_17_tm_unpacked.pus_tm_sec_header.time_provider.read_from_raw.assert_called_with(
-            TEST_STAMP
         )
         self.assertEqual(pus_17_tm_unpacked.tm_data, source_data)
         self.assertEqual(pus_17_tm_unpacked.packet_id.raw(), 0x0822)
@@ -209,7 +203,7 @@ class TestTelemetry(TestCase):
             ValueError,
             PusTm.unpack,
             self.ping_reply_raw,
-            CdsShortTimestamp.empty(),
+            len(TEST_STAMP),
         )
         self.ping_reply_raw[4] = 0xFF
         self.ping_reply_raw[5] = 0xFF
@@ -229,12 +223,10 @@ class TestTelemetry(TestCase):
         self.ping_reply_raw[4] = (incorrect_size & 0xFF00) >> 8
         self.ping_reply_raw[5] = incorrect_size & 0xFF
         with self.assertRaises(InvalidTmCrc16):
-            PusTm.unpack(data=self.ping_reply_raw, time_reader=self.time_stamp_provider)
+            PusTm.unpack(data=self.ping_reply_raw, timestamp_len=len(TEST_STAMP))
 
     def test_calc_crc(self):
-        new_ping_tm = PusTm(
-            service=17, subservice=2, time_provider=self.time_stamp_provider
-        )
+        new_ping_tm = PusTm(service=17, subservice=2, timestamp=TEST_STAMP)
         self.assertIsNone(new_ping_tm.crc16)
         new_ping_tm.calc_crc()
         self.assertIsNotNone(new_ping_tm.crc16)
@@ -242,14 +234,12 @@ class TestTelemetry(TestCase):
         self.assertEqual(len(new_ping_tm.crc16), 2)
 
     def test_crc_always_calced_if_none(self):
-        new_ping_tm = PusTm(
-            service=17, subservice=2, time_provider=self.time_stamp_provider
-        )
+        new_ping_tm = PusTm(service=17, subservice=2, timestamp=TEST_STAMP)
         self.assertIsNone(new_ping_tm.crc16)
         # Should still calculate CRC
         tc_raw = new_ping_tm.pack(recalc_crc=False)
         # Will throw invalid CRC16 error if CRC was not calculated
-        tc_unpacked = PusTm.unpack(tc_raw, time_reader=self.time_stamp_provider)
+        tc_unpacked = PusTm.unpack(tc_raw, timestamp_len=len(TEST_STAMP))
         self.assertEqual(tc_unpacked, new_ping_tm)
 
     def test_faulty_unpack(self):
@@ -287,7 +277,7 @@ class TestTelemetry(TestCase):
             PusTmSecondaryHeader(
                 service=0,
                 subservice=0,
-                time_provider=CdsShortTimestamp.from_now(),
+                timestamp=CdsShortTimestamp.now().pack(),
                 message_counter=129302,
             )
 
@@ -295,7 +285,9 @@ class TestTelemetry(TestCase):
         # Set length field invalid
         self.ping_reply_raw[4] = 0x00
         self.ping_reply_raw[5] = 0x00
-        self.assertRaises(ValueError, PusTm.unpack, self.ping_reply_raw, None)
+        self.assertRaises(
+            ValueError, PusTm.unpack, self.ping_reply_raw, len(TEST_STAMP)
+        )
 
     def test_req_id(self):
         tc_packet_id = PacketId(ptype=PacketType.TC, sec_header_flag=True, apid=0x42)

@@ -72,7 +72,7 @@ class CcsdsTimeProvider(ABC):
         return self.len_packed
 
     @abstractmethod
-    def pack(self) -> bytearray:
+    def pack(self) -> bytes:
         pass
 
     @abstractmethod

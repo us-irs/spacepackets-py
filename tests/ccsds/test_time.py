@@ -82,7 +82,7 @@ class TestTime(TestCase):
         self.assertEqual(dt.tzinfo.utcoffset(dt), datetime.timedelta(0))
 
     def test_compare_from_now_against_manually_created(self):
-        stamp = CdsShortTimestamp.from_now()
+        stamp = CdsShortTimestamp.now()
         ccsds_days = stamp.ccsds_days
         ms_of_day = stamp.ms_of_day
         new_stamp = CdsShortTimestamp(ccsds_days, ms_of_day)

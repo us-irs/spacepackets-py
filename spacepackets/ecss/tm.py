@@ -12,20 +12,20 @@ from crcmod.predefined import PredefinedCrc
 
 from .exceptions import TmSrcDataTooShortError  # noqa  # re-export
 from spacepackets.version import get_version
-from spacepackets.ccsds.time.common import read_p_field
 from spacepackets.exceptions import BytesTooShortError
 from spacepackets.util import PrintFormats, get_printable_data_string
 from spacepackets.ccsds.spacepacket import (
     PacketSeqCtrl,
     SpacePacketHeader,
     SPACE_PACKET_HEADER_SIZE,
+    CCSDS_HEADER_LEN,
     get_total_space_packet_len_from_len_field,
     PacketType,
     SpacePacket,
     AbstractSpacePacket,
     SequenceFlags,
 )
-from spacepackets.ccsds.time import CdsShortTimestamp, CcsdsTimeProvider
+from spacepackets.ccsds.time import CdsShortTimestamp
 from spacepackets.ecss.conf import (
     PusVersion,
     get_default_tm_apid,
@@ -57,7 +57,7 @@ class AbstractPusTm(AbstractSpacePacket):
 
     @property
     @abstractmethod
-    def time_provider(self) -> Optional[CcsdsTimeProvider]:
+    def timestamp(self) -> bytes:
         pass
 
     @property
@@ -81,7 +81,7 @@ class PusTmSecondaryHeader:
         self,
         service: int,
         subservice: int,
-        time_provider: Optional[CcsdsTimeProvider],
+        timestamp: bytes,
         message_counter: int,
         dest_id: int = 0,
         spacecraft_time_ref: int = 0,
@@ -109,14 +109,14 @@ class PusTmSecondaryHeader:
             )
         self.message_counter = message_counter
         self.dest_id = dest_id
-        self.time_provider = time_provider
+        self.timestamp = timestamp
 
     @classmethod
     def __empty(cls) -> PusTmSecondaryHeader:
         return PusTmSecondaryHeader(
             service=0,
             subservice=0,
-            time_provider=CdsShortTimestamp.from_now(),
+            timestamp=bytes(),
             message_counter=0,
         )
 
@@ -127,20 +127,16 @@ class PusTmSecondaryHeader:
         secondary_header.append(self.subservice)
         secondary_header.extend(struct.pack("!H", self.message_counter))
         secondary_header.extend(struct.pack("!H", self.dest_id))
-        if self.time_provider:
-            secondary_header.extend(self.time_provider.pack())
+        secondary_header.extend(self.timestamp)
         return secondary_header
 
     @classmethod
-    def unpack(
-        cls, data: bytes, time_reader: Optional[CcsdsTimeProvider]
-    ) -> PusTmSecondaryHeader:
+    def unpack(cls, data: bytes, timestamp_len: int) -> PusTmSecondaryHeader:
         """Unpack the PUS TM secondary header from the raw packet starting at the header index.
 
         :param data: Raw data. Please note that the passed buffer should start where the actual
             header start is.
-        :param time_reader: Generic time reader which knows the time stamp size and how to interpret
-            the raw timestamp
+        :param timestamp_len: Expected timestamp length.
         :raises ValueError: bytearray too short or PUS version missmatch.
         :return:
         """
@@ -170,22 +166,13 @@ class PusTmSecondaryHeader:
             "!H", data[current_idx : current_idx + 2]
         )[0]
         current_idx += 2
-        # If other time formats are supported in the future, this information can be used
-        #  to unpack the correct time code
-        time_code_id = read_p_field(data[current_idx])
-        if time_code_id:
-            pass
-        if time_reader:
-            time_reader.read_from_raw(
-                data[current_idx : current_idx + time_reader.len_packed]
-            )
-        secondary_header.time_provider = time_reader
+        secondary_header.timestamp = data[current_idx : current_idx + timestamp_len]
         return secondary_header
 
     def __repr__(self):
         return (
             f"{self.__class__.__name__}(service={self.service!r},"
-            f" subservice={self.subservice!r}, time={self.time_provider!r},"
+            f" subservice={self.subservice!r}, time={self.timestamp!r},"
             f" message_counter={self.message_counter!r}, dest_id={self.dest_id!r},"
             f" spacecraft_time_ref={self.spacecraft_time_ref!r},"
             f" pus_version={self.pus_version!r})"
@@ -199,9 +186,12 @@ class PusTmSecondaryHeader:
     @property
     def header_size(self) -> int:
         base_len = 7
-        if self.time_provider:
-            base_len += self.time_provider.len_packed
+        if self.timestamp:
+            base_len += len(self.timestamp)
         return base_len
+
+
+PUS_TM_TIMESTAMP_OFFSET = CCSDS_HEADER_LEN + PusTmSecondaryHeader.MIN_LEN
 
 
 class InvalidTmCrc16(Exception):
@@ -216,10 +206,15 @@ class PusTm(AbstractPusTm):
     or to deserialize TM packets from a raw byte stream using the :py:meth:`unpack` method.
     This implementation only supports PUS C.
 
+    Deserialization of PUS telemetry requires the timestamp length to be known. If the size of the
+    timestamp is variable but can be determined from the data, a look-ahead should be performed on
+    the raw data. The :py:const:`PUS_TM_TIMESTAMP_OFFSET` (13) can be used to do this, assuming
+    that the timestamp length can be extracted from the timestamp itself.
+
     The following doc example cuts off the timestamp (7 byte CDS Short) and the CRC16 from the ping
     packet because those change regularly.
 
-    >>> ping_tm = PusTm(service=17, subservice=2, seq_count=5, apid=0x01, time_provider=CdsShortTimestamp.empty()) # noqa
+    >>> ping_tm = PusTm(service=17, subservice=2, seq_count=5, apid=0x01, timestamp=CdsShortTimestamp.now().pack()) # noqa
     >>> ping_tm.service
     17
     >>> ping_tm.subservice
@@ -236,8 +231,8 @@ class PusTm(AbstractPusTm):
         self,
         service: int,
         subservice: int,
-        time_provider: Optional[CcsdsTimeProvider],
-        source_data: bytes = bytes([]),
+        timestamp: bytes,
+        source_data: bytes = bytes(),
         seq_count: int = 0,
         apid: int = FETCH_GLOBAL_APID,
         message_counter: int = 0,
@@ -248,9 +243,7 @@ class PusTm(AbstractPusTm):
         if apid == FETCH_GLOBAL_APID:
             apid = get_default_tm_apid()
         self._source_data = source_data
-        len_stamp = 0
-        if time_provider:
-            len_stamp += time_provider.len_packed
+        len_stamp = len(timestamp)
         data_length = self.data_len_from_src_len_timestamp_len(
             timestamp_len=len_stamp,
             source_data_len=len(self._source_data),
@@ -270,13 +263,15 @@ class PusTm(AbstractPusTm):
             message_counter=message_counter,
             dest_id=destination_id,
             spacecraft_time_ref=space_time_ref,
-            time_provider=time_provider,
+            timestamp=timestamp,
         )
         self._crc16: Optional[bytes] = None
 
     @classmethod
     def empty(cls) -> PusTm:
-        return PusTm(service=0, subservice=0, time_provider=CdsShortTimestamp.empty())
+        return PusTm(
+            service=0, subservice=0, timestamp=CdsShortTimestamp.empty().pack()
+        )
 
     def pack(self, recalc_crc: bool = True) -> bytearray:
         """Serializes the packet into a raw bytearray.
@@ -303,7 +298,7 @@ class PusTm(AbstractPusTm):
         self._crc16 = struct.pack("!H", crc.crcValue)
 
     @classmethod
-    def unpack(cls, data: bytes, time_reader: Optional[CcsdsTimeProvider]) -> PusTm:
+    def unpack(cls, data: bytes, timestamp_len: int) -> PusTm:
         """Attempts to construct a generic PusTelemetry class given a raw bytearray.
 
         :param data: Raw bytes containing the PUS telemetry packet.
@@ -324,7 +319,7 @@ class PusTm(AbstractPusTm):
             raise BytesTooShortError(expected_packet_len, len(data))
         pus_tm.pus_tm_sec_header = PusTmSecondaryHeader.unpack(
             data=data[SPACE_PACKET_HEADER_SIZE:],
-            time_reader=time_reader,
+            timestamp_len=timestamp_len,
         )
         if (
             expected_packet_len
@@ -417,8 +412,8 @@ class PusTm(AbstractPusTm):
         return self.space_packet_header.ccsds_version
 
     @property
-    def time_provider(self) -> Optional[CcsdsTimeProvider]:
-        return self.pus_tm_sec_header.time_provider
+    def timestamp(self) -> bytes:
+        return self.pus_tm_sec_header.timestamp
 
     @property
     def service(self) -> int:
@@ -449,8 +444,8 @@ class PusTm(AbstractPusTm):
     def tm_data(self, data: bytes):
         self._source_data = data
         stamp_len = 0
-        if self.pus_tm_sec_header.time_provider:
-            stamp_len += self.pus_tm_sec_header.time_provider.len_packed
+        if self.pus_tm_sec_header.timestamp:
+            stamp_len += len(self.pus_tm_sec_header.timestamp)
         self.space_packet_header.data_len = self.data_len_from_src_len_timestamp_len(
             stamp_len, len(data)
         )

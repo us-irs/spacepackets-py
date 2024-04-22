@@ -8,7 +8,6 @@ from typing import Optional
 
 from spacepackets.ccsds import SpacePacketHeader
 from spacepackets.ccsds.spacepacket import PacketId, PacketSeqCtrl
-from spacepackets.ccsds.time import CcsdsTimeProvider
 from spacepackets.ecss import PusTc
 from spacepackets.ecss.conf import FETCH_GLOBAL_APID
 from spacepackets.ecss.defs import PusService
@@ -67,7 +66,7 @@ class FailureNotice:
 
 @dataclass
 class UnpackParams:
-    time_reader: Optional[CcsdsTimeProvider]
+    timestamp_len: int
     bytes_step_id: int = 1
     bytes_err_code: int = 1
 
@@ -124,7 +123,7 @@ class Service1Tm(AbstractPusTm):
     def __init__(
         self,
         subservice: Subservice,
-        time_provider: Optional[CcsdsTimeProvider],
+        timestamp: bytes,
         verif_params: Optional[VerificationParams] = None,
         seq_count: int = 0,
         apid: int = FETCH_GLOBAL_APID,
@@ -139,7 +138,7 @@ class Service1Tm(AbstractPusTm):
         self.pus_tm = PusTm(
             service=PusService.S1_VERIFICATION,
             subservice=subservice,
-            time_provider=time_provider,
+            timestamp=timestamp,
             seq_count=seq_count,
             apid=apid,
             packet_version=packet_version,
@@ -154,12 +153,12 @@ class Service1Tm(AbstractPusTm):
         return self.pus_tm.pack()
 
     @classmethod
-    def __empty(cls, time_provider: Optional[CcsdsTimeProvider]) -> Service1Tm:
-        return cls(subservice=Subservice.INVALID, time_provider=time_provider)
+    def __empty(cls) -> Service1Tm:
+        return cls(subservice=Subservice.INVALID, timestamp=bytes())
 
     @classmethod
     def from_tm(cls, tm: PusTm, params: UnpackParams) -> Service1Tm:
-        service_1_tm = cls.__empty(params.time_reader)
+        service_1_tm = cls.__empty()
         service_1_tm.pus_tm = tm
         cls._unpack_raw_tm(service_1_tm, params)
         return service_1_tm
@@ -175,14 +174,16 @@ class Service1Tm(AbstractPusTm):
         :raises TmSourceDataTooShortError: TM source data too short.
         :return:
         """
-        service_1_tm = cls.__empty(params.time_reader)
-        service_1_tm.pus_tm = PusTm.unpack(data=data, time_reader=params.time_reader)
+        service_1_tm = cls.__empty()
+        service_1_tm.pus_tm = PusTm.unpack(
+            data=data, timestamp_len=params.timestamp_len
+        )
         cls._unpack_raw_tm(service_1_tm, params)
         return service_1_tm
 
     @property
-    def time_provider(self) -> Optional[CcsdsTimeProvider]:
-        return self.pus_tm.time_provider
+    def timestamp(self) -> bytes:
+        return self.pus_tm.timestamp
 
     @property
     def ccsds_version(self) -> int:
@@ -277,6 +278,7 @@ class Service1Tm(AbstractPusTm):
     @property
     def error_code(self) -> Optional[ErrorCode]:
         if self.has_failure_notice:
+            assert self._verif_params.failure_notice is not None
             return self._verif_params.failure_notice.code
         else:
             return None
@@ -293,26 +295,26 @@ class Service1Tm(AbstractPusTm):
         """Retrieve the step number. Returns NONE if this packet does not have a step ID"""
         return self._verif_params.step_id
 
-    def __eq__(self, other: Service1Tm):
-        return (self.pus_tm == other.pus_tm) and (
-            self._verif_params == other._verif_params
-        )
+    def __eq__(self, other: object):
+        if isinstance(other, Service1Tm):
+            return (self.pus_tm == other.pus_tm) and (
+                self._verif_params == other._verif_params
+            )
+        return False
 
 
-def create_acceptance_success_tm(
-    pus_tc: PusTc, time_provider: Optional[CcsdsTimeProvider]
-) -> Service1Tm:
+def create_acceptance_success_tm(pus_tc: PusTc, timestamp: bytes) -> Service1Tm:
     return Service1Tm(
         subservice=Subservice.TM_ACCEPTANCE_SUCCESS,
         verif_params=VerificationParams(RequestId.from_sp_header(pus_tc.sp_header)),
-        time_provider=time_provider,
+        timestamp=timestamp,
     )
 
 
 def create_acceptance_failure_tm(
     pus_tc: PusTc,
     failure_notice: FailureNotice,
-    time_provider: Optional[CcsdsTimeProvider],
+    timestamp: bytes,
 ) -> Service1Tm:
     return Service1Tm(
         subservice=Subservice.TM_ACCEPTANCE_FAILURE,
@@ -320,24 +322,22 @@ def create_acceptance_failure_tm(
             req_id=RequestId.from_sp_header(pus_tc.sp_header),
             failure_notice=failure_notice,
         ),
-        time_provider=time_provider,
+        timestamp=timestamp,
     )
 
 
-def create_start_success_tm(
-    pus_tc: PusTc, time_provider: Optional[CcsdsTimeProvider]
-) -> Service1Tm:
+def create_start_success_tm(pus_tc: PusTc, timestamp: bytes) -> Service1Tm:
     return Service1Tm(
         subservice=Subservice.TM_START_SUCCESS,
         verif_params=VerificationParams(RequestId.from_sp_header(pus_tc.sp_header)),
-        time_provider=time_provider,
+        timestamp=timestamp,
     )
 
 
 def create_start_failure_tm(
     pus_tc: PusTc,
     failure_notice: FailureNotice,
-    time_provider: Optional[CcsdsTimeProvider],
+    timestamp: bytes,
 ) -> Service1Tm:
     return Service1Tm(
         subservice=Subservice.TM_START_FAILURE,
@@ -345,21 +345,21 @@ def create_start_failure_tm(
             req_id=RequestId.from_sp_header(pus_tc.sp_header),
             failure_notice=failure_notice,
         ),
-        time_provider=time_provider,
+        timestamp=timestamp,
     )
 
 
 def create_step_success_tm(
     pus_tc: PusTc,
     step_id: PacketFieldEnum,
-    time_provider: Optional[CcsdsTimeProvider],
+    timestamp: bytes,
 ) -> Service1Tm:
     return Service1Tm(
         subservice=Subservice.TM_STEP_SUCCESS,
         verif_params=VerificationParams(
             req_id=RequestId.from_sp_header(pus_tc.sp_header), step_id=step_id
         ),
-        time_provider=time_provider,
+        timestamp=timestamp,
     )
 
 
@@ -367,7 +367,7 @@ def create_step_failure_tm(
     pus_tc: PusTc,
     step_id: PacketFieldEnum,
     failure_notice: FailureNotice,
-    time_provider: Optional[CcsdsTimeProvider],
+    timestamp: bytes,
 ) -> Service1Tm:
     return Service1Tm(
         subservice=Subservice.TM_STEP_FAILURE,
@@ -376,24 +376,22 @@ def create_step_failure_tm(
             step_id=step_id,
             failure_notice=failure_notice,
         ),
-        time_provider=time_provider,
+        timestamp=timestamp,
     )
 
 
-def create_completion_success_tm(
-    pus_tc: PusTc, time_provider: Optional[CcsdsTimeProvider]
-) -> Service1Tm:
+def create_completion_success_tm(pus_tc: PusTc, timestamp: bytes) -> Service1Tm:
     return Service1Tm(
         subservice=Subservice.TM_COMPLETION_SUCCESS,
         verif_params=VerificationParams(RequestId.from_sp_header(pus_tc.sp_header)),
-        time_provider=time_provider,
+        timestamp=timestamp,
     )
 
 
 def create_completion_failure_tm(
     pus_tc: PusTc,
     failure_notice: FailureNotice,
-    time_provider: Optional[CcsdsTimeProvider],
+    timestamp: bytes,
 ) -> Service1Tm:
     return Service1Tm(
         subservice=Subservice.TM_COMPLETION_FAILURE,
@@ -401,5 +399,5 @@ def create_completion_failure_tm(
             req_id=RequestId.from_sp_header(pus_tc.sp_header),
             failure_notice=failure_notice,
         ),
-        time_provider=time_provider,
+        timestamp=timestamp,
     )

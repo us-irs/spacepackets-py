@@ -11,6 +11,7 @@ from typing import Tuple, Deque, List, Final, Optional, Sequence
 from spacepackets.exceptions import BytesTooShortError
 
 SPACE_PACKET_HEADER_SIZE: Final = 6
+CCSDS_HEADER_LEN: Final = SPACE_PACKET_HEADER_SIZE
 SEQ_FLAG_MASK = 0xC000
 APID_MASK = 0x7FF
 PACKET_ID_MASK = 0x1FFF

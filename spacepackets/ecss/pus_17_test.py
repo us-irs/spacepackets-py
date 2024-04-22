@@ -1,10 +1,8 @@
 from __future__ import annotations
 import enum
-from typing import Optional
 
 from spacepackets import SpacePacketHeader
 from spacepackets.ccsds.spacepacket import PacketId, PacketSeqCtrl
-from spacepackets.ccsds.time import CcsdsTimeProvider
 from spacepackets.ecss.conf import FETCH_GLOBAL_APID
 from spacepackets.ecss.defs import PusService
 from spacepackets.ecss.tm import PusTm, AbstractPusTm
@@ -19,7 +17,7 @@ class Service17Tm(AbstractPusTm):
     def __init__(
         self,
         subservice: int,
-        time_provider: Optional[CcsdsTimeProvider],
+        timestamp: bytes,
         ssc: int = 0,
         source_data: bytes = bytes(),
         apid: int = FETCH_GLOBAL_APID,
@@ -30,7 +28,7 @@ class Service17Tm(AbstractPusTm):
         self.pus_tm = PusTm(
             service=PusService.S17_TEST,
             subservice=subservice,
-            time_provider=time_provider,
+            timestamp=timestamp,
             seq_count=ssc,
             source_data=source_data,
             apid=apid,
@@ -60,8 +58,8 @@ class Service17Tm(AbstractPusTm):
         return self.pus_tm.service
 
     @property
-    def time_provider(self) -> Optional[CcsdsTimeProvider]:
-        return self.pus_tm.time_provider
+    def timestamp(self) -> bytes:
+        return self.pus_tm.timestamp
 
     @property
     def subservice(self) -> int:
@@ -75,19 +73,17 @@ class Service17Tm(AbstractPusTm):
         return self.pus_tm.pack()
 
     @classmethod
-    def __empty(cls, time_provider: Optional[CcsdsTimeProvider]) -> Service17Tm:
-        return cls(subservice=0, time_provider=time_provider)
+    def __empty(cls) -> Service17Tm:
+        return cls(subservice=0, timestamp=bytes())
 
     @classmethod
-    def unpack(
-        cls, data: bytes, time_reader: Optional[CcsdsTimeProvider]
-    ) -> Service17Tm:
+    def unpack(cls, data: bytes, timestamp_len: int) -> Service17Tm:
         """
 
         :raises BytesTooShortError: Passed bytestream too short.
         :raises ValueError: Unsupported PUS version.
         :raises InvalidTmCrc16: Invalid CRC16.
         """
-        service_17_tm = cls.__empty(time_provider=time_reader)
-        service_17_tm.pus_tm = PusTm.unpack(data=data, time_reader=time_reader)
+        service_17_tm = cls.__empty()
+        service_17_tm.pus_tm = PusTm.unpack(data=data, timestamp_len=timestamp_len)
         return service_17_tm

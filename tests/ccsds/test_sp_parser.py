@@ -9,7 +9,7 @@ from spacepackets.ecss.tm import PusTm
 class TestSpParser(TestCase):
     def setUp(self) -> None:
         self.tm_packet = PusTm(
-            service=17, subservice=2, time_provider=CdsShortTimestamp.empty()
+            service=17, subservice=2, timestamp=CdsShortTimestamp.empty().pack()
         )
         self.packet_ids = (self.tm_packet.packet_id,)
         self.tm_packet_raw = self.tm_packet.pack()
@@ -30,7 +30,7 @@ class TestSpParser(TestCase):
             service=8,
             subservice=128,
             source_data=bytearray(64),
-            time_provider=CdsShortTimestamp.empty(),
+            timestamp=CdsShortTimestamp.empty().pack(),
         )
         other_larger_packet_raw = other_larger_packet.pack()
         self.packet_deque.append(self.tm_packet_raw)
