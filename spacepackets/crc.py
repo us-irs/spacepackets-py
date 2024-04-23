@@ -1,4 +1,5 @@
 """This modules contains generic CRC support."""
+
 from crcmod.predefined import mkPredefinedCrcFun
 
 #: CRC calculator function as specified in the PUS standard B.1

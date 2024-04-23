@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 # [unreleased]
 
+# [v0.24.1] 2024-04-23
+
+## Reverted
+
+- The `apid` constructor arguments for the PUS TMTC constructors now have a default value of 0.
+  This allows setting the APID in a centralized manner for APID groups and can reduce duplication.
+
 # [v0.24.0] 2024-04-23
 
 ## Removed

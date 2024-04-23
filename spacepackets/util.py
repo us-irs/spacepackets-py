@@ -78,7 +78,8 @@ class IntByteConversion:
     @staticmethod
     def to_signed(byte_num: int, val: int) -> bytes:
         """Convert number of bytes in a field to the struct API signed format specifier,
-        assuming network endianness. Raises value error if number is not inside [1, 2, 4, 8]"""
+        assuming network endianness. Raises value error if number is not inside [1, 2, 4, 8]
+        """
         if byte_num not in [0, 1, 2, 4, 8]:
             raise ValueError("Invalid byte number, must be one of [0, 1, 2, 4, 8]")
         if byte_num == 0:
@@ -92,7 +93,8 @@ class IntByteConversion:
     @staticmethod
     def to_unsigned(byte_num: int, val: int) -> bytes:
         """Convert number of bytes in a field to the struct API unsigned format specifier,
-        assuming network endianness. Raises value error if number is not inside [1, 2, 4, 8]"""
+        assuming network endianness. Raises value error if number is not inside [1, 2, 4, 8]
+        """
         if byte_num not in [0, 1, 2, 4, 8]:
             raise ValueError("Invalid byte number, must be one of [1, 2, 4, 8]")
         if byte_num == 0:
