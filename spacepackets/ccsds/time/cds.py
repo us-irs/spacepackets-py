@@ -204,7 +204,7 @@ class CdsShortTimestamp(CcsdsTimeProvider):
     @classmethod
     def now(cls) -> CdsShortTimestamp:
         """Returns a seven byte CDS short timestamp with the current time."""
-        return cls.from_date_time(datetime.datetime.now(tz=datetime.timezone.utc))
+        return cls.from_datetime(datetime.datetime.now(tz=datetime.timezone.utc))
 
     @classmethod
     @deprecation.deprecated(
