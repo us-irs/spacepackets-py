@@ -9,7 +9,8 @@ from .common import generic_time_provider_mock, TEST_STAMP
 
 class TestSrv17Tm(TestCase):
     def setUp(self) -> None:
-        self.srv17_tm = Service17Tm(subservice=1, timestamp=bytes())
+        self.def_apid = 0x05
+        self.srv17_tm = Service17Tm(apid=self.def_apid, subservice=1, timestamp=bytes())
         self.srv17_tm.pus_tm.apid = 0x72
         self.time_stamp_provider = generic_time_provider_mock(TEST_STAMP)
 
@@ -29,6 +30,7 @@ class TestSrv17Tm(TestCase):
 
     def test_other_state(self):
         srv17_with_data = Service17Tm(
+            apid=self.def_apid,
             subservice=128,
             timestamp=CdsShortTimestamp(0, 0).pack(),
             source_data=bytes([0, 1, 2]),
@@ -40,7 +42,7 @@ class TestSrv17Tm(TestCase):
         )
 
     def test_service_17_tm(self):
-        srv_17_tm = Service17Tm(subservice=2, timestamp=TEST_STAMP)
+        srv_17_tm = Service17Tm(apid=self.def_apid, subservice=2, timestamp=TEST_STAMP)
         self.assertEqual(srv_17_tm.pus_tm.subservice, 2)
         srv_17_tm_raw = srv_17_tm.pack()
         srv_17_tm_unpacked = Service17Tm.unpack(

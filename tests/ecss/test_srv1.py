@@ -26,8 +26,11 @@ from tests.ecss.common import TEST_STAMP
 
 class Service1TmTest(TestCase):
     def setUp(self) -> None:
-        ping_tc = PusTc(service=17, subservice=1)
-        self.srv1_tm = create_start_success_tm(ping_tc, TEST_STAMP)
+        self.def_apid = 0x02
+        ping_tc = PusTc(apid=self.def_apid, service=17, subservice=1)
+        self.srv1_tm = create_start_success_tm(
+            apid=self.def_apid, pus_tc=ping_tc, timestamp=TEST_STAMP
+        )
 
     def test_failure_notice_invalid_creation(self):
         with self.assertRaises(ValueError):
@@ -92,21 +95,28 @@ class Service1TmTest(TestCase):
         self._generic_test_srv_1_success(Subservice.TM_COMPLETION_SUCCESS)
 
     def _generic_test_srv_1_success(self, subservice: Subservice):
-        pus_tc = PusTc(service=17, subservice=1)
+        pus_tc = PusTc(apid=self.def_apid, service=17, subservice=1)
         helper_created = None
         step_id = None
         if subservice == Subservice.TM_ACCEPTANCE_SUCCESS:
-            helper_created = create_acceptance_success_tm(pus_tc, TEST_STAMP)
+            helper_created = create_acceptance_success_tm(
+                apid=self.def_apid, pus_tc=pus_tc, timestamp=TEST_STAMP
+            )
         elif subservice == Subservice.TM_START_SUCCESS:
-            helper_created = create_start_success_tm(pus_tc, TEST_STAMP)
+            helper_created = create_start_success_tm(self.def_apid, pus_tc, TEST_STAMP)
         elif subservice == Subservice.TM_STEP_SUCCESS:
             step_id = PacketFieldEnum.with_byte_size(1, 4)
-            helper_created = create_step_success_tm(pus_tc, step_id, TEST_STAMP)
+            helper_created = create_step_success_tm(
+                self.def_apid, pus_tc, step_id, TEST_STAMP
+            )
         elif subservice == Subservice.TM_COMPLETION_SUCCESS:
-            helper_created = create_completion_success_tm(pus_tc, timestamp=TEST_STAMP)
+            helper_created = create_completion_success_tm(
+                self.def_apid, pus_tc, timestamp=TEST_STAMP
+            )
         self._test_srv_1_success_tm(
             pus_tc,
             Service1Tm(
+                apid=self.def_apid,
                 subservice=subservice,
                 verif_params=VerificationParams(
                     req_id=RequestId(pus_tc.packet_id, pus_tc.packet_seq_control),
@@ -155,7 +165,7 @@ class Service1TmTest(TestCase):
             self.assertEqual(srv_1_tm_unpacked.step_id, step_id)
 
     def _generic_test_srv_1_failure(self, subservice: Subservice):
-        pus_tc = PusTc(service=17, subservice=1)
+        pus_tc = PusTc(apid=self.def_apid, service=17, subservice=1)
         failure_notice = FailureNotice(
             code=PacketFieldEnum.with_byte_size(1, 8), data=bytes([2, 4])
         )
@@ -163,13 +173,16 @@ class Service1TmTest(TestCase):
         step_id = None
         if subservice == Subservice.TM_ACCEPTANCE_FAILURE:
             helper_created = create_acceptance_failure_tm(
-                pus_tc, failure_notice, TEST_STAMP
+                self.def_apid, pus_tc, failure_notice, TEST_STAMP
             )
         elif subservice == Subservice.TM_START_FAILURE:
-            helper_created = create_start_failure_tm(pus_tc, failure_notice, TEST_STAMP)
+            helper_created = create_start_failure_tm(
+                self.def_apid, pus_tc, failure_notice, TEST_STAMP
+            )
         elif subservice == Subservice.TM_STEP_FAILURE:
             step_id = PacketFieldEnum.with_byte_size(2, 12)
             helper_created = create_step_failure_tm(
+                self.def_apid,
                 pus_tc,
                 failure_notice=failure_notice,
                 step_id=step_id,
@@ -177,11 +190,12 @@ class Service1TmTest(TestCase):
             )
         elif subservice == Subservice.TM_COMPLETION_FAILURE:
             helper_created = create_completion_failure_tm(
-                pus_tc, failure_notice, TEST_STAMP
+                self.def_apid, pus_tc, failure_notice, TEST_STAMP
             )
         self._test_srv_1_failure_comparison_helper(
             pus_tc,
             Service1Tm(
+                apid=self.def_apid,
                 subservice=subservice,
                 verif_params=VerificationParams(
                     req_id=RequestId(pus_tc.packet_id, pus_tc.packet_seq_control),

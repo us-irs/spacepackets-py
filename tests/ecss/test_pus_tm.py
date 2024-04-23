@@ -11,13 +11,11 @@ from spacepackets.ccsds.spacepacket import (
     SequenceFlags,
     SpacePacketHeader,
 )
-from spacepackets.ecss import check_pus_crc
-from spacepackets.ecss.conf import set_default_tm_apid
+from spacepackets.ecss import check_pus_crc, PusVersion
 from spacepackets.util import PrintFormats, get_printable_data_string
 from spacepackets.ecss.tm import (
     PusTm,
     CdsShortTimestamp,
-    PusVersion,
     PusTmSecondaryHeader,
     InvalidTmCrc16,
 )
@@ -129,7 +127,6 @@ class TestTelemetry(TestCase):
         self.assertRaises(ValueError, PusTm.service_from_bytes, bytearray())
 
     def test_source_data_string_getters(self):
-        set_default_tm_apid(0x22)
         source_data = bytearray([0x42, 0x38])
         self.ping_reply.tm_data = source_data
         self.assertEqual(
@@ -226,15 +223,15 @@ class TestTelemetry(TestCase):
             PusTm.unpack(data=self.ping_reply_raw, timestamp_len=len(TEST_STAMP))
 
     def test_calc_crc(self):
-        new_ping_tm = PusTm(service=17, subservice=2, timestamp=TEST_STAMP)
+        new_ping_tm = PusTm(apid=0, service=17, subservice=2, timestamp=TEST_STAMP)
         self.assertIsNone(new_ping_tm.crc16)
         new_ping_tm.calc_crc()
-        self.assertIsNotNone(new_ping_tm.crc16)
+        assert new_ping_tm.crc16 is not None
         self.assertTrue(isinstance(new_ping_tm.crc16, bytes))
         self.assertEqual(len(new_ping_tm.crc16), 2)
 
     def test_crc_always_calced_if_none(self):
-        new_ping_tm = PusTm(service=17, subservice=2, timestamp=TEST_STAMP)
+        new_ping_tm = PusTm(apid=0, service=17, subservice=2, timestamp=TEST_STAMP)
         self.assertIsNone(new_ping_tm.crc16)
         # Should still calculate CRC
         tc_raw = new_ping_tm.pack(recalc_crc=False)

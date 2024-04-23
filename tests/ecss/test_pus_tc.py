@@ -4,8 +4,7 @@ import crcmod
 
 from spacepackets import SpacePacketHeader, PacketType
 from spacepackets.ccsds.spacepacket import SequenceFlags
-from spacepackets.ecss import PusTc, PusTcDataFieldHeader, check_pus_crc
-from spacepackets.ecss.conf import get_default_tc_apid, set_default_tc_apid, PusVersion
+from spacepackets.ecss import PusTc, PusTcDataFieldHeader, check_pus_crc, PusVersion
 from spacepackets.ecss.tc import generate_crc, generate_packet_crc, InvalidTcCrc16
 
 
@@ -92,13 +91,10 @@ class TestTelecommand(TestCase):
         print(repr(self.ping_tc))
         print(self.ping_tc)
 
-        set_default_tc_apid(42)
-        self.assertTrue(get_default_tc_apid() == 42)
-
     def test_with_app_data(self):
         test_app_data = bytearray([1, 2, 3])
         ping_with_app_data = PusTc(
-            service=17, subservice=32, seq_count=52, app_data=test_app_data
+            apid=0, service=17, subservice=32, seq_count=52, app_data=test_app_data
         )
         # 6 bytes CCSDS header, 5 bytes secondary header, 2 bytes CRC, 3 bytes app data
         self.assertEqual(ping_with_app_data.packet_len, 16)
@@ -114,7 +110,7 @@ class TestTelecommand(TestCase):
 
     def test_invalid_seq_count(self):
         with self.assertRaises(ValueError):
-            PusTc(service=493, subservice=5252, seq_count=99432942)
+            PusTc(apid=55, service=493, subservice=5252, seq_count=99432942)
 
     def test_unpack(self):
         pus_17_unpacked = PusTc.unpack(data=self.ping_tc_raw)
@@ -147,15 +143,15 @@ class TestTelecommand(TestCase):
         self.assertEqual(tc_header_pus_c_raw[2], 2)
 
     def test_calc_crc(self):
-        new_ping_tc = PusTc(service=17, subservice=1)
+        new_ping_tc = PusTc(apid=27, service=17, subservice=1)
         self.assertIsNone(new_ping_tc.crc16)
         new_ping_tc.calc_crc()
-        self.assertIsNotNone(new_ping_tc.crc16)
+        assert new_ping_tc.crc16 is not None
         self.assertTrue(isinstance(new_ping_tc.crc16, bytes))
         self.assertEqual(len(new_ping_tc.crc16), 2)
 
     def test_crc_always_calced_if_none(self):
-        new_ping_tc = PusTc(service=17, subservice=1)
+        new_ping_tc = PusTc(apid=28, service=17, subservice=1)
         self.assertIsNone(new_ping_tc.crc16)
         # Should still calculate CRC
         tc_raw = new_ping_tc.pack(recalc_crc=False)
@@ -172,7 +168,7 @@ class TestTelecommand(TestCase):
         self.assertEqual(pus_17_from_composite_fields.pack(), self.ping_tc.pack())
 
     def test_crc_16(self):
-        pus_17_telecommand = PusTc(service=17, subservice=1, seq_count=25)
+        pus_17_telecommand = PusTc(apid=25, service=17, subservice=1, seq_count=25)
         crc_func = crcmod.mkCrcFun(0x11021, rev=False, initCrc=0xFFFF, xorOut=0x0000)
         crc = crc_func(pus_17_telecommand.pack())
         self.assertTrue(crc == 0)
@@ -189,7 +185,7 @@ class TestTelecommand(TestCase):
         self.assertTrue(crc_func(packet_raw) == 0)
 
     def test_getter_functions(self):
-        pus_17_telecommand = PusTc(service=17, subservice=1, seq_count=25)
+        pus_17_telecommand = PusTc(apid=26, service=17, subservice=1, seq_count=25)
         self.assertTrue(pus_17_telecommand.seq_count == 25)
         self.assertTrue(pus_17_telecommand.service == 17)
         self.assertEqual(pus_17_telecommand.subservice, 1)

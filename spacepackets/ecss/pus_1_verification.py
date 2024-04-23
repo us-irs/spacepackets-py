@@ -9,7 +9,6 @@ from typing import Optional
 from spacepackets.ccsds import SpacePacketHeader
 from spacepackets.ccsds.spacepacket import PacketId, PacketSeqCtrl
 from spacepackets.ecss import PusTc
-from spacepackets.ecss.conf import FETCH_GLOBAL_APID
 from spacepackets.ecss.defs import PusService
 from spacepackets.ecss.fields import PacketFieldEnum
 from spacepackets.ecss.tm import PusTm, AbstractPusTm
@@ -122,11 +121,11 @@ class Service1Tm(AbstractPusTm):
 
     def __init__(
         self,
+        apid: int,
         subservice: Subservice,
         timestamp: bytes,
         verif_params: Optional[VerificationParams] = None,
         seq_count: int = 0,
-        apid: int = FETCH_GLOBAL_APID,
         packet_version: int = 0b000,
         space_time_ref: int = 0b0000,
         destination_id: int = 0,
@@ -154,7 +153,7 @@ class Service1Tm(AbstractPusTm):
 
     @classmethod
     def __empty(cls) -> Service1Tm:
-        return cls(subservice=Subservice.INVALID, timestamp=bytes())
+        return cls(apid=0, subservice=Subservice.INVALID, timestamp=bytes())
 
     @classmethod
     def from_tm(cls, tm: PusTm, params: UnpackParams) -> Service1Tm:
@@ -303,8 +302,11 @@ class Service1Tm(AbstractPusTm):
         return False
 
 
-def create_acceptance_success_tm(pus_tc: PusTc, timestamp: bytes) -> Service1Tm:
+def create_acceptance_success_tm(
+    apid: int, pus_tc: PusTc, timestamp: bytes
+) -> Service1Tm:
     return Service1Tm(
+        apid=apid,
         subservice=Subservice.TM_ACCEPTANCE_SUCCESS,
         verif_params=VerificationParams(RequestId.from_sp_header(pus_tc.sp_header)),
         timestamp=timestamp,
@@ -312,11 +314,13 @@ def create_acceptance_success_tm(pus_tc: PusTc, timestamp: bytes) -> Service1Tm:
 
 
 def create_acceptance_failure_tm(
+    apid: int,
     pus_tc: PusTc,
     failure_notice: FailureNotice,
     timestamp: bytes,
 ) -> Service1Tm:
     return Service1Tm(
+        apid=apid,
         subservice=Subservice.TM_ACCEPTANCE_FAILURE,
         verif_params=VerificationParams(
             req_id=RequestId.from_sp_header(pus_tc.sp_header),
@@ -326,8 +330,9 @@ def create_acceptance_failure_tm(
     )
 
 
-def create_start_success_tm(pus_tc: PusTc, timestamp: bytes) -> Service1Tm:
+def create_start_success_tm(apid: int, pus_tc: PusTc, timestamp: bytes) -> Service1Tm:
     return Service1Tm(
+        apid=apid,
         subservice=Subservice.TM_START_SUCCESS,
         verif_params=VerificationParams(RequestId.from_sp_header(pus_tc.sp_header)),
         timestamp=timestamp,
@@ -335,11 +340,13 @@ def create_start_success_tm(pus_tc: PusTc, timestamp: bytes) -> Service1Tm:
 
 
 def create_start_failure_tm(
+    apid: int,
     pus_tc: PusTc,
     failure_notice: FailureNotice,
     timestamp: bytes,
 ) -> Service1Tm:
     return Service1Tm(
+        apid=apid,
         subservice=Subservice.TM_START_FAILURE,
         verif_params=VerificationParams(
             req_id=RequestId.from_sp_header(pus_tc.sp_header),
@@ -350,11 +357,13 @@ def create_start_failure_tm(
 
 
 def create_step_success_tm(
+    apid: int,
     pus_tc: PusTc,
     step_id: PacketFieldEnum,
     timestamp: bytes,
 ) -> Service1Tm:
     return Service1Tm(
+        apid=apid,
         subservice=Subservice.TM_STEP_SUCCESS,
         verif_params=VerificationParams(
             req_id=RequestId.from_sp_header(pus_tc.sp_header), step_id=step_id
@@ -364,12 +373,14 @@ def create_step_success_tm(
 
 
 def create_step_failure_tm(
+    apid: int,
     pus_tc: PusTc,
     step_id: PacketFieldEnum,
     failure_notice: FailureNotice,
     timestamp: bytes,
 ) -> Service1Tm:
     return Service1Tm(
+        apid=apid,
         subservice=Subservice.TM_STEP_FAILURE,
         verif_params=VerificationParams(
             req_id=RequestId.from_sp_header(pus_tc.sp_header),
@@ -380,8 +391,11 @@ def create_step_failure_tm(
     )
 
 
-def create_completion_success_tm(pus_tc: PusTc, timestamp: bytes) -> Service1Tm:
+def create_completion_success_tm(
+    apid: int, pus_tc: PusTc, timestamp: bytes
+) -> Service1Tm:
     return Service1Tm(
+        apid=apid,
         subservice=Subservice.TM_COMPLETION_SUCCESS,
         verif_params=VerificationParams(RequestId.from_sp_header(pus_tc.sp_header)),
         timestamp=timestamp,
@@ -389,11 +403,13 @@ def create_completion_success_tm(pus_tc: PusTc, timestamp: bytes) -> Service1Tm:
 
 
 def create_completion_failure_tm(
+    apid: int,
     pus_tc: PusTc,
     failure_notice: FailureNotice,
     timestamp: bytes,
 ) -> Service1Tm:
     return Service1Tm(
+        apid=apid,
         subservice=Subservice.TM_COMPLETION_FAILURE,
         verif_params=VerificationParams(
             req_id=RequestId.from_sp_header(pus_tc.sp_header),

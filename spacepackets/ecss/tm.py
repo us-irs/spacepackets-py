@@ -25,12 +25,8 @@ from spacepackets.ccsds.spacepacket import (
     AbstractSpacePacket,
     SequenceFlags,
 )
+from spacepackets.ecss.defs import PusVersion
 from spacepackets.ccsds.time import CdsShortTimestamp
-from spacepackets.ecss.conf import (
-    PusVersion,
-    get_default_tm_apid,
-    FETCH_GLOBAL_APID,
-)
 from spacepackets.crc import CRC16_CCITT_FUNC
 
 
@@ -226,22 +222,19 @@ class PusTm(AbstractPusTm):
     CDS_SHORT_SIZE = 7
     PUS_TIMESTAMP_SIZE = CDS_SHORT_SIZE
 
-    # TODO: Supply this constructor as a classmethod in reduced form
     def __init__(
         self,
+        apid: int,
         service: int,
         subservice: int,
         timestamp: bytes,
         source_data: bytes = bytes(),
         seq_count: int = 0,
-        apid: int = FETCH_GLOBAL_APID,
         message_counter: int = 0,
         space_time_ref: int = 0b0000,
         destination_id: int = 0,
         packet_version: int = 0b000,
     ):
-        if apid == FETCH_GLOBAL_APID:
-            apid = get_default_tm_apid()
         self._source_data = source_data
         len_stamp = len(timestamp)
         data_length = self.data_len_from_src_len_timestamp_len(
@@ -270,7 +263,7 @@ class PusTm(AbstractPusTm):
     @classmethod
     def empty(cls) -> PusTm:
         return PusTm(
-            service=0, subservice=0, timestamp=CdsShortTimestamp.empty().pack()
+            apid=0, service=0, subservice=0, timestamp=CdsShortTimestamp.empty().pack()
         )
 
     def pack(self, recalc_crc: bool = True) -> bytearray:
@@ -443,9 +436,7 @@ class PusTm(AbstractPusTm):
     @tm_data.setter
     def tm_data(self, data: bytes):
         self._source_data = data
-        stamp_len = 0
-        if self.pus_tm_sec_header.timestamp:
-            stamp_len += len(self.pus_tm_sec_header.timestamp)
+        stamp_len = len(self.pus_tm_sec_header.timestamp)
         self.space_packet_header.data_len = self.data_len_from_src_len_timestamp_len(
             stamp_len, len(data)
         )

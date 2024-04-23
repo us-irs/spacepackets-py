@@ -10,11 +10,13 @@ from typing import Tuple, Deque, List, Final, Optional, Sequence
 
 from spacepackets.exceptions import BytesTooShortError
 
-SPACE_PACKET_HEADER_SIZE: Final = 6
-CCSDS_HEADER_LEN: Final = SPACE_PACKET_HEADER_SIZE
-SEQ_FLAG_MASK = 0xC000
-APID_MASK = 0x7FF
-PACKET_ID_MASK = 0x1FFF
+CCSDS_HEADER_LEN: Final[int] = 6
+SPACE_PACKET_HEADER_SIZE: Final[int] = CCSDS_HEADER_LEN
+SEQ_FLAG_MASK: Final[int] = 0xC000
+APID_MASK: Final[int] = 0x7FF
+PACKET_ID_MASK: Final[int] = 0x1FFF
+MAX_SEQ_COUNT: Final[int] = pow(2, 14) - 1
+MAX_APID: Final[int] = pow(2, 11) - 1
 
 
 class PacketType(enum.IntEnum):
@@ -35,7 +37,7 @@ class PacketSeqCtrl:
     """
 
     def __init__(self, seq_flags: SequenceFlags, seq_count: int):
-        if seq_count > pow(2, 14) - 1 or seq_count < 0:
+        if seq_count > MAX_SEQ_COUNT or seq_count < 0:
             raise ValueError(
                 f"Sequence count larger than allowed {pow(2, 14) - 1} or negative"
             )
@@ -206,7 +208,7 @@ class SpacePacketHeader(AbstractSpacePacket):
         :param data_len: Contains a length count C that equals one fewer than the length of the
             packet data field. Should not be larger than 65535 bytes
         :param ccsds_version:
-        :param sec_header_flag: Secondary header flag, 1 or True by default
+        :param sec_header_flag: Secondary header flag, or False by default.
         :param seq_flags:
         :raises ValueError: On invalid parameters
         """
@@ -300,7 +302,7 @@ class SpacePacketHeader(AbstractSpacePacket):
 
     @property
     def header_len(self) -> int:
-        return SPACE_PACKET_HEADER_SIZE
+        return CCSDS_HEADER_LEN
 
     @apid.setter
     def apid(self, apid):
@@ -312,7 +314,7 @@ class SpacePacketHeader(AbstractSpacePacket):
 
         :return: Size of the TM packet based on the space packet header data length field.
         """
-        return SPACE_PACKET_HEADER_SIZE + self.data_len + 1
+        return CCSDS_HEADER_LEN + self.data_len + 1
 
     @classmethod
     def unpack(cls, data: bytes) -> SpacePacketHeader:
@@ -501,7 +503,7 @@ def parse_space_packets(
     # Packet ID detected
     while True:
         # Can't even parse CCSDS header. Wait for more data to arrive.
-        if current_idx + SPACE_PACKET_HEADER_SIZE >= len(concatenated_packets):
+        if current_idx + CCSDS_HEADER_LEN >= len(concatenated_packets):
             break
         current_packet_id = (
             struct.unpack("!H", concatenated_packets[current_idx : current_idx + 2])[0]

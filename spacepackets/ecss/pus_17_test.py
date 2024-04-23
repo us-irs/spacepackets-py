@@ -3,7 +3,6 @@ import enum
 
 from spacepackets import SpacePacketHeader
 from spacepackets.ccsds.spacepacket import PacketId, PacketSeqCtrl
-from spacepackets.ecss.conf import FETCH_GLOBAL_APID
 from spacepackets.ecss.defs import PusService
 from spacepackets.ecss.tm import PusTm, AbstractPusTm
 
@@ -16,11 +15,11 @@ class Subservice(enum.IntEnum):
 class Service17Tm(AbstractPusTm):
     def __init__(
         self,
+        apid: int,
         subservice: int,
         timestamp: bytes,
         ssc: int = 0,
         source_data: bytes = bytes(),
-        apid: int = FETCH_GLOBAL_APID,
         packet_version: int = 0b000,
         space_time_ref: int = 0b0000,
         destination_id: int = 0,
@@ -74,7 +73,7 @@ class Service17Tm(AbstractPusTm):
 
     @classmethod
     def __empty(cls) -> Service17Tm:
-        return cls(subservice=0, timestamp=bytes())
+        return cls(apid=0, subservice=0, timestamp=bytes())
 
     @classmethod
     def unpack(cls, data: bytes, timestamp_len: int) -> Service17Tm:

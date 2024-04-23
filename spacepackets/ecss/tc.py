@@ -15,18 +15,14 @@ from crcmod.predefined import PredefinedCrc
 from spacepackets.ccsds.spacepacket import (
     SpacePacketHeader,
     PacketType,
-    SPACE_PACKET_HEADER_SIZE,
+    CCSDS_HEADER_LEN,
     SpacePacket,
     AbstractSpacePacket,
     PacketId,
     PacketSeqCtrl,
     SequenceFlags,
 )
-from spacepackets.ecss.conf import (
-    get_default_tc_apid,
-    PusVersion,
-    FETCH_GLOBAL_APID,
-)
+from spacepackets.ecss.defs import PusVersion
 
 
 class PusTcDataFieldHeader:
@@ -123,10 +119,10 @@ class PusTc(AbstractSpacePacket):
 
     def __init__(
         self,
+        apid: int,
         service: int,
         subservice: int,
-        app_data: bytes = bytes([]),
-        apid: int = FETCH_GLOBAL_APID,
+        app_data: bytes = bytes(),
         seq_count: int = 0,
         source_id: int = 0,
         ack_flags: int = 0b1111,
@@ -144,8 +140,6 @@ class PusTc(AbstractSpacePacket):
             different packet sources (e.g. different ground stations)
         :raises ValueError: Invalid input parameters
         """
-        if apid == FETCH_GLOBAL_APID:
-            apid = get_default_tc_apid()
         self.pus_tc_sec_header = PusTcDataFieldHeader(
             service=service,
             subservice=subservice,
@@ -214,7 +208,7 @@ class PusTc(AbstractSpacePacket):
 
     @classmethod
     def empty(cls) -> PusTc:
-        return PusTc(service=0, subservice=0)
+        return PusTc(apid=0, service=0, subservice=0)
 
     def __repr__(self):
         """Returns the representation of a class instance."""
@@ -286,11 +280,9 @@ class PusTc(AbstractSpacePacket):
         tc_unpacked = cls.empty()
         tc_unpacked.sp_header = SpacePacketHeader.unpack(data=data)
         tc_unpacked.pus_tc_sec_header = PusTcDataFieldHeader.unpack(
-            data=data[SPACE_PACKET_HEADER_SIZE:]
+            data=data[CCSDS_HEADER_LEN:]
         )
-        header_len = (
-            SPACE_PACKET_HEADER_SIZE + tc_unpacked.pus_tc_sec_header.get_header_size()
-        )
+        header_len = CCSDS_HEADER_LEN + tc_unpacked.pus_tc_sec_header.get_header_size()
         expected_packet_len = tc_unpacked.packet_len
         if len(data) < expected_packet_len:
             raise BytesTooShortError(expected_packet_len, len(data))

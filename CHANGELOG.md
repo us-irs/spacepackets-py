@@ -14,8 +14,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 - ECSS PUS telemetry time handling is now more generic and low level: Constructors expect
   a simple `bytes` type while unpackers/readers expect the length of the timestamp. Determining
-  or knowing the size of the timestamp is now the task of the user.
+  or knowing the size of the timestamp is now the task of the user, but a helper constant
+  is expose which can help with this.
 - `CdsShortTimestamp.from_now` renamed to `now`.
+- The ECSS TMTC APID field must not be set explicitely in the class constructors.
 
 ## Added
 
@@ -23,6 +25,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - `spacepackets.ecss.tm.PUS_TM_TIMESTAMP_OFFSET` constant which can be used as a look-ahead to
   determine the timestamp length from a raw PUS TM packet.
 - `spacepackets.ccsds.CCSDS_HEADER_LEN` constant.
+
+## Removed
+
+- Global configuration module for TC and TM APID was removed.
 
 # [v0.23.1] 2024-04-22
 
