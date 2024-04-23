@@ -1,6 +1,7 @@
 """This module contains import PUS TM packet classes, most notably the
 :py:class:`spacepackets.ecss.tm.PusTelemetry` class.
 """
+
 from __future__ import annotations
 
 from abc import abstractmethod
@@ -224,11 +225,11 @@ class PusTm(AbstractPusTm):
 
     def __init__(
         self,
-        apid: int,
         service: int,
         subservice: int,
         timestamp: bytes,
         source_data: bytes = bytes(),
+        apid: int = 0,
         seq_count: int = 0,
         message_counter: int = 0,
         space_time_ref: int = 0b0000,

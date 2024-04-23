@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "spacepackets"
 description = "Various CCSDS and ECSS packet implementations"
 readme = "README.md"
-version = "0.24.0"
+version = "0.24.1"
 requires-python = ">=3.8"
 license = {text = "Apache-2.0"}
 authors = [
@@ -38,7 +38,7 @@ dependencies = [
 [tool.setuptools.packages]
 find = {}
 
-[tool.ruff]
+[tool.ruff.lint]
 ignore = ["E501"]
-[tool.ruff.extend-per-file-ignores]
+[tool.ruff.lint.extend-per-file-ignores]
 "__init__.py" = ["F401"]

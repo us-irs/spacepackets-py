@@ -1,6 +1,7 @@
 """This module contains the PUS telecommand class representation to pack telecommands, most notably
 the :py:class:`PusTelecommand` class.
 """
+
 from __future__ import annotations
 
 from spacepackets import BytesTooShortError
@@ -119,9 +120,9 @@ class PusTc(AbstractSpacePacket):
 
     def __init__(
         self,
-        apid: int,
         service: int,
         subservice: int,
+        apid: int = 0,
         app_data: bytes = bytes(),
         seq_count: int = 0,
         source_id: int = 0,

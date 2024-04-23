@@ -1,5 +1,6 @@
 """This module also includes the :py:class:`SpacePacketHeader` class, which is the header component
 of all CCSDS packets."""
+
 from __future__ import annotations
 
 from abc import abstractmethod, ABC

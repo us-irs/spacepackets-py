@@ -1,6 +1,7 @@
 """This module provides generic sequence counter abstractions and implementation which are commonly
 needed when working with space packet protocols.
 """
+
 from abc import abstractmethod, ABC
 from pathlib import Path
 

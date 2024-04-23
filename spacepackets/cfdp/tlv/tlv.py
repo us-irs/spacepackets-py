@@ -196,7 +196,8 @@ class FaultHandlerOverrideTlv(AbstractTlvBase):
 
 def create_cfdp_proxy_and_dir_op_message_marker() -> bytes:
     """CCSDS 727.0-B-5 p.88: The message identifier for standard CFDP proxy and dir op messages
-    is the presence of the ASCII characters 'cfdp' in the first four octests of each message"""
+    is the presence of the ASCII characters 'cfdp' in the first four octests of each message
+    """
     return "cfdp".encode()
 
 

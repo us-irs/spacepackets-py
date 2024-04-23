@@ -131,7 +131,8 @@ class TfdzConstructionRules(enum.IntEnum):
 
 class UslpProtocolIdentifier(enum.IntEnum):
     """Also called UPID. Identifies the CCSDS recognized protocol, procedure, or type of data
-    contained within the TFDZ. See list here: https://sanaregistry.org/r/uslp_protocol_id/"""
+    contained within the TFDZ. See list here: https://sanaregistry.org/r/uslp_protocol_id/
+    """
 
     SPACE_PACKETS_ENCAPSULATION_PACKETS = 0b00000
     COP_1_CTRL_COMMANDS = 0b00001
