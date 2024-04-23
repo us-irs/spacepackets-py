@@ -1,6 +1,6 @@
 from crcmod.predefined import mkPredefinedCrcFun
 
-from .tc import PusVersion, PusTelecommand, PusTc, PusTcDataFieldHeader
+from .tc import PusTc, PusTelecommand, PusTcDataFieldHeader
 from .tm import PusTm, PusTelemetry, PusTmSecondaryHeader
 from .fields import (
     PacketFieldEnum,
@@ -13,7 +13,7 @@ from .fields import (
     PfcSigned,
     PfcUnsigned,
 )
-from .defs import PusService
+from .defs import PusService, PusVersion
 from .req_id import RequestId
 from .pus_verificator import PusVerificator
 

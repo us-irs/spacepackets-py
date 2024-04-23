@@ -84,11 +84,11 @@ class CdsShortTimestamp(CcsdsTimeProvider):
 
     def _calculate_date_time(self):
         if self._unix_seconds < 0:
-            self._date_time = datetime.datetime(
+            self._datetime = datetime.datetime(
                 1970, 1, 1, tzinfo=datetime.timezone.utc
             ) + datetime.timedelta(seconds=self._unix_seconds)
         else:
-            self._date_time = datetime.datetime.fromtimestamp(
+            self._datetime = datetime.datetime.fromtimestamp(
                 self._unix_seconds, tz=datetime.timezone.utc
             )
 
@@ -108,7 +108,7 @@ class CdsShortTimestamp(CcsdsTimeProvider):
     def ms_of_day(self) -> int:
         return self._ms_of_day
 
-    def pack(self) -> bytearray:
+    def pack(self) -> bytes:
         cds_packet = bytearray()
         cds_packet.extend(self.__p_field)
         cds_packet.extend(struct.pack("!H", self._ccsds_days))
@@ -169,12 +169,14 @@ class CdsShortTimestamp(CcsdsTimeProvider):
         )
 
     def __str__(self):
-        return f"Date {self._date_time!r} with representation {self!r}"
+        return f"Date {self._datetime!r} with representation {self!r}"
 
-    def __eq__(self, other: CdsShortTimestamp):
-        return (self.ccsds_days == other.ccsds_days) and (
-            self.ms_of_day == other.ms_of_day
-        )
+    def __eq__(self, other: object):
+        if isinstance(other, CdsShortTimestamp):
+            return (self.ccsds_days == other.ccsds_days) and (
+                self.ms_of_day == other.ms_of_day
+            )
+        return False
 
     def __add__(self, timedelta: datetime.timedelta):
         """Allows adding timedelta to the CDS timestamp provider.
@@ -200,9 +202,19 @@ class CdsShortTimestamp(CcsdsTimeProvider):
         return self
 
     @classmethod
-    def from_now(cls) -> CdsShortTimestamp:
+    def now(cls) -> CdsShortTimestamp:
         """Returns a seven byte CDS short timestamp with the current time."""
         return cls.from_date_time(datetime.datetime.now(tz=datetime.timezone.utc))
+
+    @classmethod
+    @deprecation.deprecated(
+        deprecated_in="0.24.0",
+        current_version=get_version(),
+        details="use now instead",
+    )
+    def from_now(cls) -> CdsShortTimestamp:
+        """Returns a seven byte CDS short timestamp with the current time."""
+        return cls.now()
 
     @classmethod
     @deprecation.deprecated(
@@ -211,12 +223,12 @@ class CdsShortTimestamp(CcsdsTimeProvider):
         details="use from_now instead",
     )
     def from_current_time(cls) -> CdsShortTimestamp:
-        return cls.from_now()
+        return cls.now()
 
     @classmethod
-    def from_date_time(cls, dt: datetime.datetime) -> CdsShortTimestamp:
+    def from_datetime(cls, dt: datetime.datetime) -> CdsShortTimestamp:
         instance = cls.empty(False)
-        instance._date_time = dt
+        instance._datetime = dt
         instance._unix_seconds = dt.timestamp()
         full_unix_secs = int(math.floor(instance._unix_seconds))
         subsec_millis = int((instance._unix_seconds - full_unix_secs) * 1000)
@@ -225,6 +237,15 @@ class CdsShortTimestamp(CcsdsTimeProvider):
         instance._ms_of_day = secs_of_day * 1000 + subsec_millis
         instance._ccsds_days = convert_unix_days_to_ccsds_days(unix_days)
         return instance
+
+    @classmethod
+    @deprecation.deprecated(
+        deprecated_in="0.24.0",
+        current_version=get_version(),
+        details="use from_datetime instead",
+    )
+    def from_date_time(cls, dt: datetime.datetime) -> CdsShortTimestamp:
+        return cls.from_datetime(dt)
 
     @staticmethod
     def ms_of_today(seconds_since_epoch: Optional[float] = None):
@@ -238,5 +259,13 @@ class CdsShortTimestamp(CcsdsTimeProvider):
     def as_unix_seconds(self) -> float:
         return self._unix_seconds
 
+    def as_datetime(self) -> datetime.datetime:
+        return self._datetime
+
+    @deprecation.deprecated(
+        deprecated_in="0.24.0",
+        current_version=get_version(),
+        details="use as_datetime instead",
+    )
     def as_date_time(self) -> datetime.datetime:
-        return self._date_time
+        return self.as_datetime()

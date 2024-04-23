@@ -16,7 +16,7 @@ PUS ping telemetry reply without a timestamp.
     cmd_as_bytes = ping_cmd.pack()
     print(f"Ping telecommand [17,1] (hex): [{cmd_as_bytes.hex(sep=',')}]")
 
-    ping_reply = PusTm(service=17, subservice=2, apid=0x01, time_provider=None)
+    ping_reply = PusTm(service=17, subservice=2, apid=0x01, timestamp=bytes())
     tm_as_bytes = ping_reply.pack()
     print(f"Ping reply [17,2] (hex): [{tm_as_bytes.hex(sep=',')}]")
 

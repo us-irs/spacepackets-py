@@ -6,8 +6,13 @@ ECSS Package
    :undoc-members:
    :show-inheritance:
 
+.. automodule:: spacepackets.ecss.defs
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 ECSS PUS Telecommand Module
---------------------------------
+----------------------------
 
 :ref:`api/ecss_tc:ECSS Telecommand Module`
 
@@ -15,17 +20,6 @@ ECSS PUS Telemetry Module
 ----------------------------
 
 :ref:`api/ecss_tm:ECSS Telemetry Module`
-
-ECSS Configuration Submodule
-----------------------------------
-
-This module can be used to configure common default values so these don't have to be specified
-each time anymore when creating ECSS packets
-
-.. automodule:: spacepackets.ecss.conf
-   :members:
-   :undoc-members:
-   :show-inheritance:
 
 ECSS Fields Submodule
 ----------------------------------

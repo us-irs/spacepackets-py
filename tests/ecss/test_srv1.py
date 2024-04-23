@@ -21,14 +21,16 @@ from spacepackets.ecss.pus_1_verification import (
     ErrorCode,
     StepId,
 )
-from tests.ecss.common import generic_time_provider_mock, TEST_STAMP
+from tests.ecss.common import TEST_STAMP
 
 
 class Service1TmTest(TestCase):
     def setUp(self) -> None:
-        ping_tc = PusTc(service=17, subservice=1)
-        self.srv1_tm = create_start_success_tm(ping_tc, None)
-        self.time_stamp_provider = generic_time_provider_mock(TEST_STAMP)
+        self.def_apid = 0x02
+        ping_tc = PusTc(apid=self.def_apid, service=17, subservice=1)
+        self.srv1_tm = create_start_success_tm(
+            apid=self.def_apid, pus_tc=ping_tc, timestamp=TEST_STAMP
+        )
 
     def test_failure_notice_invalid_creation(self):
         with self.assertRaises(ValueError):
@@ -38,14 +40,16 @@ class Service1TmTest(TestCase):
         self.assertEqual(
             self.srv1_tm.sp_header, self.srv1_tm.pus_tm.space_packet_header
         )
-        self.assertEqual(self.srv1_tm.time_provider, None)
+        self.assertEqual(self.srv1_tm.timestamp, TEST_STAMP)
         self.assertEqual(self.srv1_tm.is_step_reply, False)
         self.assertEqual(self.srv1_tm.service, 1)
         self.assertEqual(self.srv1_tm.subservice, 3)
         self.assertEqual(self.srv1_tm.error_code, None)
 
     def test_other_ctor(self):
-        srv1_tm = Service1Tm.from_tm(self.srv1_tm.pus_tm, UnpackParams(None))
+        srv1_tm = Service1Tm.from_tm(
+            self.srv1_tm.pus_tm, UnpackParams(timestamp_len=len(TEST_STAMP))
+        )
         self.assertEqual(srv1_tm, self.srv1_tm)
 
     def test_failure_notice(self):
@@ -91,33 +95,34 @@ class Service1TmTest(TestCase):
         self._generic_test_srv_1_success(Subservice.TM_COMPLETION_SUCCESS)
 
     def _generic_test_srv_1_success(self, subservice: Subservice):
-        pus_tc = PusTc(service=17, subservice=1)
+        pus_tc = PusTc(apid=self.def_apid, service=17, subservice=1)
         helper_created = None
         step_id = None
         if subservice == Subservice.TM_ACCEPTANCE_SUCCESS:
             helper_created = create_acceptance_success_tm(
-                pus_tc, self.time_stamp_provider
+                apid=self.def_apid, pus_tc=pus_tc, timestamp=TEST_STAMP
             )
         elif subservice == Subservice.TM_START_SUCCESS:
-            helper_created = create_start_success_tm(pus_tc, self.time_stamp_provider)
+            helper_created = create_start_success_tm(self.def_apid, pus_tc, TEST_STAMP)
         elif subservice == Subservice.TM_STEP_SUCCESS:
             step_id = PacketFieldEnum.with_byte_size(1, 4)
             helper_created = create_step_success_tm(
-                pus_tc, step_id, self.time_stamp_provider
+                self.def_apid, pus_tc, step_id, TEST_STAMP
             )
         elif subservice == Subservice.TM_COMPLETION_SUCCESS:
             helper_created = create_completion_success_tm(
-                pus_tc, time_provider=self.time_stamp_provider
+                self.def_apid, pus_tc, timestamp=TEST_STAMP
             )
         self._test_srv_1_success_tm(
             pus_tc,
             Service1Tm(
+                apid=self.def_apid,
                 subservice=subservice,
                 verif_params=VerificationParams(
                     req_id=RequestId(pus_tc.packet_id, pus_tc.packet_seq_control),
                     step_id=step_id,
                 ),
-                time_provider=CdsShortTimestamp.empty(),
+                timestamp=CdsShortTimestamp.empty().pack(),
             ),
             subservice,
         )
@@ -148,7 +153,7 @@ class Service1TmTest(TestCase):
         self.assertEqual(srv_1_tm.tc_req_id.tc_psc, pus_tc.packet_seq_control)
         srv_1_tm_raw = srv_1_tm.pack()
         srv_1_tm_unpacked = Service1Tm.unpack(
-            srv_1_tm_raw, UnpackParams(self.time_stamp_provider)
+            srv_1_tm_raw, UnpackParams(len(TEST_STAMP))
         )
         self.assertEqual(
             srv_1_tm_unpacked.tc_req_id.tc_packet_id.raw(), pus_tc.packet_id.raw()
@@ -160,7 +165,7 @@ class Service1TmTest(TestCase):
             self.assertEqual(srv_1_tm_unpacked.step_id, step_id)
 
     def _generic_test_srv_1_failure(self, subservice: Subservice):
-        pus_tc = PusTc(service=17, subservice=1)
+        pus_tc = PusTc(apid=self.def_apid, service=17, subservice=1)
         failure_notice = FailureNotice(
             code=PacketFieldEnum.with_byte_size(1, 8), data=bytes([2, 4])
         )
@@ -168,34 +173,36 @@ class Service1TmTest(TestCase):
         step_id = None
         if subservice == Subservice.TM_ACCEPTANCE_FAILURE:
             helper_created = create_acceptance_failure_tm(
-                pus_tc, failure_notice, self.time_stamp_provider
+                self.def_apid, pus_tc, failure_notice, TEST_STAMP
             )
         elif subservice == Subservice.TM_START_FAILURE:
             helper_created = create_start_failure_tm(
-                pus_tc, failure_notice, self.time_stamp_provider
+                self.def_apid, pus_tc, failure_notice, TEST_STAMP
             )
         elif subservice == Subservice.TM_STEP_FAILURE:
             step_id = PacketFieldEnum.with_byte_size(2, 12)
             helper_created = create_step_failure_tm(
+                self.def_apid,
                 pus_tc,
                 failure_notice=failure_notice,
                 step_id=step_id,
-                time_provider=self.time_stamp_provider,
+                timestamp=TEST_STAMP,
             )
         elif subservice == Subservice.TM_COMPLETION_FAILURE:
             helper_created = create_completion_failure_tm(
-                pus_tc, failure_notice, self.time_stamp_provider
+                self.def_apid, pus_tc, failure_notice, TEST_STAMP
             )
         self._test_srv_1_failure_comparison_helper(
             pus_tc,
             Service1Tm(
+                apid=self.def_apid,
                 subservice=subservice,
                 verif_params=VerificationParams(
                     req_id=RequestId(pus_tc.packet_id, pus_tc.packet_seq_control),
                     failure_notice=failure_notice,
                     step_id=step_id,
                 ),
-                time_provider=self.time_stamp_provider,
+                timestamp=TEST_STAMP,
             ),
             subservice=subservice,
             failure_notice=failure_notice,
@@ -222,7 +229,7 @@ class Service1TmTest(TestCase):
         self.assertEqual(srv_1_tm.tc_req_id.tc_packet_id, pus_tc.packet_id)
         self.assertEqual(srv_1_tm.tc_req_id.tc_psc, pus_tc.packet_seq_control)
         srv_1_tm_raw = srv_1_tm.pack()
-        unpack_params = UnpackParams(self.time_stamp_provider)
+        unpack_params = UnpackParams(len(TEST_STAMP))
         if failure_notice is not None:
             unpack_params.bytes_err_code = failure_notice.code.len()
         if step_id is not None:

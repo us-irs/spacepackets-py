@@ -1,6 +1,15 @@
 import enum
 
 
+class PusVersion(enum.IntEnum):
+    # ESA PSS-07-101. Not supported by this package!
+    ESA_PUS = 0
+    # ECSS-E-70-41A
+    PUS_A = 1
+    # ECSS-E-ST-70-41C
+    PUS_C = 2
+
+
 class PusService(enum.IntEnum):
     S1_VERIFICATION = 1
     S2_RAW_CMD = 2
