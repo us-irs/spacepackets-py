@@ -19,7 +19,7 @@ The steps shown here are for Ubuntu/MacOS.
 # Release
 
 1. Delete existing distributions: `rm dist/*`
-2. Build the package. Requires the `build` package: `python3 -m build`
+2. Build the package. Requires the `build` package: `python3 -m build .`
 3. Upload the source and build distribution: `python3 -m twine upload dist/*`. You might require
    a PyPI upload token to do this.
 
