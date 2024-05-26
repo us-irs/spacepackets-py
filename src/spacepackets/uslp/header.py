@@ -209,6 +209,7 @@ class PrimaryHeader(PrimaryHeaderBase):
         )
         if self.vcf_count_len > 0 and self.vcf_count is None:
             raise ValueError(f"VCF count is None for VCS count length {self.vcf_count_len}")
+        assert self.vcf_count is not None
         if self.vcf_count_len == 1:
             packet.append(self.vcf_count)
         elif self.vcf_count_len == 2:
