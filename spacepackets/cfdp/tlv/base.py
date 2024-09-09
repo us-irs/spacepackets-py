@@ -25,7 +25,12 @@ class AbstractTlvBase(ABC):
     def value(self) -> bytes:
         pass
 
-    def __eq__(self, other: AbstractTlvBase):
+    def __repr__(self) -> str:
+        return f"Tlv(tlv_type={self.tlv_type!r}, value=0x[{self.value.hex(sep=',')}])"
+
+    def __eq__(self, other: object):
+        if not isinstance(other, AbstractTlvBase):
+            return False
         return self.tlv_type == other.tlv_type and self.value == other.value
 
     def check_type(self, tlv_type: TlvType):

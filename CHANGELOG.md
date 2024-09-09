@@ -8,6 +8,17 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 # [unreleased]
 
+# [v0.24.2] 2024-09-09
+
+## Fixed
+
+- Custom `EntityIdTlv` `__eq__` implementation which only compares the numerical value
+  of the entity ID TLVs
+
+## Added
+
+- `AbstractTlvBase` `__repr__` implementation
+
 # [v0.24.1] 2024-04-23
 
 ## Reverted
