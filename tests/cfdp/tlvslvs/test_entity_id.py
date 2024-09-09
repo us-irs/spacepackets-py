@@ -41,3 +41,14 @@ class TestEntityIdTlvs(TestCase):
         entity_id_tlv_tlv.tlv_type = TlvType.FILESTORE_REQUEST
         with self.assertRaises(TlvTypeMissmatch):
             EntityIdTlv.from_tlv(cfdp_tlv=entity_id_tlv_tlv)
+
+    def test_custom_eq(self):
+        self.entity_id_tlv = EntityIdTlv(entity_id=bytes([0x00, 0x01]))
+        self.entity_id_tlv_same = EntityIdTlv(entity_id=bytes([0x01]))
+        self.assertEqual(self.entity_id_tlv, self.entity_id_tlv_same)
+
+    def test_repr(self):
+        repr_str = repr(self.entity_id_tlv)
+        self.assertEqual(
+            repr_str, f"Tlv(tlv_type={TlvType.ENTITY_ID!r}, value=0x[00,01,02,03])"
+        )

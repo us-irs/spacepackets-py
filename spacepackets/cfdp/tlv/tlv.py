@@ -15,6 +15,7 @@ from spacepackets.cfdp.tlv.defs import (
 )
 from spacepackets.exceptions import BytesTooShortError
 from spacepackets.cfdp.exceptions import TlvTypeMissmatch
+from spacepackets.util import UnsignedByteField
 
 
 def map_enum_status_code_to_int(status_code: FilestoreResponseStatusCode) -> int:
@@ -502,6 +503,9 @@ class FileStoreResponseTlv(FileStoreRequestBase, AbstractTlvBase):
 
 
 class EntityIdTlv(AbstractTlvBase):
+    """This helper class has a :py:meth:`__eq__` implementation which only compares the numerical value
+    of the entity IDs"""
+
     TLV_TYPE = TlvType.ENTITY_ID
 
     def __init__(self, entity_id: bytes):
@@ -540,3 +544,11 @@ class EntityIdTlv(AbstractTlvBase):
         entity_id_tlv = cls.__empty()
         entity_id_tlv.tlv = cfdp_tlv
         return entity_id_tlv
+
+    def __eq__(self, other: AbstractTlvBase) -> bool:
+        """Custom implementation which only compares the numerical value of the entity IDs"""
+        if not isinstance(other, EntityIdTlv):
+            return False
+        own_id = UnsignedByteField.from_bytes(self.value)
+        other_id = UnsignedByteField.from_bytes(other.value)
+        return own_id.value == other_id.value
