@@ -74,7 +74,8 @@ coverage run -m pytest
 
 # Documentation
 
-The documentation is built with Sphinx
+The documentation is built with Sphinx and new documentation should be written using the
+[NumPy format](https://www.sphinx-doc.org/en/master/usage/extensions/example_numpy.html#example-numpy).
 
 Install the required dependencies first:
 

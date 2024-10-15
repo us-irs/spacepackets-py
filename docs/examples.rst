@@ -1,40 +1,15 @@
 Examples
 =========
 
-ECSS PUS packets
------------------
-
-The following example shows how to generate PUS packets using the PUS ping telecommand and a
-PUS ping telemetry reply without a timestamp.
-
-.. testcode:: pus
-
-    from spacepackets.ecss.tc import PusTc
-    from spacepackets.ecss.tm import PusTm
-
-    ping_cmd = PusTc(service=17, subservice=1, apid=0x01)
-    cmd_as_bytes = ping_cmd.pack()
-    print(f"Ping telecommand [17,1] (hex): [{cmd_as_bytes.hex(sep=',')}]")
-
-    ping_reply = PusTm(service=17, subservice=2, apid=0x01, timestamp=bytes())
-    tm_as_bytes = ping_reply.pack()
-    print(f"Ping reply [17,2] (hex): [{tm_as_bytes.hex(sep=',')}]")
-
-Output:
-
-.. testoutput:: pus
-
-    Ping telecommand [17,1] (hex): [18,01,c0,00,00,06,2f,11,01,00,00,16,1d]
-    Ping reply [17,2] (hex): [08,01,c0,00,00,08,20,11,02,00,00,00,00,86,d7]
-
 CCSDS Space Packet
 -------------------
 
-The following example shows how to generate a space packet header:
+The following example shows how to generate a space packet header or a custom telecommand
+based on CCSDS space packets.
 
 .. testcode:: ccsds
 
-    from spacepackets.ccsds.spacepacket import SpHeader, PacketType
+    from spacepackets.ccsds.spacepacket import SpHeader, PacketType, CCSDS_HEADER_LEN
 
     spacepacket_header = SpHeader(
         packet_type=PacketType.TC, apid=0x01, seq_count=0, data_len=0
@@ -42,11 +17,22 @@ The following example shows how to generate a space packet header:
     header_as_bytes = spacepacket_header.pack()
     print(f"Space packet header (hex): [{header_as_bytes.hex(sep=',')}]")
 
+    # Create CCSDS space packet telecommand with custom data.
+    custom_data = bytes([1, 2, 3, 4])
+    tc_header = SpHeader.tc(apid=2, seq_count=5, data_len=0)
+    tc_header.set_data_len_from_packet_len(CCSDS_HEADER_LEN + len(custom_data))
+    telecommand = tc_header.pack()
+    telecommand.extend(custom_data)
+    print(f"Space packet telecommand (hex): [{telecommand.hex(sep=',')}]")
+
+
+
 Output:
 
 .. testoutput:: ccsds
 
     Space packet header (hex): [10,01,c0,00,00,00]
+    Space packet telecommand (hex): [10,02,c0,05,00,03,01,02,03,04]
 
 CFDP Packets
 -----------------
@@ -118,6 +104,32 @@ Output
     EofPdu(file_checksum=b'\x1c)\x1c\xa3',file_size=12, pdu_conf=PduConfig(source_entity_id=ByteFieldU8(val=1, byte_len=1), dest_entity_id=ByteFieldU8(val=2, byte_len=1), transaction_seq_num=ByteFieldU8(val=0, byte_len=1), trans_mode=<TransmissionMode.UNACKNOWLEDGED: 1>, file_flag=<LargeFileFlag.NORMAL: 0>, crc_flag=<CrcFlag.NO_CRC: 0>, direction=<Direction.TOWARDS_RECEIVER: 0>, seg_ctrl=<SegmentationControl.NO_RECORD_BOUNDARIES_PRESERVATION: 0>),fault_location=None,condition_code=0)
     --- PDU 2 RAW ---
     0x[24,00,0a,00,01,00,02,04,00,1c,29,1c,a3,00,00,00,0c]
+
+ECSS PUS packets
+-----------------
+
+The following example shows how to generate PUS packets using the PUS ping telecommand and a
+PUS ping telemetry reply without a timestamp.
+
+.. testcode:: pus
+
+    from spacepackets.ecss.tc import PusTc
+    from spacepackets.ecss.tm import PusTm
+
+    ping_cmd = PusTc(service=17, subservice=1, apid=0x01)
+    cmd_as_bytes = ping_cmd.pack()
+    print(f"Ping telecommand [17,1] (hex): [{cmd_as_bytes.hex(sep=',')}]")
+
+    ping_reply = PusTm(service=17, subservice=2, apid=0x01, timestamp=bytes())
+    tm_as_bytes = ping_reply.pack()
+    print(f"Ping reply [17,2] (hex): [{tm_as_bytes.hex(sep=',')}]")
+
+Output:
+
+.. testoutput:: pus
+
+    Ping telecommand [17,1] (hex): [18,01,c0,00,00,06,2f,11,01,00,00,16,1d]
+    Ping reply [17,2] (hex): [08,01,c0,00,00,08,20,11,02,00,00,00,00,86,d7]
 
 USLP Frames
 -------------------
