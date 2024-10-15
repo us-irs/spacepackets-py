@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 # [unreleased]
 
+## Changed
+
+Renamed `PusFileSeqCountProvider` to `CcsdsFileSeqCountProvider` but keep old alias.
+
 # [v0.24.2] 2024-10-15
 
 ## Fixed

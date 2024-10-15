@@ -85,9 +85,13 @@ class FileSeqCountProvider(ProvidesSeqCount):
             return seq_cnt + 1
 
 
-class PusFileSeqCountProvider(FileSeqCountProvider):
+class CcsdsFileSeqCountProvider(FileSeqCountProvider):
     def __init__(self, file_name: Path = Path("seqcnt.txt")):
         super().__init__(max_bit_width=14, file_name=file_name)
+
+
+"""Deprecated alias: Use CcsdsFileSeqCountProvider instead"""
+PusFileSeqCountProvider = CcsdsFileSeqCountProvider
 
 
 class SeqCountProvider(ProvidesSeqCount):

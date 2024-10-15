@@ -20,7 +20,7 @@ class TestTime(TestCase):
         )
         self.assertEqual(empty_stamp.ccsds_days, 0)
         self.assertEqual(empty_stamp.ms_of_day, 0)
-        dt = empty_stamp.as_date_time()
+        dt = empty_stamp.as_datetime()
         self.assertEqual(dt.year, 1958)
         self.assertEqual(dt.month, 1)
         self.assertEqual(dt.day, 1)
@@ -33,7 +33,7 @@ class TestTime(TestCase):
         )
 
     def test_basic_from_dt(self):
-        cds_stamp = CdsShortTimestamp.from_date_time(
+        cds_stamp = CdsShortTimestamp.from_datetime(
             datetime.datetime(
                 year=1970,
                 month=1,
@@ -77,7 +77,7 @@ class TestTime(TestCase):
 
     def test_dt_is_utc(self):
         empty_stamp = CdsShortTimestamp(0, 0)
-        dt = empty_stamp.as_date_time()
+        dt = empty_stamp.as_datetime()
         self.assertEqual(dt.tzinfo, datetime.timezone.utc)
         self.assertEqual(dt.tzinfo.utcoffset(dt), datetime.timedelta(0))
 
