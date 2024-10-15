@@ -1,6 +1,6 @@
 from __future__ import annotations
 from abc import abstractmethod
-from typing import Optional
+from typing import Optional, Tuple
 import enum
 import struct
 
@@ -77,7 +77,7 @@ class PrimaryHeaderBase:
         raw_packet: bytes,
         truncated: bool = False,
         uslp_version: int = USLP_VERSION_NUMBER,
-    ) -> (int, SourceOrDestField, int, int):
+    ) -> Tuple[int, SourceOrDestField, int, int]:
         if len(raw_packet) < 4:
             raise UslpInvalidRawPacketOrFrameLen
         version_number = (raw_packet[0] & 0xF0) >> 4
@@ -94,7 +94,7 @@ class PrimaryHeaderBase:
         end_of_frame_primary_header = raw_packet[3] & 0b1
         if end_of_frame_primary_header != truncated:
             raise UslpTypeMissmatch
-        return scid, src_dest, vcid, map_id
+        return scid, SourceOrDestField(src_dest), vcid, map_id
 
 
 class TruncatedPrimaryHeader(PrimaryHeaderBase):
