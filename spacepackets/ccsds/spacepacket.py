@@ -172,8 +172,7 @@ class AbstractSpacePacket(ABC):
 
 
 class SpacePacketHeader(AbstractSpacePacket):
-    """This class encapsulates the space packet header.
-    Packet reference: Blue Book CCSDS 133.0-B-2"""
+    """This class encapsulates the space packet header. Packet reference: Blue Book CCSDS 133.0-B-2"""
 
     def __init__(
         self,
@@ -186,6 +185,10 @@ class SpacePacketHeader(AbstractSpacePacket):
         ccsds_version: int = 0b000,
     ):
         """Create a space packet header with the given field parameters.
+
+        The data length field can also be set from the total packet length by using the
+        :py:meth:`set_data_len_from_packet_len` method after construction of the space packet
+        header object.
 
         >>> sph = SpacePacketHeader(packet_type=PacketType.TC, apid=0x42, seq_count=0, data_len=12)
         >>> hex(sph.apid)
@@ -201,17 +204,28 @@ class SpacePacketHeader(AbstractSpacePacket):
         >>> sph.packet_seq_control
         PacketSeqCtrl(seq_flags=<SequenceFlags.UNSEGMENTED: 3>, seq_count=0)
 
-        :param packet_type: 0 for Telemetery, 1 for Telecommands
-        :param apid: Application Process ID, should not be larger
-            than 11 bits, deciaml 2074 or hex 0x7ff
-        :param seq_count: Source sequence counter, should not be larger than 0x3fff or
-            decimal 16383
-        :param data_len: Contains a length count C that equals one fewer than the length of the
-            packet data field. Should not be larger than 65535 bytes
-        :param ccsds_version:
-        :param sec_header_flag: Secondary header flag, or False by default.
-        :param seq_flags:
-        :raises ValueError: On invalid parameters
+        Parameters
+        -----------
+        packet_type: PacketType
+            0 for Telemetery, 1 for Telecommands
+        apid: int
+            Application Process ID, should not be larger than 11 bits, deciaml 2074 or hex 0x7ff
+        seq_count: int
+            Source sequence counter, should not be larger than 0x3fff or decimal 16383
+        data_len: int
+            Contains a length count C that equals one fewer than the length of the packet data
+            field. Should not be larger than 65535 bytes
+        sec_header_flag: bool
+            Secondary header flag, or False by default.
+        seq_flags:
+            Sequence flags, defaults to unsegmented.
+        ccsds_version: int
+            Version of the CCSDS packet. Defaults to 0b000
+
+        Raises
+        --------
+        ValueError
+            On invalid parameters
         """
         if data_len > pow(2, 16) - 1 or data_len < 0:
             raise ValueError(
@@ -224,6 +238,54 @@ class SpacePacketHeader(AbstractSpacePacket):
         )
         self._psc = PacketSeqCtrl(seq_flags=seq_flags, seq_count=seq_count)
         self.data_len = data_len
+
+    @classmethod
+    def tc(
+        cls,
+        apid: int,
+        seq_count: int,
+        data_len: int,
+        sec_header_flag: bool = False,
+        seq_flags: SequenceFlags = SequenceFlags.UNSEGMENTED,
+        ccsds_version: int = 0b000,
+    ) -> SpacePacketHeader:
+        """Create a space packet header with the given field parameters for a telecommand packet.
+        Calls the default constructor :py:meth:`SpacePacketHeader` with the packet type
+        set to :py:class:`PacketType.TC`.
+        """
+        return cls(
+            packet_type=PacketType.TC,
+            apid=apid,
+            seq_count=seq_count,
+            data_len=data_len,
+            sec_header_flag=sec_header_flag,
+            seq_flags=seq_flags,
+            ccsds_version=ccsds_version,
+        )
+
+    @classmethod
+    def tm(
+        cls,
+        apid: int,
+        seq_count: int,
+        data_len: int,
+        sec_header_flag: bool = False,
+        seq_flags: SequenceFlags = SequenceFlags.UNSEGMENTED,
+        ccsds_version: int = 0b000,
+    ) -> SpacePacketHeader:
+        """Create a space packet header with the given field parameters for a telemetry packet.
+        Calls the default constructor :py:meth:`SpacePacketHeader` with the packet type
+        set to :py:class:`PacketType.TM`.
+        """
+        return cls(
+            packet_type=PacketType.TM,
+            apid=apid,
+            seq_count=seq_count,
+            data_len=data_len,
+            sec_header_flag=sec_header_flag,
+            seq_flags=seq_flags,
+            ccsds_version=ccsds_version,
+        )
 
     @classmethod
     def from_composite_fields(
@@ -289,6 +351,19 @@ class SpacePacketHeader(AbstractSpacePacket):
     def seq_count(self):
         return self._psc.seq_count
 
+    def set_data_len_from_packet_len(self, packet_len: int):
+        """Sets the data length field from the given total packet length. The total packet length
+        must be at least 7 bytes.
+
+        Raises
+        -------
+        ValueError
+            The passed packet length is smaller than the minimum expected 7 bytes.
+        """
+        if packet_len < CCSDS_HEADER_LEN + 1:
+            raise ValueError("specified total packet length too short")
+        self.data_len = packet_len - CCSDS_HEADER_LEN - 1
+
     @seq_count.setter
     def seq_count(self, seq_cnt):
         self._psc.seq_count = seq_cnt
@@ -313,7 +388,12 @@ class SpacePacketHeader(AbstractSpacePacket):
     def packet_len(self) -> int:
         """Retrieve the full space packet size when packed.
 
-        :return: Size of the TM packet based on the space packet header data length field.
+        The full packet size is the data length field plus the :py:const:`CCSDS_HEADER_LEN` of 6
+        bytes plus one.
+
+        Returns
+        --------
+        Size of the TM packet based on the space packet header data length field.
         """
         return CCSDS_HEADER_LEN + self.data_len + 1
 
@@ -383,8 +463,12 @@ class SpacePacket:
         )
 
     def pack(self) -> bytearray:
-        """Pack the raw byte representation of the space packet
-        :raises ValueError: Mandatory fields were not supplied properly"""
+        """Pack the raw byte representation of the space packet.
+
+        Raises
+        --------
+        ValueError
+            Mandatory fields were not supplied properly"""
         packet = self.sp_header.pack()
         if self.sp_header.sec_header_flag:
             if self.sec_header is None:

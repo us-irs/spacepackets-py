@@ -12,6 +12,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 Renamed `PusFileSeqCountProvider` to `CcsdsFileSeqCountProvider` but keep old alias.
 
+## Added
+
+- New `SpacePacketHeader.tc` and `SpacePacketHeader.tm` constructors which set the packet
+  type correctly
+
 # [v0.24.2] 2024-10-15
 
 ## Fixed

@@ -35,6 +35,44 @@ class TestSpacePacket(TestCase):
         self.assertEqual(self.sp_header.data_len, 0x16)
         self.assertEqual(self.sp_header.packet_type, PacketType.TC)
 
+    def test_tm_header(self):
+        sp_header = SpacePacketHeader.tm(apid=0x03, data_len=16, seq_count=35)
+        self.assertEqual(sp_header.apid, 0x03)
+        self.assertEqual(sp_header.seq_flags, SequenceFlags.UNSEGMENTED)
+        self.assertEqual(sp_header.ccsds_version, 0b000)
+        self.assertEqual(sp_header.packet_id, PacketId(PacketType.TM, False, 0x03))
+        self.assertEqual(
+            sp_header.packet_seq_control,
+            PacketSeqCtrl(SequenceFlags.UNSEGMENTED, 35),
+        )
+        self.assertEqual(sp_header.seq_count, 35)
+        self.assertEqual(sp_header.data_len, 16)
+        self.assertEqual(sp_header.packet_type, PacketType.TM)
+
+    def test_len_field_setter(self):
+        self.sp_header.set_data_len_from_packet_len(10)
+        # Total packet lenght minus the header lenght minus 1
+        self.assertEqual(self.sp_header.data_len, 3)
+
+    def test_invalid_len_field_setter_call(self):
+        for idx in range(7):
+            with self.assertRaises(ValueError):
+                self.sp_header.set_data_len_from_packet_len(idx)
+
+    def test_tc_header(self):
+        sp_header = SpacePacketHeader.tc(apid=0x7FF, data_len=16, seq_count=0x3FFF)
+        self.assertEqual(sp_header.apid, 0x7FF)
+        self.assertEqual(sp_header.seq_flags, SequenceFlags.UNSEGMENTED)
+        self.assertEqual(sp_header.ccsds_version, 0b000)
+        self.assertEqual(sp_header.packet_id, PacketId(PacketType.TC, False, 0x7FF))
+        self.assertEqual(
+            sp_header.packet_seq_control,
+            PacketSeqCtrl(SequenceFlags.UNSEGMENTED, 0x3FFF),
+        )
+        self.assertEqual(sp_header.seq_count, 0x3FFF)
+        self.assertEqual(sp_header.data_len, 16)
+        self.assertEqual(sp_header.packet_type, PacketType.TC)
+
     def test_raw_output(self):
         raw_output = self.sp_header.pack()
         self.assertEqual(
