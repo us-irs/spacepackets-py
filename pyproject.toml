@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "spacepackets"
 description = "Various CCSDS and ECSS packet implementations"
 readme = "README.md"
-version = "0.24.2"
+version = "0.25.0"
 requires-python = ">=3.8"
 license = {text = "Apache-2.0"}
 authors = [
