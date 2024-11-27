@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 # [v0.26.0] 2024-11-27
 
+- Python 3.8 is not supported anymore as it has reached end-of-life.
+
 ## Changed
 
 - `MetadataPdu` options have to be specified as an optional list of abstract TLVs now.
