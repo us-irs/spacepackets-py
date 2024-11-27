@@ -1,7 +1,7 @@
 from __future__ import annotations
+
 import enum
 import struct
-from typing import Tuple, Union
 
 
 class PrintFormats(enum.IntEnum):
@@ -13,27 +13,25 @@ class PrintFormats(enum.IntEnum):
 def get_dec_data_string(data: bytes) -> str:
     if len(data) == 0:
         return "dec []"
-    elif len(data) == 1:
+    if len(data) == 1:
         return f"dec [{data[0]}]"
-    else:
-        string_to_print = "dec ["
-        for idx in range(len(data) - 1):
-            string_to_print += f"{data[idx]},"
-        string_to_print += f"{data[len(data) - 1]}]"
-        return string_to_print
+    string_to_print = "dec ["
+    for idx in range(len(data) - 1):
+        string_to_print += f"{data[idx]},"
+    string_to_print += f"{data[len(data) - 1]}]"
+    return string_to_print
 
 
 def get_bin_data_string(data: bytes) -> str:
     if len(data) == 0:
         return "bin []"
-    elif len(data) == 1:
+    if len(data) == 1:
         return f"bin [0:{data[0]:08b}]"
-    else:
-        string_to_print = "bin [\n"
-        for idx in range(len(data)):
-            string_to_print += f"{idx}:{data[idx]:08b}\n"
-        string_to_print += "]"
-        return string_to_print
+    string_to_print = "bin [\n"
+    for idx in range(len(data)):
+        string_to_print += f"{idx}:{data[idx]:08b}\n"
+    string_to_print += "]"
+    return string_to_print
 
 
 def get_printable_data_string(print_format: PrintFormats, data: bytes) -> str:
@@ -44,10 +42,11 @@ def get_printable_data_string(print_format: PrintFormats, data: bytes) -> str:
     data_to_print = data[:length]
     if print_format == PrintFormats.HEX:
         return f'hex [{data_to_print.hex(sep=",", bytes_per_sep=1)}]'
-    elif print_format == PrintFormats.DEC:
+    if print_format == PrintFormats.DEC:
         return get_dec_data_string(data)
-    elif print_format == PrintFormats.BIN:
+    if print_format == PrintFormats.BIN:
         return get_bin_data_string(data)
+    return None
 
 
 class IntByteConversion:
@@ -55,11 +54,11 @@ class IntByteConversion:
     def signed_struct_specifier(byte_num: int) -> str:
         if byte_num == 1:
             return "!b"
-        elif byte_num == 2:
+        if byte_num == 2:
             return "!h"
-        elif byte_num == 4:
+        if byte_num == 4:
             return "!i"
-        elif byte_num == 8:
+        if byte_num == 8:
             return "!q"
         raise ValueError("Invalid byte number, must be one of [1, 2, 4, 8]")
 
@@ -67,11 +66,11 @@ class IntByteConversion:
     def unsigned_struct_specifier(byte_num: int) -> str:
         if byte_num == 1:
             return "!B"
-        elif byte_num == 2:
+        if byte_num == 2:
             return "!H"
-        elif byte_num == 4:
+        if byte_num == 4:
             return "!I"
-        elif byte_num == 8:
+        if byte_num == 8:
             return "!Q"
         raise ValueError(f"invalid byte number {byte_num}, must be one of [1, 2, 4, 8]")
 
@@ -83,11 +82,9 @@ class IntByteConversion:
         if byte_num not in [0, 1, 2, 4, 8]:
             raise ValueError("Invalid byte number, must be one of [0, 1, 2, 4, 8]")
         if byte_num == 0:
-            return bytes()
+            return b""
         if abs(val) > pow(2, (byte_num * 8) - 1) - 1:
-            raise ValueError(
-                f"Passed value larger than allows {pow(2, (byte_num * 8) - 1) - 1}"
-            )
+            raise ValueError(f"Passed value larger than allows {pow(2, (byte_num * 8) - 1) - 1}")
         return struct.pack(IntByteConversion.signed_struct_specifier(byte_num), val)
 
     @staticmethod
@@ -98,11 +95,9 @@ class IntByteConversion:
         if byte_num not in [0, 1, 2, 4, 8]:
             raise ValueError("Invalid byte number, must be one of [1, 2, 4, 8]")
         if byte_num == 0:
-            return bytes()
+            return b""
         if val > pow(2, byte_num * 8) - 1:
-            raise ValueError(
-                f"Passed value larger than allowed {pow(2, byte_num * 8) - 1}"
-            )
+            raise ValueError(f"Passed value larger than allowed {pow(2, byte_num * 8) - 1}")
         return struct.pack(IntByteConversion.unsigned_struct_specifier(byte_num), val)
 
 
@@ -131,36 +126,32 @@ class UnsignedByteField:
         self._val_as_bytes = IntByteConversion.to_unsigned(self.byte_len, self.value)
 
     @classmethod
-    def from_bytes(cls, raw: bytes):
+    def from_bytes(cls, raw: bytes) -> UnsignedByteField:
         return cls(
-            struct.unpack(IntByteConversion.unsigned_struct_specifier(len(raw)), raw)[
-                0
-            ],
+            struct.unpack(IntByteConversion.unsigned_struct_specifier(len(raw)), raw)[0],
             len(raw),
         )
 
     @property
-    def byte_len(self):
+    def byte_len(self) -> int:
         return self._byte_len
 
     @byte_len.setter
-    def byte_len(self, byte_len: int):
+    def byte_len(self, byte_len: int) -> None:
         UnsignedByteField.verify_byte_len(byte_len)
         self._byte_len = byte_len
 
     @property
-    def value(self):
+    def value(self) -> int:
         return self._val
 
     @value.setter
-    def value(self, val: Union[int, bytes, bytearray]):
+    def value(self, val: int | bytes | bytearray) -> None:
         if isinstance(val, int):
             self._verify_int_value(val)
             self._val = val
-            self._val_as_bytes = IntByteConversion.to_unsigned(
-                self.byte_len, self.value
-            )
-        elif isinstance(val, bytes) or isinstance(val, bytearray):
+            self._val_as_bytes = IntByteConversion.to_unsigned(self.byte_len, self.value)
+        elif isinstance(val, (bytes, bytearray)):
             self._val, self._val_as_bytes = self._verify_bytes_value(bytes(val))
 
     @property
@@ -168,25 +159,21 @@ class UnsignedByteField:
         return self._val_as_bytes
 
     @staticmethod
-    def verify_byte_len(byte_len: int):
+    def verify_byte_len(byte_len: int) -> None:
         if byte_len not in [0, 1, 2, 4, 8]:
             # I really have no idea why anyone would use other values than these
-            raise ValueError(
-                "Only 0, 1, 2, 4 and 8 bytes are allowed as an entity ID length"
-            )
+            raise ValueError("Only 0, 1, 2, 4 and 8 bytes are allowed as an entity ID length")
 
-    def _verify_int_value(self, val: int):
+    def _verify_int_value(self, val: int) -> None:
         if val > pow(2, self.byte_len * 8) - 1 or val < 0:
             raise ValueError(
                 f"Passed value {val} larger than allowed"
                 f" {pow(2, self.byte_len * 8) - 1} or negative"
             )
 
-    def _verify_bytes_value(self, val: bytes) -> Tuple[int, bytes]:
+    def _verify_bytes_value(self, val: bytes) -> tuple[int, bytes]:
         if len(val) < self.byte_len:
-            raise ValueError(
-                f"Passed byte object {val} smaller than byte length {self.byte_len}"
-            )
+            raise ValueError(f"Passed byte object {val} smaller than byte length {self.byte_len}")
         int_val = struct.unpack(
             IntByteConversion.unsigned_struct_specifier(self.byte_len),
             val[0 : self.byte_len],
@@ -195,20 +182,19 @@ class UnsignedByteField:
         return int_val, val[0 : self.byte_len]
 
     @property
-    def hex_str(self):
+    def hex_str(self) -> str | None:
         if self.byte_len == 1:
             return f"{self.value:#04x}"
-        elif self.byte_len == 2:
+        if self.byte_len == 2:
             return f"{self.value:#06x}"
-        elif self.byte_len == 4:
+        if self.byte_len == 4:
             return f"{self.value:#010x}"
-        elif self.byte_len == 8:
+        if self.byte_len == 8:
             return f"{self.value:#018x}"
+        return None
 
     def __repr__(self):
-        return (
-            f"{self.__class__.__name__}(val={self.value!r}, byte_len={self.byte_len!r})"
-        )
+        return f"{self.__class__.__name__}(val={self.value!r}, byte_len={self.byte_len!r})"
 
     def __str__(self):
         return f"dec={self.value}, hex={self.hex_str}"
@@ -222,7 +208,7 @@ class UnsignedByteField:
     def __eq__(self, other: object) -> bool:
         if isinstance(other, UnsignedByteField):
             return self.value == other.value and self.byte_len == other.byte_len
-        elif isinstance(other, bytes):
+        if isinstance(other, bytes):
             return self._val_as_bytes == other
         raise TypeError(f"Cannot compare {self.__class__.__name__} to {other}")
 
@@ -230,7 +216,7 @@ class UnsignedByteField:
         """Makes all unsigned byte fields usable as dictionary keys"""
         return hash((self.value, self.byte_len))
 
-    def default_string(self, prefix):
+    def default_string(self, prefix: str) -> str:
         return f"{prefix}({self.value}, 0x[{self.as_bytes.hex(sep=',')}])"
 
 
@@ -248,9 +234,7 @@ class ByteFieldU8(UnsignedByteField):
     @classmethod
     def from_u8_bytes(cls, stream: bytes) -> ByteFieldU8:
         if len(stream) < 1:
-            raise ValueError(
-                "Passed stream not large enough, should be at least 1 byte"
-            )
+            raise ValueError("Passed stream not large enough, should be at least 1 byte")
         return cls(stream[0])
 
     def __str__(self):
@@ -266,14 +250,8 @@ class ByteFieldU16(UnsignedByteField):
     @classmethod
     def from_u16_bytes(cls, stream: bytes) -> ByteFieldU16:
         if len(stream) < 2:
-            raise ValueError(
-                "Passed stream not large enough, should be at least 2 byte"
-            )
-        return cls(
-            struct.unpack(IntByteConversion.unsigned_struct_specifier(2), stream[0:2])[
-                0
-            ]
-        )
+            raise ValueError("Passed stream not large enough, should be at least 2 byte")
+        return cls(struct.unpack(IntByteConversion.unsigned_struct_specifier(2), stream[0:2])[0])
 
     def __str__(self):
         return self.default_string("U16")
@@ -288,14 +266,8 @@ class ByteFieldU32(UnsignedByteField):
     @classmethod
     def from_u32_bytes(cls, stream: bytes) -> ByteFieldU32:
         if len(stream) < 4:
-            raise ValueError(
-                "passed stream not large enough, should be at least 4 bytes"
-            )
-        return cls(
-            struct.unpack(IntByteConversion.unsigned_struct_specifier(4), stream[0:4])[
-                0
-            ]
-        )
+            raise ValueError("passed stream not large enough, should be at least 4 bytes")
+        return cls(struct.unpack(IntByteConversion.unsigned_struct_specifier(4), stream[0:4])[0])
 
     def __str__(self):
         return self.default_string("U32")
@@ -310,14 +282,8 @@ class ByteFieldU64(UnsignedByteField):
     @classmethod
     def from_u64_bytes(cls, stream: bytes) -> ByteFieldU64:
         if len(stream) < 8:
-            raise ValueError(
-                "passed stream not large enough, should be at least 8 byte"
-            )
-        return cls(
-            struct.unpack(IntByteConversion.unsigned_struct_specifier(8), stream[0:8])[
-                0
-            ]
-        )
+            raise ValueError("passed stream not large enough, should be at least 8 byte")
+        return cls(struct.unpack(IntByteConversion.unsigned_struct_specifier(8), stream[0:8])[0])
 
     def __str__(self):
         return self.default_string("U64")
@@ -333,11 +299,11 @@ class ByteFieldGenerator:
         :raise ValueError: Byte length is not one of [1, 2, 4, 8]."""
         if byte_len == 1:
             return ByteFieldU8(val)
-        elif byte_len == 2:
+        if byte_len == 2:
             return ByteFieldU16(val)
-        elif byte_len == 4:
+        if byte_len == 4:
             return ByteFieldU32(val)
-        elif byte_len == 8:
+        if byte_len == 8:
             return ByteFieldU64(val)
         raise ValueError(f"invalid byte length {byte_len}")
 
@@ -348,11 +314,11 @@ class ByteFieldGenerator:
         :raise ValueError: Byte length is not one of [1, 2, 4, 8]."""
         if byte_len == 1:
             return ByteFieldU8.from_u8_bytes(stream)
-        elif byte_len == 2:
+        if byte_len == 2:
             return ByteFieldU16.from_u16_bytes(stream)
-        elif byte_len == 4:
+        if byte_len == 4:
             return ByteFieldU32.from_u32_bytes(stream)
-        elif byte_len == 8:
+        if byte_len == 8:
             return ByteFieldU64.from_u64_bytes(stream)
         raise ValueError(f"invalid byte length {byte_len}")
 

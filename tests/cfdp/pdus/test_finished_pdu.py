@@ -3,18 +3,18 @@ from unittest import TestCase
 from spacepackets.cfdp import (
     ConditionCode,
     EntityIdTlv,
-    FileStoreResponseTlv,
     FilestoreActionCode,
     FilestoreResponseStatusCode,
+    FileStoreResponseTlv,
     TlvType,
 )
-from spacepackets.cfdp.pdu.helper import PduFactory
 from spacepackets.cfdp.conf import PduConfig
-from spacepackets.cfdp.defs import Direction, DeliveryCode, FileStatus
+from spacepackets.cfdp.defs import DeliveryCode, Direction, FileStatus
 from spacepackets.cfdp.pdu import FinishedPdu
 from spacepackets.cfdp.pdu.finished import (
     FinishedParams,
 )
+from spacepackets.cfdp.pdu.helper import PduFactory
 
 
 class TestFinishedPdu(TestCase):
@@ -119,9 +119,7 @@ class TestFinishedPdu(TestCase):
             params=params,
             pdu_conf=self.pdu_conf,
         )
-        self.assertEqual(
-            finish_pdu_with_fault_loc.delivery_code, DeliveryCode.DATA_INCOMPLETE
-        )
+        self.assertEqual(finish_pdu_with_fault_loc.delivery_code, DeliveryCode.DATA_INCOMPLETE)
         self.assertEqual(
             finish_pdu_with_fault_loc.file_status,
             FileStatus.DISCARDED_DELIBERATELY,
@@ -130,9 +128,7 @@ class TestFinishedPdu(TestCase):
             finish_pdu_with_fault_loc.condition_code,
             ConditionCode.POSITIVE_ACK_LIMIT_REACHED,
         )
-        self.assertEqual(
-            finish_pdu_with_fault_loc.fault_location, self.fault_location_tlv
-        )
+        self.assertEqual(finish_pdu_with_fault_loc.fault_location, self.fault_location_tlv)
         # 4 additional bytes because the entity ID in the TLV has 2 bytes
         self.assertEqual(finish_pdu_with_fault_loc.packet_len, 13)
         self.assertEqual(len(finish_pdu_with_fault_loc.pack()), 13)
@@ -171,9 +167,7 @@ class TestFinishedPdu(TestCase):
         pdu_with_response = FinishedPdu(params=params, pdu_conf=self.pdu_conf)
         self.assertEqual(pdu_with_response.packet_len, 22)
         pdu_with_response_raw = pdu_with_response.pack()
-        expected_array = bytearray(
-            [0x28, 0x00, 0x0F, 0x00, 0x00, 0x00, 0x00, 0x05, 0x44]
-        )
+        expected_array = bytearray([0x28, 0x00, 0x0F, 0x00, 0x00, 0x00, 0x00, 0x05, 0x44])
         expected_array.extend(filestore_response_1_packed)
         self.assertEqual(expected_array, pdu_with_response_raw)
         pdu_with_response_unpacked = FinishedPdu.unpack(data=pdu_with_response_raw)
@@ -207,18 +201,14 @@ class TestFinishedPdu(TestCase):
             file_store_responses=[self.filestore_reponse_1, filestore_reponse_2],
             fault_location=self.fault_location_tlv,
         )
-        finish_pdu_two_responses_one_fault_loc = FinishedPdu(
-            params=params, pdu_conf=self.pdu_conf
-        )
+        finish_pdu_two_responses_one_fault_loc = FinishedPdu(params=params, pdu_conf=self.pdu_conf)
         # length should be 13 (response 1) + 23 (response 2)  + 4 (fault loc) + 9 (base)
         self.assertEqual(finish_pdu_two_responses_one_fault_loc.packet_len, 49)
         fs_responses = finish_pdu_two_responses_one_fault_loc.file_store_responses
         self.assertEqual(len(fs_responses), 2)
         complex_pdu_raw = finish_pdu_two_responses_one_fault_loc.pack()
         complex_pdu_unpacked = FinishedPdu.unpack(data=complex_pdu_raw)
-        self.assertEqual(
-            complex_pdu_unpacked.fault_location.pack(), self.fault_location_tlv.pack()
-        )
+        self.assertEqual(complex_pdu_unpacked.fault_location.pack(), self.fault_location_tlv.pack())
         self.assertEqual(self.filestore_reponse_1.pack(), fs_responses[0].pack())
         self.assertEqual(filestore_reponse_2.pack(), fs_responses[1].pack())
 

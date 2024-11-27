@@ -1,6 +1,7 @@
 import time
 from datetime import timedelta
 from unittest import TestCase
+
 from spacepackets.countdown import Countdown
 
 
@@ -14,9 +15,7 @@ class CountdownTest(TestCase):
         self.assertTrue(test_cd.timed_out())
         self.assertTrue(test_cd.remaining_time() == timedelta())
         test_cd.timeout = timedelta(seconds=0.1)
-        self.assertEqual(
-            test_cd.timeout.total_seconds(), timedelta(seconds=0.1).total_seconds()
-        )
+        self.assertEqual(test_cd.timeout.total_seconds(), timedelta(seconds=0.1).total_seconds())
         self.assertEqual(test_cd.timeout_ms, 100)
         self.assertTrue(test_cd.busy())
         self.assertFalse(test_cd.timed_out())

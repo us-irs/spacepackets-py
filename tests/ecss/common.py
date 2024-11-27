@@ -1,6 +1,6 @@
 from unittest.mock import MagicMock, PropertyMock
 
-from spacepackets.ccsds import CdsShortTimestamp, CcsdsTimeCodeId
+from spacepackets.ccsds import CcsdsTimeCodeId, CdsShortTimestamp
 
 TEST_STAMP = bytes([CcsdsTimeCodeId.CDS << 4, 1, 2, 3, 4, 5, 6])
 

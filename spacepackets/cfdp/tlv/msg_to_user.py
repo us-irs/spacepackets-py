@@ -6,27 +6,29 @@ from __future__ import annotations
 
 import dataclasses
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import TYPE_CHECKING
 
 from spacepackets.cfdp.defs import (
-    TransactionId,
-    TransmissionMode,
     ConditionCode,
     DeliveryCode,
     FileStatus,
+    TransactionId,
+    TransmissionMode,
 )
-from spacepackets.cfdp.exceptions import TlvTypeMissmatch
 from spacepackets.cfdp.lv import CfdpLv
-from spacepackets.cfdp.pdu.finished import FinishedParams
 from spacepackets.cfdp.tlv.base import AbstractTlvBase
 from spacepackets.cfdp.tlv.defs import (
     ORIGINATING_TRANSACTION_ID_MSG_TYPE_ID,
     DirectoryOperationMessageType,
     ProxyMessageType,
     TlvType,
+    TlvTypeMissmatchError,
 )
 from spacepackets.cfdp.tlv.tlv import CfdpTlv
 from spacepackets.util import UnsignedByteField
+
+if TYPE_CHECKING:
+    from spacepackets.cfdp.pdu.finished import FinishedParams
 
 
 class MessageToUserTlv(AbstractTlvBase):
@@ -41,7 +43,7 @@ class MessageToUserTlv(AbstractTlvBase):
         return self.tlv.pack()
 
     @property
-    def packet_len(self):
+    def packet_len(self) -> int:
         return self.tlv.packet_len
 
     @property
@@ -53,11 +55,9 @@ class MessageToUserTlv(AbstractTlvBase):
         return MessageToUserTlv.TLV_TYPE
 
     def is_reserved_cfdp_message(self) -> bool:
-        if len(self.tlv.value) >= 5 and self.tlv.value[0:4].decode() == "cfdp":
-            return True
-        return False
+        return bool(len(self.tlv.value) >= 5 and self.tlv.value[0:4].decode() == "cfdp")
 
-    def to_reserved_msg_tlv(self) -> Optional[ReservedCfdpMessage]:
+    def to_reserved_msg_tlv(self) -> ReservedCfdpMessage | None:
         """Attempt to convert to a reserved CFDP message. Please note that this operation
         will fail if the message if not a reserved CFDP message and will then return None.
         This method is especially useful to have access to the more specialized
@@ -67,8 +67,8 @@ class MessageToUserTlv(AbstractTlvBase):
         return ReservedCfdpMessage(self.tlv.value[4], self.tlv.value[5:])
 
     @classmethod
-    def __empty(cls):
-        return cls(bytes())
+    def __empty(cls) -> MessageToUserTlv:
+        return cls(b"")
 
     @classmethod
     def unpack(cls, data: bytes) -> MessageToUserTlv:
@@ -80,7 +80,7 @@ class MessageToUserTlv(AbstractTlvBase):
     @classmethod
     def from_tlv(cls, cfdp_tlv: CfdpTlv) -> MessageToUserTlv:
         if cfdp_tlv.tlv_type != cls.TLV_TYPE:
-            raise TlvTypeMissmatch(cfdp_tlv.tlv_type, cls.TLV_TYPE)
+            raise TlvTypeMissmatchError(cfdp_tlv.tlv_type, cls.TLV_TYPE)
         msg_to_user_tlv = cls.__empty()
         msg_to_user_tlv.tlv = cfdp_tlv
         return msg_to_user_tlv
@@ -100,7 +100,7 @@ class ReservedCfdpMessage(AbstractTlvBase):
 
     def __init__(self, msg_type: int, value: bytes):
         assert msg_type < pow(2, 8) - 1
-        full_value = bytearray("cfdp".encode())
+        full_value = bytearray(b"cfdp")
         full_value.append(msg_type)
         full_value.extend(value)
         self.tlv = CfdpTlv(TlvType.MESSAGE_TO_USER, full_value)
@@ -115,7 +115,7 @@ class ReservedCfdpMessage(AbstractTlvBase):
         return MessageToUserTlv.from_tlv(self.tlv)
 
     @property
-    def packet_len(self):
+    def packet_len(self) -> int:
         return self.tlv.packet_len
 
     @property
@@ -144,24 +144,21 @@ class ReservedCfdpMessage(AbstractTlvBase):
             return False
 
     def is_originating_transaction_id(self) -> bool:
-        return (
-            self.get_reserved_cfdp_message_type()
-            == ORIGINATING_TRANSACTION_ID_MSG_TYPE_ID
-        )
+        return self.get_reserved_cfdp_message_type() == ORIGINATING_TRANSACTION_ID_MSG_TYPE_ID
 
-    def get_cfdp_proxy_message_type(self) -> Optional[ProxyMessageType]:
+    def get_cfdp_proxy_message_type(self) -> ProxyMessageType | None:
         if not self.is_cfdp_proxy_operation():
             return None
         return ProxyMessageType(self.get_reserved_cfdp_message_type())
 
-    def get_directory_operation_type(self) -> Optional[DirectoryOperationMessageType]:
+    def get_directory_operation_type(self) -> DirectoryOperationMessageType | None:
         if not self.is_directory_operation():
             return None
         return DirectoryOperationMessageType(self.get_reserved_cfdp_message_type())
 
     def get_originating_transaction_id(
         self,
-    ) -> Optional[TransactionId]:
+    ) -> TransactionId | None:
         if not self.is_originating_transaction_id():
             return None
         if len(self.value) < 1:
@@ -179,7 +176,7 @@ class ReservedCfdpMessage(AbstractTlvBase):
             UnsignedByteField.from_bytes(seq_num),
         )
 
-    def get_proxy_put_request_params(self) -> Optional[ProxyPutRequestParams]:
+    def get_proxy_put_request_params(self) -> ProxyPutRequestParams | None:
         """This function extract the proxy put request parameters from the raw value if
         applicable. If the value format is invalid, this function will return None."""
         if (
@@ -203,7 +200,7 @@ class ReservedCfdpMessage(AbstractTlvBase):
             dest_name_lv,
         )
 
-    def get_proxy_put_response_params(self) -> Optional[ProxyPutResponseParams]:
+    def get_proxy_put_response_params(self) -> ProxyPutResponseParams | None:
         if (
             not self.is_cfdp_proxy_operation()
             or self.get_cfdp_proxy_message_type() != ProxyMessageType.PUT_RESPONSE
@@ -214,7 +211,7 @@ class ReservedCfdpMessage(AbstractTlvBase):
         file_status = FileStatus(self.value[5] & 0b11)
         return ProxyPutResponseParams(condition_code, delivery_code, file_status)
 
-    def get_proxy_closure_requested(self) -> Optional[bool]:
+    def get_proxy_closure_requested(self) -> bool | None:
         if (
             not self.is_cfdp_proxy_operation()
             or self.get_cfdp_proxy_message_type() != ProxyMessageType.CLOSURE_REQUEST
@@ -222,7 +219,7 @@ class ReservedCfdpMessage(AbstractTlvBase):
             return None
         return self.value[5] & 0b1
 
-    def get_proxy_transmission_mode(self) -> Optional[TransmissionMode]:
+    def get_proxy_transmission_mode(self) -> TransmissionMode | None:
         if (
             not self.is_cfdp_proxy_operation()
             or self.get_cfdp_proxy_message_type() != ProxyMessageType.TRANSMISSION_MODE
@@ -230,18 +227,17 @@ class ReservedCfdpMessage(AbstractTlvBase):
             return None
         return TransmissionMode(self.value[5] & 0b1)
 
-    def get_dir_listing_request_params(self) -> Optional[DirectoryParams]:
+    def get_dir_listing_request_params(self) -> DirectoryParams | None:
         if (
             not self.is_directory_operation()
-            or self.get_directory_operation_type()
-            != DirectoryOperationMessageType.LISTING_REQUEST
+            or self.get_directory_operation_type() != DirectoryOperationMessageType.LISTING_REQUEST
         ):
             return None
         dir_path_lv = CfdpLv.unpack(self.value[5:])
         dir_file_name_lv = CfdpLv.unpack(self.value[5 + dir_path_lv.packet_len :])
         return DirectoryParams(dir_path_lv, dir_file_name_lv)
 
-    def get_dir_listing_response_params(self) -> Optional[Tuple[bool, DirectoryParams]]:
+    def get_dir_listing_response_params(self) -> tuple[bool, DirectoryParams] | None:
         """
         Returns
         ---------
@@ -251,8 +247,7 @@ class ReservedCfdpMessage(AbstractTlvBase):
         """
         if (
             not self.is_directory_operation()
-            or self.get_directory_operation_type()
-            != DirectoryOperationMessageType.LISTING_RESPONSE
+            or self.get_directory_operation_type() != DirectoryOperationMessageType.LISTING_RESPONSE
         ):
             return None
         if len(self.value) < 1:
@@ -264,7 +259,7 @@ class ReservedCfdpMessage(AbstractTlvBase):
         dir_file_name_lv = CfdpLv.unpack(self.value[6 + dir_path_lv.packet_len :])
         return listing_success, DirectoryParams(dir_path_lv, dir_file_name_lv)
 
-    def get_dir_listing_options(self) -> Optional[DirListingOptions]:
+    def get_dir_listing_options(self) -> DirListingOptions | None:
         if (
             not self.is_directory_operation()
             or self.get_directory_operation_type()
@@ -311,7 +306,7 @@ class ProxyPutRequest(ReservedCfdpMessage):
 
 class ProxyCancelRequest(ReservedCfdpMessage):
     def __init__(self):
-        super().__init__(ProxyMessageType.PUT_CANCEL, bytes())
+        super().__init__(ProxyMessageType.PUT_CANCEL, b"")
 
 
 class ProxyClosureRequest(ReservedCfdpMessage):
@@ -337,10 +332,7 @@ class OriginatingTransactionId(ReservedCfdpMessage):
                 "sequence number"
             )
         value = bytearray(
-            [
-                ((transaction_id.source_id.byte_len - 1) << 4)
-                | (transaction_id.seq_num.byte_len - 1)
-            ]
+            [((transaction_id.source_id.byte_len - 1) << 4) | (transaction_id.seq_num.byte_len - 1)]
         )
         value.extend(transaction_id.source_id.as_bytes)
         value.extend(transaction_id.seq_num.as_bytes)
@@ -428,9 +420,7 @@ class ProxyPutResponseParams:
     file_status: FileStatus
 
     @classmethod
-    def from_finished_params(
-        cls, finished_params: FinishedParams
-    ) -> ProxyPutResponseParams:
+    def from_finished_params(cls, finished_params: FinishedParams) -> ProxyPutResponseParams:
         return cls(
             condition_code=finished_params.condition_code,
             delivery_code=finished_params.delivery_code,
@@ -443,10 +433,6 @@ class ProxyPutResponse(ReservedCfdpMessage):
         super().__init__(
             ProxyMessageType.PUT_RESPONSE,
             bytes(
-                [
-                    (params.condition_code << 4)
-                    | (params.delivery_code << 2)
-                    | params.file_status
-                ]
+                [(params.condition_code << 4) | (params.delivery_code << 2) | params.file_status]
             ),
         )

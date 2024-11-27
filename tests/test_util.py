@@ -7,8 +7,8 @@ from spacepackets.util import (
     ByteFieldU16,
     ByteFieldU32,
     ByteFieldU64,
-    UnsignedByteField,
     IntByteConversion,
+    UnsignedByteField,
 )
 
 
@@ -65,13 +65,11 @@ class TestUtility(TestCase):
         )
         with self.assertRaises(ValueError) as cm:
             ByteFieldGenerator.from_int(byte_len=1, val=-1)
-        self.assertEqual(
-            str(cm.exception), "Passed value -1 larger than allowed 255 or negative"
-        )
+        self.assertEqual(str(cm.exception), "Passed value -1 larger than allowed 255 or negative")
 
     def test_byte_field_u8_invalid_unpack(self):
         with self.assertRaises(ValueError):
-            ByteFieldU8.from_u8_bytes(bytes())
+            ByteFieldU8.from_u8_bytes(b"")
 
     def test_byte_field_u16_invalid_unpack(self):
         with self.assertRaises(ValueError):
@@ -117,7 +115,7 @@ class TestUtility(TestCase):
         self.assertEqual(int(one_byte_test), 0x22)
         self.assertEqual(one_byte_test.as_bytes, bytes([0x22]))
         with self.assertRaises(ValueError):
-            one_byte_test.value = bytes()
+            one_byte_test.value = b""
 
     def invalid_byte_field_len(self):
         with self.assertRaises(ValueError):

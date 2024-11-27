@@ -8,10 +8,21 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 # [unreleased]
 
+# [v0.26.0] 2024-11-27
+
+- Python 3.8 is not supported anymore as it has reached end-of-life.
+
 ## Changed
 
 - `MetadataPdu` options have to be specified as an optional list of abstract TLVs now.
    A new getter method `options_as_tlv` can be used to retrieve a list of concrete TLV objects.
+- All exceptions has an `*Error` suffix now
+- Removed `exceptions` module in CFDP and moved it to individual `defs` definition modules.
+  The Errors can still be directly imported from `spacepackets.cfdp` or `spacepackets.cfdp.tlv`.
+
+## Fixed
+
+- `CrcError` exception constructor was previously named `__int__` by accident.
 
 # [v0.25.0] 2024-10-29
 

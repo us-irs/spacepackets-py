@@ -1,13 +1,13 @@
 from unittest import TestCase
 
 from spacepackets.cfdp import (
-    TlvType,
     TlvHolder,
-    TlvTypeMissmatch,
+    TlvType,
+    TlvTypeMissmatchError,
 )
 from spacepackets.cfdp.tlv import (
-    FlowLabelTlv,
     CfdpTlv,
+    FlowLabelTlv,
 )
 
 
@@ -37,8 +37,8 @@ class TestFlowLabelTlvs(TestCase):
         flow_label_tlv_unpacked = FlowLabelTlv.unpack(data=flow_label_tlv_raw)
         self.assertEqual(flow_label_tlv_unpacked.tlv.value, bytes([0x00]))
         flow_label_tlv_tlv.tlv_type = TlvType.FILESTORE_REQUEST
-        with self.assertRaises(TlvTypeMissmatch):
+        with self.assertRaises(TlvTypeMissmatchError):
             FlowLabelTlv.from_tlv(cfdp_tlv=flow_label_tlv_tlv)
         flow_label_tlv_raw[0] = TlvType.FILESTORE_REQUEST
-        with self.assertRaises(TlvTypeMissmatch):
+        with self.assertRaises(TlvTypeMissmatchError):
             FlowLabelTlv.unpack(data=flow_label_tlv_raw)

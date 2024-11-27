@@ -1,6 +1,8 @@
-from typing import Any, Optional, Type, cast
+from __future__ import annotations  # Python 3.9 compatibility for | syntax
 
-from spacepackets.cfdp.tlv.base import TlvType
+from typing import Any, cast
+
+from spacepackets.cfdp.tlv.defs import TlvType
 from spacepackets.cfdp.tlv.msg_to_user import MessageToUserTlv
 from spacepackets.cfdp.tlv.tlv import (
     AbstractTlvBase,
@@ -14,19 +16,20 @@ from spacepackets.cfdp.tlv.tlv import (
 
 
 class TlvHolder:
-    def __init__(self, tlv: Optional[AbstractTlvBase]):
+    def __init__(self, tlv: AbstractTlvBase | None):
         self.tlv = tlv
 
     @property
-    def tlv_type(self):
+    def tlv_type(self) -> None | TlvType:
         if self.tlv is not None:
             return self.tlv.tlv_type
+        return None
 
     def __cast_internally(
         self,
-        obj_type: Type[AbstractTlvBase],
+        obj_type: type[AbstractTlvBase],
         expected_type: TlvType,
-    ) -> Any:
+    ) -> Any:  # noqa: ANN401
         assert self.tlv is not None
         if self.tlv.tlv_type != expected_type:
             raise TypeError(f"Invalid object {self.tlv} for type {self.tlv.tlv_type}")

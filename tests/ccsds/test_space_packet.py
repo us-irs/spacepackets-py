@@ -1,13 +1,13 @@
 from unittest import TestCase
 
-from spacepackets import SequenceFlags, PacketType, SpacePacketHeader
-from spacepackets.ccsds import PacketSeqCtrl, PacketId
+from spacepackets import PacketType, SequenceFlags, SpacePacketHeader
+from spacepackets.ccsds import PacketId, PacketSeqCtrl
 from spacepackets.ccsds.spacepacket import (
-    get_space_packet_id_bytes,
-    get_sp_psc_raw,
-    get_sp_packet_id_raw,
     SpacePacket,
     get_apid_from_raw_space_packet,
+    get_sp_packet_id_raw,
+    get_sp_psc_raw,
+    get_space_packet_id_bytes,
 )
 
 
@@ -129,7 +129,7 @@ class TestSpacePacket(TestCase):
 
     def test_apid_from_raw_invalid_input(self):
         with self.assertRaises(ValueError):
-            get_apid_from_raw_space_packet(raw_packet=bytes())
+            get_apid_from_raw_space_packet(raw_packet=b"")
 
     def test_unpack(self):
         sp_packed = self.sp_header.pack()
@@ -142,9 +142,7 @@ class TestSpacePacket(TestCase):
 
     def test_invalid_apid(self):
         with self.assertRaises(ValueError):
-            SpacePacketHeader(
-                apid=982292, data_len=22, seq_count=52, packet_type=PacketType.TC
-            )
+            SpacePacketHeader(apid=982292, data_len=22, seq_count=52, packet_type=PacketType.TC)
 
     def test_invalid_data_len(self):
         self.assertRaises(
@@ -192,8 +190,7 @@ class TestSpacePacket(TestCase):
         self.assertEqual(packet_id_as_num, packet_id.raw())
         self.assertEqual(packet_id_as_num, packet_id_raw)
         self.assertFalse(
-            packet_id
-            == PacketSeqCtrl(seq_flags=SequenceFlags.UNSEGMENTED, seq_count=0x22)
+            packet_id == PacketSeqCtrl(seq_flags=SequenceFlags.UNSEGMENTED, seq_count=0x22)
         )
 
     def test_packet_seq_ctrl(self):
@@ -210,9 +207,7 @@ class TestSpacePacket(TestCase):
             seq_count=0xFFFF,
             seq_flags=SequenceFlags.UNSEGMENTED,
         )
-        self.assertFalse(
-            psc == PacketId(ptype=PacketType.TC, apid=0x3FF, sec_header_flag=True)
-        )
+        self.assertFalse(psc == PacketId(ptype=PacketType.TC, apid=0x3FF, sec_header_flag=True))
 
     def test_from_composite_field(self):
         packet_id = PacketId(ptype=PacketType.TC, apid=0x3FF, sec_header_flag=True)
@@ -279,9 +274,7 @@ class TestSpacePacket(TestCase):
         print(sp)
 
     def test_utility(self):
-        psc = PacketSeqCtrl(
-            seq_flags=SequenceFlags.UNSEGMENTED, seq_count=pow(2, 14) - 1
-        )
+        psc = PacketSeqCtrl(seq_flags=SequenceFlags.UNSEGMENTED, seq_count=pow(2, 14) - 1)
         self.assertEqual(
             f"{psc}",
             f"PSC: [Seq Flags: UNSEG, Seq Count: {pow(2, 14) - 1}]",
@@ -304,9 +297,7 @@ class TestSpacePacket(TestCase):
         self.assertEqual(PacketId.empty().raw(), 0)
 
     def test_equality_sp_packet(self):
-        sp = SpacePacket(
-            sp_header=self.sp_header, sec_header=None, user_data=bytes([0, 1, 2])
-        )
+        sp = SpacePacket(sp_header=self.sp_header, sec_header=None, user_data=bytes([0, 1, 2]))
         other_sp = SpacePacket(
             sp_header=self.sp_header, sec_header=None, user_data=bytes([0, 1, 2])
         )

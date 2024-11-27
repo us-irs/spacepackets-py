@@ -3,7 +3,7 @@ from unittest import TestCase
 from spacepackets.cfdp import LargeFileFlag, PduFactory
 from spacepackets.cfdp.conf import PduConfig
 from spacepackets.cfdp.defs import Direction
-from spacepackets.cfdp.pdu import KeepAlivePdu, DirectiveType
+from spacepackets.cfdp.pdu import DirectiveType, KeepAlivePdu
 
 
 class TestKeepAlivePdu(TestCase):

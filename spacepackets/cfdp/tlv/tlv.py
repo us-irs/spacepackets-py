@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Optional, Tuple
-
 from spacepackets.cfdp.defs import (
     ConditionCode,
     FaultHandlerCode,
@@ -12,9 +10,9 @@ from spacepackets.cfdp.tlv.defs import (
     FilestoreActionCode,
     FilestoreResponseStatusCode,
     TlvType,
+    TlvTypeMissmatchError,
 )
 from spacepackets.exceptions import BytesTooShortError
-from spacepackets.cfdp.exceptions import TlvTypeMissmatch
 from spacepackets.util import UnsignedByteField
 
 
@@ -24,7 +22,7 @@ def map_enum_status_code_to_int(status_code: FilestoreResponseStatusCode) -> int
 
 def map_enum_status_code_to_action_status_code(
     status_code_enum: FilestoreResponseStatusCode,
-) -> Tuple[FilestoreActionCode, int]:
+) -> tuple[FilestoreActionCode, int]:
     """Map a given file store response status code to the action code and the corresponding
     4 bit status code. the status code will be 0x00 for a SUCCESS operation and 0b1111 if the
     operation was not performed.
@@ -45,8 +43,7 @@ def map_int_status_code_to_enum(
         code was detected
     """
     try:
-        status_code = FilestoreResponseStatusCode(action_code << 4 | status_code)
-        return status_code
+        return FilestoreResponseStatusCode(action_code << 4 | status_code)
     except (IndexError, ValueError):
         return FilestoreResponseStatusCode.INVALID
 
@@ -74,11 +71,11 @@ class CfdpTlv(AbstractTlvBase):
         self._value = value
 
     @property
-    def tlv_type(self):
+    def tlv_type(self) -> TlvType:
         return self._tlv_type
 
     @tlv_type.setter
-    def tlv_type(self, tlv_type: TlvType):
+    def tlv_type(self, tlv_type: TlvType) -> None:
         self._tlv_type = tlv_type
 
     @property
@@ -105,11 +102,10 @@ class CfdpTlv(AbstractTlvBase):
             raise BytesTooShortError(2, len(data))
         try:
             tlv_type = TlvType(data[0])
-        except ValueError:
+        except ValueError as err:
             raise ValueError(
-                f"TLV field invalid, found value {data[0]} is not a possible TLV"
-                " parameter"
-            )
+                f"TLV field invalid, found value {data[0]} is not a possible TLV" " parameter"
+            ) from err
 
         value = bytearray()
         if len(data) > 2:
@@ -124,10 +120,7 @@ class CfdpTlv(AbstractTlvBase):
         return self.MINIMAL_LEN + len(self._value)
 
     def __repr__(self):
-        return (
-            f"{self.__class__.__name__}(tlv_type={self.tlv_type!r},"
-            f" value={self.value!r})"
-        )
+        return f"{self.__class__.__name__}(tlv_type={self.tlv_type!r}," f" value={self.value!r})"
 
     def __str__(self):
         return (
@@ -155,7 +148,7 @@ class FaultHandlerOverrideTlv(AbstractTlvBase):
         return self.tlv.pack()
 
     @property
-    def packet_len(self):
+    def packet_len(self) -> int:
         return self.tlv.packet_len
 
     @property
@@ -178,16 +171,14 @@ class FaultHandlerOverrideTlv(AbstractTlvBase):
         fault_handler_ovr_tlv = cls.__empty()
         fault_handler_ovr_tlv.tlv = CfdpTlv.unpack(data=data)
         fault_handler_ovr_tlv.check_type(tlv_type=FaultHandlerOverrideTlv.TLV_TYPE)
-        fault_handler_ovr_tlv.condition_code = (
-            fault_handler_ovr_tlv.tlv.value[0] & 0xF0
-        ) >> 4
+        fault_handler_ovr_tlv.condition_code = (fault_handler_ovr_tlv.tlv.value[0] & 0xF0) >> 4
         fault_handler_ovr_tlv.handler_code = fault_handler_ovr_tlv.tlv.value[0] & 0x0F
         return fault_handler_ovr_tlv
 
     @classmethod
     def from_tlv(cls, cfdp_tlv: CfdpTlv) -> FaultHandlerOverrideTlv:
         if cfdp_tlv.tlv_type != cls.TLV_TYPE:
-            raise TlvTypeMissmatch(cfdp_tlv.tlv_type, cls.TLV_TYPE)
+            raise TlvTypeMissmatchError(cfdp_tlv.tlv_type, cls.TLV_TYPE)
         fault_handler_tlv = cls.__empty()
         fault_handler_tlv.tlv = cfdp_tlv
         fault_handler_tlv.condition_code = (cfdp_tlv.value[0] >> 4) & 0x0F
@@ -199,7 +190,7 @@ def create_cfdp_proxy_and_dir_op_message_marker() -> bytes:
     """CCSDS 727.0-B-5 p.88: The message identifier for standard CFDP proxy and dir op messages
     is the presence of the ASCII characters 'cfdp' in the first four octests of each message
     """
-    return "cfdp".encode()
+    return b"cfdp"
 
 
 class FlowLabelTlv(AbstractTlvBase):
@@ -209,14 +200,14 @@ class FlowLabelTlv(AbstractTlvBase):
         self.tlv = CfdpTlv(tlv_type=self.tlv_type, value=flow_label)
 
     @classmethod
-    def __empty(cls):
-        return cls(bytes())
+    def __empty(cls) -> FlowLabelTlv:
+        return cls(b"")
 
     def pack(self) -> bytearray:
         return self.tlv.pack()
 
     @property
-    def packet_len(self):
+    def packet_len(self) -> int:
         return self.tlv.packet_len
 
     @property
@@ -232,14 +223,14 @@ class FlowLabelTlv(AbstractTlvBase):
         flow_label_tlv = cls.__empty()
         tlv = CfdpTlv.unpack(data=data)
         if tlv.tlv_type != FlowLabelTlv.TLV_TYPE:
-            raise TlvTypeMissmatch(tlv.tlv_type, cls.TLV_TYPE)
+            raise TlvTypeMissmatchError(tlv.tlv_type, cls.TLV_TYPE)
         flow_label_tlv.tlv = tlv
         return flow_label_tlv
 
     @classmethod
     def from_tlv(cls, cfdp_tlv: CfdpTlv) -> FlowLabelTlv:
         if cfdp_tlv.tlv_type != FlowLabelTlv.TLV_TYPE:
-            raise TlvTypeMissmatch(cfdp_tlv.tlv_type, cls.TLV_TYPE)
+            raise TlvTypeMissmatchError(cfdp_tlv.tlv_type, cls.TLV_TYPE)
         flow_label_tlv = cls.__empty()
         flow_label_tlv.tlv = cfdp_tlv
         return flow_label_tlv
@@ -255,7 +246,7 @@ class FileStoreRequestBase:
         self.action_code = action_code
         self.first_file_name = first_file_name
         self.second_file_name = second_file_name
-        self.tlv: Optional[CfdpTlv] = None
+        self.tlv: CfdpTlv | None = None
 
     def _common_packer(self, status_code: int) -> bytearray:
         tlv_value = bytearray()
@@ -283,18 +274,18 @@ class FileStoreRequestBase:
         return expected_len
 
     @staticmethod
-    def _check_raw_tlv_field(first_byte: int, expected: TlvType):
+    def _check_raw_tlv_field(first_byte: int, expected: TlvType) -> None:
         try:
             raw_tlv_type = TlvType(first_byte)
             if raw_tlv_type != expected:
-                raise TlvTypeMissmatch(raw_tlv_type, expected)
-        except IndexError:
-            raise ValueError(f"No TLV type for raw field {first_byte}")
+                raise TlvTypeMissmatchError(raw_tlv_type, expected)
+        except IndexError as err:
+            raise ValueError(f"No TLV type for raw field {first_byte}") from err
 
     @staticmethod
     def _common_unpacker(
         raw_bytes: bytes,
-    ) -> Tuple[FilestoreActionCode, str, int, int, Optional[str]]:
+    ) -> tuple[FilestoreActionCode, str, int, int, str | None]:
         """Does only unpack common fields, does not unpack the filestore message of a Filestore
         Response package
 
@@ -306,11 +297,10 @@ class FileStoreRequestBase:
         action_code_as_int = (raw_bytes[value_idx] >> 4) & 0x0F
         try:
             action_code = FilestoreActionCode(action_code_as_int)
-        except ValueError:
+        except ValueError as err:
             raise ValueError(
-                "Invalid action code in file store response with value"
-                f" {action_code_as_int}"
-            )
+                "Invalid action code in file store response with value" f" {action_code_as_int}"
+            ) from err
         status_code_as_int = raw_bytes[value_idx] & 0x0F
         value_idx += 1
         first_lv = CfdpLv.unpack(raw_bytes=raw_bytes[value_idx:])
@@ -350,7 +340,7 @@ class FileStoreRequestTlv(FileStoreRequestBase, AbstractTlvBase):
             second_file_name=second_file_name,
         )
 
-    def generate_tlv(self):
+    def generate_tlv(self) -> None:
         if self.tlv is None:
             self.tlv = self._build_tlv()
 
@@ -359,7 +349,7 @@ class FileStoreRequestTlv(FileStoreRequestBase, AbstractTlvBase):
         return self.tlv.pack()
 
     @property
-    def packet_len(self):
+    def packet_len(self) -> int:
         return self.common_packet_len()
 
     @property
@@ -393,16 +383,14 @@ class FileStoreRequestTlv(FileStoreRequestBase, AbstractTlvBase):
     @classmethod
     def from_tlv(cls, cfdp_tlv: CfdpTlv) -> FileStoreRequestTlv:
         if cfdp_tlv.tlv_type != cls.TLV_TYPE:
-            raise TlvTypeMissmatch(cfdp_tlv.tlv_type, cls.TLV_TYPE)
+            raise TlvTypeMissmatchError(cfdp_tlv.tlv_type, cls.TLV_TYPE)
         fs_response = cls.__empty()
         cls._set_fields(fs_response, cfdp_tlv.value)
         return fs_response
 
     @classmethod
-    def _set_fields(cls, instance: FileStoreRequestTlv, raw_data: bytes):
-        action_code, first_name, _, _, second_name = cls._common_unpacker(
-            raw_bytes=raw_data
-        )
+    def _set_fields(cls, instance: FileStoreRequestTlv, raw_data: bytes) -> FileStoreRequestTlv:
+        action_code, first_name, _, _, second_name = cls._common_unpacker(raw_bytes=raw_data)
         instance.action_code = action_code
         instance.first_file_name = first_name
         if second_name is not None:
@@ -419,8 +407,10 @@ class FileStoreResponseTlv(FileStoreRequestBase, AbstractTlvBase):
         status_code: FilestoreResponseStatusCode,
         first_file_name: str,
         second_file_name: str = "",
-        filestore_msg: CfdpLv = CfdpLv(value=bytes()),
+        filestore_msg: None | CfdpLv = None,
     ):
+        if filestore_msg is None:
+            filestore_msg = CfdpLv(value=b"")
         super().__init__(
             action_code=action_code,
             first_file_name=first_file_name,
@@ -429,7 +419,7 @@ class FileStoreResponseTlv(FileStoreRequestBase, AbstractTlvBase):
         self.status_code = status_code
         self.filestore_msg = filestore_msg
 
-    def generate_tlv(self):
+    def generate_tlv(self) -> None:
         if self.tlv is None:
             self.tlv = self._build_tlv()
 
@@ -443,7 +433,7 @@ class FileStoreResponseTlv(FileStoreRequestBase, AbstractTlvBase):
         return self.tlv.value  # type: ignore
 
     @property
-    def packet_len(self):
+    def packet_len(self) -> int:
         return self.common_packet_len() + self.filestore_msg.packet_len
 
     @property
@@ -475,27 +465,25 @@ class FileStoreResponseTlv(FileStoreRequestBase, AbstractTlvBase):
     @classmethod
     def from_tlv(cls, cfdp_tlv: CfdpTlv) -> FileStoreResponseTlv:
         if cfdp_tlv.tlv_type != cls.TLV_TYPE:
-            raise TlvTypeMissmatch(cfdp_tlv.tlv_type, cls.TLV_TYPE)
+            raise TlvTypeMissmatchError(cfdp_tlv.tlv_type, cls.TLV_TYPE)
         fs_response = FileStoreResponseTlv.__empty()
         cls._set_fields(fs_response, cfdp_tlv.value)
         return fs_response
 
     @classmethod
-    def _set_fields(cls, instance: FileStoreResponseTlv, data: bytes):
+    def _set_fields(cls, instance: FileStoreResponseTlv, data: bytes) -> None:
         action_code, first_name, status_code, idx, second_name = cls._common_unpacker(
             raw_bytes=data
         )
         instance.action_code = action_code
         instance.first_file_name = first_name
         try:
-            status_code_named = FilestoreResponseStatusCode(
-                action_code << 4 | status_code
-            )
-        except ValueError:
+            status_code_named = FilestoreResponseStatusCode(action_code << 4 | status_code)
+        except ValueError as err:
             raise ValueError(
                 "Invalid status code in file store response with value"
                 f" {status_code} for action code {action_code}"
-            )
+            ) from err
         instance.status_code = status_code_named
         if second_name is not None:
             instance.second_file_name = second_name
@@ -503,8 +491,8 @@ class FileStoreResponseTlv(FileStoreRequestBase, AbstractTlvBase):
 
 
 class EntityIdTlv(AbstractTlvBase):
-    """This helper class has a :py:meth:`__eq__` implementation which only compares the numerical value
-    of the entity IDs"""
+    """This helper class has a :py:meth:`__eq__` implementation which only compares the numerical
+    value of the entity IDs"""
 
     TLV_TYPE = TlvType.ENTITY_ID
 
@@ -515,7 +503,7 @@ class EntityIdTlv(AbstractTlvBase):
         return self.tlv.pack()
 
     @property
-    def packet_len(self):
+    def packet_len(self) -> int:
         return self.tlv.packet_len
 
     @property
@@ -528,7 +516,7 @@ class EntityIdTlv(AbstractTlvBase):
 
     @classmethod
     def __empty(cls) -> EntityIdTlv:
-        return cls(entity_id=bytes())
+        return cls(entity_id=b"")
 
     @classmethod
     def unpack(cls, data: bytes) -> EntityIdTlv:
@@ -540,7 +528,7 @@ class EntityIdTlv(AbstractTlvBase):
     @classmethod
     def from_tlv(cls, cfdp_tlv: CfdpTlv) -> EntityIdTlv:
         if cfdp_tlv.tlv_type != cls.TLV_TYPE:
-            raise TlvTypeMissmatch(cfdp_tlv.tlv_type, cls.TLV_TYPE)
+            raise TlvTypeMissmatchError(cfdp_tlv.tlv_type, cls.TLV_TYPE)
         entity_id_tlv = cls.__empty()
         entity_id_tlv.tlv = cfdp_tlv
         return entity_id_tlv

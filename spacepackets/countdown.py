@@ -1,7 +1,7 @@
 from __future__ import annotations
+
 import time
 from datetime import timedelta
-from typing import Optional
 
 
 def time_ms() -> int:
@@ -13,7 +13,7 @@ class Countdown:
     """Utility class for counting down time. Exposes a simple API to initiate
     it with an initial timeout and to check whether is has expired."""
 
-    def __init__(self, init_timeout: Optional[timedelta]):
+    def __init__(self, init_timeout: timedelta | None):
         if init_timeout is not None:
             self._timeout_ms = int(init_timeout / timedelta(milliseconds=1))
             self._start_time_ms = time_ms()
@@ -39,28 +39,25 @@ class Countdown:
         return timedelta(milliseconds=self._timeout_ms)
 
     @timeout.setter
-    def timeout(self, timeout: timedelta):
+    def timeout(self, timeout: timedelta) -> None:
         """Set a new timeout for the countdown instance."""
         self._timeout_ms = round(timeout / timedelta(milliseconds=1))
 
     def timed_out(self) -> bool:
-        if round(time_ms() - self._start_time_ms) >= self._timeout_ms:
-            return True
-        else:
-            return False
+        return round(time_ms() - self._start_time_ms) >= self._timeout_ms
 
     def busy(self) -> bool:
         return not self.timed_out()
 
-    def reset(self, new_timeout: Optional[timedelta] = None):
+    def reset(self, new_timeout: timedelta | None = None) -> None:
         if new_timeout is not None:
             self.timeout = new_timeout
         self.start()
 
-    def start(self):
+    def start(self) -> None:
         self._start_time_ms = time_ms()
 
-    def time_out(self):
+    def time_out(self) -> None:
         self._start_time_ms = 0
 
     def remaining_time(self) -> timedelta:

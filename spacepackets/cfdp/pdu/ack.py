@@ -1,17 +1,21 @@
 from __future__ import annotations
-import enum
-import copy
-import struct
 
-from spacepackets.cfdp.pdu.header import PduHeader
-from spacepackets.cfdp.pdu.file_directive import (
-    FileDirectivePduBase,
-    DirectiveType,
-    AbstractFileDirectiveBase,
-)
-from spacepackets.cfdp.defs import ConditionCode, CrcFlag, Direction
+import copy
+import enum
+import struct
+from typing import TYPE_CHECKING
+
 from spacepackets.cfdp.conf import PduConfig
+from spacepackets.cfdp.defs import ConditionCode, CrcFlag, Direction
+from spacepackets.cfdp.pdu.file_directive import (
+    AbstractFileDirectiveBase,
+    DirectiveType,
+    FileDirectivePduBase,
+)
 from spacepackets.crc import CRC16_CCITT_FUNC
+
+if TYPE_CHECKING:
+    from spacepackets.cfdp.pdu.header import PduHeader
 
 
 class TransactionStatus(enum.IntEnum):
@@ -46,9 +50,7 @@ class AckPdu(AbstractFileDirectiveBase):
             DirectiveType.FINISHED_PDU,
             DirectiveType.EOF_PDU,
         ]:
-            raise ValueError(
-                f"invalid directive code of acked PDU {directive_code_of_acked_pdu}"
-            )
+            raise ValueError(f"invalid directive code of acked PDU {directive_code_of_acked_pdu}")
         self.directive_code_of_acked_pdu = directive_code_of_acked_pdu
         self.directive_subtype_code = 0
         if self.directive_code_of_acked_pdu == DirectiveType.FINISHED_PDU:
@@ -96,15 +98,13 @@ class AckPdu(AbstractFileDirectiveBase):
 
     def pack(self) -> bytearray:
         packet = self.pdu_file_directive.pack()
-        packet.append(
-            (self.directive_code_of_acked_pdu << 4) | self.directive_subtype_code
-        )
+        packet.append((self.directive_code_of_acked_pdu << 4) | self.directive_subtype_code)
         packet.append((self.condition_code_of_acked_pdu << 4) | self.transaction_status)
         if self.pdu_file_directive.pdu_conf.crc_flag == CrcFlag.WITH_CRC:
             packet.extend(struct.pack("!H", CRC16_CCITT_FUNC(packet)))
         return packet
 
-    def _calculate_directive_field_len(self):
+    def _calculate_directive_field_len(self) -> None:
         directive_param_field_len = 2
         if self.pdu_file_directive.pdu_conf.crc_flag == CrcFlag.WITH_CRC:
             directive_param_field_len += 2
@@ -130,7 +130,7 @@ class AckPdu(AbstractFileDirectiveBase):
             Raw data too short for expected object.
         ValueError
             Invalid directive type or data format.
-        InvalidCrc
+        InvalidCrcError
             PDU has a 16 bit CRC and the CRC check failed.
 
         """

@@ -1,23 +1,23 @@
 from __future__ import annotations
+
 import datetime
 import enum
 import math
 import struct
 import time
-from typing import Optional, Tuple
 
 import deprecation
 
-from spacepackets.version import get_version
-from spacepackets.exceptions import BytesTooShortError
 from spacepackets.ccsds.time.common import (
+    MS_PER_DAY,
+    SECONDS_PER_DAY,
+    CcsdsTimeCodeId,
     CcsdsTimeProvider,
     convert_ccsds_days_to_unix_days,
-    SECONDS_PER_DAY,
     convert_unix_days_to_ccsds_days,
-    CcsdsTimeCodeId,
-    MS_PER_DAY,
 )
+from spacepackets.exceptions import BytesTooShortError
+from spacepackets.version import get_version
 
 
 class LenOfDaysSegment(enum.IntEnum):
@@ -45,9 +45,7 @@ class CdsShortTimestamp(CcsdsTimeProvider):
     CDS_SHORT_ID = 0b100
     TIMESTAMP_SIZE = 7
 
-    def __init__(
-        self, ccsds_days: int, ms_of_day: int, init_dt_unix_stamp: bool = True
-    ):
+    def __init__(self, ccsds_days: int, ms_of_day: int, init_dt_unix_stamp: bool = True):
         """Create a stamp from the contained values directly.
 
         >>> zero_stamp = CdsShortTimestamp(ccsds_days=0, ms_of_day=0)
@@ -60,7 +58,7 @@ class CdsShortTimestamp(CcsdsTimeProvider):
         -4383
         >>> CdsShortTimestamp(0x0102, 0x03040506).pack().hex(sep=',')
         '40,01,02,03,04,05,06'
-        """
+        """  # noqa: E501
         self.__p_field = bytes([CdsShortTimestamp.CDS_SHORT_ID << 4])
         # CCSDS recommends a 1958 Januar 1 epoch, which is different from the Unix epoch
         self._ccsds_days = ccsds_days
@@ -69,11 +67,11 @@ class CdsShortTimestamp(CcsdsTimeProvider):
         if init_dt_unix_stamp:
             self._setup()
 
-    def _setup(self):
+    def _setup(self) -> None:
         self._calculate_unix_seconds()
         self._calculate_date_time()
 
-    def _calculate_unix_seconds(self):
+    def _calculate_unix_seconds(self) -> None:
         unix_days = convert_ccsds_days_to_unix_days(self._ccsds_days)
         self._unix_seconds = unix_days * SECONDS_PER_DAY
         seconds_of_day = self._ms_of_day / 1000.0
@@ -82,7 +80,7 @@ class CdsShortTimestamp(CcsdsTimeProvider):
         else:
             self._unix_seconds += seconds_of_day
 
-    def _calculate_date_time(self):
+    def _calculate_date_time(self) -> None:
         if self._unix_seconds < 0:
             self._datetime = datetime.datetime(
                 1970, 1, 1, tzinfo=datetime.timezone.utc
@@ -123,7 +121,7 @@ class CdsShortTimestamp(CcsdsTimeProvider):
         )
 
     @classmethod
-    def empty(cls, init_dt_unix_stamp: bool = True):
+    def empty(cls, init_dt_unix_stamp: bool = True) -> CdsShortTimestamp:
         """Empty instance containing only zero for all fields.
 
         :return:
@@ -135,7 +133,7 @@ class CdsShortTimestamp(CcsdsTimeProvider):
         ccsds_days, ms_of_day = CdsShortTimestamp.unpack_from_raw(data)
         return cls(ccsds_days=ccsds_days, ms_of_day=ms_of_day)
 
-    def read_from_raw(self, data: bytes):
+    def read_from_raw(self, data: bytes) -> CdsShortTimestamp:
         """Updates the instance from a given raw CDS short timestamp
 
         :param data:
@@ -145,19 +143,15 @@ class CdsShortTimestamp(CcsdsTimeProvider):
         self._setup()
 
     @staticmethod
-    def unpack_from_raw(data: bytes) -> Tuple[int, int]:
+    def unpack_from_raw(data: bytes) -> tuple[int, int]:
         if len(data) < CdsShortTimestamp.TIMESTAMP_SIZE:
             raise BytesTooShortError(CdsShortTimestamp.TIMESTAMP_SIZE, len(data))
         p_field = data[0]
         if (p_field >> 4) & 0b111 != CcsdsTimeCodeId.CDS:
-            raise ValueError(
-                f"invalid CCSDS Time Code {p_field}, expected {CcsdsTimeCodeId.CDS}"
-            )
+            raise ValueError(f"invalid CCSDS Time Code {p_field}, expected {CcsdsTimeCodeId.CDS}")
         len_of_day = len_of_day_seg_from_pfield(p_field)
         if len_of_day != LenOfDaysSegment.DAYS_16_BITS:
-            raise ValueError(
-                f"invalid length of days field {len_of_day} for CDS short timestamp"
-            )
+            raise ValueError(f"invalid length of days field {len_of_day} for CDS short timestamp")
         ccsds_days = struct.unpack("!H", data[1:3])[0]
         ms_of_day = struct.unpack("!I", data[3:7])[0]
         return ccsds_days, ms_of_day
@@ -173,9 +167,7 @@ class CdsShortTimestamp(CcsdsTimeProvider):
 
     def __eq__(self, other: object):
         if isinstance(other, CdsShortTimestamp):
-            return (self.ccsds_days == other.ccsds_days) and (
-                self.ms_of_day == other.ms_of_day
-            )
+            return (self.ccsds_days == other.ccsds_days) and (self.ms_of_day == other.ms_of_day)
         return False
 
     def __add__(self, timedelta: datetime.timedelta):
@@ -248,13 +240,11 @@ class CdsShortTimestamp(CcsdsTimeProvider):
         return cls.from_datetime(dt)
 
     @staticmethod
-    def ms_of_today(seconds_since_epoch: Optional[float] = None):
+    def ms_of_today(seconds_since_epoch: float | None = None) -> int:
         if seconds_since_epoch is None:
             seconds_since_epoch = time.time()
         fraction_ms = seconds_since_epoch - math.floor(seconds_since_epoch)
-        return int(
-            math.floor((seconds_since_epoch % SECONDS_PER_DAY) * 1000 + fraction_ms)
-        )
+        return int(math.floor((seconds_since_epoch % SECONDS_PER_DAY) * 1000 + fraction_ms))
 
     def as_unix_seconds(self) -> float:
         return self._unix_seconds

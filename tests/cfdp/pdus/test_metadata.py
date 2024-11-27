@@ -2,20 +2,20 @@ from unittest import TestCase
 
 from spacepackets.cfdp import (
     ChecksumType,
-    FileStoreRequestTlv,
-    FilestoreActionCode,
     ConditionCode,
+    FilestoreActionCode,
+    FileStoreRequestTlv,
 )
 from spacepackets.cfdp.conf import PduConfig
 from spacepackets.cfdp.defs import (
+    CrcFlag,
     Direction,
     FaultHandlerCode,
     LargeFileFlag,
-    CrcFlag,
     TransmissionMode,
 )
-from spacepackets.cfdp.pdu import MetadataPdu, MetadataParams
-from spacepackets.cfdp.tlv import TlvHolder, FaultHandlerOverrideTlv
+from spacepackets.cfdp.pdu import MetadataParams, MetadataPdu
+from spacepackets.cfdp.tlv import FaultHandlerOverrideTlv, TlvHolder
 
 
 class TestMetadata(TestCase):
@@ -120,29 +120,15 @@ class TestMetadata(TestCase):
             self.assertEqual(option.value, options_concrete[idx].value)
         pdu_with_two_options_raw = pdu_with_two_options.pack()
         header_len = pdu_with_two_options.header_len
-        expected_len = (
-            header_len + 5 + 2 + self.option_0.packet_len + self.option_1.packet_len
-        )
+        expected_len = header_len + 5 + 2 + self.option_0.packet_len + self.option_1.packet_len
         self.assertEqual(pdu_with_two_options.packet_len, expected_len)
         self.assertEqual(len(pdu_with_two_options_raw), expected_len)
         pdu_with_two_options.source_file_name = "hello.txt"
-        expected_len = (
-            header_len
-            + 5
-            + 1
-            + 10
-            + self.option_0.packet_len
-            + self.option_1.packet_len
-        )
+        expected_len = header_len + 5 + 1 + 10 + self.option_0.packet_len + self.option_1.packet_len
         self.assertEqual(pdu_with_two_options.packet_len, expected_len)
         pdu_with_two_options.dest_file_name = "hello2.txt"
         expected_len = (
-            header_len
-            + 5
-            + 11
-            + 10
-            + self.option_0.packet_len
-            + self.option_1.packet_len
+            header_len + 5 + 11 + 10 + self.option_0.packet_len + self.option_1.packet_len
         )
         self.assertEqual(pdu_with_two_options.packet_len, expected_len)
         pdu_with_no_options = pdu_with_two_options

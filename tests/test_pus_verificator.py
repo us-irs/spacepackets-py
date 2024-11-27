@@ -1,21 +1,22 @@
-from typing import Optional, List
+from __future__ import annotations
+
 from unittest import TestCase
 
 from spacepackets.ccsds import CdsShortTimestamp
 from spacepackets.ecss import PusTc
 from spacepackets.ecss.pus_1_verification import (
-    create_acceptance_success_tm,
-    RequestId,
-    create_start_success_tm,
-    create_step_success_tm,
-    StepId,
-    create_completion_success_tm,
-    FailureNotice,
-    create_acceptance_failure_tm,
-    create_start_failure_tm,
-    create_step_failure_tm,
-    create_completion_failure_tm,
     ErrorCode,
+    FailureNotice,
+    RequestId,
+    StepId,
+    create_acceptance_failure_tm,
+    create_acceptance_success_tm,
+    create_completion_failure_tm,
+    create_completion_success_tm,
+    create_start_failure_tm,
+    create_start_success_tm,
+    create_step_failure_tm,
+    create_step_success_tm,
 )
 from spacepackets.ecss.pus_verificator import (
     PusVerificator,
@@ -29,9 +30,7 @@ class SuccessSet:
         self.pus_tc = pus_tc
         self.req_id = RequestId.from_pus_tc(pus_tc)
         self.empty_stamp = CdsShortTimestamp.empty()
-        self.acc_suc_tm = create_acceptance_success_tm(
-            apid, pus_tc, self.empty_stamp.pack()
-        )
+        self.acc_suc_tm = create_acceptance_success_tm(apid, pus_tc, self.empty_stamp.pack())
         self.sta_suc_tm = create_start_success_tm(apid, pus_tc, self.empty_stamp.pack())
         self.ste_suc_tm = create_step_success_tm(
             apid=apid,
@@ -39,9 +38,7 @@ class SuccessSet:
             step_id=StepId.with_byte_size(1, 1),
             timestamp=self.empty_stamp.pack(),
         )
-        self.fin_suc_tm = create_completion_success_tm(
-            apid, pus_tc, self.empty_stamp.pack()
-        )
+        self.fin_suc_tm = create_completion_success_tm(apid, pus_tc, self.empty_stamp.pack())
 
 
 class FailureSet:
@@ -83,9 +80,7 @@ class TestPusVerificator(TestCase):
         self.pus_verificator = PusVerificator()
 
     def test_basic(self):
-        suc_set = SuccessSet(
-            self.def_apid, PusTc(apid=self.def_apid, service=17, subservice=1)
-        )
+        suc_set = SuccessSet(self.def_apid, PusTc(apid=self.def_apid, service=17, subservice=1))
         self.pus_verificator.add_tc(suc_set.pus_tc)
         check_res = self.pus_verificator.add_tm(suc_set.acc_suc_tm)
         self.assertEqual(check_res.completed, False)
@@ -115,9 +110,7 @@ class TestPusVerificator(TestCase):
 
     def test_complete_verification_clear_completed(self):
         self._regular_success_seq(
-            SuccessSet(
-                self.def_apid, PusTc(apid=self.def_apid, service=17, subservice=1)
-            ),
+            SuccessSet(self.def_apid, PusTc(apid=self.def_apid, service=17, subservice=1)),
         )
         self.pus_verificator.remove_completed_entries()
         self.assertEqual(len(self.pus_verificator.verif_dict), 0)
@@ -139,9 +132,7 @@ class TestPusVerificator(TestCase):
         self.assertEqual(len(self.pus_verificator.verif_dict), 0)
 
     def test_complete_verification_remove_manually(self):
-        suc_set = SuccessSet(
-            self.def_apid, PusTc(apid=self.def_apid, service=17, subservice=1)
-        )
+        suc_set = SuccessSet(self.def_apid, PusTc(apid=self.def_apid, service=17, subservice=1))
         self._regular_success_seq(suc_set)
         self.assertTrue(self.pus_verificator.remove_entry(suc_set.req_id))
         self.assertEqual(len(self.pus_verificator.verif_dict), 0)
@@ -281,12 +272,12 @@ class TestPusVerificator(TestCase):
 
     def _check_status(
         self,
-        status: Optional[VerificationStatus],
+        status: VerificationStatus | None,
         all_verifs: bool,
         acc_st: StatusField,
         sta_st: StatusField,
         step_st: StatusField,
-        step_list: List[int],
+        step_list: list[int],
         fin_st: StatusField,
     ):
         self.assertIsNotNone(status)

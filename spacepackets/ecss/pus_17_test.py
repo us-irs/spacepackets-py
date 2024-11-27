@@ -1,10 +1,14 @@
 from __future__ import annotations
-import enum
 
-from spacepackets import SpacePacketHeader
-from spacepackets.ccsds.spacepacket import PacketId, PacketSeqCtrl
+import enum
+from typing import TYPE_CHECKING
+
 from spacepackets.ecss.defs import PusService
-from spacepackets.ecss.tm import PusTm, AbstractPusTm
+from spacepackets.ecss.tm import AbstractPusTm, PusTm
+
+if TYPE_CHECKING:
+    from spacepackets import SpacePacketHeader
+    from spacepackets.ccsds.spacepacket import PacketId, PacketSeqCtrl
 
 
 class Subservice(enum.IntEnum):
@@ -19,7 +23,7 @@ class Service17Tm(AbstractPusTm):
         subservice: int,
         timestamp: bytes,
         ssc: int = 0,
-        source_data: bytes = bytes(),
+        source_data: bytes = b"",
         packet_version: int = 0b000,
         space_time_ref: int = 0b0000,
         destination_id: int = 0,
@@ -73,7 +77,7 @@ class Service17Tm(AbstractPusTm):
 
     @classmethod
     def __empty(cls) -> Service17Tm:
-        return cls(apid=0, subservice=0, timestamp=bytes())
+        return cls(apid=0, subservice=0, timestamp=b"")
 
     @classmethod
     def unpack(cls, data: bytes, timestamp_len: int) -> Service17Tm:

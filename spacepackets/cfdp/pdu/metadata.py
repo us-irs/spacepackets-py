@@ -1,22 +1,24 @@
 from __future__ import annotations
 
+import copy
 import dataclasses
 import struct
-import copy
-from typing import Optional, List
+from typing import TYPE_CHECKING
 
-from spacepackets.cfdp.pdu import PduHeader
-from spacepackets.cfdp.pdu.file_directive import (
-    FileDirectivePduBase,
-    DirectiveType,
-    AbstractFileDirectiveBase,
-)
-from spacepackets.cfdp.conf import PduConfig, LargeFileFlag
-from spacepackets.cfdp.tlv import CfdpTlv, TlvList
-from spacepackets.cfdp.lv import CfdpLv
+from spacepackets.cfdp.conf import LargeFileFlag, PduConfig
 from spacepackets.cfdp.defs import ChecksumType, CrcFlag, Direction
+from spacepackets.cfdp.lv import CfdpLv
+from spacepackets.cfdp.pdu.file_directive import (
+    AbstractFileDirectiveBase,
+    DirectiveType,
+    FileDirectivePduBase,
+)
+from spacepackets.cfdp.tlv import CfdpTlv, TlvList
 from spacepackets.crc import CRC16_CCITT_FUNC
 from spacepackets.exceptions import BytesTooShortError
+
+if TYPE_CHECKING:
+    from spacepackets.cfdp.pdu import PduHeader
 
 
 @dataclasses.dataclass
@@ -24,8 +26,8 @@ class MetadataParams:
     closure_requested: bool
     checksum_type: ChecksumType
     file_size: int
-    source_file_name: Optional[str]
-    dest_file_name: Optional[str]
+    source_file_name: str | None
+    dest_file_name: str | None
 
 
 class MetadataPdu(AbstractFileDirectiveBase):
@@ -53,17 +55,17 @@ class MetadataPdu(AbstractFileDirectiveBase):
         self,
         pdu_conf: PduConfig,
         params: MetadataParams,
-        options: Optional[TlvList] = None,
+        options: TlvList | None = None,
     ):
         pdu_conf = copy.copy(pdu_conf)
         self.params = params
         if params.source_file_name is None:
-            self._source_file_name_lv = CfdpLv(value=bytes())
+            self._source_file_name_lv = CfdpLv(value=b"")
         else:
             source_file_name_as_bytes = params.source_file_name.encode("utf-8")
             self._source_file_name_lv = CfdpLv(value=source_file_name_as_bytes)
         if params.dest_file_name is None:
-            self._dest_file_name_lv = CfdpLv(value=bytes())
+            self._dest_file_name_lv = CfdpLv(value=b"")
         else:
             dest_file_name_as_bytes = params.dest_file_name.encode("utf-8")
             self._dest_file_name_lv = CfdpLv(value=dest_file_name_as_bytes)
@@ -109,37 +111,30 @@ class MetadataPdu(AbstractFileDirectiveBase):
         )
 
     @property
-    def options(self) -> Optional[TlvList]:
+    def options(self) -> TlvList | None:
         return self._options
 
     @options.setter
-    def options(self, options: Optional[TlvList]):
+    def options(self, options: TlvList | None) -> None:
         self._options = options
         self._calculate_directive_field_len()
 
-    def options_as_tlv(self) -> Optional[List[CfdpTlv]]:
-        """Returns :py:meth:`options` converted to a list of concrete :py:class:`CfdpTlv` objects."""
+    def options_as_tlv(self) -> list[CfdpTlv] | None:
+        """Returns :py:meth:`options` converted to a list of concrete :py:class:`CfdpTlv`
+        objects."""
         if self.options is None:
             return None
-        cfdp_tlv_list = []
-        for option in self.options:
-            cfdp_tlv_list.append(CfdpTlv(option.tlv_type, option.value))
-        return cfdp_tlv_list
+        return [CfdpTlv(option.tlv_type, option.value) for option in self.options]
 
     @property
-    def directive_param_field_len(self):
+    def directive_param_field_len(self) -> int:
         return self.pdu_file_directive.directive_param_field_len
 
-    def _calculate_directive_field_len(self):
+    def _calculate_directive_field_len(self) -> None:
         directive_param_field_len = (
-            5
-            + self._source_file_name_lv.packet_len
-            + self._dest_file_name_lv.packet_len
+            5 + self._source_file_name_lv.packet_len + self._dest_file_name_lv.packet_len
         )
-        if (
-            self.pdu_file_directive.pdu_header.large_file_flag_set
-            == LargeFileFlag.LARGE
-        ):
+        if self.pdu_file_directive.pdu_header.large_file_flag_set == LargeFileFlag.LARGE:
             directive_param_field_len += 4
         if self._options is not None:
             for option in self._options:
@@ -149,7 +144,7 @@ class MetadataPdu(AbstractFileDirectiveBase):
         self.pdu_file_directive.directive_param_field_len = directive_param_field_len
 
     @property
-    def source_file_name(self) -> Optional[str]:
+    def source_file_name(self) -> str | None:
         """If there is no associated source file, for example for messages used for Proxy
         Operations, this function will return None
         """
@@ -158,16 +153,16 @@ class MetadataPdu(AbstractFileDirectiveBase):
         return self._source_file_name_lv.value.decode()
 
     @source_file_name.setter
-    def source_file_name(self, source_file_name: Optional[str]):
+    def source_file_name(self, source_file_name: str | None) -> None:
         if source_file_name is None:
-            self._source_file_name_lv = CfdpLv(value=bytes())
+            self._source_file_name_lv = CfdpLv(value=b"")
         else:
             source_file_name_as_bytes = source_file_name.encode("utf-8")
             self._source_file_name_lv = CfdpLv(value=source_file_name_as_bytes)
         self._calculate_directive_field_len()
 
     @property
-    def dest_file_name(self) -> Optional[str]:
+    def dest_file_name(self) -> str | None:
         """If there is no associated source file, for example for messages used for Proxy
         Operations, this function will return None
         """
@@ -176,9 +171,9 @@ class MetadataPdu(AbstractFileDirectiveBase):
         return self._dest_file_name_lv.value.decode()
 
     @dest_file_name.setter
-    def dest_file_name(self, dest_file_name: Optional[str]):
+    def dest_file_name(self, dest_file_name: str | None) -> None:
         if dest_file_name is None:
-            self._dest_file_name_lv = CfdpLv(value=bytes())
+            self._dest_file_name_lv = CfdpLv(value=b"")
         else:
             dest_file_name_as_bytes = dest_file_name.encode("utf-8")
             self._dest_file_name_lv = CfdpLv(value=dest_file_name_as_bytes)
@@ -213,7 +208,7 @@ class MetadataPdu(AbstractFileDirectiveBase):
             Raw data too short for expected object.
         ValueError
             Invalid directive type or data format.
-        InvalidCrc
+        InvalidCrcError
             PDU has a 16 bit CRC and the CRC check failed.
         """
         metadata_pdu = cls.__empty()
@@ -247,7 +242,7 @@ class MetadataPdu(AbstractFileDirectiveBase):
             metadata_pdu._parse_options(raw_packet=data, start_idx=current_idx)
         return metadata_pdu
 
-    def _parse_options(self, raw_packet: bytes, start_idx: int):
+    def _parse_options(self, raw_packet: bytes, start_idx: int) -> None:
         self._options = []
         current_idx = start_idx
         while True:
@@ -259,7 +254,7 @@ class MetadataPdu(AbstractFileDirectiveBase):
                 # This can not really happen because the CFDP TLV should check the remaining packet
                 # length as well. Still keep it for defensive programming
                 raise ValueError
-            elif current_idx == len(raw_packet):
+            if current_idx == len(raw_packet):
                 break
 
     def __repr__(self):

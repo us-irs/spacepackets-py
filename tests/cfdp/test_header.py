@@ -2,22 +2,22 @@ from unittest import TestCase
 
 from spacepackets.cfdp.conf import PduConfig, set_entity_ids
 from spacepackets.cfdp.defs import (
-    LenInBytes,
-    TransmissionMode,
-    Direction,
     CrcFlag,
-    SegmentationControl,
-    PduType,
-    SegmentMetadataFlag,
+    Direction,
     LargeFileFlag,
+    LenInBytes,
+    PduType,
+    SegmentationControl,
+    SegmentMetadataFlag,
+    TransmissionMode,
 )
 from spacepackets.cfdp.pdu import PduHeader, PromptPdu
 from spacepackets.cfdp.pdu.prompt import ResponseRequired
 from spacepackets.util import (
-    get_printable_data_string,
-    PrintFormats,
     ByteFieldU8,
     ByteFieldU16,
+    PrintFormats,
+    get_printable_data_string,
 )
 
 
@@ -51,13 +51,9 @@ class TestHeader(TestCase):
         self.assertEqual(self.pdu_header.pdu_type, PduType.FILE_DIRECTIVE)
         self.assertEqual(self.pdu_header.source_entity_id, ByteFieldU8(0))
         self.assertEqual(self.pdu_header.source_entity_id.byte_len, 1)
-        self.assertEqual(
-            self.pdu_header.transmission_mode, TransmissionMode.ACKNOWLEDGED
-        )
+        self.assertEqual(self.pdu_header.transmission_mode, TransmissionMode.ACKNOWLEDGED)
         self.assertEqual(self.pdu_header.direction, Direction.TOWARDS_RECEIVER)
-        self.assertEqual(
-            self.pdu_header.segment_metadata_flag, SegmentMetadataFlag.NOT_PRESENT
-        )
+        self.assertEqual(self.pdu_header.segment_metadata_flag, SegmentMetadataFlag.NOT_PRESENT)
         self.assertFalse(self.pdu_header.large_file_flag_set)
         self.assertEqual(self.pdu_header.transaction_seq_num, ByteFieldU8(0))
         self.assertEqual(self.pdu_header.transaction_seq_num.byte_len, 1)
@@ -68,9 +64,7 @@ class TestHeader(TestCase):
         )
         self.assertEqual(self.pdu_header.header_len, 7)
         pdu_header_packed = self.pdu_header.pack()
-        string = get_printable_data_string(
-            print_format=PrintFormats.HEX, data=pdu_header_packed
-        )
+        string = get_printable_data_string(print_format=PrintFormats.HEX, data=pdu_header_packed)
         self.assertEqual(string, "hex [20,00,00,00,00,00,00]")
         self.check_fields_case_one(pdu_header_packed=pdu_header_packed)
         pdu_header_unpacked = PduHeader.unpack(data=pdu_header_packed)
@@ -97,7 +91,7 @@ class TestHeader(TestCase):
         self.assertTrue(self.pdu_header.large_file_flag_set)
         pdu_header_packed = self.pdu_header.pack()
         self.check_fields_case_two(pdu_header_packed=pdu_header_packed)
-        set_entity_ids(source_entity_id=bytes(), dest_entity_id=bytes())
+        set_entity_ids(source_entity_id=b"", dest_entity_id=b"")
         with self.assertRaises(ValueError):
             self.pdu_header.pdu_data_field_len = 78292
         invalid_pdu_header = bytearray([0, 1, 2])
@@ -115,9 +109,7 @@ class TestHeader(TestCase):
         self._switch_cfg()
         self.pdu_conf.source_entity_id = ByteFieldU8(0)
         self.pdu_conf.dest_entity_id = ByteFieldU8(0)
-        self.pdu_conf.transaction_seq_num = ByteFieldU16.from_u16_bytes(
-            bytes([0x00, 0x2C])
-        )
+        self.pdu_conf.transaction_seq_num = ByteFieldU16.from_u16_bytes(bytes([0x00, 0x2C]))
         prompt_pdu = PromptPdu(
             response_required=ResponseRequired.KEEP_ALIVE, pdu_conf=self.pdu_conf
         )
@@ -133,9 +125,7 @@ class TestHeader(TestCase):
         self.assertEqual(prompt_pdu.pdu_file_directive.file_flag, LargeFileFlag.NORMAL)
         prompt_pdu.crc_flag = CrcFlag.NO_CRC
         self.assertEqual(prompt_pdu.crc_flag, CrcFlag.NO_CRC)
-        self.assertEqual(
-            prompt_pdu.pdu_file_directive.pdu_header.crc_flag, CrcFlag.NO_CRC
-        )
+        self.assertEqual(prompt_pdu.pdu_file_directive.pdu_header.crc_flag, CrcFlag.NO_CRC)
 
     def check_fields_case_one(self, pdu_header_packed: bytes):
         self.assertEqual(len(pdu_header_packed), 7)
@@ -187,9 +177,7 @@ class TestHeader(TestCase):
         # Segmentation Control
         self.assertEqual((pdu_header_packed[3] & 0x80) >> 7, 1)
         # Length of entity IDs
-        self.assertEqual(
-            ((pdu_header_packed[3] >> 4) & 0b111) + 1, LenInBytes.TWO_BYTES
-        )
+        self.assertEqual(((pdu_header_packed[3] >> 4) & 0b111) + 1, LenInBytes.TWO_BYTES)
         # Segment metadata flag
         self.assertEqual((pdu_header_packed[3] & 0x08) >> 3, 1)
         # Length of transaction sequence number

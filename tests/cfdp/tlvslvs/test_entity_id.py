@@ -1,11 +1,11 @@
 from unittest import TestCase
 
 from spacepackets.cfdp import (
+    CfdpTlv,
     EntityIdTlv,
     TlvHolder,
     TlvType,
-    TlvTypeMissmatch,
-    CfdpTlv,
+    TlvTypeMissmatchError,
 )
 
 
@@ -39,7 +39,7 @@ class TestEntityIdTlvs(TestCase):
     def test_invalid_type(self):
         entity_id_tlv_tlv = self.entity_id_tlv.tlv
         entity_id_tlv_tlv.tlv_type = TlvType.FILESTORE_REQUEST
-        with self.assertRaises(TlvTypeMissmatch):
+        with self.assertRaises(TlvTypeMissmatchError):
             EntityIdTlv.from_tlv(cfdp_tlv=entity_id_tlv_tlv)
 
     def test_custom_eq(self):
@@ -49,6 +49,4 @@ class TestEntityIdTlvs(TestCase):
 
     def test_repr(self):
         repr_str = repr(self.entity_id_tlv)
-        self.assertEqual(
-            repr_str, f"Tlv(tlv_type={TlvType.ENTITY_ID!r}, value=0x[00,01,02,03])"
-        )
+        self.assertEqual(repr_str, f"Tlv(tlv_type={TlvType.ENTITY_ID!r}, value=0x[00,01,02,03])")

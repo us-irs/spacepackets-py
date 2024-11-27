@@ -1,25 +1,28 @@
 from __future__ import annotations
-import enum
-import copy
-from dataclasses import dataclass
-from typing import Optional
-import struct
 
-from spacepackets.cfdp import LargeFileFlag, CrcFlag
-from spacepackets.cfdp.defs import Direction, TransmissionMode
-from spacepackets.cfdp.pdu.file_directive import SegmentMetadataFlag, PduType
+import copy
+import enum
+import struct
+from dataclasses import dataclass
+from typing import TYPE_CHECKING
+
+from spacepackets.cfdp import CrcFlag, LargeFileFlag
 from spacepackets.cfdp.conf import PduConfig
-from spacepackets.cfdp.pdu.header import PduHeader, AbstractPduBase
+from spacepackets.cfdp.defs import Direction, TransmissionMode
+from spacepackets.cfdp.pdu.file_directive import PduType, SegmentMetadataFlag
+from spacepackets.cfdp.pdu.header import AbstractPduBase, PduHeader
 from spacepackets.crc import CRC16_CCITT_FUNC
 from spacepackets.exceptions import BytesTooShortError
-from spacepackets.util import UnsignedByteField
+
+if TYPE_CHECKING:
+    from spacepackets.util import UnsignedByteField
 
 
 def get_max_file_seg_len_for_max_packet_len_and_pdu_cfg(
     pdu_conf: PduConfig,
     max_packet_len: int,
-    segment_metadata: Optional[SegmentMetadata] = None,
-):
+    segment_metadata: SegmentMetadata | None = None,
+) -> int:
     """This function can be used to calculate the maximum allowed file segment size for
     a given maximum packet length and the segment metadata if there is any."""
     subtract = pdu_conf.header_len()
@@ -32,9 +35,7 @@ def get_max_file_seg_len_for_max_packet_len_and_pdu_cfg(
     if pdu_conf.crc_flag == CrcFlag.WITH_CRC:
         subtract += 2
     if max_packet_len < subtract:
-        raise ValueError(
-            f"max packet length {max_packet_len} can not even hold base packet"
-        )
+        raise ValueError(f"max packet length {max_packet_len} can not even hold base packet")
     return max_packet_len - subtract
 
 
@@ -62,11 +63,11 @@ class SegmentMetadata:
 class FileDataParams:
     file_data: bytes
     offset: int
-    segment_metadata: Optional[SegmentMetadata] = None
+    segment_metadata: SegmentMetadata | None = None
 
     @classmethod
     def empty(cls) -> FileDataParams:
-        return cls(file_data=bytes(), offset=0)
+        return cls(file_data=b"", offset=0)
 
 
 class FileDataPdu(AbstractPduBase):
@@ -141,17 +142,17 @@ class FileDataPdu(AbstractPduBase):
         return self.pdu_header.dest_entity_id
 
     @property
-    def record_cont_state(self) -> Optional[RecordContinuationState]:
+    def record_cont_state(self) -> RecordContinuationState | None:
         if self._params.segment_metadata is None:
             return None
         return self._params.segment_metadata.record_cont_state
 
     @property
-    def offset(self):
+    def offset(self) -> int:
         return self._params.offset
 
     @property
-    def crc_flag(self):
+    def crc_flag(self) -> CrcFlag:
         return self.pdu_header.crc_flag
 
     @property
@@ -159,11 +160,11 @@ class FileDataPdu(AbstractPduBase):
         return self._pdu_header.segment_metadata_flag == SegmentMetadataFlag.PRESENT
 
     @property
-    def segment_metadata(self) -> Optional[SegmentMetadata]:
+    def segment_metadata(self) -> SegmentMetadata | None:
         return self._params.segment_metadata
 
     @segment_metadata.setter
-    def segment_metadata(self, segment_metadata: Optional[SegmentMetadata]):
+    def segment_metadata(self, segment_metadata: SegmentMetadata | None) -> None:
         self._params.segment_metadata = segment_metadata
         if segment_metadata is None:
             self._pdu_header.segment_metadata_flag = SegmentMetadataFlag.NOT_PRESENT
@@ -172,15 +173,15 @@ class FileDataPdu(AbstractPduBase):
         self._calculate_pdu_data_field_len()
 
     @property
-    def file_data(self):
+    def file_data(self) -> bytes:
         return self._params.file_data
 
     @file_data.setter
-    def file_data(self, file_data: bytes):
+    def file_data(self, file_data: bytes) -> None:
         self._params.file_data = file_data
         self._calculate_pdu_data_field_len()
 
-    def _calculate_pdu_data_field_len(self):
+    def _calculate_pdu_data_field_len(self) -> None:
         pdu_data_field_len = 0
         if self.segment_metadata is not None:
             pdu_data_field_len = 1 + len(self.segment_metadata.metadata)
@@ -199,12 +200,9 @@ class FileDataPdu(AbstractPduBase):
             len_metadata = len(self.segment_metadata.metadata)
             if len_metadata > 63:
                 raise ValueError(
-                    f"Segment metadata length {len_metadata} invalid, larger than 63"
-                    " bytes"
+                    f"Segment metadata length {len_metadata} invalid, larger than 63" " bytes"
                 )
-            file_data_pdu.append(
-                self.segment_metadata.record_cont_state << 6 | len_metadata
-            )
+            file_data_pdu.append(self.segment_metadata.record_cont_state << 6 | len_metadata)
             if len_metadata > 0:
                 file_data_pdu.extend(self.segment_metadata.metadata)
         if not self.pdu_header.large_file_flag_set:
@@ -262,7 +260,7 @@ class FileDataPdu(AbstractPduBase):
         return file_data_packet
 
     @property
-    def packet_len(self):
+    def packet_len(self) -> int:
         return self.pdu_header.packet_len
 
     def __eq__(self, other: FileDataPdu):

@@ -1,21 +1,23 @@
-# -*- coding: utf-8 -*-
 """ECSS PUS Service 1 Verification"""
+
 from __future__ import annotations
 
 import enum
 from dataclasses import dataclass
-from typing import Optional
+from typing import TYPE_CHECKING
 
-from spacepackets.ccsds import SpacePacketHeader
-from spacepackets.ccsds.spacepacket import PacketId, PacketSeqCtrl
-from spacepackets.ecss import PusTc
+from spacepackets import BytesTooShortError
 from spacepackets.ecss.defs import PusService
 from spacepackets.ecss.fields import PacketFieldEnum
-from spacepackets.ecss.tm import PusTm, AbstractPusTm
-from .exceptions import TmSrcDataTooShortError
+from spacepackets.ecss.tm import AbstractPusTm, PusTm
 
+from .exceptions import TmSrcDataTooShortError
 from .req_id import RequestId
-from .. import BytesTooShortError
+
+if TYPE_CHECKING:
+    from spacepackets.ccsds import SpacePacketHeader
+    from spacepackets.ccsds.spacepacket import PacketId, PacketSeqCtrl
+    from spacepackets.ecss import PusTc
 
 
 class Subservice(enum.IntEnum):
@@ -42,15 +44,15 @@ class FailureNotice:
     def pack(self) -> bytes:
         data = self.code.pack()
         data.extend(self.data)
-        return data
+        return bytes(data)
 
-    def len(self):
+    def len(self) -> int:
         return self.code.len() + len(self.data)
 
     @classmethod
     def unpack(
-        cls, data: bytes, num_bytes_err_code: int, num_bytes_data: Optional[int] = None
-    ):
+        cls, data: bytes, num_bytes_err_code: int, num_bytes_data: int | None = None
+    ) -> FailureNotice:
         pfc = num_bytes_err_code * 8
         if num_bytes_data is None:
             num_bytes_data = len(data) - num_bytes_err_code
@@ -76,8 +78,8 @@ StepId = PacketFieldEnum
 @dataclass
 class VerificationParams:
     req_id: RequestId
-    step_id: Optional[StepId] = None
-    failure_notice: Optional[FailureNotice] = None
+    step_id: StepId | None = None
+    failure_notice: FailureNotice | None = None
 
     def pack(self) -> bytearray:
         data = bytearray(self.req_id.pack())
@@ -87,7 +89,7 @@ class VerificationParams:
             data.extend(self.failure_notice.pack())
         return data
 
-    def len(self):
+    def len(self) -> int:
         init_len = 4
         if self.step_id is not None:
             init_len += self.step_id.len()
@@ -95,24 +97,24 @@ class VerificationParams:
             init_len += self.failure_notice.len()
         return init_len
 
-    def verify_against_subservice(self, subservice: Subservice):
+    def verify_against_subservice(self, subservice: Subservice) -> None:
         if subservice % 2 == 0:
             if self.failure_notice is None:
-                raise InvalidVerifParams("Failure Notice should be something")
+                raise InvalidVerifParamsError("Failure Notice should be something")
             if subservice == Subservice.TM_STEP_FAILURE and self.step_id is None:
-                raise InvalidVerifParams("Step ID should be something")
-            elif subservice != Subservice.TM_STEP_FAILURE and self.step_id is not None:
-                raise InvalidVerifParams("Step ID should be empty")
+                raise InvalidVerifParamsError("Step ID should be something")
+            if subservice != Subservice.TM_STEP_FAILURE and self.step_id is not None:
+                raise InvalidVerifParamsError("Step ID should be empty")
         else:
             if self.failure_notice is not None:
-                raise InvalidVerifParams("Failure Notice should be empty")
+                raise InvalidVerifParamsError("Failure Notice should be empty")
             if subservice == Subservice.TM_STEP_SUCCESS and self.step_id is None:
-                raise InvalidVerifParams("Step ID should be something")
-            elif subservice != Subservice.TM_STEP_SUCCESS and self.step_id is not None:
-                raise InvalidVerifParams("Step ID should be empty")
+                raise InvalidVerifParamsError("Step ID should be something")
+            if subservice != Subservice.TM_STEP_SUCCESS and self.step_id is not None:
+                raise InvalidVerifParamsError("Step ID should be empty")
 
 
-class InvalidVerifParams(Exception):
+class InvalidVerifParamsError(Exception):
     pass
 
 
@@ -124,7 +126,7 @@ class Service1Tm(AbstractPusTm):
         apid: int,
         subservice: Subservice,
         timestamp: bytes,
-        verif_params: Optional[VerificationParams] = None,
+        verif_params: VerificationParams | None = None,
         seq_count: int = 0,
         packet_version: int = 0b000,
         space_time_ref: int = 0b0000,
@@ -153,7 +155,7 @@ class Service1Tm(AbstractPusTm):
 
     @classmethod
     def __empty(cls) -> Service1Tm:
-        return cls(apid=0, subservice=Subservice.INVALID, timestamp=bytes())
+        return cls(apid=0, subservice=Subservice.INVALID, timestamp=b"")
 
     @classmethod
     def from_tm(cls, tm: PusTm, params: UnpackParams) -> Service1Tm:
@@ -174,9 +176,7 @@ class Service1Tm(AbstractPusTm):
         :return:
         """
         service_1_tm = cls.__empty()
-        service_1_tm.pus_tm = PusTm.unpack(
-            data=data, timestamp_len=params.timestamp_len
-        )
+        service_1_tm.pus_tm = PusTm.unpack(data=data, timestamp_len=params.timestamp_len)
         cls._unpack_raw_tm(service_1_tm, params)
         return service_1_tm
 
@@ -201,11 +201,11 @@ class Service1Tm(AbstractPusTm):
         return self.pus_tm.space_packet_header
 
     @property
-    def service(self):
+    def service(self) -> int:
         return self.pus_tm.service
 
     @property
-    def subservice(self):
+    def subservice(self) -> int:
         return self.pus_tm.subservice
 
     @property
@@ -213,7 +213,7 @@ class Service1Tm(AbstractPusTm):
         return self.pus_tm.source_data
 
     @classmethod
-    def _unpack_raw_tm(cls, instance: Service1Tm, params: UnpackParams):
+    def _unpack_raw_tm(cls, instance: Service1Tm, params: UnpackParams) -> None:
         tm_data = instance.pus_tm.tm_data
         if len(tm_data) < 4:
             raise TmSrcDataTooShortError(4, len(tm_data))
@@ -223,7 +223,7 @@ class Service1Tm(AbstractPusTm):
         else:
             instance._unpack_success_verification(params)
 
-    def _unpack_failure_verification(self, unpack_cfg: UnpackParams):
+    def _unpack_failure_verification(self, unpack_cfg: UnpackParams) -> None:
         """Handle parsing a verification failure packet, subservice ID 2, 4, 6 or 8"""
         tm_data = self.pus_tm.tm_data
         subservice = self.pus_tm.subservice
@@ -244,7 +244,7 @@ class Service1Tm(AbstractPusTm):
             tm_data[current_idx:], unpack_cfg.bytes_err_code, len(tm_data) - current_idx
         )
 
-    def _unpack_success_verification(self, unpack_cfg: UnpackParams):
+    def _unpack_success_verification(self, unpack_cfg: UnpackParams) -> None:
         if self.pus_tm.subservice == Subservice.TM_STEP_SUCCESS:
             try:
                 self._verif_params.step_id = StepId.unpack(
@@ -252,14 +252,12 @@ class Service1Tm(AbstractPusTm):
                     data=self.pus_tm.tm_data[4 : 4 + unpack_cfg.bytes_step_id],
                 )
             except BytesTooShortError as e:
-                raise TmSrcDataTooShortError(e.expected_len, e.bytes_len)
+                raise TmSrcDataTooShortError(e.expected_len, e.bytes_len) from e
         elif self.pus_tm.subservice not in [1, 3, 7]:
-            raise ValueError(
-                f"invalid subservice {self.pus_tm.subservice}, not in [1, 3, 7]"
-            )
+            raise ValueError(f"invalid subservice {self.pus_tm.subservice}, not in [1, 3, 7]")
 
     @property
-    def failure_notice(self) -> Optional[FailureNotice]:
+    def failure_notice(self) -> FailureNotice | None:
         return self._verif_params.failure_notice
 
     @property
@@ -267,44 +265,36 @@ class Service1Tm(AbstractPusTm):
         return (self.subservice % 2) == 0
 
     @property
-    def tc_req_id(self):
+    def tc_req_id(self) -> RequestId:
         return self._verif_params.req_id
 
     @tc_req_id.setter
-    def tc_req_id(self, value):
+    def tc_req_id(self, value: RequestId) -> None:
         self._verif_params.req_id = value
 
     @property
-    def error_code(self) -> Optional[ErrorCode]:
+    def error_code(self) -> ErrorCode | None:
         if self.has_failure_notice:
             assert self._verif_params.failure_notice is not None
             return self._verif_params.failure_notice.code
-        else:
-            return None
+        return None
 
     @property
     def is_step_reply(self) -> bool:
-        return (
-            self.subservice == Subservice.TM_STEP_FAILURE
-            or self.subservice == Subservice.TM_STEP_SUCCESS
-        )
+        return self.subservice in (Subservice.TM_STEP_FAILURE, Subservice.TM_STEP_SUCCESS)
 
     @property
-    def step_id(self) -> Optional[StepId]:
+    def step_id(self) -> StepId | None:
         """Retrieve the step number. Returns NONE if this packet does not have a step ID"""
         return self._verif_params.step_id
 
     def __eq__(self, other: object):
         if isinstance(other, Service1Tm):
-            return (self.pus_tm == other.pus_tm) and (
-                self._verif_params == other._verif_params
-            )
+            return (self.pus_tm == other.pus_tm) and (self._verif_params == other._verif_params)
         return False
 
 
-def create_acceptance_success_tm(
-    apid: int, pus_tc: PusTc, timestamp: bytes
-) -> Service1Tm:
+def create_acceptance_success_tm(apid: int, pus_tc: PusTc, timestamp: bytes) -> Service1Tm:
     return Service1Tm(
         apid=apid,
         subservice=Subservice.TM_ACCEPTANCE_SUCCESS,
@@ -391,9 +381,7 @@ def create_step_failure_tm(
     )
 
 
-def create_completion_success_tm(
-    apid: int, pus_tc: PusTc, timestamp: bytes
-) -> Service1Tm:
+def create_completion_success_tm(apid: int, pus_tc: PusTc, timestamp: bytes) -> Service1Tm:
     return Service1Tm(
         apid=apid,
         subservice=Subservice.TM_COMPLETION_SUCCESS,

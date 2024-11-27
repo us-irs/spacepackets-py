@@ -1,14 +1,17 @@
 from __future__ import annotations
-from spacepackets.util import UnsignedByteField
-import enum
 
+import enum
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from spacepackets.util import UnsignedByteField
 
 CFDP_VERSION_2_NAME = "CCSDS 727.0-B-5"
 # Second version of the protocol, only this one is supported here
 CFDP_VERSION_2 = 0b001
 
 
-class UnsupportedCfdpVersion(Exception):
+class UnsupportedCfdpVersionError(Exception):
     def __init__(self, version: int):
         self.version = version
 
@@ -152,3 +155,12 @@ class TransactionId:
 
 
 NULL_CHECKSUM_U32 = bytes([0x00, 0x00, 0x00, 0x00])
+
+
+class InvalidCrcError(Exception):
+    def __init__(self, crc16: int, message: str | None = None):
+        self.crc16 = crc16
+        self.message = message
+        if self.message is None:
+            self.message = f"invalid crc with value {crc16:#04x} detected"
+        super().__init__(self.message)

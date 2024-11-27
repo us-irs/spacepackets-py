@@ -1,4 +1,5 @@
 from unittest import TestCase
+
 from spacepackets.cfdp import TransactionId
 from spacepackets.util import ByteFieldU16
 
@@ -18,7 +19,7 @@ class TestTransactionId(TestCase):
         self.assertNotEqual(self.transaction_id_0, self.transaction_id_1)
 
     def test_repr(self):
-        repr = self.transaction_id_0.__repr__()
-        self.assertTrue("TransactionId" in repr)
-        self.assertTrue("source_entity_id=" in repr)
-        self.assertTrue("transaction_seq_num=" in repr)
+        repr_str = self.transaction_id_0.__repr__()
+        self.assertTrue("TransactionId" in repr_str)
+        self.assertTrue("source_entity_id=" in repr_str)
+        self.assertTrue("transaction_seq_num=" in repr_str)

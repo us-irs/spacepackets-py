@@ -1,18 +1,21 @@
 from __future__ import annotations
 
-import struct
 import copy
+import struct
+from typing import TYPE_CHECKING
 
 from spacepackets.cfdp import CrcFlag
+from spacepackets.cfdp.conf import LargeFileFlag, PduConfig
 from spacepackets.cfdp.defs import Direction
-from spacepackets.cfdp.pdu import PduHeader
 from spacepackets.cfdp.pdu.file_directive import (
-    FileDirectivePduBase,
-    DirectiveType,
     AbstractFileDirectiveBase,
+    DirectiveType,
+    FileDirectivePduBase,
 )
-from spacepackets.cfdp.conf import PduConfig, LargeFileFlag
 from spacepackets.crc import CRC16_CCITT_FUNC
+
+if TYPE_CHECKING:
+    from spacepackets.cfdp.pdu import PduHeader
 
 
 class KeepAlivePdu(AbstractFileDirectiveBase):
@@ -43,11 +46,11 @@ class KeepAlivePdu(AbstractFileDirectiveBase):
         return self.pdu_file_directive.pdu_header
 
     @property
-    def file_flag(self):
+    def file_flag(self) -> LargeFileFlag:
         return self.pdu_file_directive.pdu_header.file_flag
 
     @file_flag.setter
-    def file_flag(self, file_size: LargeFileFlag):
+    def file_flag(self, file_size: LargeFileFlag) -> None:
         directive_param_field_len = 4
         if file_size == LargeFileFlag.LARGE:
             directive_param_field_len = 8
@@ -68,9 +71,7 @@ class KeepAlivePdu(AbstractFileDirectiveBase):
         else:
             keep_alive_packet.extend(struct.pack("Q", self.progress))
         if self.pdu_file_directive.pdu_conf.crc_flag == CrcFlag.WITH_CRC:
-            keep_alive_packet.extend(
-                struct.pack("!H", CRC16_CCITT_FUNC(keep_alive_packet))
-            )
+            keep_alive_packet.extend(struct.pack("!H", CRC16_CCITT_FUNC(keep_alive_packet)))
         return keep_alive_packet
 
     @classmethod
@@ -85,7 +86,7 @@ class KeepAlivePdu(AbstractFileDirectiveBase):
             Raw data too short for expected object.
         ValueError
             Invalid directive type or data format.
-        InvalidCrc
+        InvalidCrcError
             PDU has a 16 bit CRC and the CRC check failed.
         """
         keep_alive_pdu = cls.__empty()
@@ -105,13 +106,12 @@ class KeepAlivePdu(AbstractFileDirectiveBase):
         return keep_alive_pdu
 
     @property
-    def packet_len(self):
+    def packet_len(self) -> int:
         return self.pdu_file_directive.packet_len
 
     def __eq__(self, other: KeepAlivePdu):
         return (
-            self.pdu_file_directive == other.pdu_file_directive
-            and self.progress == other.progress
+            self.pdu_file_directive == other.pdu_file_directive and self.progress == other.progress
         )
 
     def __repr__(self):

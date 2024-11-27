@@ -4,31 +4,31 @@ from unittest import TestCase
 
 from spacepackets.cfdp import (
     CfdpLv,
-    TransactionId,
     ConditionCode,
-    FileStatus,
     DeliveryCode,
+    FileStatus,
     FinishedParams,
+    TransactionId,
     TransmissionMode,
 )
 from spacepackets.cfdp.tlv import (
-    ProxyPutRequest,
-    ProxyPutRequestParams,
-    ProxyPutResponseParams,
-    ProxyPutResponse,
-    ProxyClosureRequest,
-    ProxyTransmissionMode,
-    DirectoryParams,
-    DirListingOptions,
+    ORIGINATING_TRANSACTION_ID_MSG_TYPE_ID,
+    DirectoryListingParameters,
     DirectoryListingRequest,
     DirectoryListingResponse,
-    DirectoryListingParameters,
     DirectoryOperationMessageType,
-    ProxyCancelRequest,
-    OriginatingTransactionId,
+    DirectoryParams,
+    DirListingOptions,
     MessageToUserTlv,
-    ORIGINATING_TRANSACTION_ID_MSG_TYPE_ID,
+    OriginatingTransactionId,
+    ProxyCancelRequest,
+    ProxyClosureRequest,
     ProxyMessageType,
+    ProxyPutRequest,
+    ProxyPutRequestParams,
+    ProxyPutResponse,
+    ProxyPutResponseParams,
+    ProxyTransmissionMode,
     TlvType,
 )
 from spacepackets.util import ByteFieldU8, ByteFieldU16
@@ -60,9 +60,7 @@ class TestReservedMsg(TestCase):
         )
         self.proxy_put_response = ProxyPutResponse(self.proxy_put_response_params)
         self.proxy_closure_requested = ProxyClosureRequest(True)
-        self.proxy_transmission_mode = ProxyTransmissionMode(
-            TransmissionMode.UNACKNOWLEDGED
-        )
+        self.proxy_transmission_mode = ProxyTransmissionMode(TransmissionMode.UNACKNOWLEDGED)
 
         self.proxy_cancel_request = ProxyCancelRequest()
 
@@ -76,9 +74,7 @@ class TestReservedMsg(TestCase):
         self.dir_listing_options = DirListingOptions(
             self.dir_lst_opt_recursive, self.dir_lst_opt_all
         )
-        self.dir_listing_options_msg = DirectoryListingParameters(
-            self.dir_listing_options
-        )
+        self.dir_listing_options_msg = DirectoryListingParameters(self.dir_listing_options)
 
     def _generic_raw_data_verification(
         self, data: bytes, expected_custom_len: int, expected_msg_type: int
@@ -128,9 +124,7 @@ class TestReservedMsg(TestCase):
         self.assertEqual(self.proxy_put_request.packet_len, reserved_msg.packet_len)
 
     def test_originating_transaction_id_state(self):
-        self.assertTrue(
-            self.originating_transaction_id_msg.is_originating_transaction_id()
-        )
+        self.assertTrue(self.originating_transaction_id_msg.is_originating_transaction_id())
         self.assertFalse(self.originating_transaction_id_msg.is_cfdp_proxy_operation())
         self.assertFalse(self.originating_transaction_id_msg.is_directory_operation())
 
@@ -147,8 +141,8 @@ class TestReservedMsg(TestCase):
         self.assertEqual(seq_num, 5)
 
     def test_originating_transaction_id_unpack(self):
-        id = self.originating_transaction_id_msg.get_originating_transaction_id()
-        self.assertEqual(self.originating_transaction_id, id)
+        originating_id = self.originating_transaction_id_msg.get_originating_transaction_id()
+        self.assertEqual(self.originating_transaction_id, originating_id)
         id_raw = self.originating_transaction_id_msg.pack()
         generic_reserved_msg = MessageToUserTlv.unpack(id_raw).to_reserved_msg_tlv()
         self.assertIsNotNone(generic_reserved_msg)
@@ -166,9 +160,7 @@ class TestReservedMsg(TestCase):
 
     def test_put_reponse_pack(self):
         put_response_raw = self.proxy_put_response.pack()
-        self._generic_raw_data_verification(
-            put_response_raw, 1, ProxyMessageType.PUT_RESPONSE
-        )
+        self._generic_raw_data_verification(put_response_raw, 1, ProxyMessageType.PUT_RESPONSE)
         self.assertEqual((put_response_raw[7] >> 4) & 0b1111, ConditionCode.NO_ERROR)
         self.assertEqual((put_response_raw[7] >> 2) & 0b1, DeliveryCode.DATA_COMPLETE)
         self.assertEqual(put_response_raw[7] & 0b11, FileStatus.FILE_RETAINED)
@@ -177,9 +169,7 @@ class TestReservedMsg(TestCase):
         put_reponse_params = self.proxy_put_response.get_proxy_put_response_params()
         self.assertEqual(put_reponse_params, self.proxy_put_response_params)
         put_response_raw = self.proxy_put_response.pack()
-        generic_reserved_msg = MessageToUserTlv.unpack(
-            put_response_raw
-        ).to_reserved_msg_tlv()
+        generic_reserved_msg = MessageToUserTlv.unpack(put_response_raw).to_reserved_msg_tlv()
         self.assertIsNotNone(generic_reserved_msg)
         put_reponse_params_2 = self.proxy_put_response.get_proxy_put_response_params()
         self.assertEqual(put_reponse_params_2, self.proxy_put_response_params)
@@ -195,18 +185,14 @@ class TestReservedMsg(TestCase):
 
     def test_proxy_closure_requested_pack(self):
         proxy_closure_raw = self.proxy_closure_requested.pack()
-        self._generic_raw_data_verification(
-            proxy_closure_raw, 1, ProxyMessageType.CLOSURE_REQUEST
-        )
+        self._generic_raw_data_verification(proxy_closure_raw, 1, ProxyMessageType.CLOSURE_REQUEST)
         self.assertTrue(proxy_closure_raw[7] & 0b1)
 
     def test_proxy_closure_requested_unpack(self):
         closure_requested = self.proxy_closure_requested.get_proxy_closure_requested()
         self.assertTrue(closure_requested)
         proxy_closure_raw = self.proxy_closure_requested.pack()
-        generic_reserved_msg = MessageToUserTlv.unpack(
-            proxy_closure_raw
-        ).to_reserved_msg_tlv()
+        generic_reserved_msg = MessageToUserTlv.unpack(proxy_closure_raw).to_reserved_msg_tlv()
         self.assertTrue(generic_reserved_msg.get_proxy_closure_requested())
 
     def test_proxy_transmission_mode_state(self):
@@ -223,17 +209,13 @@ class TestReservedMsg(TestCase):
         self._generic_raw_data_verification(
             proxy_transmission_mode_raw, 1, ProxyMessageType.TRANSMISSION_MODE
         )
-        self.assertEqual(
-            proxy_transmission_mode_raw[7] & 0b1, TransmissionMode.UNACKNOWLEDGED
-        )
+        self.assertEqual(proxy_transmission_mode_raw[7] & 0b1, TransmissionMode.UNACKNOWLEDGED)
 
     def test_proxy_transmission_mode_unpack(self):
         transmission_mode = self.proxy_transmission_mode.get_proxy_transmission_mode()
         self.assertEqual(transmission_mode, TransmissionMode.UNACKNOWLEDGED)
         transmission_mode_raw = self.proxy_transmission_mode.pack()
-        generic_reserved_msg = MessageToUserTlv.unpack(
-            transmission_mode_raw
-        ).to_reserved_msg_tlv()
+        generic_reserved_msg = MessageToUserTlv.unpack(transmission_mode_raw).to_reserved_msg_tlv()
         self.assertEqual(
             generic_reserved_msg.get_proxy_transmission_mode(),
             TransmissionMode.UNACKNOWLEDGED,
@@ -256,9 +238,7 @@ class TestReservedMsg(TestCase):
             DirectoryOperationMessageType.LISTING_REQUEST,
         )
         dir_path_lv = CfdpLv.unpack(dir_listing_req_raw[7:])
-        dir_listing_name_lv = CfdpLv.unpack(
-            dir_listing_req_raw[7 + dir_path_lv.packet_len :]
-        )
+        dir_listing_name_lv = CfdpLv.unpack(dir_listing_req_raw[7 + dir_path_lv.packet_len :])
         self.assertEqual(dir_path_lv, self.dir_path_lv)
         self.assertEqual(dir_listing_name_lv, self.dir_listing_name_lv)
 
@@ -266,9 +246,7 @@ class TestReservedMsg(TestCase):
         dir_listing_req_params = self.dir_listing_req.get_dir_listing_request_params()
         self.assertEqual(dir_listing_req_params, self.dir_params)
         dir_listing_raw = self.dir_listing_req.pack()
-        generic_reserved_msg = MessageToUserTlv.unpack(
-            dir_listing_raw
-        ).to_reserved_msg_tlv()
+        generic_reserved_msg = MessageToUserTlv.unpack(dir_listing_raw).to_reserved_msg_tlv()
         self.assertEqual(
             generic_reserved_msg.get_dir_listing_request_params(),
             self.dir_params,
@@ -292,22 +270,16 @@ class TestReservedMsg(TestCase):
         )
         success_response = (dir_listing_response_raw[7] >> 7) & 0b1
         dir_path_lv = CfdpLv.unpack(dir_listing_response_raw[8:])
-        dir_listing_name_lv = CfdpLv.unpack(
-            dir_listing_response_raw[8 + dir_path_lv.packet_len :]
-        )
+        dir_listing_name_lv = CfdpLv.unpack(dir_listing_response_raw[8 + dir_path_lv.packet_len :])
         self.assertTrue(success_response)
         self.assertEqual(self.dir_path_lv, dir_path_lv)
         self.assertEqual(self.dir_listing_name_lv, dir_listing_name_lv)
 
     def test_dir_listing_response_unpack(self):
-        dir_listing_response_params = (
-            self.dir_listing_req.get_dir_listing_request_params()
-        )
+        dir_listing_response_params = self.dir_listing_req.get_dir_listing_request_params()
         self.assertEqual(dir_listing_response_params, self.dir_params)
         dir_listing_raw = self.dir_listing_response.pack()
-        generic_reserved_msg = MessageToUserTlv.unpack(
-            dir_listing_raw
-        ).to_reserved_msg_tlv()
+        generic_reserved_msg = MessageToUserTlv.unpack(dir_listing_raw).to_reserved_msg_tlv()
         (
             success_response,
             dir_listing_params,
@@ -338,9 +310,7 @@ class TestReservedMsg(TestCase):
         dir_listing_options = self.dir_listing_options_msg.get_dir_listing_options()
         self.assertEqual(dir_listing_options, self.dir_listing_options)
         dir_listing_opt_raw = self.dir_listing_options_msg.pack()
-        generic_reserved_msg = MessageToUserTlv.unpack(
-            dir_listing_opt_raw
-        ).to_reserved_msg_tlv()
+        generic_reserved_msg = MessageToUserTlv.unpack(dir_listing_opt_raw).to_reserved_msg_tlv()
         listing_opts_from_raw = generic_reserved_msg.get_dir_listing_options()
         self.assertEqual(listing_opts_from_raw, self.dir_listing_options)
 
@@ -355,15 +325,11 @@ class TestReservedMsg(TestCase):
 
     def test_proxy_cancel_request_pack(self):
         proxy_put_cancel_raw = self.proxy_cancel_request.pack()
-        self._generic_raw_data_verification(
-            proxy_put_cancel_raw, 0, ProxyMessageType.PUT_CANCEL
-        )
+        self._generic_raw_data_verification(proxy_put_cancel_raw, 0, ProxyMessageType.PUT_CANCEL)
 
     def test_proxy_cancel_request_unpack(self):
         proxy_put_cancel_raw = self.proxy_cancel_request.pack()
-        generic_reserved_msg = MessageToUserTlv.unpack(
-            proxy_put_cancel_raw
-        ).to_reserved_msg_tlv()
+        generic_reserved_msg = MessageToUserTlv.unpack(proxy_put_cancel_raw).to_reserved_msg_tlv()
         self.assertEqual(
             generic_reserved_msg.get_cfdp_proxy_message_type(),
             ProxyMessageType.PUT_CANCEL,
@@ -383,9 +349,7 @@ class TestReservedMsg(TestCase):
         self.assertEqual(
             self.proxy_put_response_params.delivery_code, finished_params.delivery_code
         )
-        self.assertEqual(
-            self.proxy_put_response_params.file_status, finished_params.file_status
-        )
+        self.assertEqual(self.proxy_put_response_params.file_status, finished_params.file_status)
 
     def test_proxy_put_req_param_api(self):
         src_as_str = "/tmp/test.txt"

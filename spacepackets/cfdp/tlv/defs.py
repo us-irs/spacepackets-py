@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 import enum
 
 
@@ -111,3 +112,10 @@ class DirectoryOperationMessageType(enum.IntEnum):
     CUSTOM_LISTING_PARAMETERS = 0x15
     """Custom message type not specified by the standard. Used to supply parameters like the
     recursive and the all option to the directory listing."""
+
+
+class TlvTypeMissmatchError(Exception):
+    def __init__(self, found: TlvType, expected: TlvType):
+        self.found = found
+        self.expected = expected
+        super().__init__(f"Expected TLV {self.expected}, found {self.found}")

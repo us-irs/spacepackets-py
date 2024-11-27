@@ -1,8 +1,12 @@
 from __future__ import annotations
-from typing import List
+
 from abc import ABC, abstractmethod
-from spacepackets.cfdp.exceptions import TlvTypeMissmatch
-from spacepackets.cfdp.tlv.defs import TlvType
+from typing import TYPE_CHECKING
+
+from spacepackets.cfdp.tlv.defs import TlvTypeMissmatchError
+
+if TYPE_CHECKING:
+    from spacepackets.cfdp.tlv.defs import TlvType
 
 
 class AbstractTlvBase(ABC):
@@ -33,9 +37,9 @@ class AbstractTlvBase(ABC):
             return False
         return self.tlv_type == other.tlv_type and self.value == other.value
 
-    def check_type(self, tlv_type: TlvType):
+    def check_type(self, tlv_type: TlvType) -> None:
         if self.tlv_type != tlv_type:
-            raise TlvTypeMissmatch(found=tlv_type, expected=self.tlv_type)
+            raise TlvTypeMissmatchError(found=tlv_type, expected=self.tlv_type)
 
 
-TlvList = List[AbstractTlvBase]
+TlvList = list[AbstractTlvBase]

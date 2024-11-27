@@ -2,10 +2,10 @@ from unittest import TestCase
 
 import crcmod
 
-from spacepackets import SpacePacketHeader, PacketType
+from spacepackets import PacketType, SpacePacketHeader
 from spacepackets.ccsds.spacepacket import SequenceFlags
-from spacepackets.ecss import PusTc, PusTcDataFieldHeader, check_pus_crc, PusVersion
-from spacepackets.ecss.tc import generate_crc, generate_packet_crc, InvalidTcCrc16
+from spacepackets.ecss import PusTc, PusTcDataFieldHeader, PusVersion, check_pus_crc
+from spacepackets.ecss.tc import InvalidTcCrc16Error, generate_crc, generate_packet_crc
 
 
 class TestTelecommand(TestCase):
@@ -66,9 +66,7 @@ class TestTelecommand(TestCase):
         self.assertEqual(self.ping_tc.source_id, 12)
 
     def test_from_sph(self):
-        sp = SpacePacketHeader(
-            apid=0x02, packet_type=PacketType.TC, seq_count=0x34, data_len=0
-        )
+        sp = SpacePacketHeader(apid=0x02, packet_type=PacketType.TC, seq_count=0x34, data_len=0)
         ping_tc_from_sph = PusTc.from_sp_header(sp_header=sp, service=17, subservice=1)
         self.assertEqual(self.ping_tc, ping_tc_from_sph)
 
@@ -126,7 +124,7 @@ class TestTelecommand(TestCase):
     def test_invalid_crc(self):
         # Make CRC invalid
         self.ping_tc_raw[-1] = self.ping_tc_raw[-1] + 1
-        with self.assertRaises(InvalidTcCrc16):
+        with self.assertRaises(InvalidTcCrc16Error):
             PusTc.unpack(data=self.ping_tc_raw)
         self.assertEqual(PusTcDataFieldHeader.get_header_size(), 5)
 

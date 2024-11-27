@@ -1,11 +1,10 @@
 from unittest import TestCase
 
-from spacepackets.cfdp import CrcFlag, TransmissionMode, LargeFileFlag, ConditionCode
+from spacepackets.cfdp import ConditionCode, CrcFlag, LargeFileFlag, TransmissionMode
 from spacepackets.cfdp.conf import PduConfig
 from spacepackets.cfdp.defs import Direction
-from spacepackets.cfdp.pdu import AckPdu, DirectiveType, TransactionStatus
+from spacepackets.cfdp.pdu import AckPdu, DirectiveType, PduFactory, TransactionStatus
 from spacepackets.util import ByteFieldU16, ByteFieldU32
-from spacepackets.cfdp.pdu import PduFactory
 
 
 class TestAckPdu(TestCase):
@@ -57,12 +56,8 @@ class TestAckPdu(TestCase):
         self.check_fields_packet_0(ack_pdu=ack_pdu_unpacked)
 
         pdu_conf = PduConfig(
-            transaction_seq_num=ByteFieldU32.from_u32_bytes(
-                bytes([0x50, 0x00, 0x10, 0x01])
-            ),
-            source_entity_id=ByteFieldU32.from_u32_bytes(
-                bytes([0x10, 0x00, 0x01, 0x02])
-            ),
+            transaction_seq_num=ByteFieldU32.from_u32_bytes(bytes([0x50, 0x00, 0x10, 0x01])),
+            source_entity_id=ByteFieldU32.from_u32_bytes(bytes([0x10, 0x00, 0x01, 0x02])),
             dest_entity_id=ByteFieldU32.from_u32_bytes(bytes([0x30, 0x00, 0x01, 0x03])),
             crc_flag=CrcFlag.WITH_CRC,
             trans_mode=TransmissionMode.UNACKNOWLEDGED,
@@ -120,9 +115,7 @@ class TestAckPdu(TestCase):
         )
 
     def check_fields_packet_0(self, ack_pdu: AckPdu):
-        self.assertEqual(
-            ack_pdu.directive_code_of_acked_pdu, DirectiveType.FINISHED_PDU
-        )
+        self.assertEqual(ack_pdu.directive_code_of_acked_pdu, DirectiveType.FINISHED_PDU)
         self.assertEqual(ack_pdu.condition_code_of_acked_pdu, ConditionCode.NO_ERROR)
         self.assertEqual(ack_pdu.transaction_status, TransactionStatus.TERMINATED)
         self.assertEqual(ack_pdu.direction, Direction.TOWARDS_RECEIVER)
