@@ -21,6 +21,7 @@ from spacepackets.cfdp.tlv import TlvHolder, FaultHandlerOverrideTlv
 class TestMetadata(TestCase):
     def setUp(self) -> None:
         self.pdu_conf = PduConfig.default()
+        self.pdu_header_len = self.pdu_conf.header_len()
         self.metadata_params = MetadataParams(
             closure_requested=False,
             file_size=2,
@@ -28,6 +29,16 @@ class TestMetadata(TestCase):
             dest_file_name="test2.txt",
             checksum_type=ChecksumType.MODULAR,
         )
+        self.file_name = "hallo.txt"
+        self.option_0 = FileStoreRequestTlv(
+            action_code=FilestoreActionCode.CREATE_FILE_SNM,
+            first_file_name=self.file_name,
+        )
+        self.option_1 = FaultHandlerOverrideTlv(
+            condition_code=ConditionCode.POSITIVE_ACK_LIMIT_REACHED,
+            handler_code=FaultHandlerCode.ABANDON_TRANSACTION,
+        )
+        self.assertEqual(self.option_1.packet_len, 3)
 
     def test_metadata_simple(self):
         metadata_pdu = MetadataPdu(pdu_conf=self.pdu_conf, params=self.metadata_params)
@@ -58,25 +69,20 @@ class TestMetadata(TestCase):
         self.assertEqual(len(metadata_raw), expected_len)
 
     def test_metadata_pdu(self):
-        file_name = "hallo.txt"
-        option_0 = FileStoreRequestTlv(
-            action_code=FilestoreActionCode.CREATE_FILE_SNM, first_file_name=file_name
-        )
-
-        self.assertEqual(option_0.packet_len, 13)
+        self.assertEqual(self.option_0.packet_len, 13)
         expected_bytes = bytearray()
         expected_bytes.extend(bytes([0x00, 0x0B, 0x00, 0x09]))
-        expected_bytes.extend(file_name.encode())
-        self.assertEqual(option_0.pack(), expected_bytes)
+        expected_bytes.extend(self.file_name.encode())
+        self.assertEqual(self.option_0.pack(), expected_bytes)
 
         # Create completey new packet
         pdu_with_option = MetadataPdu(
             pdu_conf=self.pdu_conf,
             params=self.metadata_params,
-            options=[option_0],
+            options=[self.option_0],
         )
         header_len = pdu_with_option.pdu_file_directive.header_len
-        self.assertEqual(pdu_with_option.options, [option_0])
+        self.assertEqual(pdu_with_option.options, [self.option_0])
         expected_len = 10 + 9 + 8 + 5 + 13
         self.assertEqual(pdu_with_option.packet_len, expected_len)
         pdu_with_option_raw = pdu_with_option.pack()
@@ -86,7 +92,7 @@ class TestMetadata(TestCase):
         tlv_wrapper = TlvHolder(pdu_with_option_unpacked.options[0])  # type: ignore
         tlv_typed = tlv_wrapper.to_fs_request()
         self.assertIsNotNone(tlv_typed)
-        self.assertEqual(tlv_typed.pack(), option_0.pack())
+        self.assertEqual(tlv_typed.pack(), self.option_0.pack())
 
         pdu_with_option.source_file_name = None
         pdu_with_option.dest_file_name = None
@@ -94,11 +100,7 @@ class TestMetadata(TestCase):
         self.assertEqual(pdu_with_option.directive_param_field_len, 1 + 1 + 5 + 13)
         self.assertEqual(pdu_with_option.packet_len, expected_len)
 
-        option_1 = FaultHandlerOverrideTlv(
-            condition_code=ConditionCode.POSITIVE_ACK_LIMIT_REACHED,
-            handler_code=FaultHandlerCode.ABANDON_TRANSACTION,
-        )
-        self.assertEqual(option_1.packet_len, 3)
+    def test_metadata_pdu_two_options(self):
         metadata_params = MetadataParams(
             closure_requested=False,
             file_size=2,
@@ -109,20 +111,38 @@ class TestMetadata(TestCase):
         pdu_with_two_options = MetadataPdu(
             pdu_conf=self.pdu_conf,
             params=metadata_params,
-            options=[option_0, option_1],
+            options=[self.option_0, self.option_1],
         )
+        options_abstract = pdu_with_two_options.options
+        options_concrete = pdu_with_two_options.options_as_tlv()
+        for idx, option in enumerate(options_abstract):
+            self.assertEqual(option.tlv_type, options_concrete[idx].tlv_type)
+            self.assertEqual(option.value, options_concrete[idx].value)
         pdu_with_two_options_raw = pdu_with_two_options.pack()
-        expected_len = header_len + 5 + 2 + option_0.packet_len + option_1.packet_len
+        header_len = pdu_with_two_options.header_len
+        expected_len = (
+            header_len + 5 + 2 + self.option_0.packet_len + self.option_1.packet_len
+        )
         self.assertEqual(pdu_with_two_options.packet_len, expected_len)
         self.assertEqual(len(pdu_with_two_options_raw), expected_len)
         pdu_with_two_options.source_file_name = "hello.txt"
         expected_len = (
-            header_len + 5 + 1 + 10 + option_0.packet_len + option_1.packet_len
+            header_len
+            + 5
+            + 1
+            + 10
+            + self.option_0.packet_len
+            + self.option_1.packet_len
         )
         self.assertEqual(pdu_with_two_options.packet_len, expected_len)
         pdu_with_two_options.dest_file_name = "hello2.txt"
         expected_len = (
-            header_len + 5 + 11 + 10 + option_0.packet_len + option_1.packet_len
+            header_len
+            + 5
+            + 11
+            + 10
+            + self.option_0.packet_len
+            + self.option_1.packet_len
         )
         self.assertEqual(pdu_with_two_options.packet_len, expected_len)
         pdu_with_no_options = pdu_with_two_options
@@ -132,14 +152,23 @@ class TestMetadata(TestCase):
             pdu_with_no_options.pack()
 
         self.pdu_conf.file_flag = LargeFileFlag.LARGE
+
+    def test_metadata_pdu_1(self):
+        metadata_params = MetadataParams(
+            closure_requested=False,
+            file_size=2,
+            source_file_name=None,
+            dest_file_name=None,
+            checksum_type=ChecksumType.MODULAR,
+        )
         pdu_file_size_large = MetadataPdu(
             pdu_conf=self.pdu_conf,
             params=metadata_params,
             options=None,
         )
-        self.assertEqual(pdu_file_size_large.pdu_file_directive.header_len, header_len)
-        self.assertEqual(pdu_file_size_large.packet_len, header_len + 2 + 9)
-        pdu_file_size_large.options = [option_0]
+        # 1 byte directive type, 7 bytes metadata content
+        self.assertEqual(pdu_file_size_large.packet_len, self.pdu_header_len + 1 + 7)
+        pdu_file_size_large.options = [self.option_0]
         pdu_file_size_large_raw = pdu_file_size_large.pack()
         pdu_file_size_large_raw = pdu_file_size_large_raw[:-2]
         with self.assertRaises(ValueError):

@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 # [unreleased]
 
+## Changed
+
+- `MetadataPdu` options have to be specified as an optional list of abstract TLVs now.
+   A new getter method `options_as_tlv` can be used to retrieve a list of concrete TLV objects.
+
 # [v0.25.0] 2024-10-29
 
 ## Changed
