@@ -95,3 +95,17 @@ You can run the doctests with
 ```sh
 make doctest
 ```
+
+# Formatting and Linting
+
+Linting:
+
+```sh
+ruff check .
+```
+
+Formatting:
+
+```sh
+ruff format .
+```
