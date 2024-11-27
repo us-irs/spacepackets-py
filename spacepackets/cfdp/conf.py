@@ -1,15 +1,16 @@
 from __future__ import annotations
+
 from dataclasses import dataclass
-from typing import TypedDict, Tuple
+from typing import TypedDict
 
 from spacepackets.cfdp.defs import (
-    TransmissionMode,
-    LargeFileFlag,
     CrcFlag,
     Direction,
+    LargeFileFlag,
     SegmentationControl,
+    TransmissionMode,
 )
-from spacepackets.util import UnsignedByteField, ByteFieldU8, ByteFieldEmpty
+from spacepackets.util import ByteFieldEmpty, ByteFieldU8, UnsignedByteField
 
 
 @dataclass
@@ -23,9 +24,7 @@ class PduConfig:
     file_flag: LargeFileFlag = LargeFileFlag.NORMAL
     crc_flag: CrcFlag = CrcFlag.NO_CRC
     direction: Direction = Direction.TOWARDS_RECEIVER
-    seg_ctrl: SegmentationControl = (
-        SegmentationControl.NO_RECORD_BOUNDARIES_PRESERVATION
-    )
+    seg_ctrl: SegmentationControl = SegmentationControl.NO_RECORD_BOUNDARIES_PRESERVATION
 
     @classmethod
     def empty(cls) -> PduConfig:
@@ -42,7 +41,7 @@ class PduConfig:
         )
 
     @classmethod
-    def default(cls):
+    def default(cls) -> PduConfig:
         """Valid PDU configuration"""
         return PduConfig(
             transaction_seq_num=ByteFieldU8(0),
@@ -63,19 +62,19 @@ class PduConfig:
 
 
 class CfdpDict(TypedDict):
-    source_dest_entity_ids: Tuple[bytes, bytes]
+    source_dest_entity_ids: tuple[bytes, bytes]
 
 
 # TODO: Protect dict access with a dedicated lock for thread-safety
 __CFDP_DICT: CfdpDict = {
-    "source_dest_entity_ids": (bytes(), bytes()),
+    "source_dest_entity_ids": (b"", b""),
 }
 
 
-def set_entity_ids(source_entity_id: bytes, dest_entity_id: bytes):
+def set_entity_ids(source_entity_id: bytes, dest_entity_id: bytes) -> None:
     __CFDP_DICT["source_dest_entity_ids"] = (source_entity_id, dest_entity_id)
 
 
-def get_entity_ids() -> Tuple[bytes, bytes]:
+def get_entity_ids() -> tuple[bytes, bytes]:
     """Return a tuple where the first entry is the source entity ID"""
     return __CFDP_DICT["source_dest_entity_ids"]

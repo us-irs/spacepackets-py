@@ -1,9 +1,9 @@
 import enum
 from dataclasses import dataclass, field
-from typing import Dict, Optional, List
+from typing import Optional
 
-from spacepackets.ecss import PusTc
 from spacepackets.ecss.pus_1_verification import RequestId, Service1Tm, Subservice
+from spacepackets.ecss.tc import PusTc
 
 
 class StatusField(enum.IntEnum):
@@ -18,11 +18,11 @@ class VerificationStatus:
     accepted: StatusField = StatusField.UNSET
     started: StatusField = StatusField.UNSET
     step: StatusField = StatusField.UNSET
-    step_list: List[int] = field(default_factory=lambda: [])
+    step_list: list[int] = field(default_factory=list)
     completed: StatusField = StatusField.UNSET
 
 
-VerifDictT = Dict[RequestId, VerificationStatus]
+VerifDictT = dict[RequestId, VerificationStatus]
 
 
 @dataclass
@@ -54,8 +54,7 @@ class PusVerificator:
     """
 
     def __init__(self):
-        self._verif_dict: VerifDictT = dict()
-        pass
+        self._verif_dict: VerifDictT = {}
 
     def add_tc(self, tc: PusTc) -> bool:
         req_id = RequestId.from_sp_header(tc.sp_header)
@@ -70,15 +69,13 @@ class PusVerificator:
             return None
         verif_status = self._verif_dict.get(req_id)
         if pus_1_tm.subservice <= 0 or pus_1_tm.subservice > 8:
-            raise ValueError(
-                f"PUS 1 TM with invalid subservice {pus_1_tm.subservice} was passed"
-            )
+            raise ValueError(f"PUS 1 TM with invalid subservice {pus_1_tm.subservice} was passed")
         res = TmCheckResult(status=VerificationStatus(), completed=False)
         res.status = verif_status
 
         return self._check_subservice(pus_1_tm, res, verif_status)
 
-    def _check_subservice(  # noqa: C901
+    def _check_subservice(
         self,
         pus_1_tm: Service1Tm,
         res: TmCheckResult,
@@ -119,30 +116,25 @@ class PusVerificator:
         return res
 
     @property
-    def verif_dict(self):
+    def verif_dict(self) -> VerifDictT:
         return self._verif_dict
 
     def _handle_step_failure(
         self, verif_status: VerificationStatus, res: TmCheckResult, pus_1_tm: Service1Tm
-    ):
+    ) -> None:
         self._check_all_replies_recvd_after_step(verif_status)
         verif_status.step = StatusField.FAILURE
         verif_status.step_list.append(pus_1_tm.step_id.val)
         res.completed = True
 
     @staticmethod
-    def _check_all_replies_recvd_after_step(verif_stat: VerificationStatus):
-        if (
-            verif_stat.accepted != StatusField.UNSET
-            and verif_stat.started != StatusField.UNSET
-        ):
+    def _check_all_replies_recvd_after_step(verif_stat: VerificationStatus) -> None:
+        if StatusField.UNSET not in (verif_stat.accepted, verif_stat.started):
             verif_stat.all_verifs_recvd = True
 
-    def remove_completed_entries(self):
+    def remove_completed_entries(self) -> None:
         self._verif_dict = {
-            key: val
-            for key, val in self._verif_dict.items()
-            if not val.all_verifs_recvd
+            key: val for key, val in self._verif_dict.items() if not val.all_verifs_recvd
         }
 
     def remove_entry(self, req_id: RequestId) -> bool:

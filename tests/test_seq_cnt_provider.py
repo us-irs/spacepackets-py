@@ -1,10 +1,10 @@
 import os
-from pathlib import Path
 import platform
+from pathlib import Path
+from tempfile import NamedTemporaryFile
 from unittest import TestCase
 
 from spacepackets.seqcount import CcsdsFileSeqCountProvider
-from tempfile import NamedTemporaryFile
 
 
 class TestSeqCount(TestCase):
@@ -34,7 +34,6 @@ class TestSeqCount(TestCase):
         self.assertTrue(self.file_name.exists())
         self.assertEqual(seq_cnt_provider.current(), 0)
         self.assertEqual(next(seq_cnt_provider), 0)
-        pass
 
     def test_file_deleted_runtime(self):
         seq_cnt_provider = CcsdsFileSeqCountProvider(self.file_name)

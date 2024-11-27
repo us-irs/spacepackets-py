@@ -5,6 +5,7 @@ ECSS Package
    :members:
    :undoc-members:
    :show-inheritance:
+   :no-index:
 
 .. automodule:: spacepackets.ecss.defs
    :members:

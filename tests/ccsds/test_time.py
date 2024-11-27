@@ -1,10 +1,11 @@
 import datetime
 import struct
 from unittest import TestCase
+
 from spacepackets.ccsds.time import (
-    CdsShortTimestamp,
-    SECONDS_PER_DAY,
     MS_PER_DAY,
+    SECONDS_PER_DAY,
+    CdsShortTimestamp,
 )
 from spacepackets.ccsds.time.common import (
     convert_ccsds_days_to_unix_days,
@@ -15,9 +16,7 @@ from spacepackets.ccsds.time.common import (
 class TestTime(TestCase):
     def test_basic(self):
         empty_stamp = CdsShortTimestamp(0, 0)
-        self.assertEqual(
-            empty_stamp.pfield, bytes([CdsShortTimestamp.CDS_SHORT_ID << 4])
-        )
+        self.assertEqual(empty_stamp.pfield, bytes([CdsShortTimestamp.CDS_SHORT_ID << 4]))
         self.assertEqual(empty_stamp.ccsds_days, 0)
         self.assertEqual(empty_stamp.ms_of_day, 0)
         dt = empty_stamp.as_datetime()
@@ -28,9 +27,7 @@ class TestTime(TestCase):
         self.assertEqual(dt.minute, 0)
         self.assertEqual(dt.second, 0)
         unix_seconds = empty_stamp.as_unix_seconds()
-        self.assertEqual(
-            unix_seconds, convert_ccsds_days_to_unix_days(0) * SECONDS_PER_DAY
-        )
+        self.assertEqual(unix_seconds, convert_ccsds_days_to_unix_days(0) * SECONDS_PER_DAY)
 
     def test_basic_from_dt(self):
         cds_stamp = CdsShortTimestamp.from_datetime(

@@ -1,18 +1,21 @@
 from __future__ import annotations
+
 import struct
-from typing import List, Tuple, Optional
+from typing import TYPE_CHECKING
 
 from spacepackets.cfdp import CrcFlag
+from spacepackets.cfdp.conf import PduConfig
 from spacepackets.cfdp.defs import Direction
-from spacepackets.cfdp.pdu import PduHeader
 from spacepackets.cfdp.pdu.file_directive import (
     AbstractFileDirectiveBase,
-    FileDirectivePduBase,
     DirectiveType,
+    FileDirectivePduBase,
     LargeFileFlag,
 )
-from spacepackets.cfdp.conf import PduConfig
 from spacepackets.crc import CRC16_CCITT_FUNC
+
+if TYPE_CHECKING:
+    from spacepackets.cfdp.pdu import PduHeader
 
 
 def get_max_seg_reqs_for_max_packet_size_and_pdu_cfg(
@@ -41,7 +44,7 @@ def get_max_seg_reqs_for_max_packet_size_and_pdu_cfg(
     max_packet_size -= base_decrement
     if pdu_conf.file_flag == LargeFileFlag.NORMAL:
         return max_packet_size // 8
-    elif pdu_conf.file_flag == LargeFileFlag.LARGE:
+    if pdu_conf.file_flag == LargeFileFlag.LARGE:
         return max_packet_size // 16
     raise ValueError("Invalid large file flag argument")
 
@@ -103,7 +106,7 @@ class NakPdu(AbstractFileDirectiveBase):
         pdu_conf: PduConfig,
         start_of_scope: int,
         end_of_scope: int,
-        segment_requests: Optional[List[Tuple[int, int]]] = None,
+        segment_requests: list[tuple[int, int]] | None = None,
     ):
         """Create a NAK PDU object instance.
 
@@ -138,13 +141,12 @@ class NakPdu(AbstractFileDirectiveBase):
     @classmethod
     def __empty(cls) -> NakPdu:
         empty_conf = PduConfig.empty()
-        return cls(
-            start_of_scope=0, end_of_scope=0, segment_requests=[], pdu_conf=empty_conf
-        )
+        return cls(start_of_scope=0, end_of_scope=0, segment_requests=[], pdu_conf=empty_conf)
 
     def get_max_seg_reqs_for_max_packet_size(self, max_packet_size: int) -> int:
-        """Member method which forwards to :py:meth:`get_max_seg_reqs_for_max_packet_size_and_pdu_cfg`,
-        passing the internal PDU configuration field."""
+        """Member method which forwards to
+        :py:meth:`get_max_seg_reqs_for_max_packet_size_and_pdu_cfg`, passing the internal PDU
+        configuration field."""
         return get_max_seg_reqs_for_max_packet_size_and_pdu_cfg(
             max_packet_size, self.pdu_file_directive.pdu_conf
         )
@@ -158,17 +160,17 @@ class NakPdu(AbstractFileDirectiveBase):
         return self.pdu_file_directive.pdu_header
 
     @property
-    def file_flag(self):
+    def file_flag(self) -> LargeFileFlag:
         return self.pdu_file_directive.file_flag
 
     @file_flag.setter
-    def file_flag(self, file_flag: LargeFileFlag):
+    def file_flag(self, file_flag: LargeFileFlag) -> None:
         """Set the file size. This changes the length of the packet when packed as well
         which is handled by this function"""
         self.pdu_file_directive.file_flag = file_flag
         self._calculate_directive_field_len()
 
-    def _calculate_directive_field_len(self):
+    def _calculate_directive_field_len(self) -> None:
         if self.pdu_file_directive.file_flag == LargeFileFlag.NORMAL:
             directive_param_field_len = 8 + len(self._segment_requests) * 8
         elif self.pdu_file_directive.file_flag == LargeFileFlag.LARGE:
@@ -180,7 +182,7 @@ class NakPdu(AbstractFileDirectiveBase):
         self.pdu_file_directive.directive_param_field_len = directive_param_field_len
 
     @property
-    def segment_requests(self) -> List[Tuple[int, int]]:
+    def segment_requests(self) -> list[tuple[int, int]]:
         """An optional list of segment request pair tuples, where the first entry of
         list element is the start offset and the second entry is the end offset. If the
         start and end offset are both 0, the metadata is re-requested.
@@ -188,13 +190,13 @@ class NakPdu(AbstractFileDirectiveBase):
         return self._segment_requests
 
     @segment_requests.setter
-    def segment_requests(self, segment_requests: Optional[List[Tuple[int, int]]]):
+    def segment_requests(self, segment_requests: list[tuple[int, int]] | None) -> None:
         """Update the segment requests. This changes the length of the packet when packed as well
         which is handled by this function."""
         if segment_requests is None:
             self._segment_requests = []
         else:
-            self._segment_requests: List[Tuple[int, int]] = segment_requests  # type: ignore
+            self._segment_requests: list[tuple[int, int]] = segment_requests  # type: ignore
         self._calculate_directive_field_len()
 
     def pack(self) -> bytearray:
@@ -204,10 +206,7 @@ class NakPdu(AbstractFileDirectiveBase):
         """
         nak_pdu = self.pdu_file_directive.pack()
         if not self.pdu_file_directive.pdu_header.large_file_flag_set:
-            if (
-                self.start_of_scope > pow(2, 32) - 1
-                or self.end_of_scope > pow(2, 32) - 1
-            ):
+            if self.start_of_scope > pow(2, 32) - 1 or self.end_of_scope > pow(2, 32) - 1:
                 raise ValueError
             nak_pdu.extend(struct.pack("!I", self.start_of_scope))
             nak_pdu.extend(struct.pack("!I", self.end_of_scope))
@@ -216,10 +215,7 @@ class NakPdu(AbstractFileDirectiveBase):
             nak_pdu.extend(struct.pack("!Q", self.end_of_scope))
         for segment_request in self._segment_requests:
             if not self.pdu_file_directive.pdu_header.large_file_flag_set:
-                if (
-                    segment_request[0] > pow(2, 32) - 1
-                    or segment_request[1] > pow(2, 32) - 1
-                ):
+                if segment_request[0] > pow(2, 32) - 1 or segment_request[1] > pow(2, 32) - 1:
                     raise ValueError
                 nak_pdu.extend(struct.pack("!I", segment_request[0]))
                 nak_pdu.extend(struct.pack("!I", segment_request[1]))
@@ -242,7 +238,7 @@ class NakPdu(AbstractFileDirectiveBase):
             Raw data too short for expected object.
         ValueError
             Invalid directive type or data format.
-        InvalidCrc
+        InvalidCrcError
             PDU has a 16 bit CRC and the CRC check failed.
         """
         nak_pdu = cls.__empty()

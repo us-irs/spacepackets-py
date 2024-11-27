@@ -1,5 +1,5 @@
-from unittest import TestCase
 from pathlib import Path
+from unittest import TestCase
 
 from spacepackets.cfdp.lv import CfdpLv
 from spacepackets.cfdp.tlv import CfdpTlv

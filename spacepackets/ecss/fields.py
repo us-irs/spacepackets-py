@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 import enum
 import struct
 from dataclasses import dataclass
@@ -86,20 +87,20 @@ class PacketFieldEnum(PacketFieldBase):
         self.val = val
 
     @classmethod
-    def with_byte_size(cls, num_bytes: int, val: int):
+    def with_byte_size(cls, num_bytes: int, val: int) -> PacketFieldEnum:
         return cls(num_bytes * 8, val)
 
     def pack(self) -> bytearray:
         num_bytes = self.check_pfc(self.pfc)
         return bytearray(IntByteConversion.to_unsigned(num_bytes, self.val))
 
-    def len(self):
+    def len(self) -> int:
         """Return the length in bytes. This will raise a ValueError for non-byte-aligned
         PFC values."""
         return self.check_pfc(self.pfc)
 
     @classmethod
-    def unpack(cls, data: bytes, pfc: int):
+    def unpack(cls, data: bytes, pfc: int) -> PacketFieldEnum:
         """Construct from a raw bytestream.
 
         :raises BytesTooShortError: Raw bytestream too short.

@@ -1,19 +1,22 @@
 from __future__ import annotations
-import struct
-import copy
-from typing import Optional
 
-from spacepackets.cfdp.pdu.header import PduHeader
-from spacepackets.cfdp.pdu.file_directive import (
-    FileDirectivePduBase,
-    DirectiveType,
-    AbstractFileDirectiveBase,
-)
-from spacepackets.cfdp.defs import ConditionCode, CrcFlag, Direction
+import copy
+import struct
+from typing import TYPE_CHECKING
+
 from spacepackets.cfdp.conf import PduConfig
+from spacepackets.cfdp.defs import ConditionCode, CrcFlag, Direction
+from spacepackets.cfdp.pdu.file_directive import (
+    AbstractFileDirectiveBase,
+    DirectiveType,
+    FileDirectivePduBase,
+)
 from spacepackets.cfdp.tlv.tlv import EntityIdTlv
 from spacepackets.crc import CRC16_CCITT_FUNC
 from spacepackets.exceptions import BytesTooShortError
+
+if TYPE_CHECKING:
+    from spacepackets.cfdp.pdu.header import PduHeader
 
 
 class EofPdu(AbstractFileDirectiveBase):
@@ -24,7 +27,7 @@ class EofPdu(AbstractFileDirectiveBase):
         pdu_conf: PduConfig,
         file_checksum: bytes,
         file_size: int,
-        fault_location: Optional[EntityIdTlv] = None,
+        fault_location: EntityIdTlv | None = None,
         condition_code: ConditionCode = ConditionCode.NO_ERROR,
     ):
         """Constructor for an EOF PDU.
@@ -77,15 +80,15 @@ class EofPdu(AbstractFileDirectiveBase):
         return self.pdu_file_directive.packet_len
 
     @property
-    def fault_location(self):
+    def fault_location(self) -> EntityIdTlv | None:
         return self._fault_location
 
     @fault_location.setter
-    def fault_location(self, fault_location: Optional[EntityIdTlv]):
+    def fault_location(self, fault_location: EntityIdTlv | None) -> None:
         self._fault_location = fault_location
         self._calculate_directive_param_field_len()
 
-    def _calculate_directive_param_field_len(self):
+    def _calculate_directive_param_field_len(self) -> None:
         directive_param_field_len = 9
         if self.pdu_file_directive.pdu_header.large_file_flag_set:
             directive_param_field_len = 13
@@ -130,7 +133,7 @@ class EofPdu(AbstractFileDirectiveBase):
             Raw data too short for expected object.
         ValueError
             Invalid directive type or data format.
-        InvalidCrc
+        InvalidCrcError
             PDU has a 16 bit CRC and the CRC check failed.
         """
         eof_pdu = cls.__empty()

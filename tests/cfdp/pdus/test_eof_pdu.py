@@ -1,18 +1,16 @@
 from unittest import TestCase
 
-from spacepackets.cfdp import LargeFileFlag, NULL_CHECKSUM_U32, CrcFlag
-from spacepackets.cfdp.tlv import EntityIdTlv
+from spacepackets.cfdp import NULL_CHECKSUM_U32, CrcFlag, LargeFileFlag
 from spacepackets.cfdp.conf import PduConfig
 from spacepackets.cfdp.defs import Direction
 from spacepackets.cfdp.pdu import EofPdu, PduFactory
+from spacepackets.cfdp.tlv import EntityIdTlv
 
 
 class TestEofPdu(TestCase):
     def setUp(self) -> None:
         self.pdu_conf = PduConfig.default()
-        self.eof_pdu = EofPdu(
-            file_checksum=NULL_CHECKSUM_U32, file_size=0, pdu_conf=self.pdu_conf
-        )
+        self.eof_pdu = EofPdu(file_checksum=NULL_CHECKSUM_U32, file_size=0, pdu_conf=self.pdu_conf)
 
     def test_eof_pdu(self):
         self.assertEqual(self.eof_pdu.pdu_file_directive.header_len, 8)
@@ -60,9 +58,7 @@ class TestEofPdu(TestCase):
 
     def test_with_crc(self):
         self.pdu_conf.crc_flag = CrcFlag.WITH_CRC
-        eof = EofPdu(
-            file_checksum=NULL_CHECKSUM_U32, file_size=0, pdu_conf=self.pdu_conf
-        )
+        eof = EofPdu(file_checksum=NULL_CHECKSUM_U32, file_size=0, pdu_conf=self.pdu_conf)
         expected_packet_len = eof.header_len + 1 + 4 + 4 + 2
         self.assertEqual(eof.packet_len, expected_packet_len)
         eof_raw = eof.pack()

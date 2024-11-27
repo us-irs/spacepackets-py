@@ -1,13 +1,13 @@
 from unittest import TestCase
 
 from spacepackets.cfdp import (
-    FileStoreResponseTlv,
+    CfdpTlv,
     FilestoreActionCode,
     FilestoreResponseStatusCode,
+    FileStoreResponseTlv,
     TlvHolder,
     TlvType,
-    TlvTypeMissmatch,
-    CfdpTlv,
+    TlvTypeMissmatchError,
 )
 
 
@@ -23,9 +23,7 @@ class TestFsResponseTlv(TestCase):
         )
 
     def test_from_cfdp_tlv(self):
-        self.assertEqual(
-            TlvHolder(self.cfdp_tlv).to_fs_response(), self.fs_response_tlv
-        )
+        self.assertEqual(TlvHolder(self.cfdp_tlv).to_fs_response(), self.fs_response_tlv)
 
     def test_invalid_cast(self):
         with self.assertRaises(TypeError):
@@ -39,7 +37,7 @@ class TestFsResponseTlv(TestCase):
 
         self.assertEqual(fs_reply_tlv_from_fac.pack(), self.fs_response_tlv.pack())
         fs_response_tlv_tlv.tlv_type = TlvType.ENTITY_ID
-        with self.assertRaises(TlvTypeMissmatch):
+        with self.assertRaises(TlvTypeMissmatchError):
             FileStoreResponseTlv.from_tlv(cfdp_tlv=fs_response_tlv_tlv)
         fs_response_tlv_tlv.tlv_type = TlvType.FILESTORE_RESPONSE
         fs_response_tlv_raw = self.fs_response_tlv.pack()
@@ -49,7 +47,7 @@ class TestFsResponseTlv(TestCase):
             FileStoreResponseTlv.unpack(data=fs_response_tlv_raw)
         # Wrong ID
         fs_response_tlv_raw[0] = TlvType.ENTITY_ID
-        with self.assertRaises(TlvTypeMissmatch):
+        with self.assertRaises(TlvTypeMissmatchError):
             FileStoreResponseTlv.unpack(data=fs_response_tlv_raw)
         fs_response_tlv_raw[0] = TlvType.FILESTORE_RESPONSE
         fs_response_tlv_raw[2] = 0b11110000

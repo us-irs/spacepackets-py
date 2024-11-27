@@ -1,10 +1,12 @@
 from __future__ import annotations
+
 import datetime
 import enum
-from abc import abstractmethod, ABC
-from spacepackets.version import get_version
+from abc import ABC, abstractmethod
 
 import deprecation
+
+from spacepackets.version import get_version
 
 #: The day offset to convert from CCSDS days to UNIX days.
 DAYS_CCSDS_TO_UNIX = -4383
@@ -76,7 +78,7 @@ class CcsdsTimeProvider(ABC):
         pass
 
     @abstractmethod
-    def read_from_raw(self, timestamp: bytes):
+    def read_from_raw(self, timestamp: bytes) -> CcsdsTimeProvider:
         pass
 
     @abstractmethod
@@ -96,13 +98,12 @@ class CcsdsTimeProvider(ABC):
         """Retrieve a :py:class:`datetime.datetime` with the :py:class:`datetime.timezone` set to
         utc.
         """
-        pass
 
     def as_time_string(self) -> str:
         return self.as_date_time().strftime("%Y-%m-%d %H:%M:%S.%f")
 
     def ccsds_time_code(self) -> int:
-        if self.pfield == bytes():
+        if self.pfield == b"":
             return 0
         return (self.pfield[0] >> 4) & 0b111
 

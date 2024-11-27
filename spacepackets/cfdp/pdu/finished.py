@@ -3,7 +3,7 @@ from __future__ import annotations
 import copy
 import struct
 from dataclasses import dataclass, field
-from typing import List, Optional
+from typing import TYPE_CHECKING
 
 from spacepackets.cfdp.conf import PduConfig
 from spacepackets.cfdp.defs import (
@@ -18,11 +18,13 @@ from spacepackets.cfdp.pdu.file_directive import (
     DirectiveType,
     FileDirectivePduBase,
 )
-from spacepackets.cfdp.pdu.header import PduHeader
 from spacepackets.cfdp.tlv.defs import TlvType
 from spacepackets.cfdp.tlv.tlv import EntityIdTlv, FileStoreResponseTlv
 from spacepackets.crc import CRC16_CCITT_FUNC
 from spacepackets.exceptions import BytesTooShortError
+
+if TYPE_CHECKING:
+    from spacepackets.cfdp.pdu.header import PduHeader
 
 
 @dataclass
@@ -30,8 +32,8 @@ class FinishedParams:
     condition_code: ConditionCode
     delivery_code: DeliveryCode
     file_status: FileStatus
-    file_store_responses: List[FileStoreResponseTlv] = field(default_factory=lambda: [])
-    fault_location: Optional[EntityIdTlv] = None
+    file_store_responses: list[FileStoreResponseTlv] = field(default_factory=list)
+    fault_location: EntityIdTlv | None = None
 
     @classmethod
     def empty(cls) -> FinishedParams:
@@ -99,7 +101,7 @@ class FinishedPdu(AbstractFileDirectiveBase):
         return self._params.condition_code
 
     @condition_code.setter
-    def condition_code(self, condition_code: ConditionCode):
+    def condition_code(self, condition_code: ConditionCode) -> None:
         self._params.condition_code = condition_code
 
     @property
@@ -115,7 +117,7 @@ class FinishedPdu(AbstractFileDirectiveBase):
         return self.pdu_file_directive.packet_len
 
     @property
-    def file_store_responses(self) -> List[FileStoreResponseTlv]:
+    def file_store_responses(self) -> list[FileStoreResponseTlv]:
         return self._params.file_store_responses
 
     @property
@@ -123,18 +125,14 @@ class FinishedPdu(AbstractFileDirectiveBase):
         return self._params
 
     @property
-    def might_have_fault_location(self):
-        if self._params.condition_code in [
+    def might_have_fault_location(self) -> bool:
+        return self._params.condition_code not in [
             ConditionCode.NO_ERROR,
             ConditionCode.UNSUPPORTED_CHECKSUM_TYPE,
-        ]:
-            return False
-        return True
+        ]
 
     @file_store_responses.setter
-    def file_store_responses(
-        self, file_store_responses: Optional[List[FileStoreResponseTlv]]
-    ):
+    def file_store_responses(self, file_store_responses: list[FileStoreResponseTlv] | None) -> None:
         """Setter function for the file store responses
         :param file_store_responses:
         :raises ValueError: TLV type is not a filestore response
@@ -147,33 +145,29 @@ class FinishedPdu(AbstractFileDirectiveBase):
         self._calculate_directive_field_len()
 
     @property
-    def file_store_responses_len(self):
+    def file_store_responses_len(self) -> int:
         if not self._params.file_store_responses:
             return 0
-        else:
-            file_store_responses_len = 0
-            for file_store_response in self._params.file_store_responses:
-                file_store_responses_len += file_store_response.packet_len
-            return file_store_responses_len
+        file_store_responses_len = 0
+        for file_store_response in self._params.file_store_responses:
+            file_store_responses_len += file_store_response.packet_len
+        return file_store_responses_len
 
     @property
-    def fault_location(self) -> Optional[EntityIdTlv]:
+    def fault_location(self) -> EntityIdTlv | None:
         return self._params.fault_location
 
     @fault_location.setter
-    def fault_location(self, fault_location: Optional[EntityIdTlv]):
+    def fault_location(self, fault_location: EntityIdTlv | None) -> None:
         """Setter function for the fault location.
         :raises ValueError: Type ID is not entity ID (0x06)
         """
         self._params.fault_location = fault_location
         self._calculate_directive_field_len()
 
-    def _calculate_directive_field_len(self):
+    def _calculate_directive_field_len(self) -> None:
         base_len = 1
-        if self.fault_location is None:
-            fault_loc_len = 0
-        else:
-            fault_loc_len = self.fault_location_len
+        fault_loc_len = 0 if self.fault_location is None else self.fault_location_len
         if self.pdu_file_directive.pdu_conf.crc_flag == CrcFlag.WITH_CRC:
             base_len += 2
         self.pdu_file_directive.directive_param_field_len = (
@@ -181,11 +175,10 @@ class FinishedPdu(AbstractFileDirectiveBase):
         )
 
     @property
-    def fault_location_len(self):
+    def fault_location_len(self) -> int:
         if self._params.fault_location is None:
             return 0
-        else:
-            return self._params.fault_location.packet_len
+        return self._params.fault_location.packet_len
 
     @classmethod
     def __empty(cls) -> FinishedPdu:
@@ -223,16 +216,14 @@ class FinishedPdu(AbstractFileDirectiveBase):
             Raw data too short for expected object.
         ValueError
             Invalid directive type or data format.
-        InvalidCrc
+        InvalidCrcError
             PDU has a 16 bit CRC and the CRC check failed.
         """
         finished_pdu = cls.__empty()
         finished_pdu.pdu_file_directive = FileDirectivePduBase.unpack(raw_packet=data)
         finished_pdu.pdu_file_directive.verify_length_and_checksum(data)
         if finished_pdu.pdu_file_directive.packet_len > len(data):
-            raise BytesTooShortError(
-                finished_pdu.pdu_file_directive.packet_len, len(data)
-            )
+            raise BytesTooShortError(finished_pdu.pdu_file_directive.packet_len, len(data))
         current_idx = finished_pdu.pdu_file_directive.header_len
         first_param_byte = data[current_idx]
         params = FinishedParams(
@@ -244,9 +235,7 @@ class FinishedPdu(AbstractFileDirectiveBase):
         finished_pdu._params = params
         current_idx += 1
         if len(data) > current_idx:
-            finished_pdu._unpack_tlvs(
-                rest_of_packet=data[current_idx : finished_pdu.packet_len]
-            )
+            finished_pdu._unpack_tlvs(rest_of_packet=data[current_idx : finished_pdu.packet_len])
         return finished_pdu
 
     def _unpack_tlvs(self, rest_of_packet: bytes) -> int:
@@ -256,16 +245,12 @@ class FinishedPdu(AbstractFileDirectiveBase):
         while True:
             next_tlv_code = rest_of_packet[current_idx]
             if next_tlv_code == TlvType.FILESTORE_RESPONSE:
-                next_fs_response = FileStoreResponseTlv.unpack(
-                    data=rest_of_packet[current_idx:]
-                )
+                next_fs_response = FileStoreResponseTlv.unpack(data=rest_of_packet[current_idx:])
                 current_idx += next_fs_response.packet_len
                 fs_responses_list.append(next_fs_response)
             elif next_tlv_code == TlvType.ENTITY_ID:
                 if not self.might_have_fault_location:
-                    raise ValueError(
-                        "Entity ID found in Finished PDU but wrong condition code"
-                    )
+                    raise ValueError("Entity ID found in Finished PDU but wrong condition code")
                 fault_loc = EntityIdTlv.unpack(data=rest_of_packet[current_idx:])
                 current_idx += fault_loc.packet_len
             else:
@@ -279,10 +264,7 @@ class FinishedPdu(AbstractFileDirectiveBase):
         return current_idx
 
     def __eq__(self, other: FinishedPdu):
-        return (
-            self._params == other._params
-            and self.pdu_file_directive == other.pdu_file_directive
-        )
+        return self._params == other._params and self.pdu_file_directive == other.pdu_file_directive
 
     def __repr__(self):
         return (

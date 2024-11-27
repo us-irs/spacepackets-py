@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 import struct
+from typing import TYPE_CHECKING
 
 from spacepackets import BytesTooShortError
 from spacepackets.ccsds.spacepacket import PacketId, PacketSeqCtrl, SpacePacketHeader
-from spacepackets.ecss.tc import PusTc
+
+if TYPE_CHECKING:
+    from spacepackets.ecss.tc import PusTc
 
 
 class RequestId:
@@ -23,15 +26,13 @@ tc_psc=PacketSeqCtrl(seq_flags=<SequenceFlags.UNSEGMENTED: 3>, seq_count=17), cc
     '10,22,c0,11'
     """
 
-    def __init__(
-        self, tc_packet_id: PacketId, tc_psc: PacketSeqCtrl, ccsds_version: int = 0b000
-    ):
+    def __init__(self, tc_packet_id: PacketId, tc_psc: PacketSeqCtrl, ccsds_version: int = 0b000):
         self.tc_packet_id = tc_packet_id
         self.tc_psc = tc_psc
         self.ccsds_version = ccsds_version
 
     @classmethod
-    def empty(cls):
+    def empty(cls) -> RequestId:
         return cls(PacketId.empty(), PacketSeqCtrl.empty())
 
     @classmethod
@@ -47,7 +48,7 @@ tc_psc=PacketSeqCtrl(seq_flags=<SequenceFlags.UNSEGMENTED: 3>, seq_count=17), cc
         )
 
     @classmethod
-    def from_pus_tc(cls, pus_tc: PusTc):
+    def from_pus_tc(cls, pus_tc: PusTc) -> RequestId:
         return cls.from_sp_header(pus_tc.sp_header)
 
     @classmethod
@@ -63,9 +64,9 @@ tc_psc=PacketSeqCtrl(seq_flags=<SequenceFlags.UNSEGMENTED: 3>, seq_count=17), cc
         packet_id_and_version = (self.ccsds_version << 13) | self.tc_packet_id.raw()
         raw.extend(struct.pack("!H", packet_id_and_version))
         raw.extend(struct.pack("!H", self.tc_psc.raw()))
-        return raw
+        return bytes(raw)
 
-    def as_u32(self):
+    def as_u32(self) -> int:
         packet_id_and_version = (self.ccsds_version << 13) | self.tc_packet_id.raw()
         return (packet_id_and_version << 16) | self.tc_psc.raw()
 

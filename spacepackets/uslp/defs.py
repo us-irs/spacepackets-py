@@ -1,26 +1,26 @@
-class UslpInvalidFrameHeader(Exception):
+class UslpInvalidFrameHeaderError(Exception):
     pass
 
 
-class UslpInvalidRawPacketOrFrameLen(Exception):
+class UslpInvalidRawPacketOrFrameLenError(Exception):
     pass
 
 
-class UslpInvalidConstructionRules(Exception):
+class UslpInvalidConstructionRulesError(Exception):
     pass
 
 
-class UslpFhpVhopFieldMissing(Exception):
+class UslpFhpVhopFieldMissingError(Exception):
     pass
 
 
-class UslpTruncatedFrameNotAllowed(Exception):
+class UslpTruncatedFrameNotAllowedError(Exception):
     pass
 
 
-class UslpVersionMissmatch(Exception):
+class UslpVersionMissmatchError(Exception):
     pass
 
 
-class UslpTypeMissmatch(Exception):
+class UslpTypeMissmatchError(Exception):
     pass

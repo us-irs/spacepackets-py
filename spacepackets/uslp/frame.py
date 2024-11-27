@@ -1,23 +1,23 @@
 from __future__ import annotations
+
 import enum
 import struct
+from typing import Union
 
+from .defs import (
+    UslpFhpVhopFieldMissingError,
+    UslpInvalidConstructionRulesError,
+    UslpInvalidFrameHeaderError,
+    UslpInvalidRawPacketOrFrameLenError,
+    UslpTruncatedFrameNotAllowedError,
+)
 from .header import (
-    TruncatedPrimaryHeader,
+    HeaderType,
     PrimaryHeader,
     SourceOrDestField,
+    TruncatedPrimaryHeader,
     determine_header_type,
-    HeaderType,
 )
-from .defs import (
-    UslpInvalidRawPacketOrFrameLen,
-    UslpTruncatedFrameNotAllowed,
-    UslpInvalidConstructionRules,
-    UslpInvalidFrameHeader,
-    UslpFhpVhopFieldMissing,
-)
-
-from typing import Union, Optional
 
 FrameHeaderT = Union[TruncatedPrimaryHeader, PrimaryHeader]
 
@@ -41,8 +41,8 @@ class FramePropertiesBase:
         self,
         has_insert_zone: bool,
         has_fecf: bool,
-        insert_zone_len: Optional[int] = None,
-        fecf_len: Optional[int] = None,
+        insert_zone_len: int | None = None,
+        fecf_len: int | None = None,
     ):
         if has_insert_zone and insert_zone_len is None:
             raise ValueError
@@ -60,8 +60,8 @@ class FixedFrameProperties(FramePropertiesBase):
         fixed_len: int,
         has_insert_zone: bool,
         has_fecf: bool,
-        insert_zone_len: Optional[int] = None,
-        fecf_len: Optional[int] = None,
+        insert_zone_len: int | None = None,
+        fecf_len: int | None = None,
     ):
         """Contains properties required when unpacking fixed USLP frames. These properties
         can not be determined by parsing the frame. The standard refers to these properties
@@ -87,8 +87,8 @@ class VarFrameProperties(FramePropertiesBase):
         has_insert_zone: bool,
         has_fecf: bool,
         truncated_frame_len: int,
-        insert_zone_len: Optional[int] = None,
-        fecf_len: Optional[int] = None,
+        insert_zone_len: int | None = None,
+        fecf_len: int | None = None,
     ):
         """Contains properties required when unpacking variable USLP frames. These properties
         can not be determined by parsing the frame. The standard refers to these properties
@@ -165,7 +165,7 @@ class TransferFrameDataField:
         tfdz_cnstr_rules: TfdzConstructionRules,
         uslp_ident: UslpProtocolIdentifier,
         tfdz: bytes,
-        fhp_or_lvop: Optional[int] = None,
+        fhp_or_lvop: int | None = None,
     ):
         """
         Notes on the FHP or LVOP field. For more details, refer to CCSDS 732.1-B-2. p.92:
@@ -205,23 +205,21 @@ class TransferFrameDataField:
             raise ValueError
 
     @property
-    def tfdz(self):
+    def tfdz(self) -> bytes:
         return self._tfdz
 
     @tfdz.setter
-    def tfdz(self, tfdz: bytes):
+    def tfdz(self, tfdz: bytes) -> None:
         self._tfdz = tfdz
         self._size = self.header_len() + len(tfdz)
 
     def header_len(self) -> int:
         return 1 if self.fhp_or_lvop is None else 3
 
-    def len(self):
+    def len(self) -> int:
         return self._size
 
-    def pack(
-        self, truncated: bool = False, frame_type: Optional[FrameType] = None
-    ) -> bytearray:
+    def pack(self, truncated: bool = False, frame_type: FrameType | None = None) -> bytearray:
         packet = bytearray()
         packet.append(self.tfdz_contr_rules << 5 | self.uslp_ident)
         if frame_type is None:
@@ -230,64 +228,56 @@ class TransferFrameDataField:
                 frame_type = FrameType.FIXED
             elif self.__cnstr_rules_for_vp():
                 frame_type = FrameType.VARIABLE
-        if self.should_have_fhp_or_lvp_field(
-            truncated=truncated, frame_type=frame_type
-        ):
+        if self.should_have_fhp_or_lvp_field(truncated=truncated, frame_type=frame_type):
             if self.fhp_or_lvop is None:
-                raise UslpFhpVhopFieldMissing
+                raise UslpFhpVhopFieldMissingError
             packet.extend(struct.pack("!H", self.fhp_or_lvop))
         packet.extend(self.tfdz)
         return packet
 
-    def should_have_fhp_or_lvp_field(
-        self, truncated: bool, frame_type: Optional[FrameType]
-    ) -> bool:
+    def should_have_fhp_or_lvp_field(self, truncated: bool, frame_type: FrameType | None) -> bool:
         if frame_type is not None and frame_type == FrameType.VARIABLE:
             return False
-        if not truncated and self.tfdz_contr_rules in [
-            TfdzConstructionRules.FpPacketSpanningMultipleFrames,
-            TfdzConstructionRules.FpContinuingPortionOfMapaSDU,
-            TfdzConstructionRules.FpFixedStartOfMapaSDU,
-        ]:
-            return True
-        return False
+        return bool(
+            not truncated
+            and self.tfdz_contr_rules
+            in [
+                TfdzConstructionRules.FpPacketSpanningMultipleFrames,
+                TfdzConstructionRules.FpContinuingPortionOfMapaSDU,
+                TfdzConstructionRules.FpFixedStartOfMapaSDU,
+            ]
+        )
 
     def verify_frame_type(self, frame_type: FrameType) -> bool:
-        if frame_type == FrameType.FIXED and self.__cnstr_rules_for_fp():
-            return True
-        elif frame_type == FrameType.VARIABLE and self.__cnstr_rules_for_vp():
-            return True
-        return False
+        return bool(
+            (frame_type == FrameType.FIXED and self.__cnstr_rules_for_fp())
+            or (frame_type == FrameType.VARIABLE and self.__cnstr_rules_for_vp())
+        )
 
     def __cnstr_rules_for_fp(self) -> bool:
-        if self.tfdz_contr_rules in [
+        return self.tfdz_contr_rules in [
             TfdzConstructionRules.FpPacketSpanningMultipleFrames,
             TfdzConstructionRules.FpContinuingPortionOfMapaSDU,
             TfdzConstructionRules.FpFixedStartOfMapaSDU,
-        ]:
-            return True
-        return False
+        ]
 
     def __cnstr_rules_for_vp(self) -> bool:
-        if self.tfdz_contr_rules in [
+        return self.tfdz_contr_rules in [
             TfdzConstructionRules.VpContinuingSegment,
             TfdzConstructionRules.VpLastSegment,
             TfdzConstructionRules.VpOctetStream,
             TfdzConstructionRules.VpNoSegmentation,
             TfdzConstructionRules.VpStartingSegment,
-        ]:
-            return True
-        return False
+        ]
 
     @classmethod
     def __empty(cls) -> TransferFrameDataField:
-        empty = TransferFrameDataField(
+        return TransferFrameDataField(
             tfdz_cnstr_rules=TfdzConstructionRules.FpPacketSpanningMultipleFrames,
             uslp_ident=UslpProtocolIdentifier.SPACE_PACKETS_ENCAPSULATION_PACKETS,
             fhp_or_lvop=None,
             tfdz=bytearray(),
         )
-        return empty
 
     @classmethod
     def unpack(
@@ -295,7 +285,7 @@ class TransferFrameDataField:
         raw_tfdf: bytes,
         truncated: bool,
         exact_len: int,
-        frame_type: Optional[FrameType],
+        frame_type: FrameType | None,
     ) -> TransferFrameDataField:
         """Unpack a TFDF, given a raw bytearray.
 
@@ -310,15 +300,12 @@ class TransferFrameDataField:
         """
         tfdf = cls.__empty()
         if len(raw_tfdf) < 1:
-            raise UslpInvalidRawPacketOrFrameLen
+            raise UslpInvalidRawPacketOrFrameLenError
         tfdf.tfdz_contr_rules = (raw_tfdf[0] >> 5) & 0b111
         tfdf.uslp_ident = raw_tfdf[0] & 0b11111
-        if frame_type is not None:
-            if not tfdf.verify_frame_type(frame_type=frame_type):
-                raise UslpInvalidConstructionRules
-        if tfdf.should_have_fhp_or_lvp_field(
-            truncated=truncated, frame_type=frame_type
-        ):
+        if frame_type is not None and not tfdf.verify_frame_type(frame_type=frame_type):
+            raise UslpInvalidConstructionRulesError
+        if tfdf.should_have_fhp_or_lvp_field(truncated=truncated, frame_type=frame_type):
             tfdf.fhp_or_lvop = (raw_tfdf[1] << 8) | raw_tfdf[2]
             tfdz_start = 3
         else:
@@ -335,9 +322,9 @@ class TransferFrame:
         self,
         header: FrameHeaderT,
         tfdf: TransferFrameDataField,
-        insert_zone: Optional[bytes] = None,
-        op_ctrl_field: Optional[bytes] = None,
-        fecf: Optional[bytes] = None,
+        insert_zone: bytes | None = None,
+        op_ctrl_field: bytes | None = None,
+        fecf: bytes | None = None,
     ):
         self.header = header
         self.tfdf = tfdf
@@ -345,9 +332,7 @@ class TransferFrame:
         self.op_ctrl_field = op_ctrl_field
         self.fecf = fecf
 
-    def pack(
-        self, truncated: bool = False, frame_type: Optional[FrameType] = None
-    ) -> bytearray:
+    def pack(self, truncated: bool = False, frame_type: FrameType | None = None) -> bytearray:
         frame = bytearray()
         frame.extend(self.header.pack())
         if self.insert_zone is not None:
@@ -355,25 +340,24 @@ class TransferFrame:
         frame.extend(self.tfdf.pack(truncated=truncated, frame_type=frame_type))
         if self.op_ctrl_field:
             if not self.header.op_ctrl_flag:
-                raise UslpInvalidFrameHeader
+                raise UslpInvalidFrameHeaderError
             if len(self.op_ctrl_field) != 4:
                 raise ValueError
             frame.extend(self.op_ctrl_field)
-        else:
-            if not truncated and self.header.op_ctrl_flag:
-                raise UslpInvalidFrameHeader
+        elif not truncated and self.header.op_ctrl_flag:
+            raise UslpInvalidFrameHeaderError
         if self.fecf is not None:
             frame.extend(self.fecf)
         return frame
 
-    def set_frame_len_in_header(self):
+    def set_frame_len_in_header(self) -> None:
         # According to the standard, the frame length field will contain the length of of the
         # frame minus 1. Also check whether this is a regular header and not a truncated one,
         # as the truncated one does not have the frame length field
         if isinstance(self.header, PrimaryHeader):
             self.header.frame_len = self.len() - 1
 
-    def len(self):
+    def len(self) -> int:
         size = self.header.len() + self.tfdf.len()
         if self.insert_zone is not None:
             size += len(self.insert_zone)
@@ -392,19 +376,19 @@ class TransferFrame:
             tfdz_cnstr_rules=TfdzConstructionRules.FpPacketSpanningMultipleFrames,
             uslp_ident=UslpProtocolIdentifier.SPACE_PACKETS_ENCAPSULATION_PACKETS,
             fhp_or_lvop=None,
-            tfdz=bytearray(),
+            tfdz=b"",
         )
-        empty = TransferFrame(
+        return TransferFrame(
             header=empty_header,
             tfdf=empty_data_field,
             insert_zone=None,
             op_ctrl_field=None,
             fecf=None,
         )
-        return empty
 
+    # TODO: Fix lint by creating helper methods.
     @classmethod
-    def unpack(  # noqa: C901
+    def unpack(  # noqa: PLR0912 too many branches
         cls, raw_frame: bytes, frame_type: FrameType, frame_properties: FramePropertiesT
     ) -> TransferFrame:
         """Unpack a USLP transfer frame from a raw bytearray. All managed parameters have
@@ -420,18 +404,18 @@ class TransferFrame:
         """
         frame = cls.__empty()
         if len(raw_frame) < 4:
-            raise UslpInvalidRawPacketOrFrameLen
+            raise UslpInvalidRawPacketOrFrameLenError
         if frame_type == FrameType.FIXED:
             if not isinstance(frame_properties, FixedFrameProperties):
                 raise ValueError
             if len(raw_frame) < frame_properties.fixed_len:
-                raise UslpInvalidRawPacketOrFrameLen
+                raise UslpInvalidRawPacketOrFrameLenError
         header_type = determine_header_type(header_start=raw_frame)
         if header_type == HeaderType.TRUNCATED:
             # Truncated frames are only allowed if the frame type is specified as variable
             # as specified by the standard on page p.161
             if frame_type != FrameType.VARIABLE:
-                raise UslpTruncatedFrameNotAllowed
+                raise UslpTruncatedFrameNotAllowedError
             frame.header = TruncatedPrimaryHeader.unpack(raw_packet=raw_frame)
         else:
             frame.header = PrimaryHeader.unpack(raw_packet=raw_frame)
@@ -439,7 +423,7 @@ class TransferFrame:
         if frame_type == FrameType.FIXED and (
             frame.header.frame_len + 1 != frame_properties.fixed_len
         ):
-            raise UslpInvalidRawPacketOrFrameLen
+            raise UslpInvalidRawPacketOrFrameLenError
         exact_tfdf_len = cls.__get_tfdf_len(
             frame_type=frame_type,
             header_type=header_type,
@@ -448,17 +432,14 @@ class TransferFrame:
             properties=frame_properties,
         )
         if exact_tfdf_len <= 0 or header_len + exact_tfdf_len > len(raw_frame):
-            raise UslpInvalidRawPacketOrFrameLen
+            raise UslpInvalidRawPacketOrFrameLenError
         current_idx = header_len
         # Skip insert zone if present
         if frame_properties.insert_zone_properties.present:
-            if (
-                header_len
-                + frame_properties.insert_zone_properties.size
-                + exact_tfdf_len
-                > len(raw_frame)
+            if header_len + frame_properties.insert_zone_properties.size + exact_tfdf_len > len(
+                raw_frame
             ):
-                raise UslpInvalidRawPacketOrFrameLen
+                raise UslpInvalidRawPacketOrFrameLenError
             frame.insert_zone = raw_frame[
                 current_idx : current_idx + frame_properties.insert_zone_properties.size
             ]
@@ -472,7 +453,7 @@ class TransferFrame:
         )
         current_idx += exact_tfdf_len
         # Parse OCF field if present
-        if not header_type == HeaderType.TRUNCATED and frame.header.op_ctrl_flag:
+        if header_type != HeaderType.TRUNCATED and frame.header.op_ctrl_flag:
             frame.op_ctrl_field = raw_frame[current_idx : current_idx + 4]
             current_idx += 4
         # Parse Frame Error Control field if present
@@ -490,7 +471,7 @@ class TransferFrame:
         raw_frame_len: int,
         header: UslpHeaderT,
         properties: FramePropertiesT,
-    ):
+    ) -> int:
         """This helper function calculates the initial value for expected TFDF length and subtracts
         all (optional) fields lengths if they are present.
 
@@ -509,14 +490,13 @@ class TransferFrame:
             # the transfer frame.
             exact_tfdf_len = header.frame_len + 1 - header_len
             if raw_frame_len < exact_tfdf_len:
-                raise UslpInvalidRawPacketOrFrameLen
+                raise UslpInvalidRawPacketOrFrameLenError
+        # Truncated frames are only allowed if the frame type is Variable. The truncated
+        # frame length is then a managed parameter for a specific virtual channel.
+        elif header_type == HeaderType.TRUNCATED:
+            exact_tfdf_len = properties.truncated_frame_len - header_len
         else:
-            # Truncated frames are only allowed if the frame type is Variable. The truncated
-            # frame length is then a managed parameter for a specific virtual channel.
-            if header_type == HeaderType.TRUNCATED:
-                exact_tfdf_len = properties.truncated_frame_len - header_len
-            else:
-                exact_tfdf_len = header.frame_len + 1 - header_len
+            exact_tfdf_len = header.frame_len + 1 - header_len
         if properties.fecf_properties.present:
             exact_tfdf_len -= properties.fecf_properties.size
         if header_type != HeaderType.TRUNCATED and header.op_ctrl_flag:

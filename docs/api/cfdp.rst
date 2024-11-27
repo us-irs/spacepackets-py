@@ -1,4 +1,4 @@
-CFDP Package 
+CFDP Package
 ==========================
 
 Package Contents
@@ -8,6 +8,7 @@ Package Contents
    :members:
    :undoc-members:
    :show-inheritance:
+   :no-index:
 
 PDU Submodule
 ----------------
@@ -40,14 +41,6 @@ Common Definitions
 -------------------------------------
 
 .. automodule:: spacepackets.cfdp.defs
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-Exceptions
--------------------------------------
-
-.. automodule:: spacepackets.cfdp.exceptions
    :members:
    :undoc-members:
    :show-inheritance:

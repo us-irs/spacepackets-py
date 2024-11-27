@@ -4,31 +4,30 @@
 
 from __future__ import annotations
 
-from abc import abstractmethod
 import struct
-from typing import Optional
+from abc import abstractmethod
 
 import deprecation
 from crcmod.predefined import PredefinedCrc
 
-from .exceptions import TmSrcDataTooShortError  # noqa  # re-export
-from spacepackets.version import get_version
-from spacepackets.exceptions import BytesTooShortError
-from spacepackets.util import PrintFormats, get_printable_data_string
 from spacepackets.ccsds.spacepacket import (
-    PacketSeqCtrl,
-    SpacePacketHeader,
-    SPACE_PACKET_HEADER_SIZE,
     CCSDS_HEADER_LEN,
-    get_total_space_packet_len_from_len_field,
-    PacketType,
-    SpacePacket,
+    SPACE_PACKET_HEADER_SIZE,
     AbstractSpacePacket,
+    PacketId,
+    PacketSeqCtrl,
+    PacketType,
     SequenceFlags,
+    SpacePacket,
+    SpacePacketHeader,
+    get_total_space_packet_len_from_len_field,
 )
-from spacepackets.ecss.defs import PusVersion
 from spacepackets.ccsds.time import CdsShortTimestamp
 from spacepackets.crc import CRC16_CCITT_FUNC
+from spacepackets.ecss.defs import PusVersion
+from spacepackets.exceptions import BytesTooShortError
+from spacepackets.util import PrintFormats, get_printable_data_string
+from spacepackets.version import get_version
 
 
 class AbstractPusTm(AbstractSpacePacket):
@@ -113,7 +112,7 @@ class PusTmSecondaryHeader:
         return PusTmSecondaryHeader(
             service=0,
             subservice=0,
-            timestamp=bytes(),
+            timestamp=b"",
             message_counter=0,
         )
 
@@ -155,13 +154,11 @@ class PusTmSecondaryHeader:
         current_idx += 1
         secondary_header.subservice = data[current_idx]
         current_idx += 1
-        secondary_header.message_counter = struct.unpack(
-            "!H", data[current_idx : current_idx + 2]
-        )[0]
+        secondary_header.message_counter = struct.unpack("!H", data[current_idx : current_idx + 2])[
+            0
+        ]
         current_idx += 2
-        secondary_header.dest_id = struct.unpack(
-            "!H", data[current_idx : current_idx + 2]
-        )[0]
+        secondary_header.dest_id = struct.unpack("!H", data[current_idx : current_idx + 2])[0]
         current_idx += 2
         secondary_header.timestamp = data[current_idx : current_idx + timestamp_len]
         return secondary_header
@@ -191,7 +188,7 @@ class PusTmSecondaryHeader:
 PUS_TM_TIMESTAMP_OFFSET = CCSDS_HEADER_LEN + PusTmSecondaryHeader.MIN_LEN
 
 
-class InvalidTmCrc16(Exception):
+class InvalidTmCrc16Error(Exception):
     def __init__(self, tm: PusTm):
         self.tm = tm
 
@@ -211,14 +208,14 @@ class PusTm(AbstractPusTm):
     The following doc example cuts off the timestamp (7 byte CDS Short) and the CRC16 from the ping
     packet because those change regularly.
 
-    >>> ping_tm = PusTm(service=17, subservice=2, seq_count=5, apid=0x01, timestamp=CdsShortTimestamp.now().pack()) # noqa
+    >>> ping_tm = PusTm(service=17, subservice=2, seq_count=5, apid=0x01, timestamp=CdsShortTimestamp.now().pack())
     >>> ping_tm.service
     17
     >>> ping_tm.subservice
     2
     >>> ping_tm.pack()[:-9].hex(sep=',')
     '08,01,c0,05,00,0f,20,11,02,00,00,00,00'
-    """
+    """  # noqa: E501
 
     CDS_SHORT_SIZE = 7
     PUS_TIMESTAMP_SIZE = CDS_SHORT_SIZE
@@ -228,7 +225,7 @@ class PusTm(AbstractPusTm):
         service: int,
         subservice: int,
         timestamp: bytes,
-        source_data: bytes = bytes(),
+        source_data: bytes = b"",
         apid: int = 0,
         seq_count: int = 0,
         message_counter: int = 0,
@@ -259,13 +256,11 @@ class PusTm(AbstractPusTm):
             spacecraft_time_ref=space_time_ref,
             timestamp=timestamp,
         )
-        self._crc16: Optional[bytes] = None
+        self._crc16: bytes | None = None
 
     @classmethod
     def empty(cls) -> PusTm:
-        return PusTm(
-            apid=0, service=0, subservice=0, timestamp=CdsShortTimestamp.empty().pack()
-        )
+        return PusTm(apid=0, service=0, subservice=0, timestamp=CdsShortTimestamp.empty().pack())
 
     def pack(self, recalc_crc: bool = True) -> bytearray:
         """Serializes the packet into a raw bytearray.
@@ -283,7 +278,7 @@ class PusTm(AbstractPusTm):
         tm_packet_raw.extend(self._crc16)
         return tm_packet_raw
 
-    def calc_crc(self):
+    def calc_crc(self) -> None:
         """Can be called to calculate the CRC16"""
         crc = PredefinedCrc(crc_name="crc-ccitt-false")
         crc.update(self.space_packet_header.pack())
@@ -300,7 +295,7 @@ class PusTm(AbstractPusTm):
             you can supply None here.
         :raises BytesTooShortError: Passed bytestream too short.
         :raises ValueError: Unsupported PUS version.
-        :raises InvalidTmCrc16: Invalid CRC16.
+        :raises InvalidTmCrc16Error: Invalid CRC16.
         """
         if data is None:
             raise ValueError("byte stream invalid")
@@ -315,20 +310,16 @@ class PusTm(AbstractPusTm):
             data=data[SPACE_PACKET_HEADER_SIZE:],
             timestamp_len=timestamp_len,
         )
-        if (
-            expected_packet_len
-            < pus_tm.pus_tm_sec_header.header_size + SPACE_PACKET_HEADER_SIZE
-        ):
+        if expected_packet_len < pus_tm.pus_tm_sec_header.header_size + SPACE_PACKET_HEADER_SIZE:
             raise ValueError("passed packet too short")
         pus_tm._source_data = data[
-            pus_tm.pus_tm_sec_header.header_size
-            + SPACE_PACKET_HEADER_SIZE : expected_packet_len
+            pus_tm.pus_tm_sec_header.header_size + SPACE_PACKET_HEADER_SIZE : expected_packet_len
             - 2
         ]
         pus_tm._crc16 = data[expected_packet_len - 2 : expected_packet_len]
         # CRC16-CCITT checksum
         if CRC16_CCITT_FUNC(data[:expected_packet_len]) != 0:
-            raise InvalidTmCrc16(pus_tm)
+            raise InvalidTmCrc16Error(pus_tm)
         return pus_tm
 
     @staticmethod
@@ -352,9 +343,7 @@ class PusTm(AbstractPusTm):
     ) -> PusTm:
         pus_tm = cls.empty()
         if sp_header.packet_type == PacketType.TC:
-            raise ValueError(
-                f"Invalid Packet Type {sp_header.packet_type} in CCSDS primary header"
-            )
+            raise ValueError(f"Invalid Packet Type {sp_header.packet_type} in CCSDS primary header")
         pus_tm.space_packet_header = sp_header
         pus_tm.pus_tm_sec_header = sec_header
         pus_tm._source_data = tm_data
@@ -366,9 +355,7 @@ class PusTm(AbstractPusTm):
         self.calc_crc()
         user_data = bytearray(self._source_data)
         user_data.extend(self.crc16)  # type: ignore
-        return SpacePacket(
-            self.space_packet_header, self.pus_tm_sec_header.pack(), user_data
-        )
+        return SpacePacket(self.space_packet_header, self.pus_tm_sec_header.pack(), user_data)
 
     def __str__(self):
         return (
@@ -435,7 +422,7 @@ class PusTm(AbstractPusTm):
         return self._source_data
 
     @tm_data.setter
-    def tm_data(self, data: bytes):
+    def tm_data(self, data: bytes) -> None:
         self._source_data = data
         stamp_len = len(self.pus_tm_sec_header.timestamp)
         self.space_packet_header.data_len = self.data_len_from_src_len_timestamp_len(
@@ -443,29 +430,27 @@ class PusTm(AbstractPusTm):
         )
 
     @property
-    def apid(self):
+    def apid(self) -> int:
         return self.space_packet_header.apid
 
     @apid.setter
-    def apid(self, apid: int):
+    def apid(self, apid: int) -> None:
         self.space_packet_header.apid = apid
 
     @property
-    def seq_flags(self):
+    def seq_flags(self) -> SequenceFlags:
         return self.space_packet_header.seq_flags
 
     @seq_flags.setter
-    def seq_flags(self, seq_flags):
+    def seq_flags(self, seq_flags: SequenceFlags) -> None:
         self.space_packet_header.seq_flags = seq_flags
 
     @property
-    def packet_id(self):
+    def packet_id(self) -> PacketId:
         return self.space_packet_header.packet_id
 
     @staticmethod
-    def data_len_from_src_len_timestamp_len(
-        timestamp_len: int, source_data_len: int
-    ) -> int:
+    def data_len_from_src_len_timestamp_len(timestamp_len: int, source_data_len: int) -> int:
         """Retrieve size of TM packet data header in bytes. Only support PUS C
         Formula according to PUS Standard: C = (Number of octets in packet source data field) - 1.
         The size of the TM packet is the size of the packet secondary header with
@@ -494,7 +479,7 @@ class PusTm(AbstractPusTm):
         return self.space_packet_header.seq_count
 
     @property
-    def crc16(self) -> Optional[bytes]:
+    def crc16(self) -> bytes | None:
         """Will be the raw CRC16 if the telecommand was created using :py:meth:`unpack` or
         :py:meth:`pack` was called at least once."""
         return self._crc16
@@ -503,13 +488,10 @@ class PusTm(AbstractPusTm):
         deprecated_in="0.14.0rc3",
         current_version=get_version(),
         details=(
-            "use pack and get_printable_data_string or the hex method on bytearray"
-            " instead"
+            "use pack and get_printable_data_string or the hex method on bytearray" " instead"
         ),
     )
-    def get_full_packet_string(
-        self, print_format: PrintFormats = PrintFormats.HEX
-    ) -> str:
+    def get_full_packet_string(self, print_format: PrintFormats = PrintFormats.HEX) -> str:
         packet_raw = self.pack()
         return get_printable_data_string(print_format=print_format, data=packet_raw)
 
@@ -517,23 +499,19 @@ class PusTm(AbstractPusTm):
         deprecated_in="0.14.0rc3",
         current_version=get_version(),
         details=(
-            "use pack and get_printable_data_string or the hex method on bytearray"
-            " instead"
+            "use pack and get_printable_data_string or the hex method on bytearray" " instead"
         ),
     )
-    def print_full_packet_string(self, print_format: PrintFormats = PrintFormats.HEX):
+    def print_full_packet_string(self, print_format: PrintFormats = PrintFormats.HEX) -> None:
         """Print the full TM packet in a clean format."""
         print(self.get_full_packet_string(print_format=print_format))
 
     @deprecation.deprecated(
         deprecated_in="0.14.0rc3",
         current_version=get_version(),
-        details=(
-            "use print, the source_data property and the hex method on bytearray"
-            " instead"
-        ),
+        details=("use print, the source_data property and the hex method on bytearray" " instead"),
     )
-    def print_source_data(self, print_format: PrintFormats = PrintFormats.HEX):
+    def print_source_data(self, print_format: PrintFormats = PrintFormats.HEX) -> None:
         """Prints the TM source data in a clean format"""
         print(self.get_source_data_string(print_format=print_format))
 
@@ -542,13 +520,9 @@ class PusTm(AbstractPusTm):
         current_version=get_version(),
         details="use the source_data property and the hex method on bytearray instead",
     )
-    def get_source_data_string(
-        self, print_format: PrintFormats = PrintFormats.HEX
-    ) -> str:
+    def get_source_data_string(self, print_format: PrintFormats = PrintFormats.HEX) -> str:
         """Returns the source data string"""
-        return get_printable_data_string(
-            print_format=print_format, data=self._source_data
-        )
+        return get_printable_data_string(print_format=print_format, data=self._source_data)
 
 
 PusTelemetry = PusTm

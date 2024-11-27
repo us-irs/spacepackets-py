@@ -6,8 +6,8 @@ build-backend = "setuptools.build_meta"
 name = "spacepackets"
 description = "Various CCSDS and ECSS packet implementations"
 readme = "README.md"
-version = "0.25.0"
-requires-python = ">=3.8"
+version = "0.26.0"
+requires-python = ">=3.9"
 license = {text = "Apache-2.0"}
 authors = [
   {name = "Robin Mueller", email = "robin.mueller.m@gmail.com"}
@@ -38,7 +38,73 @@ dependencies = [
 [tool.setuptools.packages]
 find = {}
 
+[tool.ruff]
+exclude = [
+    ".git",
+    "venv",
+    "docs"
+]
+line-length = 100
+
 [tool.ruff.lint]
-ignore = ["E501"]
+select = [
+    # See https://docs.astral.sh/ruff/rules/
+    "F", # pyflakes
+    "E", # pycodestyle
+    "W", # pycodestyle
+    "I", # isort
+    "N", # pep8-naming
+    # "D", # pydocstyle (documentation!)
+    "ANN", # flake8-annotations
+    "UP", # pyupgrade
+    "ASYNC", # flake8-async
+    "S", # flake8-bandit
+    "B", # flake8-bugbear
+    "A", # flake8-builtins
+    "C4", # flake8-comprehensions
+    "DTZ", # flake8-datetimez
+    "ICN", # flake8-import-conventions
+    "INP", # flake8-no-pep420
+    "PIE", # flake8-pie
+    "PYI", # flake8-pyi
+    "RSE", # flake8-raise
+    "RET", # flake8-return
+    "SIM", # flake8-simplify
+    "TID", # flake8-tidy
+    "TCH", # flake8-type-checking
+    "PERF", # Performance
+    "FURB", # Refurb rules
+    "PL", # Pylint
+    "RUF" # ruff specific
+]
+ignore = [
+    "S101", # Use of assert, should be changed in the future
+    "ANN204", # Do not use return typing on __init__, __new__ and __call__ methods
+    "E111", # Recommended to be disabled when using the ruff formatter
+    "E114", # Recommended to be disabled when using the ruff formatter
+    "PLR2004" # This lint is a bit too conservative. Not every number needs to be a named constant.
+]
+
 [tool.ruff.lint.extend-per-file-ignores]
-"__init__.py" = ["F401"]
+"tests/*" = [
+    "INP001", # Tests are implicit namespace packets
+    "S101", # Tests use assert
+    "S105", # Tests use hardcoded test credentials
+    "S108", # Tests use temporary files names
+    "S311", # Tests use random without cryptographic security requirements
+    "ANN", # Type hints in test are not required
+    "PLR0912", # Too many branches
+    "PLR0915", # Too many statements
+    "PLR2004", # Magic values in comparison are common in tests
+    "D" # No documentation rules in tests
+]
+"examples/*" = [
+    "INP001", # Examples are implicit namespace packets
+    "S101", # Examples use assert
+    "S104", # Possible binding to all interfaces
+    "S108", # Temp files
+    "PLR0915" # Too many statements
+]
+
+[tool.ruff.lint.pylint]
+max-args = 10

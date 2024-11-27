@@ -2,7 +2,7 @@ from unittest import TestCase
 
 from spacepackets.cfdp import LargeFileFlag
 from spacepackets.cfdp.conf import PduConfig
-from spacepackets.cfdp.pdu import FileDirectivePduBase, DirectiveType
+from spacepackets.cfdp.pdu import DirectiveType, FileDirectivePduBase
 
 
 class TestDirective(TestCase):

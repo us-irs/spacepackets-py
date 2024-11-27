@@ -3,25 +3,25 @@ from __future__ import annotations
 import abc
 import struct
 
-from spacepackets.cfdp.defs import (
-    LargeFileFlag,
-    PduType,
-    SegmentMetadataFlag,
-    CrcFlag,
-    TransmissionMode,
-    Direction,
-    SegmentationControl,
-    LenInBytes,
-    CFDP_VERSION_2,
-    UnsupportedCfdpVersion,
-)
 from spacepackets.cfdp.conf import (
     PduConfig,
 )
-from spacepackets.cfdp.exceptions import InvalidCrc
+from spacepackets.cfdp.defs import (
+    CFDP_VERSION_2,
+    CrcFlag,
+    Direction,
+    InvalidCrcError,
+    LargeFileFlag,
+    LenInBytes,
+    PduType,
+    SegmentationControl,
+    SegmentMetadataFlag,
+    TransmissionMode,
+    UnsupportedCfdpVersionError,
+)
 from spacepackets.crc import CRC16_CCITT_FUNC
 from spacepackets.exceptions import BytesTooShortError
-from spacepackets.util import UnsignedByteField, ByteFieldGenerator
+from spacepackets.util import ByteFieldGenerator, UnsignedByteField
 
 
 class AbstractPduBase(abc.ABC):
@@ -64,7 +64,7 @@ class AbstractPduBase(abc.ABC):
 
     @file_flag.setter
     @abc.abstractmethod
-    def file_flag(self, file_flag: LargeFileFlag):
+    def file_flag(self, file_flag: LargeFileFlag) -> None:
         pass
 
     @property
@@ -104,12 +104,12 @@ class AbstractPduBase(abc.ABC):
 
     @property
     @abc.abstractmethod
-    def crc_flag(self):
+    def crc_flag(self) -> CrcFlag:
         pass
 
     @crc_flag.setter
     @abc.abstractmethod
-    def crc_flag(self, crc_flag: CrcFlag):
+    def crc_flag(self, crc_flag: CrcFlag) -> None:
         pass
 
     @property
@@ -131,7 +131,7 @@ class AbstractPduBase(abc.ABC):
         )
 
     @staticmethod
-    def header_len_from_raw(data: bytes):
+    def header_len_from_raw(data: bytes) -> int:
         entity_id_len = ((data[3] >> 4) & 0b111) + 1
         seq_num_len = (data[3] & 0b111) + 1
         return AbstractPduBase.FIXED_LENGTH + 2 * entity_id_len + seq_num_len
@@ -175,24 +175,24 @@ class PduHeader(AbstractPduBase):
         return self._pdu_type
 
     @pdu_type.setter
-    def pdu_type(self, pdu_type: PduType):
+    def pdu_type(self, pdu_type: PduType) -> None:
         self._pdu_type = pdu_type
 
     @property
-    def source_entity_id(self):
+    def source_entity_id(self) -> UnsignedByteField:
         return self.pdu_conf.source_entity_id
 
     @property
-    def dest_entity_id(self):
+    def dest_entity_id(self) -> UnsignedByteField:
         return self.pdu_conf.dest_entity_id
 
     @property
-    def transmission_mode(self):
+    def transmission_mode(self) -> TransmissionMode:
         return self.pdu_conf.trans_mode
 
     def set_entity_ids(
         self, source_entity_id: UnsignedByteField, dest_entity_id: UnsignedByteField
-    ):
+    ) -> None:
         """Both IDs must be set at once because they must have the same length as well
         :param source_entity_id:
         :param dest_entity_id:
@@ -204,55 +204,55 @@ class PduHeader(AbstractPduBase):
         self.pdu_conf.dest_entity_id = dest_entity_id
 
     @property
-    def transaction_seq_num(self):
+    def transaction_seq_num(self) -> UnsignedByteField:
         return self.pdu_conf.transaction_seq_num
 
     @transaction_seq_num.setter
-    def transaction_seq_num(self, transaction_seq_num: UnsignedByteField):
+    def transaction_seq_num(self, transaction_seq_num: UnsignedByteField) -> None:
         self.pdu_conf.transaction_seq_num = transaction_seq_num
 
     @property
-    def file_flag(self):
+    def file_flag(self) -> LargeFileFlag:
         return self.pdu_conf.file_flag
 
     @file_flag.setter
-    def file_flag(self, file_flag: LargeFileFlag):
+    def file_flag(self, file_flag: LargeFileFlag) -> None:
         self.pdu_conf.file_flag = file_flag
 
     @property
-    def crc_flag(self):
+    def crc_flag(self) -> CrcFlag:
         return self.pdu_conf.crc_flag
 
     @crc_flag.setter
-    def crc_flag(self, crc_flag: CrcFlag):
+    def crc_flag(self, crc_flag: CrcFlag) -> None:
         self.pdu_conf.crc_flag = crc_flag
 
     @transmission_mode.setter
-    def transmission_mode(self, trans_mode: TransmissionMode):
+    def transmission_mode(self, trans_mode: TransmissionMode) -> None:
         self.pdu_conf.trans_mode = trans_mode
 
     @property
-    def direction(self):
+    def direction(self) -> Direction:
         return self.pdu_conf.direction
 
     @direction.setter
-    def direction(self, direction: Direction):
+    def direction(self, direction: Direction) -> None:
         self.pdu_conf.direction = direction
 
     @property
-    def seg_ctrl(self):
+    def seg_ctrl(self) -> SegmentationControl:
         return self.pdu_conf.seg_ctrl
 
     @seg_ctrl.setter
-    def seg_ctrl(self, seg_ctrl: SegmentationControl):
+    def seg_ctrl(self, seg_ctrl: SegmentationControl) -> None:
         self.pdu_conf.seg_ctrl = seg_ctrl
 
     @property
-    def pdu_data_field_len(self):
+    def pdu_data_field_len(self) -> int:
         return self._pdu_data_field_len
 
     @pdu_data_field_len.setter
-    def pdu_data_field_len(self, new_len: int):
+    def pdu_data_field_len(self, new_len: int) -> None:
         """Set the PDU data field length.
 
         :param new_len:
@@ -320,7 +320,7 @@ class PduHeader(AbstractPduBase):
         pdu_header = cls.__empty()
         version_raw = (data[0] >> 5) & 0b111
         if version_raw != CFDP_VERSION_2:
-            raise UnsupportedCfdpVersion(version_raw)
+            raise UnsupportedCfdpVersionError(version_raw)
         pdu_header._pdu_type = PduType((data[0] & 0x10) >> 4)
         pdu_header.direction = Direction((data[0] & 0x08) >> 3)
         pdu_header.transmission_mode = TransmissionMode((data[0] & 0x04) >> 2)
@@ -333,9 +333,7 @@ class PduHeader(AbstractPduBase):
         expected_len_seq_num = cls.check_len_in_bytes((data[3] & 0b111) + 1)
         expected_remaining_len = 2 * expected_len_entity_ids + expected_len_seq_num
         if expected_remaining_len + cls.FIXED_LENGTH > len(data):
-            raise BytesTooShortError(
-                expected_remaining_len + cls.FIXED_LENGTH, len(data)
-            )
+            raise BytesTooShortError(expected_remaining_len + cls.FIXED_LENGTH, len(data))
         current_idx = 4
         source_entity_id = ByteFieldGenerator.from_bytes(
             expected_len_entity_ids,
@@ -351,27 +349,25 @@ class PduHeader(AbstractPduBase):
             expected_len_entity_ids,
             data[current_idx : current_idx + expected_len_entity_ids],
         )
-        pdu_header.set_entity_ids(
-            source_entity_id=source_entity_id, dest_entity_id=dest_entity_id
-        )
+        pdu_header.set_entity_ids(source_entity_id=source_entity_id, dest_entity_id=dest_entity_id)
         return pdu_header
 
     def verify_length_and_checksum(self, data: bytes) -> int:
         if len(data) < self.packet_len:
             raise BytesTooShortError(self.packet_len, len(data))
-        if self.pdu_conf.crc_flag == CrcFlag.WITH_CRC:
-            if CRC16_CCITT_FUNC(data[: self.packet_len]) != 0:
-                raise InvalidCrc(
-                    struct.unpack("!H", data[self.packet_len - 2 : self.packet_len])[0]
-                )
+        if (
+            self.pdu_conf.crc_flag == CrcFlag.WITH_CRC
+            and CRC16_CCITT_FUNC(data[: self.packet_len]) != 0
+        ):
+            raise InvalidCrcError(
+                struct.unpack("!H", data[self.packet_len - 2 : self.packet_len])[0]
+            )
         return self.packet_len
 
     @staticmethod
     def check_len_in_bytes(detected_len: int) -> LenInBytes:
         if detected_len not in [1, 2, 4, 8]:
-            raise ValueError(
-                "Unsupported length field detected. Must be in [1, 2, 4, 8]"
-            )
+            raise ValueError("Unsupported length field detected. Must be in [1, 2, 4, 8]")
         return LenInBytes(detected_len)
 
     def __repr__(self):

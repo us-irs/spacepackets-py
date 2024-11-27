@@ -2,29 +2,29 @@ from unittest import TestCase
 
 from spacepackets.cfdp import (
     NULL_CHECKSUM_U32,
-    ConditionCode,
-    PduConfig,
-    DirectiveType,
     ChecksumType,
+    ConditionCode,
+    DirectiveType,
+    PduConfig,
 )
 from spacepackets.cfdp.pdu import (
-    EofPdu,
-    PduFactory,
-    FileDataPdu,
-    MetadataPdu,
-    MetadataParams,
     AckPdu,
-    TransactionStatus,
+    EofPdu,
+    FileDataPdu,
+    MetadataParams,
+    MetadataPdu,
     NakPdu,
+    PduFactory,
+    TransactionStatus,
 )
 from spacepackets.cfdp.pdu.file_data import FileDataParams
 from spacepackets.cfdp.pdu.finished import (
-    FinishedParams,
     DeliveryCode,
     FileStatus,
+    FinishedParams,
     FinishedPdu,
 )
-from spacepackets.cfdp.pdu.prompt import ResponseRequired, PromptPdu
+from spacepackets.cfdp.pdu.prompt import PromptPdu, ResponseRequired
 
 
 class TestPduHolder(TestCase):
@@ -40,12 +40,10 @@ class TestPduHolder(TestCase):
             pdu_conf=self.pdu_conf,
         )
         eof_raw = eof_pdu.pack()
-        self.assertEqual(
-            self.pdu_factory.pdu_directive_type(eof_raw), DirectiveType.EOF_PDU
-        )
+        self.assertEqual(self.pdu_factory.pdu_directive_type(eof_raw), DirectiveType.EOF_PDU)
 
     def test_factory_file_directive_on_file_data(self):
-        fd_params = FileDataParams(file_data=bytes(), offset=0)
+        fd_params = FileDataParams(file_data=b"", offset=0)
         file_data_pdu = FileDataPdu(self.pdu_conf, fd_params)
         fd_pdu_raw = file_data_pdu.pack()
         self.assertEqual(self.pdu_factory.pdu_directive_type(fd_pdu_raw), None)
@@ -65,9 +63,7 @@ class TestPduHolder(TestCase):
         self.assertEqual(metadata_pdu, metadata_pdu_from_factory)
 
     def test_eof_pdu_creation(self):
-        eof_pdu = EofPdu(
-            file_checksum=NULL_CHECKSUM_U32, file_size=0, pdu_conf=self.pdu_conf
-        )
+        eof_pdu = EofPdu(file_checksum=NULL_CHECKSUM_U32, file_size=0, pdu_conf=self.pdu_conf)
         eof_raw = eof_pdu.pack()
         eof_unpacked = EofPdu.unpack(eof_raw)
         self.assertEqual(eof_pdu, eof_unpacked)
@@ -89,9 +85,7 @@ class TestPduHolder(TestCase):
     def test_file_data_pdu_creation(self):
         file_data = "hello world"
         file_data_bytes = file_data.encode()
-        fd_params = FileDataParams(
-            file_data=file_data_bytes, offset=0, segment_metadata=None
-        )
+        fd_params = FileDataParams(file_data=file_data_bytes, offset=0, segment_metadata=None)
 
         file_data_pdu = FileDataPdu(pdu_conf=self.pdu_conf, params=fd_params)
         fd_raw = file_data_pdu.pack()

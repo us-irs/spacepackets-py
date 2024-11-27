@@ -4,26 +4,25 @@ the :py:class:`PusTelecommand` class.
 
 from __future__ import annotations
 
-from spacepackets import BytesTooShortError
-from spacepackets.version import get_version
 import struct
-from typing import Tuple, Optional
 
 import deprecation
-from spacepackets.crc import CRC16_CCITT_FUNC
 from crcmod.predefined import PredefinedCrc
 
+from spacepackets import BytesTooShortError
 from spacepackets.ccsds.spacepacket import (
-    SpacePacketHeader,
-    PacketType,
     CCSDS_HEADER_LEN,
-    SpacePacket,
     AbstractSpacePacket,
     PacketId,
     PacketSeqCtrl,
+    PacketType,
     SequenceFlags,
+    SpacePacket,
+    SpacePacketHeader,
 )
+from spacepackets.crc import CRC16_CCITT_FUNC
 from spacepackets.ecss.defs import PusVersion
+from spacepackets.version import get_version
 
 
 class PusTcDataFieldHeader:
@@ -95,11 +94,11 @@ class PusTcDataFieldHeader:
         return False
 
     @classmethod
-    def get_header_size(cls):
+    def get_header_size(cls) -> int:
         return cls.PUS_C_SEC_HEADER_LEN
 
 
-class InvalidTcCrc16(Exception):
+class InvalidTcCrc16Error(Exception):
     def __init__(self, tc: PusTc):
         self.tc = tc
 
@@ -123,7 +122,7 @@ class PusTc(AbstractSpacePacket):
         service: int,
         subservice: int,
         apid: int = 0,
-        app_data: bytes = bytes(),
+        app_data: bytes = b"",
         seq_count: int = 0,
         source_id: int = 0,
         ack_flags: int = 0b1111,
@@ -161,7 +160,7 @@ class PusTc(AbstractSpacePacket):
         )
         self._app_data = app_data
         self._valid = True
-        self._crc16: Optional[bytes] = None
+        self._crc16: bytes | None = None
 
     @classmethod
     def from_sp_header(
@@ -172,7 +171,7 @@ class PusTc(AbstractSpacePacket):
         app_data: bytes = bytes([]),
         source_id: int = 0,
         ack_flags: int = 0b1111,
-    ):
+    ) -> PusTc:
         pus_tc = cls.empty()
         sp_header.packet_type = PacketType.TC
         sp_header.sec_header_flag = True
@@ -199,9 +198,7 @@ class PusTc(AbstractSpacePacket):
     ) -> PusTc:
         pus_tc = cls.empty()
         if sp_header.packet_type == PacketType.TM:
-            raise ValueError(
-                f"Invalid Packet Type {sp_header.packet_type} in CCSDS primary header"
-            )
+            raise ValueError(f"Invalid Packet Type {sp_header.packet_type} in CCSDS primary header")
         pus_tc.sp_header = sp_header
         pus_tc.pus_tc_sec_header = sec_header
         pus_tc._app_data = app_data
@@ -246,7 +243,7 @@ class PusTc(AbstractSpacePacket):
         user_data.extend(self._crc16)  # type: ignore
         return SpacePacket(self.sp_header, self.pus_tc_sec_header.pack(), user_data)
 
-    def calc_crc(self):
+    def calc_crc(self) -> None:
         """Can be called to calculate the CRC16. Also sets the internal CRC16 field."""
         crc = PredefinedCrc(crc_name="crc-ccitt-false")
         crc.update(self.sp_header.pack())
@@ -276,13 +273,11 @@ class PusTc(AbstractSpacePacket):
 
         :raises BytesTooShortError: Passed bytestream too short.
         :raises ValueError: Unsupported PUS version.
-        :raises InvalidTcCrc16: Invalid CRC16.
+        :raises InvalidTcCrc16Error: Invalid CRC16.
         """
         tc_unpacked = cls.empty()
         tc_unpacked.sp_header = SpacePacketHeader.unpack(data=data)
-        tc_unpacked.pus_tc_sec_header = PusTcDataFieldHeader.unpack(
-            data=data[CCSDS_HEADER_LEN:]
-        )
+        tc_unpacked.pus_tc_sec_header = PusTcDataFieldHeader.unpack(data=data[CCSDS_HEADER_LEN:])
         header_len = CCSDS_HEADER_LEN + tc_unpacked.pus_tc_sec_header.get_header_size()
         expected_packet_len = tc_unpacked.packet_len
         if len(data) < expected_packet_len:
@@ -290,7 +285,7 @@ class PusTc(AbstractSpacePacket):
         tc_unpacked._app_data = data[header_len : expected_packet_len - 2]
         tc_unpacked._crc16 = data[expected_packet_len - 2 : expected_packet_len]
         if CRC16_CCITT_FUNC(data[:expected_packet_len]) != 0:
-            raise InvalidTcCrc16(tc_unpacked)
+            raise InvalidTcCrc16Error(tc_unpacked)
         return tc_unpacked
 
     @property
@@ -309,20 +304,18 @@ class PusTc(AbstractSpacePacket):
         The size of the TC packet is the size of the packet secondary header with
         source ID + the length of the application data + length of the CRC16 checksum - 1
         """
-        data_length = secondary_header_len + app_data_len + 1
-        return data_length
+        return secondary_header_len + app_data_len + 1
 
     @deprecation.deprecated(
         deprecated_in="v0.14.0rc3",
         current_version=get_version(),
         details="use pack and the class itself to build this instead",
     )
-    def pack_command_tuple(self) -> Tuple[bytearray, PusTc]:
+    def pack_command_tuple(self) -> tuple[bytearray, PusTc]:
         """Pack a tuple consisting of the raw packet as the first entry and the class representation
         as the second entry
         """
-        command_tuple = (self.pack(), self)
-        return command_tuple
+        return (self.pack(), self)
 
     @property
     def service(self) -> int:
@@ -337,7 +330,7 @@ class PusTc(AbstractSpacePacket):
         return self.pus_tc_sec_header.source_id
 
     @source_id.setter
-    def source_id(self, source_id: int):
+    def source_id(self, source_id: int) -> None:
         self.pus_tc_sec_header.source_id = source_id
 
     @property
@@ -365,22 +358,22 @@ class PusTc(AbstractSpacePacket):
         return self._app_data
 
     @app_data.setter
-    def app_data(self, app_data: bytes):
+    def app_data(self, app_data: bytes) -> None:
         self._app_data = app_data
 
     @property
-    def crc16(self) -> Optional[bytes]:
+    def crc16(self) -> bytes | None:
         """Will be the raw CRC16 if the telecommand was created using :py:meth:`unpack`,
         :py:meth:`pack` was called at least once or :py:meth:`calc_crc` was called at
         least once."""
         return self._crc16
 
     @seq_count.setter
-    def seq_count(self, value):
+    def seq_count(self, value: int) -> None:
         self.sp_header.seq_count = value
 
     @apid.setter
-    def apid(self, apid):
+    def apid(self, apid: int) -> None:
         self.sp_header.apid = apid
 
 
@@ -395,7 +388,7 @@ def generate_packet_crc(tc_packet: bytearray) -> bytes:
     crc = CRC16_CCITT_FUNC(tc_packet[0 : len(tc_packet) - 2])
     tc_packet[len(tc_packet) - 2] = (crc & 0xFF00) >> 8
     tc_packet[len(tc_packet) - 1] = crc & 0xFF
-    return tc_packet
+    return bytes(tc_packet)
 
 
 def generate_crc(data: bytearray) -> bytes:
@@ -404,4 +397,4 @@ def generate_crc(data: bytearray) -> bytes:
     data_with_crc += data
     crc = CRC16_CCITT_FUNC(data)
     data_with_crc.extend(struct.pack("!H", crc))
-    return data_with_crc
+    return bytes(data_with_crc)

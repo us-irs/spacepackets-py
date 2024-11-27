@@ -3,8 +3,6 @@ class BytesTooShortError(ValueError):
     short."""
 
     def __init__(self, expected_len: int, bytes_len: int):
-        super().__init__(
-            f"bytearray with length {bytes_len} shorter than expected {expected_len}"
-        )
+        super().__init__(f"bytearray with length {bytes_len} shorter than expected {expected_len}")
         self.expected_len = expected_len
         self.bytes_len = bytes_len

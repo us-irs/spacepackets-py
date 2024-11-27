@@ -1,28 +1,25 @@
 from unittest import TestCase
 
-from spacepackets.cfdp import TlvType, CfdpTlv
 from spacepackets.cfdp.tlv import (
-    map_enum_status_code_to_action_status_code,
-    FilestoreResponseStatusCode,
+    CfdpTlv,
     FilestoreActionCode,
+    FilestoreResponseStatusCode,
+    TlvType,
+    map_enum_status_code_to_action_status_code,
     map_int_status_code_to_enum,
 )
 
 
 class TestTlvs(TestCase):
     def test_basic(self):
-        test_tlv = CfdpTlv(
-            tlv_type=TlvType.FILESTORE_REQUEST, value=bytes([0, 1, 2, 3, 4])
-        )
+        test_tlv = CfdpTlv(tlv_type=TlvType.FILESTORE_REQUEST, value=bytes([0, 1, 2, 3, 4]))
         self.assertEqual(test_tlv.tlv_type, TlvType.FILESTORE_REQUEST)
         self.assertEqual(test_tlv.value_len, 5)
         self.assertEqual(test_tlv.value, bytes([0, 1, 2, 3, 4]))
         self.assertEqual(test_tlv.packet_len, 7)
 
     def test_packing(self):
-        test_tlv = CfdpTlv(
-            tlv_type=TlvType.FILESTORE_REQUEST, value=bytes([0, 1, 2, 3, 4])
-        )
+        test_tlv = CfdpTlv(tlv_type=TlvType.FILESTORE_REQUEST, value=bytes([0, 1, 2, 3, 4]))
         test_tlv_package = test_tlv.pack()
         test_tlv_unpacked = CfdpTlv.unpack(data=test_tlv_package)
         self.assertEqual(test_tlv_unpacked.tlv_type, TlvType.FILESTORE_REQUEST)
@@ -59,9 +56,7 @@ class TestTlvs(TestCase):
         self.assertEqual(action_code, FilestoreActionCode.APPEND_FILE_SNP)
         self.assertEqual(status_code, 0b1111)
         with self.assertRaises(ValueError):
-            map_enum_status_code_to_action_status_code(
-                FilestoreResponseStatusCode.INVALID
-            )
+            map_enum_status_code_to_action_status_code(FilestoreResponseStatusCode.INVALID)
         status_code = map_int_status_code_to_enum(
             action_code=FilestoreActionCode.APPEND_FILE_SNP, status_code=0b1111
         )
@@ -72,8 +67,6 @@ class TestTlvs(TestCase):
         self.assertEqual(invalid_code, FilestoreResponseStatusCode.INVALID)
 
     def test_tlv_print(self):
-        test_tlv = CfdpTlv(
-            tlv_type=TlvType.FILESTORE_REQUEST, value=bytes([0, 1, 2, 3, 4])
-        )
+        test_tlv = CfdpTlv(tlv_type=TlvType.FILESTORE_REQUEST, value=bytes([0, 1, 2, 3, 4]))
         print(test_tlv)
         print(f"{test_tlv!r}")

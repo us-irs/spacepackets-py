@@ -1,8 +1,8 @@
 from unittest import TestCase
 
 from spacepackets.cfdp.conf import (
-    set_entity_ids,
     get_entity_ids,
+    set_entity_ids,
 )
 
 

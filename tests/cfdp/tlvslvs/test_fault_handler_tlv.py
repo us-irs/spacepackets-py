@@ -1,13 +1,13 @@
 from unittest import TestCase
 
 from spacepackets.cfdp import (
-    FaultHandlerOverrideTlv,
+    CfdpTlv,
     ConditionCode,
     FaultHandlerCode,
+    FaultHandlerOverrideTlv,
     TlvHolder,
     TlvType,
-    TlvTypeMissmatch,
-    CfdpTlv,
+    TlvTypeMissmatchError,
 )
 
 
@@ -35,7 +35,7 @@ class TestFaultHandlerOverrideTlv(TestCase):
     def test_type_missmatch(self):
         fault_handler_ovvrd_tlv_tlv = self.fault_handler_ovvrd_tlv.tlv
         fault_handler_ovvrd_tlv_tlv.tlv_type = TlvType.ENTITY_ID
-        with self.assertRaises(TlvTypeMissmatch):
+        with self.assertRaises(TlvTypeMissmatchError):
             FaultHandlerOverrideTlv.from_tlv(cfdp_tlv=fault_handler_ovvrd_tlv_tlv)
 
     def test_unpack(self):

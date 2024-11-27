@@ -1,20 +1,22 @@
 from __future__ import annotations
-from typing import Tuple
 
 import abc
 import enum
 import struct
+from typing import TYPE_CHECKING
 
+from spacepackets.cfdp.conf import PduConfig
+from spacepackets.cfdp.defs import CrcFlag, Direction, LargeFileFlag, TransmissionMode
 from spacepackets.cfdp.pdu.header import (
+    AbstractPduBase,
     PduHeader,
     PduType,
     SegmentMetadataFlag,
-    AbstractPduBase,
 )
-from spacepackets.cfdp.defs import Direction, LargeFileFlag, CrcFlag, TransmissionMode
-from spacepackets.cfdp.conf import PduConfig
 from spacepackets.exceptions import BytesTooShortError
-from spacepackets.util import UnsignedByteField
+
+if TYPE_CHECKING:
+    from spacepackets.util import UnsignedByteField
 
 
 class DirectiveType(enum.IntEnum):
@@ -53,19 +55,19 @@ class AbstractFileDirectiveBase(AbstractPduBase):
         return self.pdu_header.transmission_mode
 
     @file_flag.setter
-    def file_flag(self, field_len: LargeFileFlag):
+    def file_flag(self, field_len: LargeFileFlag) -> None:
         self.pdu_header.file_flag = field_len
 
     @property
-    def crc_flag(self):
+    def crc_flag(self) -> CrcFlag:
         return self.pdu_header.crc_flag
 
     @crc_flag.setter
-    def crc_flag(self, crc_flag: CrcFlag):
+    def crc_flag(self, crc_flag: CrcFlag) -> None:
         self.pdu_header.crc_flag = crc_flag
 
     @property
-    def pdu_data_field_len(self):
+    def pdu_data_field_len(self) -> int:
         return self.pdu_header.pdu_data_field_len
 
     @property
@@ -81,7 +83,7 @@ class AbstractFileDirectiveBase(AbstractPduBase):
         return self.pdu_header.dest_entity_id
 
     @pdu_data_field_len.setter
-    def pdu_data_field_len(self, pdu_data_field_len: int):
+    def pdu_data_field_len(self, pdu_data_field_len: int) -> None:
         self.pdu_header.pdu_data_field_len = pdu_data_field_len
 
     @property
@@ -97,10 +99,7 @@ class AbstractFileDirectiveBase(AbstractPduBase):
         return self.pdu_header.packet_len
 
     def __eq__(self, other: AbstractFileDirectiveBase):
-        return (
-            self.pdu_header == other.pdu_header
-            and self.directive_type == other.directive_type
-        )
+        return self.pdu_header == other.pdu_header and self.directive_type == other.directive_type
 
 
 class FileDirectivePduBase(AbstractFileDirectiveBase):
@@ -134,7 +133,7 @@ class FileDirectivePduBase(AbstractFileDirectiveBase):
         )
         self._directive_type = directive_code
 
-    def verify_length_and_checksum(self, data: bytes):
+    def verify_length_and_checksum(self, data: bytes) -> None:
         self.pdu_header.verify_length_and_checksum(data)
 
     @property
@@ -150,11 +149,11 @@ class FileDirectivePduBase(AbstractFileDirectiveBase):
         return self._directive_type
 
     @property
-    def directive_param_field_len(self):
+    def directive_param_field_len(self) -> int:
         return self.pdu_header.pdu_data_field_len - 1
 
     @directive_param_field_len.setter
-    def directive_param_field_len(self, directive_param_field_len: int):
+    def directive_param_field_len(self, directive_param_field_len: int) -> None:
         self.pdu_header.pdu_data_field_len = directive_param_field_len + 1
 
     @classmethod
@@ -189,17 +188,14 @@ class FileDirectivePduBase(AbstractFileDirectiveBase):
         file_directive._directive_type = raw_packet[header_len - 1]
         return file_directive
 
-    def _verify_file_len(self, file_size: int):
+    def _verify_file_len(self, file_size: int) -> None:
         """Can be used by subclasses to verify a given file size"""
         if self.pdu_header.file_flag == LargeFileFlag.LARGE and file_size > pow(2, 64):
-
             raise ValueError(f"File size {file_size} larger than 64 bit field")
-        elif self.pdu_header.file_flag == LargeFileFlag.NORMAL and file_size > pow(
-            2, 32
-        ):
+        if self.pdu_header.file_flag == LargeFileFlag.NORMAL and file_size > pow(2, 32):
             raise ValueError(f"File size {file_size} larger than 32 bit field")
 
-    def parse_fss_field(self, raw_packet: bytes, current_idx: int) -> Tuple[int, int]:
+    def parse_fss_field(self, raw_packet: bytes, current_idx: int) -> tuple[int, int]:
         """Parse the FSS field, which has different size depending on the large file flag being
         set or not. Returns the current index incremented and the parsed file size.
 
@@ -208,16 +204,12 @@ class FileDirectivePduBase(AbstractFileDirectiveBase):
         if self.pdu_header.file_flag == LargeFileFlag.LARGE:
             if current_idx + 8 > len(raw_packet):
                 raise BytesTooShortError(current_idx + 8, len(raw_packet))
-            file_size = struct.unpack("!Q", raw_packet[current_idx : current_idx + 8])[
-                0
-            ]
+            file_size = struct.unpack("!Q", raw_packet[current_idx : current_idx + 8])[0]
             current_idx += 8
         else:
             if current_idx + 4 > len(raw_packet):
                 raise BytesTooShortError(current_idx + 4, len(raw_packet))
-            file_size = struct.unpack("!I", raw_packet[current_idx : current_idx + 4])[
-                0
-            ]
+            file_size = struct.unpack("!I", raw_packet[current_idx : current_idx + 4])[0]
             current_idx += 4
         return current_idx, file_size
 

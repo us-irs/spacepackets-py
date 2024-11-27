@@ -2,10 +2,10 @@ from unittest import TestCase
 
 from spacepackets.cfdp import CfdpLv
 from spacepackets.cfdp.tlv import (
-    ProxyPutRequest,
-    TlvType,
     ProxyMessageType,
+    ProxyPutRequest,
     ProxyPutRequestParams,
+    TlvType,
 )
 from spacepackets.util import ByteFieldU8
 
@@ -23,7 +23,7 @@ class TestProxyPacket(TestCase):
         self.proxy_put_req = ProxyPutRequest(proxy_put_req_params)
         self.expected_raw_len = (
             2  # TLV header
-            + len("cfdp".encode())
+            + len(b"cfdp")
             + 1  # Message type
             + self.dest_entity_id.byte_len
             + 1
@@ -47,18 +47,14 @@ class TestProxyPacket(TestCase):
         self.assertEqual(raw_proxy_put_req[9], len(self.src_string))
         current_idx = 10
         self.assertEqual(
-            raw_proxy_put_req[
-                current_idx : current_idx + len(self.src_string)
-            ].decode(),
+            raw_proxy_put_req[current_idx : current_idx + len(self.src_string)].decode(),
             self.src_string,
         )
         current_idx += len(self.src_string)
         self.assertEqual(raw_proxy_put_req[current_idx], len(self.dest_string))
         current_idx += 1
         self.assertEqual(
-            raw_proxy_put_req[
-                current_idx : current_idx + len(self.dest_string)
-            ].decode(),
+            raw_proxy_put_req[current_idx : current_idx + len(self.dest_string)].decode(),
             self.dest_string,
         )
         current_idx += len(self.dest_string)

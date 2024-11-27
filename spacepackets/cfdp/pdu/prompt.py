@@ -1,13 +1,14 @@
 from __future__ import annotations
-import enum
+
 import copy
+import enum
 import struct
 
 from spacepackets.cfdp import CrcFlag
-from spacepackets.cfdp.defs import Direction
-from spacepackets.cfdp.pdu.file_directive import FileDirectivePduBase, DirectiveType
 from spacepackets.cfdp.conf import PduConfig
+from spacepackets.cfdp.defs import Direction
 from spacepackets.cfdp.pdu import AbstractFileDirectiveBase, PduHeader
+from spacepackets.cfdp.pdu.file_directive import DirectiveType, FileDirectivePduBase
 from spacepackets.crc import CRC16_CCITT_FUNC
 from spacepackets.exceptions import BytesTooShortError
 
@@ -70,7 +71,7 @@ class PromptPdu(AbstractFileDirectiveBase):
             Raw data too short for expected object.
         ValueError:
             Invalid directive type or data format.
-        InvalidCrc:
+        InvalidCrcError:
             PDU has a 16 bit CRC and the CRC check failed.
         """
         prompt_pdu = cls.__empty()

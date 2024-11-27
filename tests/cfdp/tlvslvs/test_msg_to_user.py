@@ -1,10 +1,10 @@
 from unittest import TestCase
 
-from spacepackets.cfdp import MessageToUserTlv, TlvHolder, TlvType, TlvTypeMissmatch
+from spacepackets.cfdp import MessageToUserTlv, TlvHolder, TlvType, TlvTypeMissmatchError
 from spacepackets.cfdp.tlv import (
-    create_cfdp_proxy_and_dir_op_message_marker,
     CfdpTlv,
     ProxyMessageType,
+    create_cfdp_proxy_and_dir_op_message_marker,
 )
 
 
@@ -24,7 +24,7 @@ class TestMsgToUser(TestCase):
     def test_msg_to_user_tlv(self):
         msg_to_usr_tlv_tlv = self.msg_to_usr_tlv.tlv
         msg_to_usr_tlv_tlv.tlv_type = TlvType.FILESTORE_REQUEST
-        with self.assertRaises(TlvTypeMissmatch):
+        with self.assertRaises(TlvTypeMissmatchError):
             MessageToUserTlv.from_tlv(cfdp_tlv=msg_to_usr_tlv_tlv)
         msg_to_usr_tlv_tlv.tlv_type = TlvType.MESSAGE_TO_USER
         msg_to_usr_tlv_raw = self.msg_to_usr_tlv.pack()

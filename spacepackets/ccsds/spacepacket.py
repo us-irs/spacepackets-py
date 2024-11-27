@@ -3,13 +3,16 @@ of all CCSDS packets."""
 
 from __future__ import annotations
 
-from abc import abstractmethod, ABC
 import enum
 import struct
-
-from typing import Tuple, Deque, List, Final, Optional, Sequence
+from abc import ABC, abstractmethod
+from typing import TYPE_CHECKING, Final
 
 from spacepackets.exceptions import BytesTooShortError
+
+if TYPE_CHECKING:
+    from collections import deque
+    from collections.abc import Sequence
 
 CCSDS_HEADER_LEN: Final[int] = 6
 SPACE_PACKET_HEADER_SIZE: Final[int] = CCSDS_HEADER_LEN
@@ -39,9 +42,7 @@ class PacketSeqCtrl:
 
     def __init__(self, seq_flags: SequenceFlags, seq_count: int):
         if seq_count > MAX_SEQ_COUNT or seq_count < 0:
-            raise ValueError(
-                f"Sequence count larger than allowed {pow(2, 14) - 1} or negative"
-            )
+            raise ValueError(f"Sequence count larger than allowed {pow(2, 14) - 1} or negative")
         self.seq_flags = seq_flags
         self.seq_count = seq_count
 
@@ -68,7 +69,7 @@ class PacketSeqCtrl:
         return self.seq_flags << 14 | self.seq_count
 
     @classmethod
-    def empty(cls):
+    def empty(cls) -> PacketSeqCtrl:
         return cls(seq_flags=SequenceFlags.CONTINUATION_SEGMENT, seq_count=0)
 
     def __eq__(self, other: object) -> bool:
@@ -77,10 +78,8 @@ class PacketSeqCtrl:
         return False
 
     @classmethod
-    def from_raw(cls, raw: int):
-        return cls(
-            seq_flags=SequenceFlags((raw >> 14) & 0b11), seq_count=raw & ~SEQ_FLAG_MASK
-        )
+    def from_raw(cls, raw: int) -> PacketSeqCtrl:
+        return cls(seq_flags=SequenceFlags((raw >> 14) & 0b11), seq_count=raw & ~SEQ_FLAG_MASK)
 
 
 class PacketId:
@@ -89,15 +88,13 @@ class PacketId:
 
     def __init__(self, ptype: PacketType, sec_header_flag: bool, apid: int):
         if apid > pow(2, 11) - 1 or apid < 0:
-            raise ValueError(
-                f"Invalid APID, exceeds maximum value {pow(2, 11) - 1} or negative"
-            )
+            raise ValueError(f"Invalid APID, exceeds maximum value {pow(2, 11) - 1} or negative")
         self.ptype = ptype
         self.sec_header_flag = sec_header_flag
         self.apid = apid
 
     @classmethod
-    def empty(cls):
+    def empty(cls) -> PacketId:
         return cls(ptype=PacketType.TM, sec_header_flag=False, apid=0)
 
     def __repr__(self):
@@ -172,7 +169,8 @@ class AbstractSpacePacket(ABC):
 
 
 class SpacePacketHeader(AbstractSpacePacket):
-    """This class encapsulates the space packet header. Packet reference: Blue Book CCSDS 133.0-B-2"""
+    """This class encapsulates the space packet header. Packet reference: Blue Book
+    CCSDS 133.0-B-2"""
 
     def __init__(
         self,
@@ -233,9 +231,7 @@ class SpacePacketHeader(AbstractSpacePacket):
                 f" {pow(2, 16) - 1} or negative"
             )
         self._ccsds_version = ccsds_version
-        self._packet_id = PacketId(
-            ptype=packet_type, sec_header_flag=sec_header_flag, apid=apid
-        )
+        self._packet_id = PacketId(ptype=packet_type, sec_header_flag=sec_header_flag, apid=apid)
         self._psc = PacketSeqCtrl(seq_flags=seq_flags, seq_count=seq_count)
         self.data_len = data_len
 
@@ -328,7 +324,7 @@ class SpacePacketHeader(AbstractSpacePacket):
         return self.packet_id.ptype
 
     @packet_type.setter
-    def packet_type(self, packet_type):
+    def packet_type(self, packet_type: PacketType) -> None:
         self.packet_id.ptype = packet_type
 
     @property
@@ -344,14 +340,14 @@ class SpacePacketHeader(AbstractSpacePacket):
         return self._packet_id.sec_header_flag
 
     @sec_header_flag.setter
-    def sec_header_flag(self, value):
+    def sec_header_flag(self, value: bool) -> None:
         self._packet_id.sec_header_flag = value
 
     @property
-    def seq_count(self):
+    def seq_count(self) -> int:
         return self._psc.seq_count
 
-    def set_data_len_from_packet_len(self, packet_len: int):
+    def set_data_len_from_packet_len(self, packet_len: int) -> None:
         """Sets the data length field from the given total packet length. The total packet length
         must be at least 7 bytes.
 
@@ -365,15 +361,15 @@ class SpacePacketHeader(AbstractSpacePacket):
         self.data_len = packet_len - CCSDS_HEADER_LEN - 1
 
     @seq_count.setter
-    def seq_count(self, seq_cnt):
+    def seq_count(self, seq_cnt: int) -> None:
         self._psc.seq_count = seq_cnt
 
     @property
-    def seq_flags(self):
+    def seq_flags(self) -> SequenceFlags:
         return self._psc.seq_flags
 
     @seq_flags.setter
-    def seq_flags(self, value):
+    def seq_flags(self, value: SequenceFlags) -> None:
         self._psc.seq_flags = value
 
     @property
@@ -381,7 +377,7 @@ class SpacePacketHeader(AbstractSpacePacket):
         return CCSDS_HEADER_LEN
 
     @apid.setter
-    def apid(self, apid):
+    def apid(self, apid: int) -> None:
         self.packet_id.apid = apid
 
     @property
@@ -449,8 +445,8 @@ class SpacePacket:
     def __init__(
         self,
         sp_header: SpacePacketHeader,
-        sec_header: Optional[bytes],
-        user_data: Optional[bytes],
+        sec_header: bytes | None,
+        user_data: bytes | None,
     ):
         self.sp_header = sp_header
         self.sec_header = sec_header
@@ -476,25 +472,22 @@ class SpacePacket:
                     "Secondary header flag is set but no secondary header was supplied"
                 )
             packet.extend(self.sec_header)
-        else:
-            if self.user_data is None:
-                raise ValueError(
-                    "Secondary header not present but no user data supplied"
-                )
+        elif self.user_data is None:
+            raise ValueError("Secondary header not present but no user data supplied")
         if self.user_data is not None:
             packet.extend(self.user_data)
         return packet
 
     @property
-    def apid(self):
+    def apid(self) -> int:
         return self.sp_header.apid
 
     @property
-    def seq_count(self):
+    def seq_count(self) -> int:
         return self.sp_header.seq_count
 
     @property
-    def sec_header_flag(self):
+    def sec_header_flag(self) -> bool:
         return self.sp_header.sec_header_flag
 
     def __eq__(self, other: object):
@@ -512,7 +505,7 @@ def get_space_packet_id_bytes(
     secondary_header_flag: bool,
     apid: int,
     version: int = 0b000,
-) -> Tuple[int, int]:
+) -> tuple[int, int]:
     """This function also includes the first three bits reserved for the version.
 
     :param version: Version field of the packet ID. Defined to be 0b000 in the space packet standard
@@ -532,9 +525,7 @@ def get_space_packet_id_bytes(
     return byte_one, byte_two
 
 
-def get_sp_packet_id_raw(
-    packet_type: PacketType, secondary_header_flag: bool, apid: int
-) -> int:
+def get_sp_packet_id_raw(packet_type: PacketType, secondary_header_flag: bool, apid: int) -> int:
     """Get packet identification segment of packet primary header in integer format"""
     return PacketId(packet_type, secondary_header_flag, apid).raw()
 
@@ -555,7 +546,7 @@ def get_apid_from_raw_space_packet(raw_packet: bytes) -> int:
     return ((raw_packet[0] & 0x7) << 8) | raw_packet[1]
 
 
-def get_total_space_packet_len_from_len_field(len_field: int):
+def get_total_space_packet_len_from_len_field(len_field: int) -> int:
     """Definition of length field is: C = (Octets in data field - 1).
     Therefore, octets in data field in len_field plus one. The total space packet length
     is therefore len_field plus one plus the space packet header size (6)"""
@@ -563,8 +554,8 @@ def get_total_space_packet_len_from_len_field(len_field: int):
 
 
 def parse_space_packets(
-    analysis_queue: Deque[bytearray], packet_ids: Sequence[PacketId]
-) -> List[bytearray]:
+    analysis_queue: deque[bytearray], packet_ids: Sequence[PacketId]
+) -> list[bytearray]:
     """Given a deque of bytearrays, parse for space packets. This funtion expects the deque
     to be filled on the right side, for example with :py:meth:`collections.deque.append`.
     If a split packet with a valid header is detected, this function will re-insert the header into
@@ -611,10 +602,10 @@ def parse_space_packets(
 
 def __handle_packet_id_match(
     concatenated_packets: bytearray,
-    analysis_queue: Deque[bytearray],
+    analysis_queue: deque[bytearray],
     current_idx: int,
-    tm_list: List[bytearray],
-) -> Tuple[int, int]:
+    tm_list: list[bytearray],
+) -> tuple[int, int]:
     total_packet_len = get_total_space_packet_len_from_len_field(
         struct.unpack("!H", concatenated_packets[current_idx + 4 : current_idx + 6])[0]
     )
@@ -624,9 +615,6 @@ def __handle_packet_id_match(
         analysis_queue.clear()
         analysis_queue.append(concatenated_packets[current_idx:])
         return -1, current_idx
-    else:
-        tm_list.append(
-            concatenated_packets[current_idx : current_idx + total_packet_len]
-        )
-        current_idx += total_packet_len
+    tm_list.append(concatenated_packets[current_idx : current_idx + total_packet_len])
+    current_idx += total_packet_len
     return 0, current_idx

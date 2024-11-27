@@ -1,25 +1,25 @@
 from typing import Optional
 from unittest import TestCase
 
-from spacepackets import SpacePacketHeader, PacketType
+from spacepackets import PacketType, SpacePacketHeader
 from spacepackets.ccsds import CdsShortTimestamp
-from spacepackets.ecss import PusTc, PacketFieldEnum, RequestId
+from spacepackets.ecss import PacketFieldEnum, PusTc, RequestId
 from spacepackets.ecss.pus_1_verification import (
-    Service1Tm,
-    create_start_success_tm,
-    UnpackParams,
-    Subservice,
-    create_acceptance_success_tm,
-    create_step_success_tm,
-    create_completion_success_tm,
-    VerificationParams,
-    FailureNotice,
-    create_acceptance_failure_tm,
-    create_start_failure_tm,
-    create_step_failure_tm,
-    create_completion_failure_tm,
     ErrorCode,
+    FailureNotice,
+    Service1Tm,
     StepId,
+    Subservice,
+    UnpackParams,
+    VerificationParams,
+    create_acceptance_failure_tm,
+    create_acceptance_success_tm,
+    create_completion_failure_tm,
+    create_completion_success_tm,
+    create_start_failure_tm,
+    create_start_success_tm,
+    create_step_failure_tm,
+    create_step_success_tm,
 )
 from tests.ecss.common import TEST_STAMP
 
@@ -34,12 +34,10 @@ class Service1TmTest(TestCase):
 
     def test_failure_notice_invalid_creation(self):
         with self.assertRaises(ValueError):
-            FailureNotice(ErrorCode(pfc=4, val=2), bytes())
+            FailureNotice(ErrorCode(pfc=4, val=2), b"")
 
     def test_basic(self):
-        self.assertEqual(
-            self.srv1_tm.sp_header, self.srv1_tm.pus_tm.space_packet_header
-        )
+        self.assertEqual(self.srv1_tm.sp_header, self.srv1_tm.pus_tm.space_packet_header)
         self.assertEqual(self.srv1_tm.timestamp, TEST_STAMP)
         self.assertEqual(self.srv1_tm.is_step_reply, False)
         self.assertEqual(self.srv1_tm.service, 1)
@@ -106,9 +104,7 @@ class Service1TmTest(TestCase):
             helper_created = create_start_success_tm(self.def_apid, pus_tc, TEST_STAMP)
         elif subservice == Subservice.TM_STEP_SUCCESS:
             step_id = PacketFieldEnum.with_byte_size(1, 4)
-            helper_created = create_step_success_tm(
-                self.def_apid, pus_tc, step_id, TEST_STAMP
-            )
+            helper_created = create_step_success_tm(self.def_apid, pus_tc, step_id, TEST_STAMP)
         elif subservice == Subservice.TM_COMPLETION_SUCCESS:
             helper_created = create_completion_success_tm(
                 self.def_apid, pus_tc, timestamp=TEST_STAMP
@@ -152,15 +148,9 @@ class Service1TmTest(TestCase):
         self.assertEqual(srv_1_tm.tc_req_id.tc_packet_id, pus_tc.packet_id)
         self.assertEqual(srv_1_tm.tc_req_id.tc_psc, pus_tc.packet_seq_control)
         srv_1_tm_raw = srv_1_tm.pack()
-        srv_1_tm_unpacked = Service1Tm.unpack(
-            srv_1_tm_raw, UnpackParams(len(TEST_STAMP))
-        )
-        self.assertEqual(
-            srv_1_tm_unpacked.tc_req_id.tc_packet_id.raw(), pus_tc.packet_id.raw()
-        )
-        self.assertEqual(
-            srv_1_tm_unpacked.tc_req_id.tc_psc.raw(), pus_tc.packet_seq_control.raw()
-        )
+        srv_1_tm_unpacked = Service1Tm.unpack(srv_1_tm_raw, UnpackParams(len(TEST_STAMP)))
+        self.assertEqual(srv_1_tm_unpacked.tc_req_id.tc_packet_id.raw(), pus_tc.packet_id.raw())
+        self.assertEqual(srv_1_tm_unpacked.tc_req_id.tc_psc.raw(), pus_tc.packet_seq_control.raw())
         if step_id is not None and subservice == Subservice.TM_STEP_SUCCESS:
             self.assertEqual(srv_1_tm_unpacked.step_id, step_id)
 
@@ -236,15 +226,9 @@ class Service1TmTest(TestCase):
             unpack_params.bytes_step_id = step_id.len()
         srv_1_tm_unpacked = Service1Tm.unpack(srv_1_tm_raw, unpack_params)
         self.assertEqual(srv_1_tm_unpacked.error_code.val, failure_notice.code.val)
-        self.assertEqual(
-            srv_1_tm_unpacked.tc_req_id.tc_packet_id.raw(), pus_tc.packet_id.raw()
-        )
-        self.assertEqual(
-            srv_1_tm_unpacked.tc_req_id.tc_psc.raw(), pus_tc.packet_seq_control.raw()
-        )
+        self.assertEqual(srv_1_tm_unpacked.tc_req_id.tc_packet_id.raw(), pus_tc.packet_id.raw())
+        self.assertEqual(srv_1_tm_unpacked.tc_req_id.tc_psc.raw(), pus_tc.packet_seq_control.raw())
         if failure_notice is not None:
-            self.assertEqual(
-                srv_1_tm_unpacked.failure_notice.pack(), failure_notice.pack()
-            )
+            self.assertEqual(srv_1_tm_unpacked.failure_notice.pack(), failure_notice.pack())
         if step_id is not None:
             self.assertEqual(srv_1_tm_unpacked.step_id.pack(), step_id.pack())

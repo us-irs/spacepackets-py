@@ -3,25 +3,25 @@ from unittest import TestCase
 from spacepackets.cfdp import ChecksumType, ConditionCode
 from spacepackets.cfdp.conf import PduConfig
 from spacepackets.cfdp.pdu import (
-    MetadataPdu,
     AckPdu,
     DirectiveType,
-    TransactionStatus,
-    NakPdu,
-    PromptPdu,
     EofPdu,
     FinishedPdu,
     KeepAlivePdu,
+    MetadataPdu,
+    NakPdu,
+    PromptPdu,
+    TransactionStatus,
 )
-from spacepackets.cfdp.pdu.file_data import FileDataPdu, FileDataParams
+from spacepackets.cfdp.pdu.file_data import FileDataParams, FileDataPdu
 from spacepackets.cfdp.pdu.finished import (
     DeliveryCode,
     FileStatus,
     FinishedParams,
 )
+from spacepackets.cfdp.pdu.helper import PduHolder
 from spacepackets.cfdp.pdu.metadata import MetadataParams
 from spacepackets.cfdp.pdu.prompt import ResponseRequired
-from spacepackets.cfdp.pdu.helper import PduHolder
 
 
 class TestPduHolder(TestCase):
@@ -32,9 +32,7 @@ class TestPduHolder(TestCase):
         self.pdu_wrapper = PduHolder(None)
 
     def test_file_data(self):
-        fd_params = FileDataParams(
-            file_data=self.file_data_bytes, offset=0, segment_metadata=None
-        )
+        fd_params = FileDataParams(file_data=self.file_data_bytes, offset=0, segment_metadata=None)
         file_data_pdu = FileDataPdu(pdu_conf=self.pdu_conf, params=fd_params)
         self.pdu_wrapper.pdu = file_data_pdu
         pdu_casted_back = self.pdu_wrapper.to_file_data_pdu()
@@ -75,9 +73,7 @@ class TestPduHolder(TestCase):
         self.assertEqual(metadata_casted_back, metadata_pdu)
 
     def test_invalid_cast(self):
-        fd_params = FileDataParams(
-            file_data=self.file_data_bytes, offset=0, segment_metadata=None
-        )
+        fd_params = FileDataParams(file_data=self.file_data_bytes, offset=0, segment_metadata=None)
         file_data_pdu = FileDataPdu(pdu_conf=self.pdu_conf, params=fd_params)
         self.pdu_wrapper.pdu = file_data_pdu
         with self.assertRaises(TypeError) as cm:
@@ -112,9 +108,7 @@ class TestPduHolder(TestCase):
 
     def test_eof_cast(self):
         zero_checksum = bytes([0x00, 0x00, 0x00, 0x00])
-        eof_pdu = EofPdu(
-            file_checksum=zero_checksum, file_size=0, pdu_conf=self.pdu_conf
-        )
+        eof_pdu = EofPdu(file_checksum=zero_checksum, file_size=0, pdu_conf=self.pdu_conf)
         self.pdu_wrapper.pdu = eof_pdu
         eof_pdu_converted = self.pdu_wrapper.to_eof_pdu()
         self.assertEqual(eof_pdu_converted, eof_pdu)
