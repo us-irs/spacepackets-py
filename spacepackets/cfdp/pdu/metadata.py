@@ -12,7 +12,7 @@ from spacepackets.cfdp.pdu.file_directive import (
     AbstractFileDirectiveBase,
 )
 from spacepackets.cfdp.conf import PduConfig, LargeFileFlag
-from spacepackets.cfdp.tlv import CfdpTlv
+from spacepackets.cfdp.tlv import CfdpTlv, TlvList
 from spacepackets.cfdp.lv import CfdpLv
 from spacepackets.cfdp.defs import ChecksumType, CrcFlag, Direction
 from spacepackets.crc import CRC16_CCITT_FUNC
@@ -53,7 +53,7 @@ class MetadataPdu(AbstractFileDirectiveBase):
         self,
         pdu_conf: PduConfig,
         params: MetadataParams,
-        options: Optional[List[CfdpTlv]] = None,
+        options: Optional[TlvList] = None,
     ):
         pdu_conf = copy.copy(pdu_conf)
         self.params = params
@@ -109,13 +109,22 @@ class MetadataPdu(AbstractFileDirectiveBase):
         )
 
     @property
-    def options(self) -> Optional[List[CfdpTlv]]:
+    def options(self) -> Optional[TlvList]:
         return self._options
 
     @options.setter
-    def options(self, options: Optional[List[CfdpTlv]]):
+    def options(self, options: Optional[TlvList]):
         self._options = options
         self._calculate_directive_field_len()
+
+    def options_as_tlv(self) -> Optional[List[CfdpTlv]]:
+        """Returns :py:meth:`options` converted to a list of concrete :py:class:`CfdpTlv` objects."""
+        if self.options is None:
+            return None
+        cfdp_tlv_list = []
+        for option in self.options:
+            cfdp_tlv_list.append(CfdpTlv(option.tlv_type, option.value))
+        return cfdp_tlv_list
 
     @property
     def directive_param_field_len(self):
