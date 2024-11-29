@@ -67,6 +67,9 @@ class TestMetadata(TestCase):
         self.assertEqual(metadata_pdu.packet_len, expected_len)
         metadata_raw = metadata_pdu.pack()
         self.assertEqual(len(metadata_raw), expected_len)
+        # verify a round-trip works w/ CRC set.
+        metadata_unpacked = MetadataPdu.unpack(metadata_raw)
+        self.assertEqual(metadata_pdu, metadata_unpacked)
 
     def test_metadata_pdu(self):
         self.assertEqual(self.option_0.packet_len, 13)
