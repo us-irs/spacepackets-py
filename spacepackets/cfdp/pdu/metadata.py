@@ -238,6 +238,8 @@ class MetadataPdu(AbstractFileDirectiveBase):
         current_idx += metadata_pdu._source_file_name_lv.packet_len
         metadata_pdu._dest_file_name_lv = CfdpLv.unpack(raw_bytes=data[current_idx:])
         current_idx += metadata_pdu._dest_file_name_lv.packet_len
+        if metadata_pdu.pdu_file_directive.pdu_conf.crc_flag == CrcFlag.WITH_CRC:
+            data = data[:-2]
         if current_idx < len(data):
             metadata_pdu._parse_options(raw_packet=data, start_idx=current_idx)
         return metadata_pdu
