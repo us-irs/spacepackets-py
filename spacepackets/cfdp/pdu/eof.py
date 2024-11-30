@@ -150,6 +150,8 @@ class EofPdu(AbstractFileDirectiveBase):
         current_idx, eof_pdu.file_size = eof_pdu.pdu_file_directive.parse_fss_field(
             raw_packet=data, current_idx=current_idx
         )
+        if eof_pdu.pdu_file_directive.pdu_conf.crc_flag == CrcFlag.WITH_CRC:
+            data = data[:-2]
         if len(data) > current_idx:
             eof_pdu.fault_location = EntityIdTlv.unpack(data=data[current_idx:])
         return eof_pdu

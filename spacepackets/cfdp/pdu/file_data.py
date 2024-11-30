@@ -255,6 +255,9 @@ class FileDataPdu(AbstractPduBase):
             data[current_idx : current_idx + struct_arg_tuple[1]],
         )[0]
         current_idx += struct_arg_tuple[1]
+
+        if file_data_packet.pdu_header.crc_flag == CrcFlag.WITH_CRC:
+            data = data[:-2]
         if current_idx < len(data):
             file_data_packet._params.file_data = data[current_idx:]
         return file_data_packet

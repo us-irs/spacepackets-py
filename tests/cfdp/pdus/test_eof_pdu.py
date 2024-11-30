@@ -63,6 +63,9 @@ class TestEofPdu(TestCase):
         self.assertEqual(eof.packet_len, expected_packet_len)
         eof_raw = eof.pack()
         self.assertEqual(len(eof_raw), expected_packet_len)
+        # verify we can round-trip pack/unpack
+        eof_unpacked = EofPdu.unpack(data=eof_raw)
+        self.assertEqual(eof_unpacked, eof)
 
     def test_from_factory(self):
         eof_pdu_raw = self.eof_pdu.pack()

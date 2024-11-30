@@ -74,6 +74,19 @@ class TestFileDataPdu(TestCase):
         self.assertEqual(file_data_pdu_unpacked.offset, 0)
         self.assertEqual(file_data_pdu_unpacked.file_data, self.file_data_bytes)
 
+    def test_pack_unpack_w_crc(self):
+        pdu_conf = PduConfig.default()
+        pdu_conf.crc_flag = CrcFlag.WITH_CRC
+        fd_pdu = FileDataPdu(pdu_conf, FileDataParams(self.file_data_bytes, 0))
+        packed = fd_pdu.pack()
+        expected_bytes = bytearray([0x32, 0x00, 0x11, 0x00, 0x00, 0x00, 0x00])
+        expected_bytes.extend(bytes([0x00, 0x00, 0x00, 0x00]))
+        expected_bytes.extend(self.file_data_bytes)
+        expected_bytes.extend(bytes([0xF6, 0xEB]))  # CRC16
+        self.assertEqual(packed, expected_bytes)
+        unpacked = FileDataPdu.unpack(packed)
+        self.assertEqual(unpacked, fd_pdu)
+
     def test_with_seg_metadata(self):
         fd_params = FileDataParams(
             file_data=self.file_data_bytes,
