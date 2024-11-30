@@ -77,7 +77,7 @@ class PusTmSecondaryHeader:
         self,
         service: int,
         subservice: int,
-        timestamp: bytes,
+        timestamp: bytes | bytearray,
         message_counter: int,
         dest_id: int = 0,
         spacecraft_time_ref: int = 0,
@@ -127,7 +127,7 @@ class PusTmSecondaryHeader:
         return secondary_header
 
     @classmethod
-    def unpack(cls, data: bytes, timestamp_len: int) -> PusTmSecondaryHeader:
+    def unpack(cls, data: bytes | bytearray, timestamp_len: int) -> PusTmSecondaryHeader:
         """Unpack the PUS TM secondary header from the raw packet starting at the header index.
 
         :param data: Raw data. Please note that the passed buffer should start where the actual
@@ -224,8 +224,8 @@ class PusTm(AbstractPusTm):
         self,
         service: int,
         subservice: int,
-        timestamp: bytes,
-        source_data: bytes = b"",
+        timestamp: bytes | bytearray,
+        source_data: bytes | bytearray = b"",
         apid: int = 0,
         seq_count: int = 0,
         message_counter: int = 0,
@@ -287,7 +287,7 @@ class PusTm(AbstractPusTm):
         self._crc16 = struct.pack("!H", crc.crcValue)
 
     @classmethod
-    def unpack(cls, data: bytes, timestamp_len: int) -> PusTm:
+    def unpack(cls, data: bytes | bytearray, timestamp_len: int) -> PusTm:
         """Attempts to construct a generic PusTelemetry class given a raw bytearray.
 
         :param data: Raw bytes containing the PUS telemetry packet.
@@ -297,8 +297,6 @@ class PusTm(AbstractPusTm):
         :raises ValueError: Unsupported PUS version.
         :raises InvalidTmCrc16Error: Invalid CRC16.
         """
-        if data is None:
-            raise ValueError("byte stream invalid")
         pus_tm = cls.empty()
         pus_tm.space_packet_header = SpacePacketHeader.unpack(data=data)
         expected_packet_len = get_total_space_packet_len_from_len_field(
@@ -316,7 +314,7 @@ class PusTm(AbstractPusTm):
             pus_tm.pus_tm_sec_header.header_size + SPACE_PACKET_HEADER_SIZE : expected_packet_len
             - 2
         ]
-        pus_tm._crc16 = data[expected_packet_len - 2 : expected_packet_len]
+        pus_tm._crc16 = bytes(data[expected_packet_len - 2 : expected_packet_len])
         # CRC16-CCITT checksum
         if CRC16_CCITT_FUNC(data[:expected_packet_len]) != 0:
             raise InvalidTmCrc16Error(pus_tm)
@@ -394,7 +392,7 @@ class PusTm(AbstractPusTm):
 
     @property
     def timestamp(self) -> bytes:
-        return self.pus_tm_sec_header.timestamp
+        return bytes(self.pus_tm_sec_header.timestamp)
 
     @property
     def service(self) -> int:
@@ -419,7 +417,7 @@ class PusTm(AbstractPusTm):
         """
         :return: TM source data (raw)
         """
-        return self._source_data
+        return bytes(self._source_data)
 
     @tm_data.setter
     def tm_data(self, data: bytes) -> None:

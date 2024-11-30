@@ -34,7 +34,7 @@ def get_bin_data_string(data: bytes) -> str:
     return string_to_print
 
 
-def get_printable_data_string(print_format: PrintFormats, data: bytes) -> str:
+def get_printable_data_string(print_format: PrintFormats, data: bytes | bytearray) -> str:
     """Returns the TM data in a clean printable hex string format
     :return: The string
     """
@@ -126,7 +126,7 @@ class UnsignedByteField:
         self._val_as_bytes = IntByteConversion.to_unsigned(self.byte_len, self.value)
 
     @classmethod
-    def from_bytes(cls, raw: bytes) -> UnsignedByteField:
+    def from_bytes(cls, raw: bytes | bytearray) -> UnsignedByteField:
         return cls(
             struct.unpack(IntByteConversion.unsigned_struct_specifier(len(raw)), raw)[0],
             len(raw),
@@ -232,7 +232,7 @@ class ByteFieldU8(UnsignedByteField):
         super().__init__(val, 1)
 
     @classmethod
-    def from_u8_bytes(cls, stream: bytes) -> ByteFieldU8:
+    def from_u8_bytes(cls, stream: bytes | bytearray) -> ByteFieldU8:
         if len(stream) < 1:
             raise ValueError("Passed stream not large enough, should be at least 1 byte")
         return cls(stream[0])
@@ -248,7 +248,7 @@ class ByteFieldU16(UnsignedByteField):
         super().__init__(val, 2)
 
     @classmethod
-    def from_u16_bytes(cls, stream: bytes) -> ByteFieldU16:
+    def from_u16_bytes(cls, stream: bytes | bytearray) -> ByteFieldU16:
         if len(stream) < 2:
             raise ValueError("Passed stream not large enough, should be at least 2 byte")
         return cls(struct.unpack(IntByteConversion.unsigned_struct_specifier(2), stream[0:2])[0])
@@ -264,7 +264,7 @@ class ByteFieldU32(UnsignedByteField):
         super().__init__(val, 4)
 
     @classmethod
-    def from_u32_bytes(cls, stream: bytes) -> ByteFieldU32:
+    def from_u32_bytes(cls, stream: bytes | bytearray) -> ByteFieldU32:
         if len(stream) < 4:
             raise ValueError("passed stream not large enough, should be at least 4 bytes")
         return cls(struct.unpack(IntByteConversion.unsigned_struct_specifier(4), stream[0:4])[0])
@@ -280,7 +280,7 @@ class ByteFieldU64(UnsignedByteField):
         super().__init__(val, 8)
 
     @classmethod
-    def from_u64_bytes(cls, stream: bytes) -> ByteFieldU64:
+    def from_u64_bytes(cls, stream: bytes | bytearray) -> ByteFieldU64:
         if len(stream) < 8:
             raise ValueError("passed stream not large enough, should be at least 8 byte")
         return cls(struct.unpack(IntByteConversion.unsigned_struct_specifier(8), stream[0:8])[0])
@@ -308,7 +308,7 @@ class ByteFieldGenerator:
         raise ValueError(f"invalid byte length {byte_len}")
 
     @staticmethod
-    def from_bytes(byte_len: int, stream: bytes) -> UnsignedByteField:
+    def from_bytes(byte_len: int, stream: bytes | bytearray) -> UnsignedByteField:
         """Generate an :py:class:`UnsignedByteField` from a raw bytestream and a length.
 
         :raise ValueError: Byte length is not one of [1, 2, 4, 8]."""

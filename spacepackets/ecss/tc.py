@@ -57,7 +57,7 @@ class PusTcDataFieldHeader:
         return header_raw
 
     @classmethod
-    def unpack(cls, data: bytes) -> PusTcDataFieldHeader:
+    def unpack(cls, data: bytes | bytearray) -> PusTcDataFieldHeader:
         """Unpack a TC data field header.
 
         :param data: Start of raw data belonging to the TC data field header
@@ -122,7 +122,7 @@ class PusTc(AbstractSpacePacket):
         service: int,
         subservice: int,
         apid: int = 0,
-        app_data: bytes = b"",
+        app_data: bytes | bytearray = b"",
         seq_count: int = 0,
         source_id: int = 0,
         ack_flags: int = 0b1111,
@@ -268,7 +268,7 @@ class PusTc(AbstractSpacePacket):
         return packed_data
 
     @classmethod
-    def unpack(cls, data: bytes) -> PusTc:
+    def unpack(cls, data: bytes | bytearray) -> PusTc:
         """Create an instance from a raw bytestream.
 
         :raises BytesTooShortError: Passed bytestream too short.
@@ -283,7 +283,7 @@ class PusTc(AbstractSpacePacket):
         if len(data) < expected_packet_len:
             raise BytesTooShortError(expected_packet_len, len(data))
         tc_unpacked._app_data = data[header_len : expected_packet_len - 2]
-        tc_unpacked._crc16 = data[expected_packet_len - 2 : expected_packet_len]
+        tc_unpacked._crc16 = bytes(data[expected_packet_len - 2 : expected_packet_len])
         if CRC16_CCITT_FUNC(data[:expected_packet_len]) != 0:
             raise InvalidTcCrc16Error(tc_unpacked)
         return tc_unpacked

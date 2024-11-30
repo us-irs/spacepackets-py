@@ -197,7 +197,7 @@ class MetadataPdu(AbstractFileDirectiveBase):
         return packet
 
     @classmethod
-    def unpack(cls, data: bytes) -> MetadataPdu:
+    def unpack(cls, data: bytes | bytearray) -> MetadataPdu:
         """Generate an object instance from raw data. Care should be taken to check whether
         the raw bytestream really contains a Metadata PDU.
 
@@ -244,7 +244,7 @@ class MetadataPdu(AbstractFileDirectiveBase):
             metadata_pdu._parse_options(raw_packet=data, start_idx=current_idx)
         return metadata_pdu
 
-    def _parse_options(self, raw_packet: bytes, start_idx: int) -> None:
+    def _parse_options(self, raw_packet: bytes | bytearray, start_idx: int) -> None:
         self._options = []
         current_idx = start_idx
         while True:

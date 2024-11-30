@@ -75,7 +75,7 @@ class KeepAlivePdu(AbstractFileDirectiveBase):
         return keep_alive_packet
 
     @classmethod
-    def unpack(cls, data: bytes) -> KeepAlivePdu:
+    def unpack(cls, data: bytes | bytearray) -> KeepAlivePdu:
         """Generate an object instance from raw data. Care should be taken to check whether
         the raw bytestream really contains a Keep Alive PDU.
 

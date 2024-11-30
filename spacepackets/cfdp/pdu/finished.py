@@ -205,7 +205,7 @@ class FinishedPdu(AbstractFileDirectiveBase):
         return packet
 
     @classmethod
-    def unpack(cls, data: bytes) -> FinishedPdu:
+    def unpack(cls, data: bytes | bytearray) -> FinishedPdu:
         """Generate an object instance from raw data. Care should be taken to check whether
         the raw bytestream really contains a Finished PDU.
 
@@ -241,7 +241,7 @@ class FinishedPdu(AbstractFileDirectiveBase):
             finished_pdu._unpack_tlvs(rest_of_packet=data[current_idx:end_of_optional_tlvs_idx])
         return finished_pdu
 
-    def _unpack_tlvs(self, rest_of_packet: bytes) -> int:
+    def _unpack_tlvs(self, rest_of_packet: bytes | bytearray) -> int:
         current_idx = 0
         fs_responses_list = []
         fault_loc = None
@@ -266,7 +266,7 @@ class FinishedPdu(AbstractFileDirectiveBase):
             self.fault_location = fault_loc
         return current_idx
 
-    def __eq__(self, other: object):
+    def __eq__(self, other: object) -> bool:
         if not isinstance(other, FinishedPdu):
             return False
         return self._params == other._params and self.pdu_file_directive == other.pdu_file_directive

@@ -121,7 +121,7 @@ class AckPdu(AbstractFileDirectiveBase):
         )
 
     @classmethod
-    def unpack(cls, data: bytes) -> AckPdu:
+    def unpack(cls, data: bytes | bytearray) -> AckPdu:
         """Generate an object instance from raw data. Care should be taken to check whether
         the raw bytestream really contains an ACK PDU.
 

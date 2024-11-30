@@ -60,7 +60,7 @@ class PromptPdu(AbstractFileDirectiveBase):
         )
 
     @classmethod
-    def unpack(cls, data: bytes) -> PromptPdu:
+    def unpack(cls, data: bytes | bytearray) -> PromptPdu:
         """Generate an object instance from raw data. Care should be taken to check whether
         the raw bytestream really contains a Prompt PDU.
 
@@ -83,7 +83,7 @@ class PromptPdu(AbstractFileDirectiveBase):
         prompt_pdu.response_required = ResponseRequired((data[current_idx] & 0x80) >> 7)
         return prompt_pdu
 
-    def __eq__(self, other: object):
+    def __eq__(self, other: object) -> bool:
         if not isinstance(other, PromptPdu):
             return False
         return (

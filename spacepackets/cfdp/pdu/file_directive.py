@@ -133,7 +133,7 @@ class FileDirectivePduBase(AbstractFileDirectiveBase):
         )
         self._directive_type = directive_code
 
-    def verify_length_and_checksum(self, data: bytes) -> None:
+    def verify_length_and_checksum(self, data: bytes | bytearray) -> None:
         self.pdu_header.verify_length_and_checksum(data)
 
     @property
@@ -172,7 +172,7 @@ class FileDirectivePduBase(AbstractFileDirectiveBase):
         return data
 
     @classmethod
-    def unpack(cls, raw_packet: bytes) -> FileDirectivePduBase:
+    def unpack(cls, raw_packet: bytes | bytearray) -> FileDirectivePduBase:
         """Unpack a raw bytearray into the File Directive PDU object representation.
 
         :param raw_packet: Unpack PDU file directive base
@@ -195,7 +195,7 @@ class FileDirectivePduBase(AbstractFileDirectiveBase):
         if self.pdu_header.file_flag == LargeFileFlag.NORMAL and file_size > pow(2, 32):
             raise ValueError(f"File size {file_size} larger than 32 bit field")
 
-    def parse_fss_field(self, raw_packet: bytes, current_idx: int) -> tuple[int, int]:
+    def parse_fss_field(self, raw_packet: bytes | bytearray, current_idx: int) -> tuple[int, int]:
         """Parse the FSS field, which has different size depending on the large file flag being
         set or not. Returns the current index incremented and the parsed file size.
 

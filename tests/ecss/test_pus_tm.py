@@ -21,6 +21,7 @@ from spacepackets.ecss.tm import (
     PusTm,
     PusTmSecondaryHeader,
 )
+from spacepackets.exceptions import BytesTooShortError
 from spacepackets.util import PrintFormats, get_printable_data_string
 
 from .common import TEST_STAMP
@@ -223,8 +224,8 @@ class TestTelemetry(TestCase):
         self.assertEqual(tc_unpacked, new_ping_tm)
 
     def test_faulty_unpack(self):
-        self.assertRaises(ValueError, PusTm.unpack, None, None)
-        self.assertRaises(ValueError, PusTm.unpack, bytearray(), None)
+        self.assertRaises(TypeError, PusTm.unpack, None, None)
+        self.assertRaises(BytesTooShortError, PusTm.unpack, bytearray(), None)
 
     def test_invalid_sec_header_unpack(self):
         invalid_secondary_header = bytearray([0x20, 0x00, 0x01, 0x06])

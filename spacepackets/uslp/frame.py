@@ -164,7 +164,7 @@ class TransferFrameDataField:
         self,
         tfdz_cnstr_rules: TfdzConstructionRules,
         uslp_ident: UslpProtocolIdentifier,
-        tfdz: bytes,
+        tfdz: bytes | bytearray,
         fhp_or_lvop: int | None = None,
     ):
         """
@@ -199,7 +199,7 @@ class TransferFrameDataField:
         self.fhp_or_lvop = fhp_or_lvop
 
         self._size = 0
-        self.tfdz = tfdz
+        self.tfdz = bytes(tfdz)
         allowed_max_len = USLP_TFDF_MAX_SIZE - self.header_len()
         if self.len() > allowed_max_len:
             raise ValueError
@@ -276,13 +276,13 @@ class TransferFrameDataField:
             tfdz_cnstr_rules=TfdzConstructionRules.FpPacketSpanningMultipleFrames,
             uslp_ident=UslpProtocolIdentifier.SPACE_PACKETS_ENCAPSULATION_PACKETS,
             fhp_or_lvop=None,
-            tfdz=bytearray(),
+            tfdz=b"",
         )
 
     @classmethod
     def unpack(
         cls,
-        raw_tfdf: bytes,
+        raw_tfdf: bytes | bytearray,
         truncated: bool,
         exact_len: int,
         frame_type: FrameType | None,

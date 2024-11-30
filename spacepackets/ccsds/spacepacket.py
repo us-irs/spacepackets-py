@@ -394,7 +394,7 @@ class SpacePacketHeader(AbstractSpacePacket):
         return CCSDS_HEADER_LEN + self.data_len + 1
 
     @classmethod
-    def unpack(cls, data: bytes) -> SpacePacketHeader:
+    def unpack(cls, data: bytes | bytearray) -> SpacePacketHeader:
         """Unpack a raw space packet into the space packet header instance.
 
         :raise ValueError: Raw packet length invalid
@@ -445,8 +445,8 @@ class SpacePacket:
     def __init__(
         self,
         sp_header: SpacePacketHeader,
-        sec_header: bytes | None,
-        user_data: bytes | None,
+        sec_header: bytes | bytearray | None,
+        user_data: bytes | bytearray | None,
     ):
         self.sp_header = sp_header
         self.sec_header = sec_header

@@ -7,7 +7,7 @@ if TYPE_CHECKING:
 
 
 class CfdpLv:
-    def __init__(self, value: bytes):
+    def __init__(self, value: bytes | bytearray):
         """This class encapsulates CFDP Length-Value (LV) fields.
 
         Raises
@@ -42,7 +42,7 @@ class CfdpLv:
         return packet
 
     @classmethod
-    def unpack(cls, raw_bytes: bytes) -> CfdpLv:
+    def unpack(cls, raw_bytes: bytes | bytearray) -> CfdpLv:
         """Parses LV field at the start of the given bytearray
 
         :raise ValueError: Invalid length found

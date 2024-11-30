@@ -55,7 +55,7 @@ class CfdpTlv(AbstractTlvBase):
 
     MINIMAL_LEN = 2
 
-    def __init__(self, tlv_type: TlvType, value: bytes):
+    def __init__(self, tlv_type: TlvType, value: bytes | bytearray):
         """Constructor for TLV field.
 
         Raises
@@ -80,7 +80,7 @@ class CfdpTlv(AbstractTlvBase):
 
     @property
     def value(self) -> bytes:
-        return self._value
+        return bytes(self._value)
 
     def pack(self) -> bytearray:
         tlv_data = bytearray()
@@ -90,7 +90,7 @@ class CfdpTlv(AbstractTlvBase):
         return tlv_data
 
     @classmethod
-    def unpack(cls, data: bytes) -> CfdpTlv:
+    def unpack(cls, data: bytes | bytearray) -> CfdpTlv:
         """Parses LV field at the start of the given bytearray
 
         :param data:
@@ -284,7 +284,7 @@ class FileStoreRequestBase:
 
     @staticmethod
     def _common_unpacker(
-        raw_bytes: bytes,
+        raw_bytes: bytes | bytearray,
     ) -> tuple[FilestoreActionCode, str, int, int, str | None]:
         """Does only unpack common fields, does not unpack the filestore message of a Filestore
         Response package
@@ -456,7 +456,7 @@ class FileStoreResponseTlv(FileStoreRequestBase, AbstractTlvBase):
         return CfdpTlv(tlv_type=TlvType.FILESTORE_RESPONSE, value=tlv_value)
 
     @classmethod
-    def unpack(cls, data: bytes) -> FileStoreResponseTlv:
+    def unpack(cls, data: bytes | bytearray) -> FileStoreResponseTlv:
         cls._check_raw_tlv_field(data[0], FileStoreResponseTlv.TLV_TYPE)
         filestore_reply = cls.__empty()
         cls._set_fields(filestore_reply, data[2:])
@@ -471,7 +471,7 @@ class FileStoreResponseTlv(FileStoreRequestBase, AbstractTlvBase):
         return fs_response
 
     @classmethod
-    def _set_fields(cls, instance: FileStoreResponseTlv, data: bytes) -> None:
+    def _set_fields(cls, instance: FileStoreResponseTlv, data: bytes | bytearray) -> None:
         action_code, first_name, status_code, idx, second_name = cls._common_unpacker(
             raw_bytes=data
         )
@@ -519,7 +519,7 @@ class EntityIdTlv(AbstractTlvBase):
         return cls(entity_id=b"")
 
     @classmethod
-    def unpack(cls, data: bytes) -> EntityIdTlv:
+    def unpack(cls, data: bytes | bytearray) -> EntityIdTlv:
         entity_id_tlv = cls.__empty()
         entity_id_tlv.tlv = CfdpTlv.unpack(data=data)
         entity_id_tlv.check_type(tlv_type=TlvType.ENTITY_ID)

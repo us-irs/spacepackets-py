@@ -227,7 +227,7 @@ class NakPdu(AbstractFileDirectiveBase):
         return nak_pdu
 
     @classmethod
-    def unpack(cls, data: bytes) -> NakPdu:
+    def unpack(cls, data: bytes | bytearray) -> NakPdu:
         """Generate an object instance from raw data. The user should take care to check whether
         the raw bytestream really contains a NAK PDU.
 

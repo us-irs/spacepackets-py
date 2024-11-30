@@ -215,7 +215,7 @@ class FileDataPdu(AbstractPduBase):
         return file_data_pdu
 
     @classmethod
-    def unpack(cls, data: bytes) -> FileDataPdu:
+    def unpack(cls, data: bytes | bytearray) -> FileDataPdu:
         """Generate an object instance from raw data. Care should be taken to check whether
         the raw bytestream really contains a File Data PDU.
 
@@ -242,7 +242,7 @@ class FileDataPdu(AbstractPduBase):
             metadata = data[current_idx : current_idx + segment_metadata_len]
             current_idx += segment_metadata_len
             file_data_packet.segment_metadata = SegmentMetadata(
-                record_cont_state=rec_cont_state, metadata=metadata
+                record_cont_state=rec_cont_state, metadata=bytes(metadata)
             )
         if not file_data_packet.pdu_header.large_file_flag_set:
             struct_arg_tuple = ("!I", 4)
@@ -259,7 +259,7 @@ class FileDataPdu(AbstractPduBase):
         if file_data_packet.pdu_header.crc_flag == CrcFlag.WITH_CRC:
             data = data[:-2]
         if current_idx < len(data):
-            file_data_packet._params.file_data = data[current_idx:]
+            file_data_packet._params.file_data = bytes(data[current_idx:])
         return file_data_packet
 
     @property

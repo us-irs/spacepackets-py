@@ -26,6 +26,6 @@ class TestDirective(TestCase):
         invalid_fss = bytes([0x00, 0x01])
         with self.assertRaises(ValueError):
             file_directive_header.parse_fss_field(raw_packet=invalid_fss, current_idx=0)
-        file_directive_header.pdu_header.file_size = LargeFileFlag.LARGE
+        file_directive_header.pdu_header.file_flag = LargeFileFlag.LARGE
         with self.assertRaises(ValueError):
             file_directive_header.parse_fss_field(raw_packet=invalid_fss, current_idx=0)

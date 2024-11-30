@@ -71,7 +71,7 @@ class MessageToUserTlv(AbstractTlvBase):
         return cls(b"")
 
     @classmethod
-    def unpack(cls, data: bytes) -> MessageToUserTlv:
+    def unpack(cls, data: bytes | bytearray) -> MessageToUserTlv:
         msg_to_user_tlv = cls.__empty()
         msg_to_user_tlv.tlv = CfdpTlv.unpack(data)
         msg_to_user_tlv.check_type(MessageToUserTlv.TLV_TYPE)
@@ -98,7 +98,7 @@ class ReservedCfdpMessage(AbstractTlvBase):
     conversion.
     """
 
-    def __init__(self, msg_type: int, value: bytes):
+    def __init__(self, msg_type: int, value: bytes | bytearray):
         assert msg_type < pow(2, 8) - 1
         full_value = bytearray(b"cfdp")
         full_value.append(msg_type)
@@ -217,7 +217,7 @@ class ReservedCfdpMessage(AbstractTlvBase):
             or self.get_cfdp_proxy_message_type() != ProxyMessageType.CLOSURE_REQUEST
         ):
             return None
-        return self.value[5] & 0b1
+        return bool(self.value[5] & 0b1)
 
     def get_proxy_transmission_mode(self) -> TransmissionMode | None:
         if (
@@ -270,7 +270,7 @@ class ReservedCfdpMessage(AbstractTlvBase):
             raise ValueError(
                 f"value with length {len(self.value)} too small for dir listing options."
             )
-        return DirListingOptions((self.value[5] >> 1) & 0b1, self.value[5] & 0b1)
+        return DirListingOptions(bool((self.value[5] >> 1) & 0b1), bool(self.value[5] & 0b1))
 
 
 @dataclasses.dataclass
@@ -284,7 +284,7 @@ class ProxyPutRequestParams:
         return self.source_file_name.value.decode()
 
     @property
-    def source_file_as_path(self) -> str:
+    def source_file_as_path(self) -> Path:
         return Path(self.source_file_as_str)
 
     @property
@@ -292,7 +292,7 @@ class ProxyPutRequestParams:
         return self.dest_file_name.value.decode()
 
     @property
-    def dest_file_as_path(self) -> str:
+    def dest_file_as_path(self) -> Path:
         return Path(self.dest_file_as_str)
 
 

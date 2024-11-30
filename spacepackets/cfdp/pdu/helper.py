@@ -126,7 +126,9 @@ class PduFactory:
     """Helper class to generate PDUs and retrieve PDU information from a raw bytestream"""
 
     @staticmethod
-    def from_raw(data: bytes) -> GenericPduPacket | None:  # noqa: PLR0911
+    def from_raw(data: bytes | bytearray) -> GenericPduPacket | None:  # noqa: PLR0911
+        if len(data) == 0:
+            return None
         if not PduFactory.is_file_directive(data):
             return FileDataPdu.unpack(data)
         directive = PduFactory.pdu_directive_type(data)
@@ -147,19 +149,19 @@ class PduFactory:
         return None
 
     @staticmethod
-    def from_raw_to_holder(data: bytes) -> PduHolder:
+    def from_raw_to_holder(data: bytes | bytearray) -> PduHolder:
         return PduHolder(PduFactory.from_raw(data))
 
     @staticmethod
-    def pdu_type(data: bytes) -> PduType:
+    def pdu_type(data: bytes | bytearray) -> PduType:
         return PduType((data[0] >> 4) & 0x01)
 
     @staticmethod
-    def is_file_directive(data: bytes) -> bool:
+    def is_file_directive(data: bytes | bytearray) -> bool:
         return PduFactory.pdu_type(data) == PduType.FILE_DIRECTIVE
 
     @staticmethod
-    def pdu_directive_type(data: bytes) -> DirectiveType | None:
+    def pdu_directive_type(data: bytes | bytearray) -> DirectiveType | None:
         """Retrieve the PDU directive type from a raw bytestream.
 
         :raises ValueError: Invalid directive type.

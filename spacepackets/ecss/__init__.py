@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from crcmod.predefined import mkPredefinedCrcFun
 
 from .defs import PusService, PusVersion
@@ -40,7 +42,7 @@ __all__ = [
 ]
 
 
-def check_pus_crc(tc_packet: bytes) -> bool:
+def check_pus_crc(tc_packet: bytes | bytearray) -> bool:
     """Checks the CRC of a given raw PUS packet. It is expected that the passed packet is the exact
     raw PUS packet. Both TC and TM packets can be passed to this function because both packet
     formats have a CCITT-CRC16 at the last two bytes as specified in the PUS standard.
