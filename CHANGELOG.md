@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 # [unreleased]
 
+# [v0.26.1] 2024-11-30
+
 ## Fixed
 
 - Unpacking / re-packing was buggy for some file directives when the PDU checksum was activated.
@@ -17,6 +19,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   - File Data
   - Metadata
   - Finished
+
+## Added
+
+- Typing improvements: Most raw byte APIs like `unpack` methods now accept both `bytes` and
+  `bytearray`
 
 # [v0.26.0] 2024-11-27
 
