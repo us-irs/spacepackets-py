@@ -122,7 +122,7 @@ class EofPdu(AbstractFileDirectiveBase):
         return eof_pdu
 
     @classmethod
-    def unpack(cls, data: bytes) -> EofPdu:
+    def unpack(cls, data: bytes | bytearray) -> EofPdu:
         """Generate an object instance from raw data. Care should be taken to check whether
         the raw bytestream really contains an EOF PDU.
 
@@ -156,7 +156,9 @@ class EofPdu(AbstractFileDirectiveBase):
             eof_pdu.fault_location = EntityIdTlv.unpack(data=data[current_idx:])
         return eof_pdu
 
-    def __eq__(self, other: EofPdu):
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, EofPdu):
+            return False
         return (
             self.pdu_file_directive == other.pdu_file_directive
             and self.condition_code == other.condition_code

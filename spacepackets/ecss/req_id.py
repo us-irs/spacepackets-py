@@ -36,7 +36,7 @@ tc_psc=PacketSeqCtrl(seq_flags=<SequenceFlags.UNSEGMENTED: 3>, seq_count=17), cc
         return cls(PacketId.empty(), PacketSeqCtrl.empty())
 
     @classmethod
-    def unpack(cls, tm_data: bytes) -> RequestId:
+    def unpack(cls, tm_data: bytes | bytearray) -> RequestId:
         if len(tm_data) < 4:
             raise BytesTooShortError(4, len(tm_data))
         packet_id_version_raw = struct.unpack("!H", tm_data[0:2])[0]
@@ -79,7 +79,9 @@ tc_psc=PacketSeqCtrl(seq_flags=<SequenceFlags.UNSEGMENTED: 3>, seq_count=17), cc
     def __str__(self):
         return f"Request ID: [{self.tc_packet_id}, {self.tc_psc}]"
 
-    def __eq__(self, other: RequestId):
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, RequestId):
+            return False
         return self.as_u32() == other.as_u32()
 
     def __hash__(self):

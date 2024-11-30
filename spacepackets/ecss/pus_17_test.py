@@ -80,7 +80,7 @@ class Service17Tm(AbstractPusTm):
         return cls(apid=0, subservice=0, timestamp=b"")
 
     @classmethod
-    def unpack(cls, data: bytes, timestamp_len: int) -> Service17Tm:
+    def unpack(cls, data: bytes | bytearray, timestamp_len: int) -> Service17Tm:
         """
 
         :raises BytesTooShortError: Passed bytestream too short.

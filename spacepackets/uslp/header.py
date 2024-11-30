@@ -70,7 +70,7 @@ class PrimaryHeaderBase:
 
     @staticmethod
     def _unpack_raw_header_base_fields(
-        raw_packet: bytes,
+        raw_packet: bytes | bytearray,
         truncated: bool = False,
         uslp_version: int = USLP_VERSION_NUMBER,
     ) -> tuple[int, SourceOrDestField, int, int]:
@@ -130,7 +130,7 @@ class TruncatedPrimaryHeader(PrimaryHeaderBase):
     @classmethod
     def unpack(
         cls,
-        raw_packet: bytes,
+        raw_packet: bytes | bytearray,
         uslp_version: int = USLP_VERSION_NUMBER,
     ) -> TruncatedPrimaryHeader:
         """Unpack USLP primary header from raw bytearray.
@@ -208,7 +208,7 @@ class PrimaryHeader(PrimaryHeaderBase):
             | self.vcf_count_len
         )
         if self.vcf_count_len > 0 and self.vcf_count is None:
-            raise ValueError
+            raise ValueError(f"VCF count is None for VCS count length {self.vcf_count_len}")
         if self.vcf_count_len == 1:
             packet.append(self.vcf_count)
         elif self.vcf_count_len == 2:
@@ -239,7 +239,9 @@ class PrimaryHeader(PrimaryHeaderBase):
         )
 
     @classmethod
-    def unpack(cls, raw_packet: bytes, uslp_version: int = USLP_VERSION_NUMBER) -> PrimaryHeader:
+    def unpack(
+        cls, raw_packet: bytes | bytearray, uslp_version: int = USLP_VERSION_NUMBER
+    ) -> PrimaryHeader:
         """Unpack a regular transfer frame header from a raw bytearray
 
         :param raw_packet:

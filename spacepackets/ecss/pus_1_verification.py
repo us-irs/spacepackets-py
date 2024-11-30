@@ -51,14 +51,14 @@ class FailureNotice:
 
     @classmethod
     def unpack(
-        cls, data: bytes, num_bytes_err_code: int, num_bytes_data: int | None = None
+        cls, data: bytes | bytearray, num_bytes_err_code: int, num_bytes_data: int | None = None
     ) -> FailureNotice:
         pfc = num_bytes_err_code * 8
         if num_bytes_data is None:
             num_bytes_data = len(data) - num_bytes_err_code
         return cls(
             code=PacketFieldEnum.unpack(data, pfc),
-            data=data[num_bytes_err_code : num_bytes_err_code + num_bytes_data],
+            data=bytes(data[num_bytes_err_code : num_bytes_err_code + num_bytes_data]),
         )
 
     def __repr__(self):
@@ -125,7 +125,7 @@ class Service1Tm(AbstractPusTm):
         self,
         apid: int,
         subservice: Subservice,
-        timestamp: bytes,
+        timestamp: bytes | bytearray,
         verif_params: VerificationParams | None = None,
         seq_count: int = 0,
         packet_version: int = 0b000,
@@ -148,7 +148,7 @@ class Service1Tm(AbstractPusTm):
         )
         if verif_params is not None:
             verif_params.verify_against_subservice(subservice)
-            self.pus_tm.tm_data = verif_params.pack()
+            self.pus_tm.tm_data = bytes(verif_params.pack())
 
     def pack(self) -> bytearray:
         return self.pus_tm.pack()

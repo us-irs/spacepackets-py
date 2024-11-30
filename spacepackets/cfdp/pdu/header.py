@@ -120,7 +120,9 @@ class AbstractPduBase(abc.ABC):
     def large_file_flag_set(self) -> bool:
         return self.file_flag == LargeFileFlag.LARGE
 
-    def __eq__(self, other: AbstractPduBase):
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, AbstractPduBase):
+            return False
         return (
             self.pdu_type == other.pdu_type
             and self.file_flag == other.file_flag
@@ -131,7 +133,7 @@ class AbstractPduBase(abc.ABC):
         )
 
     @staticmethod
-    def header_len_from_raw(data: bytes) -> int:
+    def header_len_from_raw(data: bytes | bytearray) -> int:
         entity_id_len = ((data[3] >> 4) & 0b111) + 1
         seq_num_len = (data[3] & 0b111) + 1
         return AbstractPduBase.FIXED_LENGTH + 2 * entity_id_len + seq_num_len
@@ -306,7 +308,7 @@ class PduHeader(AbstractPduBase):
         )
 
     @classmethod
-    def unpack(cls, data: bytes) -> PduHeader:
+    def unpack(cls, data: bytes | bytearray) -> PduHeader:
         """Unpack a raw bytearray into the PDU header object representation.
 
         :param data:
@@ -352,7 +354,7 @@ class PduHeader(AbstractPduBase):
         pdu_header.set_entity_ids(source_entity_id=source_entity_id, dest_entity_id=dest_entity_id)
         return pdu_header
 
-    def verify_length_and_checksum(self, data: bytes) -> int:
+    def verify_length_and_checksum(self, data: bytes | bytearray) -> int:
         if len(data) < self.packet_len:
             raise BytesTooShortError(self.packet_len, len(data))
         if (

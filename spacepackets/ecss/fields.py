@@ -100,7 +100,7 @@ class PacketFieldEnum(PacketFieldBase):
         return self.check_pfc(self.pfc)
 
     @classmethod
-    def unpack(cls, data: bytes, pfc: int) -> PacketFieldEnum:
+    def unpack(cls, data: bytes | bytearray, pfc: int) -> PacketFieldEnum:
         """Construct from a raw bytestream.
 
         :raises BytesTooShortError: Raw bytestream too short.
@@ -129,7 +129,9 @@ class PacketFieldEnum(PacketFieldBase):
     def __repr__(self):
         return f"{self.__class__.__name__}(pfc={self.pfc!r}, val={self.val!r})"
 
-    def __eq__(self, other: PacketFieldEnum):
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, PacketFieldEnum):
+            return False
         return self.pfc == other.pfc and self.val == other.val
 
 
