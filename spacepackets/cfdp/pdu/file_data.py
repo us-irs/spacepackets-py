@@ -266,7 +266,9 @@ class FileDataPdu(AbstractPduBase):
     def packet_len(self) -> int:
         return self.pdu_header.packet_len
 
-    def __eq__(self, other: FileDataPdu):
+    def __eq__(self, other: object):
+        if not isinstance(other, FileDataPdu):
+            return False
         return self.pdu_header == other.pdu_header and self._params == other._params
 
     def __repr__(self):

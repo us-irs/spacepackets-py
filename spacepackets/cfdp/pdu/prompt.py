@@ -83,7 +83,9 @@ class PromptPdu(AbstractFileDirectiveBase):
         prompt_pdu.response_required = ResponseRequired((data[current_idx] & 0x80) >> 7)
         return prompt_pdu
 
-    def __eq__(self, other: PromptPdu):
+    def __eq__(self, other: object):
+        if not isinstance(other, PromptPdu):
+            return False
         return (
             self.pdu_file_directive == other.pdu_file_directive
             and self.response_required == other.response_required

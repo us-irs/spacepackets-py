@@ -66,6 +66,7 @@ class TestEofPdu(TestCase):
         # verify we can round-trip pack/unpack
         eof_unpacked = EofPdu.unpack(data=eof_raw)
         self.assertEqual(eof_unpacked, eof)
+        self.assertEqual(eof_unpacked.pack(), eof.pack())
 
     def test_from_factory(self):
         eof_pdu_raw = self.eof_pdu.pack()

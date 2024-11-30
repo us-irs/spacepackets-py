@@ -265,7 +265,9 @@ class MetadataPdu(AbstractFileDirectiveBase):
             f" options={self.options!r}, pdu_conf={self.pdu_file_directive.pdu_conf})"
         )
 
-    def __eq__(self, other: MetadataPdu):
+    def __eq__(self, other: object):
+        if not isinstance(other, MetadataPdu):
+            return False
         return (
             self.pdu_file_directive == other.pdu_file_directive
             and self.params.closure_requested == other.params.closure_requested

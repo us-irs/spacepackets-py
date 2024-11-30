@@ -264,15 +264,18 @@ class NakPdu(AbstractFileDirectiveBase):
             data[current_idx : current_idx + struct_arg_tuple[1]],
         )[0]
         current_idx += struct_arg_tuple[1]
-        if current_idx < len(data):
-            packet_size_check = (len(data) - current_idx) % (struct_arg_tuple[1] * 2)
+        end_of_segment_req_idx = len(data)
+        if nak_pdu.pdu_header.crc_flag == CrcFlag.WITH_CRC:
+            end_of_segment_req_idx -= 2
+        if current_idx < end_of_segment_req_idx:
+            packet_size_check = (end_of_segment_req_idx - current_idx) % (struct_arg_tuple[1] * 2)
             if packet_size_check != 0:
                 raise ValueError(
                     "Invalid size for remaining data, "
                     f"which should be a multiple of {struct_arg_tuple[1] * 2}"
                 )
             segment_requests = []
-            while current_idx < len(data):
+            while current_idx < end_of_segment_req_idx:
                 start_of_segment = struct.unpack(
                     struct_arg_tuple[0],
                     data[current_idx : current_idx + struct_arg_tuple[1]],
@@ -289,7 +292,9 @@ class NakPdu(AbstractFileDirectiveBase):
             nak_pdu.segment_requests = segment_requests
         return nak_pdu
 
-    def __eq__(self, other: NakPdu):
+    def __eq__(self, other: object):
+        if not isinstance(other, NakPdu):
+            return False
         return (
             self.pdu_file_directive == other.pdu_file_directive
             and self._segment_requests == other._segment_requests

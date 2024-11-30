@@ -48,7 +48,7 @@ class TestKeepAlivePdu(TestCase):
         keep_alive_pdu_large = KeepAlivePdu(pdu_conf=self.pdu_conf, progress=0)
         keep_alive_pdu_invalid = keep_alive_pdu_large.pack()[:-1]
         with self.assertRaises(ValueError):
-            KeepAlivePdu.unpack(data=keep_alive_pdu_invalid)
+            KeepAlivePdu.unpack(bytes(keep_alive_pdu_invalid))
 
     def test_unpack(self):
         keep_alive_pdu_raw = self.keep_alive_pdu.pack()

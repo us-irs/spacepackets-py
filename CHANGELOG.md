@@ -8,6 +8,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 # [unreleased]
 
+## Fixed
+
+- Unpacking / re-packing was buggy for some file directives when the PDU checksum was activated.
+  This was fixed for the following PDUs:
+  - NAK
+  - EOF
+  - File Data
+  - Metadata
+  - Finished
+
 # [v0.26.0] 2024-11-27
 
 - Python 3.8 is not supported anymore as it has reached end-of-life.
