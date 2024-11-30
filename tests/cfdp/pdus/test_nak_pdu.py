@@ -188,6 +188,17 @@ class TestNakPdu(TestCase):
         nak_unpacked = NakPdu.unpack(data=nak_packed)
         self.assertEqual(nak_unpacked.pack(), nak_packed)
 
+    def test_roundtrip_with_file_segments_and_crc(self):
+        self.nak_pdu.start_of_scope = 0
+        self.nak_pdu.end_of_scope = 200
+        segment_requests = [(20, 40), (60, 80)]
+        self.nak_pdu.pdu_header.crc_flag = CrcFlag.WITH_CRC
+        self.nak_pdu.segment_requests = segment_requests
+        nak_raw = self.nak_pdu.pack()
+        nak_unpacked = NakPdu.unpack(nak_raw)
+        self.assertEqual(nak_unpacked, self.nak_pdu)
+        self.assertEqual(nak_unpacked.pack(), self.nak_pdu.pack())
+
     def test_nak_pdu_errors(self):
         self.nak_pdu.start_of_scope = 0
         self.nak_pdu.end_of_scope = 200

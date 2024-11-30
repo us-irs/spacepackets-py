@@ -76,7 +76,9 @@ class AckPdu(AbstractFileDirectiveBase):
     def pdu_header(self) -> PduHeader:
         return self.pdu_file_directive.pdu_header
 
-    def __eq__(self, other: AckPdu):
+    def __eq__(self, other: object):
+        if not isinstance(other, AckPdu):
+            return False
         return (
             self.pdu_file_directive == other.pdu_file_directive
             and self.directive_code_of_acked_pdu == other.directive_code_of_acked_pdu

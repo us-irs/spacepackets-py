@@ -86,6 +86,7 @@ class TestFileDataPdu(TestCase):
         self.assertEqual(packed, expected_bytes)
         unpacked = FileDataPdu.unpack(packed)
         self.assertEqual(unpacked, fd_pdu)
+        self.assertEqual(unpacked.pack(), fd_pdu.pack())
 
     def test_with_seg_metadata(self):
         fd_params = FileDataParams(

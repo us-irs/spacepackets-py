@@ -234,8 +234,11 @@ class FinishedPdu(AbstractFileDirectiveBase):
         finished_pdu.condition_code = params.condition_code
         finished_pdu._params = params
         current_idx += 1
-        if len(data) > current_idx:
-            finished_pdu._unpack_tlvs(rest_of_packet=data[current_idx : finished_pdu.packet_len])
+        end_of_optional_tlvs_idx = finished_pdu.packet_len
+        if finished_pdu.pdu_header.crc_flag == CrcFlag.WITH_CRC:
+            end_of_optional_tlvs_idx -= 2
+        if end_of_optional_tlvs_idx > current_idx:
+            finished_pdu._unpack_tlvs(rest_of_packet=data[current_idx:end_of_optional_tlvs_idx])
         return finished_pdu
 
     def _unpack_tlvs(self, rest_of_packet: bytes) -> int:
@@ -263,7 +266,9 @@ class FinishedPdu(AbstractFileDirectiveBase):
             self.fault_location = fault_loc
         return current_idx
 
-    def __eq__(self, other: FinishedPdu):
+    def __eq__(self, other: object):
+        if not isinstance(other, FinishedPdu):
+            return False
         return self._params == other._params and self.pdu_file_directive == other.pdu_file_directive
 
     def __repr__(self):
