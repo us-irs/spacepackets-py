@@ -35,9 +35,6 @@ dependencies = [
 [project.urls]
 "Homepage" = "https://github.com/us-irs/spacepackets-py"
 
-[tool.setuptools.packages]
-find = {}
-
 [tool.ruff]
 exclude = [
     ".git",
