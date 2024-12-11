@@ -3,9 +3,8 @@ API Documentation
 
 This package is split into multiple submodules:
 
-- :py:mod:`spacepackets.ccsds`: Contains CCSDS specific code. This includes the space packet
-  implementation inside the :py:mod:`spacepackets.ccsds.spacepacket` module and time related
-  implementations in the :py:mod:`spacepackets.ccsds.time` module
+- :py:mod:`spacepackets.ccsds`: Contains CCSDS specific code. This includes the CCSDS space packet
+  helpers and the CCSDS time implementations in the :py:mod:`spacepackets.ccsds.time` module.
 - :py:mod:`spacepackets.cfdp`: Contains packet implementations related to the CCSDS File Delivery Protocol
 - :py:mod:`spacepackets.ecss`: Contains packet implementations related to the ECSS PUS standard.
 - :py:mod:`spacepackets.uslp`: Contains packet implementations related to the USLP standard.
@@ -22,11 +21,8 @@ This package also uses the :py:mod:`logging` package to emit warnings.
    api/ccsds
    api/ccsds_time
    api/ecss
-   api/ecss_tc
-   api/ecss_tm
    api/cfdp
    api/cfdp_pdu
-   api/cfdp_tlv
    api/uslp
    api/countdown
    api/seqcount
