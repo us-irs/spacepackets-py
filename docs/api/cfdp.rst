@@ -8,17 +8,11 @@ Package Contents
    :members:
    :undoc-members:
    :show-inheritance:
-   :no-index:
 
 PDU Submodule
 ----------------
 
 :ref:`api/cfdp_pdu:CFDP PDU Subpackage`
-
-Type-Length-Value (TLV) Submodule
--------------------------------------
-
-:ref:`api/cfdp_tlv:CFDP Type-Length-Value (TLV) Subpackage`
 
 Configuration Submodule
 -------------------------------------
@@ -33,14 +27,6 @@ Length-Value (LV) Submodule
 -------------------------------------
 
 .. automodule:: spacepackets.cfdp.lv
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-Common Definitions
--------------------------------------
-
-.. automodule:: spacepackets.cfdp.defs
    :members:
    :undoc-members:
    :show-inheritance:

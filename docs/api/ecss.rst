@@ -1,31 +1,13 @@
 ECSS Package 
 =======================
 
+The following classes can be used to create and read
+ECSS PUS-C packets:
+
+- :py:class:`spacepackets.ecss.PusTc`
+- :py:class:`spacepackets.ecss.PusTm`
+
 .. automodule:: spacepackets.ecss
-   :members:
-   :undoc-members:
-   :show-inheritance:
-   :no-index:
-
-.. automodule:: spacepackets.ecss.defs
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-ECSS PUS Telecommand Module
-----------------------------
-
-:ref:`api/ecss_tc:ECSS Telecommand Module`
-
-ECSS PUS Telemetry Module
-----------------------------
-
-:ref:`api/ecss_tm:ECSS Telemetry Module`
-
-ECSS Fields Submodule
-----------------------------------
-
-.. automodule:: spacepackets.ecss.fields
    :members:
    :undoc-members:
    :show-inheritance:
