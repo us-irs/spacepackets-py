@@ -1,5 +1,7 @@
+import struct
 from unittest import TestCase
 
+from spacepackets.crc import CRC16_CCITT_FUNC
 from spacepackets.uslp.defs import (
     UslpFhpVhopFieldMissingError,
     UslpInvalidConstructionRulesError,
@@ -30,6 +32,37 @@ from spacepackets.uslp.header import (
 
 
 class TestUslp(TestCase):
+    def setUp(self) -> None:
+        # Initialize with frame length 0 and set frame length field later with a helper function
+        self.primary_header = PrimaryHeader(
+            scid=0x10,
+            map_id=0b0011,
+            src_dest=SourceOrDestField.SOURCE,
+            vcid=0b110111,
+            frame_len=0,
+            op_ctrl_flag=False,
+            vcf_count_len=0,
+            prot_ctrl_cmd_flag=ProtocolCommandFlag.USER_DATA,
+            bypass_seq_ctrl_flag=BypassSequenceControlFlag.SEQ_CTRLD_QOS,
+        )
+        self.fp_tfdf = TransferFrameDataField(
+            tfdz_cnstr_rules=TfdzConstructionRules.FpPacketSpanningMultipleFrames,
+            uslp_ident=UslpProtocolIdentifier.SPACE_PACKETS_ENCAPSULATION_PACKETS,
+            tfdz=bytearray(),
+            fhp_or_lvop=0,
+        )
+        # Packet without op control field, without insert zone and without frame error control
+        self.transfer_frame = TransferFrame(
+            header=self.primary_header,
+            op_ctrl_field=None,
+            insert_zone=None,
+            tfdf=self.fp_tfdf,
+            has_fecf=False,
+        )
+        # This sets the correct frame length in the primary header
+        self.transfer_frame.set_frame_len_in_header()
+        return super().setUp()
+
     def test_header(self):
         primary_header = PrimaryHeader(
             scid=pow(2, 16) - 2,
@@ -139,7 +172,9 @@ class TestUslp(TestCase):
         self.assertEqual(packed_header, unpacked_primary_header.pack())
         self.assertRaises(UslpTypeMissmatchError, TruncatedPrimaryHeader.unpack, packed_header)
         self.assertRaises(
-            UslpInvalidRawPacketOrFrameLenError, TruncatedPrimaryHeader.unpack, bytearray()
+            UslpInvalidRawPacketOrFrameLenError,
+            TruncatedPrimaryHeader.unpack,
+            bytearray(),
         )
         self.assertRaises(
             UslpInvalidRawPacketOrFrameLenError,
@@ -202,36 +237,10 @@ class TestUslp(TestCase):
         unpacked_truncated = TruncatedPrimaryHeader.unpack(raw_packet=packed_header)
         self.assertEqual(unpacked_truncated.pack(), packed_header)
 
-    def test_frame(self):
-        # Initialize with frame length 0 and set frame length field later with a helper function
-        primary_header = PrimaryHeader(
-            scid=0x10,
-            map_id=0b0011,
-            src_dest=SourceOrDestField.SOURCE,
-            vcid=0b110111,
-            frame_len=0,
-            op_ctrl_flag=False,
-            vcf_count_len=0,
-            prot_ctrl_cmd_flag=ProtocolCommandFlag.USER_DATA,
-            bypass_seq_ctrl_flag=BypassSequenceControlFlag.SEQ_CTRLD_QOS,
-        )
-        fp_tfdf = TransferFrameDataField(
-            tfdz_cnstr_rules=TfdzConstructionRules.FpPacketSpanningMultipleFrames,
-            uslp_ident=UslpProtocolIdentifier.SPACE_PACKETS_ENCAPSULATION_PACKETS,
-            tfdz=bytearray(),
-            fhp_or_lvop=0,
-        )
-        # Packet without op control field, without insert zone and without frame error control
-        transfer_frame = TransferFrame(
-            header=primary_header,
-            op_ctrl_field=None,
-            insert_zone=None,
-            tfdf=fp_tfdf,
-            fecf=None,
-        )
+    def test_frame_pack(self):
         # This sets the correct frame length in the primary header
-        transfer_frame.set_frame_len_in_header()
-        frame_packed = transfer_frame.pack(truncated=False, frame_type=FrameType.FIXED)
+        self.transfer_frame.set_frame_len_in_header()
+        frame_packed = self.transfer_frame.pack(truncated=False, frame_type=FrameType.FIXED)
         # 7 byte primary header + TFDF with 3 bytes, TFDZ is empty
         self.assertEqual(len(frame_packed), 10)
         self.assertEqual((frame_packed[4] << 8) | frame_packed[5], len(frame_packed) - 1)
@@ -239,10 +248,10 @@ class TestUslp(TestCase):
         self.assertEqual(frame_packed[7], 0x00)
         self.assertEqual(frame_packed[8], 0x00)
         self.assertEqual(frame_packed[9], 0x00)
-        transfer_frame.tfdf.tfdz_contr_rules = TfdzConstructionRules.FpFixedStartOfMapaSDU
-        transfer_frame.tfdf.uslp_ident = UslpProtocolIdentifier.IDLE_DATA
-        transfer_frame.tfdf.fhp_or_lvop = 0xAFFE
-        frame_packed = transfer_frame.pack()
+        self.transfer_frame.tfdf.tfdz_contr_rules = TfdzConstructionRules.FpFixedStartOfMapaSDU
+        self.transfer_frame.tfdf.uslp_ident = UslpProtocolIdentifier.IDLE_DATA
+        self.transfer_frame.tfdf.fhp_or_lvop = 0xAFFE
+        frame_packed = self.transfer_frame.pack()
         self.assertEqual(len(frame_packed), 10)
         self.assertEqual((frame_packed[4] << 8) | frame_packed[5], len(frame_packed) - 1)
         # TFDZ construction rule is 0b001, USLP identifier is 0b11111, concatenation is 0x3f
@@ -251,14 +260,20 @@ class TestUslp(TestCase):
         # still set correctly
         self.assertEqual(frame_packed[8], 0xAF)
         self.assertEqual(frame_packed[9], 0xFE)
+
+    def test_frame_unpack(self):
         frame_properties = FixedFrameProperties(has_insert_zone=False, has_fecf=False, fixed_len=10)
+        self.fp_tfdf.uslp_ident = UslpProtocolIdentifier.IDLE_DATA
+        self.fp_tfdf.tfdz_contr_rules = TfdzConstructionRules.FpFixedStartOfMapaSDU
+        self.fp_tfdf.fhp_or_lvop = 0xAFFE
+        frame_packed = self.transfer_frame.pack(truncated=False, frame_type=FrameType.FIXED)
         frame_unpacked = TransferFrame.unpack(
             raw_frame=frame_packed,
             frame_type=FrameType.FIXED,
             frame_properties=frame_properties,
         )
         self.assertEqual(frame_unpacked.insert_zone, None)
-        self.assertEqual(frame_unpacked.fecf, None)
+        self.assertEqual(frame_unpacked.has_fecf, False)
         self.assertEqual(frame_unpacked.op_ctrl_field, None)
         self.assertEqual(frame_unpacked.tfdf.uslp_ident, UslpProtocolIdentifier.IDLE_DATA)
         self.assertEqual(
@@ -267,11 +282,11 @@ class TestUslp(TestCase):
         )
         self.assertEqual(frame_unpacked.tfdf.fhp_or_lvop, 0xAFFE)
         self.assertEqual(frame_unpacked.tfdf.tfdz, bytearray())
-        self.assertEqual(frame_unpacked.header.pack(), transfer_frame.header.pack())
+        self.assertEqual(frame_unpacked.header.pack(), self.transfer_frame.header.pack())
+
+    def test_some_errors(self):
         with self.assertRaises(ValueError):
             FixedFrameProperties(fixed_len=5, has_fecf=False, has_insert_zone=True)
-        with self.assertRaises(ValueError):
-            FixedFrameProperties(fixed_len=5, has_fecf=True, has_insert_zone=False)
         with self.assertRaises(ValueError):
             invalid_tfdz = bytearray(70000)
             tfdf = TransferFrameDataField(
@@ -280,8 +295,8 @@ class TestUslp(TestCase):
                 tfdz=invalid_tfdz,
                 fhp_or_lvop=0,
             )
-        self.assertEqual(fp_tfdf.verify_frame_type(frame_type=FrameType.FIXED), True)
-        self.assertEqual(fp_tfdf.verify_frame_type(frame_type=FrameType.VARIABLE), False)
+        self.assertEqual(self.fp_tfdf.verify_frame_type(frame_type=FrameType.FIXED), True)
+        self.assertEqual(self.fp_tfdf.verify_frame_type(frame_type=FrameType.VARIABLE), False)
         vp_tfdf = TransferFrameDataField(
             tfdz_cnstr_rules=TfdzConstructionRules.VpNoSegmentation,
             uslp_ident=UslpProtocolIdentifier.SPACE_PACKETS_ENCAPSULATION_PACKETS,
@@ -293,7 +308,7 @@ class TestUslp(TestCase):
             False,
         )
         self.assertEqual(
-            fp_tfdf.should_have_fhp_or_lvp_field(truncated=False, frame_type=FrameType.FIXED),
+            self.fp_tfdf.should_have_fhp_or_lvp_field(truncated=False, frame_type=FrameType.FIXED),
             True,
         )
         empty_short_tfdf = TransferFrameDataField(
@@ -370,14 +385,13 @@ class TestUslp(TestCase):
             fhp_or_lvop=0,
         )
         insert_zone = bytearray(4)
-        op_ctrl_field = bytearray([1, 2, 3, 4])
-        fecf = bytearray([3, 4])
+        op_ctrl_field = bytearray([4, 3, 2, 1])
         larger_frame = TransferFrame(
             header=primary_header,
             insert_zone=insert_zone,
             op_ctrl_field=op_ctrl_field,
             tfdf=tfdf,
-            fecf=fecf,
+            has_fecf=True,
         )
         larger_frame.set_frame_len_in_header()
         self.assertEqual(larger_frame.header.frame_len, 24 - 1)
@@ -386,8 +400,9 @@ class TestUslp(TestCase):
         self.assertEqual(len(larger_frame_packed), 24)
         self.assertEqual(larger_frame_packed[7 : 7 + 4], bytearray(4))
         self.assertEqual(larger_frame_packed[14 : 14 + 4], bytearray([1, 2, 3, 4]))
-        self.assertEqual(larger_frame_packed[18 : 18 + 4], bytearray([1, 2, 3, 4]))
-        self.assertEqual(larger_frame_packed[22:], bytearray([3, 4]))
+        self.assertEqual(larger_frame_packed[18 : 18 + 4], bytearray([4, 3, 2, 1]))
+        crc16 = struct.pack("!H", CRC16_CCITT_FUNC(larger_frame_packed[0:22]))
+        self.assertEqual(larger_frame_packed[22:], crc16)
         with self.assertRaises(UslpInvalidRawPacketOrFrameLenError):
             TransferFrame.unpack(
                 raw_frame=larger_frame_packed,
@@ -397,7 +412,6 @@ class TestUslp(TestCase):
                     has_insert_zone=True,
                     insert_zone_len=4,
                     has_fecf=True,
-                    fecf_len=2,
                 ),
             )
         with self.assertRaises(UslpInvalidRawPacketOrFrameLenError):
@@ -409,7 +423,6 @@ class TestUslp(TestCase):
                     has_insert_zone=True,
                     insert_zone_len=4,
                     has_fecf=True,
-                    fecf_len=2,
                 ),
             )
         with self.assertRaises(ValueError):
@@ -421,7 +434,6 @@ class TestUslp(TestCase):
                     has_insert_zone=True,
                     insert_zone_len=4,
                     has_fecf=True,
-                    fecf_len=2,
                 ),
             )
         larger_frame.header.op_ctrl_flag = False
@@ -444,12 +456,10 @@ class TestUslp(TestCase):
                 has_insert_zone=True,
                 insert_zone_len=4,
                 has_fecf=True,
-                fecf_len=2,
             ),
         )
-        self.assertEqual(larger_frame_unpacked.fecf, bytearray([3, 4]))
         self.assertEqual(larger_frame_unpacked.insert_zone, bytearray(4))
-        self.assertEqual(larger_frame_unpacked.op_ctrl_field, bytearray([1, 2, 3, 4]))
+        self.assertEqual(larger_frame_unpacked.op_ctrl_field, bytearray([4, 3, 2, 1]))
         with self.assertRaises(UslpInvalidRawPacketOrFrameLenError):
             TransferFrame.unpack(
                 raw_frame=bytearray(3),
@@ -459,7 +469,6 @@ class TestUslp(TestCase):
                     has_insert_zone=True,
                     insert_zone_len=4,
                     has_fecf=True,
-                    fecf_len=2,
                 ),
             )
         truncated_header = TruncatedPrimaryHeader(
@@ -475,7 +484,7 @@ class TestUslp(TestCase):
             insert_zone=None,
             op_ctrl_field=None,
             tfdf=tfdf_truncated,
-            fecf=None,
+            has_fecf=False,
         )
         truncated_frame_packed = truncated_frame.pack(truncated=True)
         self.assertEqual(len(truncated_frame_packed), 9)
@@ -488,7 +497,6 @@ class TestUslp(TestCase):
                     has_insert_zone=True,
                     insert_zone_len=4,
                     has_fecf=True,
-                    fecf_len=2,
                 ),
             )
         truncated_frame_unpacked = TransferFrame.unpack(

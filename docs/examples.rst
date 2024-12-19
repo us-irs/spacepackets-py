@@ -183,14 +183,14 @@ packet.
     )
     var_frame = TransferFrame(header=frame_header, tfdf=tfdf)
     var_frame_packed = var_frame.pack()
-    print("USLP variable length frame without FECF containing a simple space packet")
+    print("USLP variable length frame with checksum containing a simple space packet")
     print(f"Contained space packet (hex): [{var_frame_packed.hex(sep=',')}]")
 
 Output:
 
 .. testoutput:: uslp
 
-    USLP variable length frame without FECF containing a simple space packet
-    Contained space packet (hex): [c0,07,30,20,00,00,00,e0,10,73,c0,00,00,03,01,02,03,04]
+    USLP variable length frame with checksum containing a simple space packet
+    Contained space packet (hex): [c0,07,30,20,00,00,00,e0,10,73,c0,00,00,03,01,02,03,04,4e,03]
 
 

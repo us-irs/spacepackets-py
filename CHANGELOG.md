@@ -8,6 +8,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 # [unreleased]
 
+## Changed
+
+- USLP implementation: FECF is fixed to 2 bytes and always uses the standard CRC16 CCITT checksum
+  calculation now. Consequently, the USLP API was adapted and simplified.
+  - `FecfProperties` removed, not required anymore
+  - `TransferFrame` constructor now expects `has_fecf` boolean parameter which defaults to true.
+     The checksum will be calculated and appended by the `pack` method. The `unpack` method
+     expects the `has_fecf` flag now as well and will perform a CRC16 calculation when the flag
+     is set to True.
+
 # [v0.26.1] 2024-11-30
 
 ## Fixed
