@@ -24,3 +24,7 @@ class UslpVersionMissmatchError(Exception):
 
 class UslpTypeMissmatchError(Exception):
     pass
+
+
+class UslpChecksumError(Exception):
+    pass

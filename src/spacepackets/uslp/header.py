@@ -183,9 +183,9 @@ class PrimaryHeader(PrimaryHeaderBase):
         vcid: int,
         map_id: int,
         frame_len: int,
-        bypass_seq_ctrl_flag: BypassSequenceControlFlag,
-        prot_ctrl_cmd_flag: ProtocolCommandFlag,
-        op_ctrl_flag: bool,
+        bypass_seq_ctrl_flag: BypassSequenceControlFlag = BypassSequenceControlFlag.SEQ_CTRLD_QOS,
+        prot_ctrl_cmd_flag: ProtocolCommandFlag = ProtocolCommandFlag.USER_DATA,
+        op_ctrl_flag: bool = False,
         vcf_count_len: int = 0,
         vcf_count: int | None = None,
     ):
@@ -286,7 +286,7 @@ class PrimaryHeader(PrimaryHeaderBase):
         return 7 + self.vcf_count_len
 
 
-def determine_header_type(header_start: bytes) -> HeaderType:
+def determine_header_type(header_start: bytes | bytearray) -> HeaderType:
     """Determine header type from raw header.
     :param header_start:
     :raises ValueError: Passed bytearray shorter than minimum length 4

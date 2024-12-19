@@ -51,7 +51,10 @@ class FailureNotice:
 
     @classmethod
     def unpack(
-        cls, data: bytes | bytearray, num_bytes_err_code: int, num_bytes_data: int | None = None
+        cls,
+        data: bytes | bytearray,
+        num_bytes_err_code: int,
+        num_bytes_data: int | None = None,
     ) -> FailureNotice:
         pfc = num_bytes_err_code * 8
         if num_bytes_data is None:
@@ -281,7 +284,10 @@ class Service1Tm(AbstractPusTm):
 
     @property
     def is_step_reply(self) -> bool:
-        return self.subservice in (Subservice.TM_STEP_FAILURE, Subservice.TM_STEP_SUCCESS)
+        return self.subservice in (
+            Subservice.TM_STEP_FAILURE,
+            Subservice.TM_STEP_SUCCESS,
+        )
 
     @property
     def step_id(self) -> StepId | None:

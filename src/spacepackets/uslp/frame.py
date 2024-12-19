@@ -4,7 +4,10 @@ import enum
 import struct
 from typing import Union
 
+from spacepackets.crc import CRC16_CCITT_FUNC
+
 from .defs import (
+    UslpChecksumError,
     UslpFhpVhopFieldMissingError,
     UslpInvalidConstructionRulesError,
     UslpInvalidFrameHeaderError,
@@ -30,28 +33,19 @@ class InsertZoneProperties:
         self.size = size
 
 
-class FecfProperties:
-    def __init__(self, present: bool, size: int):
-        self.present = present
-        self.size = size
-
-
 class FramePropertiesBase:
     def __init__(
         self,
         has_insert_zone: bool,
         has_fecf: bool,
         insert_zone_len: int | None = None,
-        fecf_len: int | None = None,
     ):
         if has_insert_zone and insert_zone_len is None:
-            raise ValueError
-        if has_fecf and fecf_len is None:
             raise ValueError
         self.insert_zone_properties = InsertZoneProperties(
             present=has_insert_zone, size=insert_zone_len
         )
-        self.fecf_properties = FecfProperties(present=has_fecf, size=fecf_len)
+        self.has_fecf = has_fecf
 
 
 class FixedFrameProperties(FramePropertiesBase):
@@ -61,7 +55,6 @@ class FixedFrameProperties(FramePropertiesBase):
         has_insert_zone: bool,
         has_fecf: bool,
         insert_zone_len: int | None = None,
-        fecf_len: int | None = None,
     ):
         """Contains properties required when unpacking fixed USLP frames. These properties
         can not be determined by parsing the frame. The standard refers to these properties
@@ -76,7 +69,6 @@ class FixedFrameProperties(FramePropertiesBase):
             has_insert_zone=has_insert_zone,
             has_fecf=has_fecf,
             insert_zone_len=insert_zone_len,
-            fecf_len=fecf_len,
         )
         self.fixed_len = fixed_len
 
@@ -88,23 +80,20 @@ class VarFrameProperties(FramePropertiesBase):
         has_fecf: bool,
         truncated_frame_len: int,
         insert_zone_len: int | None = None,
-        fecf_len: int | None = None,
     ):
         """Contains properties required when unpacking variable USLP frames. These properties
         can not be determined by parsing the frame. The standard refers to these properties
         as managed parameters.
 
         :param has_insert_zone:
-        :param insert_zone_len:
         :param has_fecf:
-        :param fecf_len:
         :param truncated_frame_len:
+        :param insert_zone_len:
         """
         super().__init__(
             has_insert_zone=has_insert_zone,
             has_fecf=has_fecf,
             insert_zone_len=insert_zone_len,
-            fecf_len=fecf_len,
         )
         self.truncated_frame_len = truncated_frame_len
 
@@ -324,13 +313,13 @@ class TransferFrame:
         tfdf: TransferFrameDataField,
         insert_zone: bytes | None = None,
         op_ctrl_field: bytes | None = None,
-        fecf: bytes | None = None,
+        has_fecf: bool = True,
     ):
         self.header = header
         self.tfdf = tfdf
         self.insert_zone = insert_zone
         self.op_ctrl_field = op_ctrl_field
-        self.fecf = fecf
+        self.has_fecf = has_fecf
 
     def pack(self, truncated: bool = False, frame_type: FrameType | None = None) -> bytearray:
         frame = bytearray()
@@ -346,8 +335,8 @@ class TransferFrame:
             frame.extend(self.op_ctrl_field)
         elif not truncated and self.header.op_ctrl_flag:
             raise UslpInvalidFrameHeaderError
-        if self.fecf is not None:
-            frame.extend(self.fecf)
+        if self.has_fecf:
+            frame.extend(struct.pack("!H", CRC16_CCITT_FUNC(frame)))
         return frame
 
     def set_frame_len_in_header(self) -> None:
@@ -363,8 +352,8 @@ class TransferFrame:
             size += len(self.insert_zone)
         if self.op_ctrl_field is not None:
             size += len(self.op_ctrl_field)
-        if self.fecf is not None:
-            size += len(self.fecf)
+        if self.has_fecf:
+            size += 2
         return size
 
     @classmethod
@@ -383,13 +372,16 @@ class TransferFrame:
             tfdf=empty_data_field,
             insert_zone=None,
             op_ctrl_field=None,
-            fecf=None,
+            has_fecf=False,
         )
 
     # TODO: Fix lint by creating helper methods.
     @classmethod
     def unpack(  # noqa: PLR0912 too many branches
-        cls, raw_frame: bytes, frame_type: FrameType, frame_properties: FramePropertiesT
+        cls,
+        raw_frame: bytes | bytearray,
+        frame_type: FrameType,
+        frame_properties: FramePropertiesT,
     ) -> TransferFrame:
         """Unpack a USLP transfer frame from a raw bytearray. All managed parameters have
         to be passed explicitly.
@@ -457,11 +449,11 @@ class TransferFrame:
             frame.op_ctrl_field = raw_frame[current_idx : current_idx + 4]
             current_idx += 4
         # Parse Frame Error Control field if present
-        if frame_properties.fecf_properties.present:
-            frame.fecf = raw_frame[
-                current_idx : current_idx + frame_properties.fecf_properties.size
-            ]
-            current_idx += frame_properties.fecf_properties.size
+        if frame_properties.has_fecf:
+            crc_check = CRC16_CCITT_FUNC(raw_frame[0 : current_idx + 2])
+            if crc_check != 0:
+                raise UslpChecksumError
+
         return frame
 
     @staticmethod
@@ -497,8 +489,8 @@ class TransferFrame:
             exact_tfdf_len = properties.truncated_frame_len - header_len
         else:
             exact_tfdf_len = header.frame_len + 1 - header_len
-        if properties.fecf_properties.present:
-            exact_tfdf_len -= properties.fecf_properties.size
+        if properties.has_fecf:
+            exact_tfdf_len -= 2
         if header_type != HeaderType.TRUNCATED and header.op_ctrl_flag:
             exact_tfdf_len -= 4
         if properties.insert_zone_properties.present:
