@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 # [unreleased]
 
+# [v0.27.0] 2025-01-15
+
 ## Changed
 
 - USLP implementation: FECF is fixed to 2 bytes and always uses the standard CRC16 CCITT checksum
