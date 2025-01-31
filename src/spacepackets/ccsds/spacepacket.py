@@ -556,6 +556,14 @@ def get_total_space_packet_len_from_len_field(len_field: int) -> int:
 def parse_space_packets(
     analysis_queue: deque[bytearray], packet_ids: Sequence[PacketId]
 ) -> list[bytearray]:
+    """This calls :py:func:`parse_space_packets_with_skipped_bytes` and returns only the parsed
+    packets."""
+    return parse_space_packets_with_skipped_bytes_report(analysis_queue, packet_ids)[0]
+
+
+def parse_space_packets_with_skipped_bytes_report(
+    analysis_queue: deque[bytearray], packet_ids: Sequence[PacketId]
+) -> tuple[list[bytearray], int]:
     """Given a deque of bytearrays, parse for space packets. This funtion expects the deque
     to be filled on the right side, for example with :py:meth:`collections.deque.append`.
     If a split packet with a valid header is detected, this function will re-insert the header into
@@ -563,19 +571,22 @@ def parse_space_packets(
 
     :param analysis_queue:
     :param packet_ids:
-    :return:
+    :return: Tuple where the first entry is the list of parse packets and the second entry is the
+    number of skipped bytes. Bytes are skipped if the first two bytes in the data stream do not
+    match the packet ID.
     """
     ids_raw = [packet_id.raw() for packet_id in packet_ids]
+    skipped_bytes = 0
     tm_list = []
     concatenated_packets = bytearray()
     if not analysis_queue:
-        return tm_list
+        return (tm_list, skipped_bytes)
     while analysis_queue:
         # Put it all in one buffer
         concatenated_packets.extend(analysis_queue.popleft())
     current_idx = 0
     if len(concatenated_packets) < 6:
-        return tm_list
+        return (tm_list, skipped_bytes)
     # Packet ID detected
     while True:
         # Can't even parse CCSDS header. Wait for more data to arrive.
@@ -597,7 +608,8 @@ def parse_space_packets(
         else:
             # Keep parsing until a packet ID is found
             current_idx += 1
-    return tm_list
+            skipped_bytes += 1
+    return (tm_list, skipped_bytes)
 
 
 def __handle_packet_id_match(
