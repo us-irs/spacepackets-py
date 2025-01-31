@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 # [unreleased]
 
+## Added
+
+- Added  `parse_space_packets_with_skipped_bytes_report` which behaves like `parse_space_packets`
+  but reports the number of skipped bytes.
+
 # [v0.27.0] 2025-01-15
 
 ## Changed
