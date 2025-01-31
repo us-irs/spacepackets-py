@@ -15,7 +15,7 @@ from importlib.metadata import version
 # -- Project information -----------------------------------------------------
 
 project = "spacepackets"
-copyright = "2021-2023, Robin Mueller"
+copyright = "2021-2024, Robin Mueller"
 author = "Robin Mueller"
 
 # The full version, including alpha/beta/rc tags
