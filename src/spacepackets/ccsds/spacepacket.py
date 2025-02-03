@@ -3,6 +3,7 @@ of all CCSDS packets."""
 
 from __future__ import annotations
 
+import dataclasses
 import enum
 import struct
 from abc import ABC, abstractmethod
@@ -553,68 +554,100 @@ def get_total_space_packet_len_from_len_field(len_field: int) -> int:
     return len_field + SPACE_PACKET_HEADER_SIZE + 1
 
 
-def parse_space_packets(
-    analysis_queue: deque[bytearray], packet_ids: Sequence[PacketId]
-) -> list[bytearray]:
-    """Given a deque of bytearrays, parse for space packets. This funtion expects the deque
-    to be filled on the right side, for example with :py:meth:`collections.deque.append`.
-    If a split packet with a valid header is detected, this function will re-insert the header into
-    the given deque on the right side.
+@dataclasses.dataclass
+class ParserResult:
+    #: List of parsed space packets.
+    tm_list: list[bytes]
+    #: Range of bytes which were skipped during parsing. This can happen if there are
+    #: broken/invalid spacepackets or packets/bytes which are not CCSDS spacepackets in the
+    #: datastream. This context information can be used for debugging.
+    skipped_ranges: list[range]
+    #: Number of bytes scanned. Incomplete packets will not increment this number. Therefore,
+    #: this can be smaller than the total size of the provided buffer. Furthermore, the packet
+    #: parser will not scan fragments at the buffer end which are smaller than the minimum CCSDS
+    #: space packet size.
+    scanned_bytes: int
 
-    :param analysis_queue:
-    :param packet_ids:
-    :return:
+    @classmethod
+    def empty(cls) -> ParserResult:
+        return ParserResult(tm_list=[], skipped_ranges=[], scanned_bytes=0)
+
+    def num_of_found_packets(self) -> int:
+        return len(self.tm_list)
+
+
+def parse_space_packets_from_deque(
+    analysis_queue: deque[bytearray | bytes], packet_ids: Sequence[PacketId]
+) -> ParserResult:
+    """Given a deque of bytearrays, parse for space packets which start with the provided
+    list of packet IDs.
+
+    This funtion expects the deque to be filled on the right side, for example with
+    :py:meth:`collections.deque.append`. This function only reads the given deque. It fills
+    the provided queue content into a regular byte buffer and then calls
+    :py:meth:`parse_space_packets`.
+
+    The user needs to take care to clear the analysis queue depending on how this API is used. The
+    number of bytes scanned is returned as part of the :py:class:`ParserResult` and can be used to
+    clear the deque or only keep relevant portions for the next parse call.
     """
-    ids_raw = [packet_id.raw() for packet_id in packet_ids]
-    tm_list = []
-    concatenated_packets = bytearray()
+    packet_buf = bytearray()
     if not analysis_queue:
-        return tm_list
-    while analysis_queue:
+        return ParserResult.empty()
+    for value in analysis_queue:
         # Put it all in one buffer
-        concatenated_packets.extend(analysis_queue.popleft())
+        packet_buf.extend(value)
+    return parse_space_packets(packet_buf, packet_ids)
+
+
+def parse_space_packets(buf: bytearray | bytes, packet_ids: Sequence[PacketId]) -> ParserResult:
+    """Given a byte buffer, parse for space packets which start with the provided list of packet
+    IDs.
+
+    If there are broken/invalid spacepackets or packets/bytes which are not CCSDS spacepackets in
+    the datastream, those bytes will be skipped,  and the range of skipped bytes is returned as
+    part of the :py:class:`ParserResult`. This context information can be used for debugging or
+    management of invalid data.
+
+    In case of incomplete packets where are partial packet header is found at the end of the buffer,
+    the scanned bytes number will be the start of the incomplete packet. The number of scanned bytes
+    returned might also be smaller than the buffer size for invalid data because the packet parser
+    will not scan fragments at the end of the buffer which are smaller than the minimum
+    space packet header length.
+    """
+    tm_list = []
+    skipped_ranges = []
+
+    packet_id_list = [packet_id.raw() for packet_id in packet_ids]
     current_idx = 0
-    if len(concatenated_packets) < 6:
-        return tm_list
-    # Packet ID detected
+    skip_start = None
+    if len(buf) < 6:
+        return ParserResult(tm_list, skipped_ranges, current_idx)
     while True:
-        # Can't even parse CCSDS header. Wait for more data to arrive.
-        if current_idx + CCSDS_HEADER_LEN >= len(concatenated_packets):
+        # Can't even parse CCSDS packet ID. Wait for more data to arrive.
+        if current_idx + CCSDS_HEADER_LEN >= len(buf):
+            if skip_start is not None:
+                skipped_ranges.append(range(skip_start, current_idx))
             break
         current_packet_id = (
-            struct.unpack("!H", concatenated_packets[current_idx : current_idx + 2])[0]
-            & PACKET_ID_MASK
+            struct.unpack("!H", buf[current_idx : current_idx + 2])[0] & PACKET_ID_MASK
         )
-        if current_packet_id in ids_raw:
-            result, current_idx = __handle_packet_id_match(
-                concatenated_packets=concatenated_packets,
-                analysis_queue=analysis_queue,
-                current_idx=current_idx,
-                tm_list=tm_list,
+        # Packet ID detected
+        if current_packet_id in packet_id_list:
+            total_packet_len = get_total_space_packet_len_from_len_field(
+                struct.unpack("!H", buf[current_idx + 4 : current_idx + 6])[0]
             )
-            if result != 0:
+            # Partial header.
+            if current_idx + total_packet_len > len(buf):
                 break
+            tm_list.append(buf[current_idx : current_idx + total_packet_len])
+            if skip_start is not None:
+                skipped_ranges.append(range(skip_start, current_idx))
+                skip_start = None
+            current_idx += total_packet_len
         else:
+            if skip_start is None:
+                skip_start = current_idx
             # Keep parsing until a packet ID is found
             current_idx += 1
-    return tm_list
-
-
-def __handle_packet_id_match(
-    concatenated_packets: bytearray,
-    analysis_queue: deque[bytearray],
-    current_idx: int,
-    tm_list: list[bytearray],
-) -> tuple[int, int]:
-    total_packet_len = get_total_space_packet_len_from_len_field(
-        struct.unpack("!H", concatenated_packets[current_idx + 4 : current_idx + 6])[0]
-    )
-    # Might be part of packet. Put back into analysis queue as whole
-    if current_idx + total_packet_len > len(concatenated_packets):
-        # Clear the queue first. We are done with parsing
-        analysis_queue.clear()
-        analysis_queue.append(concatenated_packets[current_idx:])
-        return -1, current_idx
-    tm_list.append(concatenated_packets[current_idx : current_idx + total_packet_len])
-    current_idx += total_packet_len
-    return 0, current_idx
+    return ParserResult(tm_list, skipped_ranges, current_idx)

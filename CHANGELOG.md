@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 # [unreleased]
 
+# [v0.28.0] 2025-02-03
+
+## Changed
+
+- Improved the space packet parser API: The `parse_space_packets` function simply expects
+  a byte buffer and returns results and useful context information inside a `ParseResult`
+  structure. The former `parse_space_packets` was renamed to `parse_space_packets_from_deque`
+  and now treats the provided `deque` read-only.
+
 # [v0.27.0] 2025-01-15
 
 ## Changed
