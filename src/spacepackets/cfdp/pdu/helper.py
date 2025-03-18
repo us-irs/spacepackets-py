@@ -74,7 +74,7 @@ class PduHolder:
         """
         if not self.is_file_directive:
             return None
-        directive_base = cast(AbstractFileDirectiveBase, self.pdu)
+        directive_base = cast("AbstractFileDirectiveBase", self.pdu)
         return directive_base.directive_type
 
     def __repr__(self):
@@ -88,15 +88,15 @@ class PduHolder:
             isinstance(self.pdu, AbstractFileDirectiveBase)
             and self.pdu.pdu_type == PduType.FILE_DIRECTIVE  # type: ignore
         ):
-            pdu_base = cast(AbstractFileDirectiveBase, self.pdu)
-            if pdu_base.directive_type == dir_type:
-                return cast(pdu_type, self.pdu)
+            pdu_base = cast("AbstractFileDirectiveBase", self.pdu)
+            if pdu_base.directive_type == dir_type and isinstance(self.pdu, pdu_type):
+                return self.pdu
         self._raise_not_target_exception(pdu_type)
         return None
 
     def to_file_data_pdu(self) -> FileDataPdu:  # type: ignore
         if isinstance(self.pdu, AbstractPduBase) and self.pdu.pdu_type == PduType.FILE_DATA:
-            return cast(FileDataPdu, self.pdu)
+            return cast("FileDataPdu", self.pdu)
         self._raise_not_target_exception(FileDataPdu)
         return None
 

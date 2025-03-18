@@ -104,7 +104,7 @@ class CfdpTlv(AbstractTlvBase):
             tlv_type = TlvType(data[0])
         except ValueError as err:
             raise ValueError(
-                f"TLV field invalid, found value {data[0]} is not a possible TLV" " parameter"
+                f"TLV field invalid, found value {data[0]} is not a possible TLV parameter"
             ) from err
 
         value = bytearray()
@@ -120,7 +120,7 @@ class CfdpTlv(AbstractTlvBase):
         return self.MINIMAL_LEN + len(self._value)
 
     def __repr__(self):
-        return f"{self.__class__.__name__}(tlv_type={self.tlv_type!r}," f" value={self.value!r})"
+        return f"{self.__class__.__name__}(tlv_type={self.tlv_type!r}, value={self.value!r})"
 
     def __str__(self):
         return (
@@ -299,7 +299,7 @@ class FileStoreRequestBase:
             action_code = FilestoreActionCode(action_code_as_int)
         except ValueError as err:
             raise ValueError(
-                "Invalid action code in file store response with value" f" {action_code_as_int}"
+                f"Invalid action code in file store response with value {action_code_as_int}"
             ) from err
         status_code_as_int = raw_bytes[value_idx] & 0x0F
         value_idx += 1

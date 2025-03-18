@@ -485,9 +485,7 @@ class PusTm(AbstractPusTm):
     @deprecation.deprecated(
         deprecated_in="0.14.0rc3",
         current_version=get_version(),
-        details=(
-            "use pack and get_printable_data_string or the hex method on bytearray" " instead"
-        ),
+        details=("use pack and get_printable_data_string or the hex method on bytearray instead"),
     )
     def get_full_packet_string(self, print_format: PrintFormats = PrintFormats.HEX) -> str:
         packet_raw = self.pack()
@@ -496,9 +494,7 @@ class PusTm(AbstractPusTm):
     @deprecation.deprecated(
         deprecated_in="0.14.0rc3",
         current_version=get_version(),
-        details=(
-            "use pack and get_printable_data_string or the hex method on bytearray" " instead"
-        ),
+        details=("use pack and get_printable_data_string or the hex method on bytearray instead"),
     )
     def print_full_packet_string(self, print_format: PrintFormats = PrintFormats.HEX) -> None:
         """Print the full TM packet in a clean format."""
@@ -507,7 +503,7 @@ class PusTm(AbstractPusTm):
     @deprecation.deprecated(
         deprecated_in="0.14.0rc3",
         current_version=get_version(),
-        details=("use print, the source_data property and the hex method on bytearray" " instead"),
+        details=("use print, the source_data property and the hex method on bytearray instead"),
     )
     def print_source_data(self, print_format: PrintFormats = PrintFormats.HEX) -> None:
         """Prints the TM source data in a clean format"""
