@@ -49,8 +49,7 @@ class PacketSeqCtrl:
 
     def __repr__(self):
         return (
-            f"{self.__class__.__name__}(seq_flags={self.seq_flags!r}, "
-            f"seq_count={self.seq_count!r})"
+            f"{self.__class__.__name__}(seq_flags={self.seq_flags!r}, seq_count={self.seq_count!r})"
         )
 
     def __str__(self):
@@ -228,8 +227,7 @@ class SpacePacketHeader(AbstractSpacePacket):
         """
         if data_len > pow(2, 16) - 1 or data_len < 0:
             raise ValueError(
-                "Invalid data length value, exceeds maximum value of"
-                f" {pow(2, 16) - 1} or negative"
+                f"Invalid data length value, exceeds maximum value of {pow(2, 16) - 1} or negative"
             )
         self._ccsds_version = ccsds_version
         self._packet_id = PacketId(ptype=packet_type, sec_header_flag=sec_header_flag, apid=apid)

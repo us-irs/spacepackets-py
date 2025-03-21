@@ -41,7 +41,7 @@ def get_printable_data_string(print_format: PrintFormats, data: bytes | bytearra
     length = len(data)
     data_to_print = data[:length]
     if print_format == PrintFormats.HEX:
-        return f'hex [{data_to_print.hex(sep=",", bytes_per_sep=1)}]'
+        return f"hex [{data_to_print.hex(sep=',', bytes_per_sep=1)}]"
     if print_format == PrintFormats.DEC:
         return get_dec_data_string(data)
     if print_format == PrintFormats.BIN:

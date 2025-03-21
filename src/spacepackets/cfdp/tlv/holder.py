@@ -1,6 +1,6 @@
 from __future__ import annotations  # Python 3.9 compatibility for | syntax
 
-from typing import Any, cast
+from typing import Any
 
 from spacepackets.cfdp.tlv.defs import TlvType
 from spacepackets.cfdp.tlv.msg_to_user import MessageToUserTlv
@@ -31,9 +31,9 @@ class TlvHolder:
         expected_type: TlvType,
     ) -> Any:  # noqa: ANN401
         assert self.tlv is not None
-        if self.tlv.tlv_type != expected_type:
+        if self.tlv.tlv_type != expected_type or not isinstance(self.tlv, obj_type):
             raise TypeError(f"Invalid object {self.tlv} for type {self.tlv.tlv_type}")
-        return cast(obj_type, self.tlv)
+        return self.tlv
 
     def to_fs_request(self) -> FileStoreRequestTlv:
         # Check this type first. It's a concrete type where we can not just use a simple cast

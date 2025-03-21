@@ -222,7 +222,7 @@ class CdsShortTimestamp(CcsdsTimeProvider):
         instance = cls.empty(False)
         instance._datetime = dt
         instance._unix_seconds = dt.timestamp()
-        full_unix_secs = int(math.floor(instance._unix_seconds))
+        full_unix_secs = math.floor(instance._unix_seconds)
         subsec_millis = int((instance._unix_seconds - full_unix_secs) * 1000)
         unix_days = int(full_unix_secs / SECONDS_PER_DAY)
         secs_of_day = full_unix_secs % SECONDS_PER_DAY
@@ -244,7 +244,7 @@ class CdsShortTimestamp(CcsdsTimeProvider):
         if seconds_since_epoch is None:
             seconds_since_epoch = time.time()
         fraction_ms = seconds_since_epoch - math.floor(seconds_since_epoch)
-        return int(math.floor((seconds_since_epoch % SECONDS_PER_DAY) * 1000 + fraction_ms))
+        return math.floor((seconds_since_epoch % SECONDS_PER_DAY) * 1000 + fraction_ms)
 
     def as_unix_seconds(self) -> float:
         return self._unix_seconds

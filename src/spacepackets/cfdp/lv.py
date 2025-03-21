@@ -58,7 +58,7 @@ class CfdpLv:
         return f"{self.__class__.__name__}(value={self.value!r})"
 
     def __str__(self):
-        return f"CFDP LV with data 0x[{self.value.hex(sep=',')}] of length" f" {len(self.value)}"
+        return f"CFDP LV with data 0x[{self.value.hex(sep=',')}] of length {len(self.value)}"
 
     def __eq__(self, other: object):
         if not isinstance(other, CfdpLv):
