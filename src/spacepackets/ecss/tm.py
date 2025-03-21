@@ -105,7 +105,7 @@ class PusTmSecondaryHeader:
             )
         self.message_counter = message_counter
         self.dest_id = dest_id
-        self.timestamp = timestamp
+        self.timestamp = bytes(timestamp)
 
     @classmethod
     def __empty(cls) -> PusTmSecondaryHeader:

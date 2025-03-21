@@ -111,7 +111,7 @@ class CdsShortTimestamp(CcsdsTimeProvider):
         cds_packet.extend(self.__p_field)
         cds_packet.extend(struct.pack("!H", self._ccsds_days))
         cds_packet.extend(struct.pack("!I", self._ms_of_day))
-        return cds_packet
+        return bytes(cds_packet)
 
     @classmethod
     def from_unix_days(cls, unix_days: int, ms_of_day: int) -> CdsShortTimestamp:
@@ -129,11 +129,11 @@ class CdsShortTimestamp(CcsdsTimeProvider):
         return cls(ccsds_days=0, ms_of_day=0, init_dt_unix_stamp=init_dt_unix_stamp)
 
     @classmethod
-    def unpack(cls, data: bytes) -> CdsShortTimestamp:
+    def unpack(cls, data: bytes | bytearray) -> CdsShortTimestamp:
         ccsds_days, ms_of_day = CdsShortTimestamp.unpack_from_raw(data)
         return cls(ccsds_days=ccsds_days, ms_of_day=ms_of_day)
 
-    def read_from_raw(self, data: bytes) -> CdsShortTimestamp:
+    def read_from_raw(self, data: bytes | bytearray) -> CdsShortTimestamp:
         """Updates the instance from a given raw CDS short timestamp
 
         :param data:
@@ -143,7 +143,7 @@ class CdsShortTimestamp(CcsdsTimeProvider):
         self._setup()
 
     @staticmethod
-    def unpack_from_raw(data: bytes) -> tuple[int, int]:
+    def unpack_from_raw(data: bytes | bytearray) -> tuple[int, int]:
         if len(data) < CdsShortTimestamp.TIMESTAMP_SIZE:
             raise BytesTooShortError(CdsShortTimestamp.TIMESTAMP_SIZE, len(data))
         p_field = data[0]

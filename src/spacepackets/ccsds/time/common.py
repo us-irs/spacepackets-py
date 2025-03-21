@@ -78,7 +78,7 @@ class CcsdsTimeProvider(ABC):
         pass
 
     @abstractmethod
-    def read_from_raw(self, timestamp: bytes) -> CcsdsTimeProvider:
+    def read_from_raw(self, timestamp: bytes | bytearray) -> CcsdsTimeProvider:
         pass
 
     @abstractmethod
