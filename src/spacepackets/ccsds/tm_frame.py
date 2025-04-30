@@ -21,6 +21,17 @@ class TransferFrameDataFieldStatus:
     segment_len_id: int
     first_header_pointer: int
 
+    @staticmethod
+    def pack(data: TransferFrameDataFieldStatus) -> bytes:
+        packed = bytearray(2)
+        packed[0] = data.secondary_header_flag << 7
+        packed[0] = packed[0] | data.sync_flag << 6
+        packed[0] = packed[0] | data.packet_order_flag << 5
+        packed[0] = packed[0] | data.segment_len_id << 3
+        packed[0] = packed[0] | data.first_header_pointer >> 8
+        packed[1] = data.first_header_pointer & 0b11111111
+        return bytes(packed)
+
     @classmethod
     def unpack(cls, data: bytes) -> TransferFrameDataFieldStatus:
         if len(data) < 2:
@@ -29,8 +40,8 @@ class TransferFrameDataFieldStatus:
             bool((data[0] >> 7) & 0b1),
             bool((data[0] >> 6) & 0b1),
             bool((data[0] >> 5) & 0b1),
-            (data[0] >> 4) & 0b11,
-            ((data[0] >> 3 & 0b111) << 8) | data[1],
+            (data[0] >> 3) & 0b11,
+            ((data[0] & 0b111) << 8) | data[1],
         )
 
 
@@ -51,10 +62,23 @@ class TmFramePrimaryHeader:
         self.vc_frame_count = vc_frame_count
         self.frame_datafield_status = frame_datafield_status
 
+    @staticmethod
+    def pack(data: TmFramePrimaryHeader) -> bytes:
+        packed = bytearray(6)
+        packed[0] = data.master_channel_id.transfer_frame_version << 6
+        packed[0] = packed[0] | data.master_channel_id.spacecraft_id >> 4
+        packed[1] = (data.master_channel_id.spacecraft_id & 0b1111) << 4
+        packed[1] = packed[1] | data.vc_id << 1
+        packed[1] = packed[1] | data.ocf_flag
+        packed[2] = data.master_ch_frame_count
+        packed[3] = data.vc_frame_count
+        packed[4:5] = TransferFrameDataFieldStatus.pack(data.frame_datafield_status)
+        return bytes(packed)
+
     @classmethod
     def unpack(cls, data: bytes) -> TmFramePrimaryHeader:
         tf_version = (data[0] >> 6) & 0b11
-        spacecraft_id = (data[0] & 0b111111 << 8) | ((data[1] >> 4) & 0b1111)
+        spacecraft_id = (data[0] & 0b111111) << 4 | (data[1] >> 4) & 0b1111
         master_channel_id = MasterChannelId(tf_version, spacecraft_id)
         vc_id = (data[1] >> 1) & 0b111
         ocf_flag = bool(data[1] & 0b1)
@@ -76,6 +100,17 @@ class TransferFrameSecondaryHeader:
     version_number: int
     secondary_header_len: int
     data_field: bytes
+
+    @staticmethod
+    def pack(data:TransferFrameSecondaryHeader) -> bytes:
+        packed = bytearray(1)
+        packed[0] = data.version_number << 6
+        packed[0] = packed[0] | data.secondary_header_len
+        if data.secondary_header_len <= 63:
+            packed.extend(data.data_field)
+        else:
+            raise ValueError(f"Secondary header length too long (max 63 octets): {data.secondary_header_len}")
+        return bytes(packed)
 
     @classmethod
     def unpack(cls, data: bytes) -> TransferFrameSecondaryHeader:
@@ -103,6 +138,19 @@ class TmTransferFrame:
         self.data_field = data_field
         self.op_ctrl_field = op_ctrl_field
         self.frame_error_control = frame_error_control
+
+    @classmethod
+    def pack(cls, data: TmTransferFrame) -> bytes:
+        packed = bytearray()
+        packed.extend(TmFramePrimaryHeader.pack(data.primary_header))
+        if data.primary_header.frame_datafield_status.secondary_header_flag:
+            packed.extend(TransferFrameSecondaryHeader.pack(data.secondary_header))
+        packed.extend(data.data_field)
+        if data.op_ctrl_field is not None:
+            packed.extend(data.op_ctrl_field)
+        if data.frame_error_control is not None:
+            packed.extend(data.frame_error_control)
+        return bytes(packed)
 
     @classmethod
     def unpack(cls, raw_frame: bytes, has_error_control_field: bool) -> TmTransferFrame:
