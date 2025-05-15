@@ -102,14 +102,16 @@ class TransferFrameSecondaryHeader:
     data_field: bytes
 
     @staticmethod
-    def pack(data:TransferFrameSecondaryHeader) -> bytes:
+    def pack(data: TransferFrameSecondaryHeader) -> bytes:
         packed = bytearray(1)
         packed[0] = data.version_number << 6
         packed[0] = packed[0] | data.secondary_header_len
         if data.secondary_header_len <= 63:
             packed.extend(data.data_field)
         else:
-            raise ValueError(f"Secondary header length too long (max 63 octets): {data.secondary_header_len}")
+            raise ValueError(
+                f"Secondary header length too long (max 63 octets): {data.secondary_header_len}"
+            )
         return bytes(packed)
 
     @classmethod
@@ -152,11 +154,15 @@ class TmTransferFrame:
         if data.frame_error_control is not None:
             packed.extend(data.frame_error_control)
         if len(packed) != data.length:
-            raise ValueError(f"Transfer frame length {len(packed)} not equal to expected length {data.length}")
+            raise ValueError(
+                f"Transfer frame length {len(packed)} not equal to expected length {data.length}"
+            )
         return bytes(packed)
 
     @classmethod
-    def unpack(cls, raw_frame: bytes, length: int, has_error_control_field: bool) -> TmTransferFrame:
+    def unpack(
+        cls, raw_frame: bytes, length: int, has_error_control_field: bool
+    ) -> TmTransferFrame:
         primary_header = TmFramePrimaryHeader.unpack(raw_frame)
         secondary_header = None
         current_idx = 6
