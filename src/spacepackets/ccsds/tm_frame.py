@@ -72,7 +72,7 @@ class TmFramePrimaryHeader:
         packed[1] = packed[1] | data.ocf_flag
         packed[2] = data.master_ch_frame_count
         packed[3] = data.vc_frame_count
-        packed[4:5] = TransferFrameDataFieldStatus.pack(data.frame_datafield_status)
+        packed[4:6] = TransferFrameDataFieldStatus.pack(data.frame_datafield_status)
         return bytes(packed)
 
     @classmethod
@@ -127,20 +127,21 @@ class TransferFrameSecondaryHeader:
 class TmTransferFrame:
     def __init__(
         self,
+        length: int,
         primary_header: TmFramePrimaryHeader,
         secondary_header: Optional[TransferFrameSecondaryHeader],
         data_field: bytes,
         op_ctrl_field: Optional[bytes],
         frame_error_control: Optional[bytes],
     ) -> None:
+        self.length = length
         self.primary_header = primary_header
         self.secondary_header = secondary_header
         self.data_field = data_field
         self.op_ctrl_field = op_ctrl_field
         self.frame_error_control = frame_error_control
 
-    @classmethod
-    def pack(cls, data: TmTransferFrame) -> bytes:
+    def pack(self, data: TmTransferFrame) -> bytes:
         packed = bytearray()
         packed.extend(TmFramePrimaryHeader.pack(data.primary_header))
         if data.primary_header.frame_datafield_status.secondary_header_flag:
@@ -150,10 +151,12 @@ class TmTransferFrame:
             packed.extend(data.op_ctrl_field)
         if data.frame_error_control is not None:
             packed.extend(data.frame_error_control)
+        if len(packed) != data.length:
+            raise ValueError(f"Transfer frame length {len(packed)} not equal to expected length {data.length}")
         return bytes(packed)
 
     @classmethod
-    def unpack(cls, raw_frame: bytes, has_error_control_field: bool) -> TmTransferFrame:
+    def unpack(cls, raw_frame: bytes, length: int, has_error_control_field: bool) -> TmTransferFrame:
         primary_header = TmFramePrimaryHeader.unpack(raw_frame)
         secondary_header = None
         current_idx = 6
@@ -161,27 +164,37 @@ class TmTransferFrame:
             secondary_header = TransferFrameSecondaryHeader.unpack(
                 raw_frame[current_idx:]
             )
-            current_idx += secondary_header.secondary_header_len
+            current_idx += 1 + secondary_header.secondary_header_len
         data_end = len(raw_frame)
         op_ctrl_field = None
         frame_error_control = None
         if has_error_control_field:
-            if current_idx + 2 > len(raw_frame):
-                raise BytesTooShortError(current_idx + 2, len(raw_frame))
+            # check for too-short fefc
+            if primary_header.ocf_flag:
+                len_data = length - current_idx - 6
+                if current_idx + len_data + 6 > len(raw_frame):
+                    raise BytesTooShortError(current_idx + len_data + 6, len(raw_frame))
+            else:
+                len_data = length - current_idx - 2
+                if current_idx + len_data + 2 > len(raw_frame):
+                    raise BytesTooShortError(current_idx + len_data + 2, len(raw_frame))
             frame_error_control = raw_frame[-2:]
             # CRC16-CCITT checksum
             if CRC16_CCITT_FUNC(raw_frame) != 0:
                 raise InvalidCrcCcitt16(raw_frame)
             # Used for length checks.
-            current_idx += 2
             data_end -= 2
         if primary_header.ocf_flag:
             if current_idx + 4 > len(raw_frame):
                 raise BytesTooShortError(current_idx + 4, len(raw_frame))
-            op_ctrl_field = raw_frame[-6:-2]
+            if has_error_control_field:
+                op_ctrl_field = raw_frame[-6:-2]
+            else:
+                op_ctrl_field = raw_frame[-4:]
             data_end -= 4
         frame_data_field = raw_frame[current_idx:data_end]
         return cls(
+            len(raw_frame),
             primary_header,
             secondary_header,
             frame_data_field,
