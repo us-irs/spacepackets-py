@@ -136,7 +136,10 @@ class TmTransferFrame:
         op_ctrl_field: Optional[bytes],
         frame_error_control: Optional[bytes],
     ) -> None:
-        self.length = length
+        if length < 2048:  # According to CCSDS TM SYNCHRONIZATION AND CHANNEL CODING Blue Book
+            self.length = length
+        else:
+            raise ValueError(f"Tm frame length {length} exceeds maximum of 2048.")
         self.primary_header = primary_header
         self.secondary_header = secondary_header
         self.data_field = data_field
