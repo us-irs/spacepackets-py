@@ -21,8 +21,8 @@ class TransferFrameDataFieldStatus:
     segment_len_id: int
     first_header_pointer: int
 
-    @staticmethod
-    def pack(data: TransferFrameDataFieldStatus) -> bytes:
+    @classmethod
+    def pack(cls, data: TransferFrameDataFieldStatus) -> bytes:
         packed = bytearray(2)
         packed[0] = data.secondary_header_flag << 7
         packed[0] = packed[0] | data.sync_flag << 6
@@ -62,8 +62,8 @@ class TmFramePrimaryHeader:
         self.vc_frame_count = vc_frame_count
         self.frame_datafield_status = frame_datafield_status
 
-    @staticmethod
-    def pack(data: TmFramePrimaryHeader) -> bytes:
+    @classmethod
+    def pack(cls, data: TmFramePrimaryHeader) -> bytes:
         packed = bytearray(6)
         packed[0] = data.master_channel_id.transfer_frame_version << 6
         packed[0] = packed[0] | data.master_channel_id.spacecraft_id >> 4
@@ -101,8 +101,8 @@ class TransferFrameSecondaryHeader:
     secondary_header_len: int
     data_field: bytes
 
-    @staticmethod
-    def pack(data: TransferFrameSecondaryHeader) -> bytes:
+    @classmethod
+    def pack(cls, data: TransferFrameSecondaryHeader) -> bytes:
         packed = bytearray(1)
         packed[0] = data.version_number << 6
         packed[0] = packed[0] | data.secondary_header_len
@@ -143,7 +143,8 @@ class TmTransferFrame:
         self.op_ctrl_field = op_ctrl_field
         self.frame_error_control = frame_error_control
 
-    def pack(self, data: TmTransferFrame) -> bytes:
+    @staticmethod
+    def pack(data: TmTransferFrame) -> bytes:
         packed = bytearray()
         packed.extend(TmFramePrimaryHeader.pack(data.primary_header))
         if data.primary_header.frame_datafield_status.secondary_header_flag:
