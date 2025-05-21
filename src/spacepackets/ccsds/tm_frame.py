@@ -21,14 +21,14 @@ class TransferFrameDataFieldStatus:
     segment_len_id: int
     first_header_pointer: int
 
-    def pack(self, data: TransferFrameDataFieldStatus) -> bytes:
+    def pack(self) -> bytes:
         packed = bytearray(2)
-        packed[0] = data.secondary_header_flag << 7
-        packed[0] = packed[0] | data.sync_flag << 6
-        packed[0] = packed[0] | data.packet_order_flag << 5
-        packed[0] = packed[0] | data.segment_len_id << 3
-        packed[0] = packed[0] | data.first_header_pointer >> 8
-        packed[1] = data.first_header_pointer & 0b11111111
+        packed[0] = self.secondary_header_flag << 7
+        packed[0] = packed[0] | self.sync_flag << 6
+        packed[0] = packed[0] | self.packet_order_flag << 5
+        packed[0] = packed[0] | self.segment_len_id << 3
+        packed[0] = packed[0] | self.first_header_pointer >> 8
+        packed[1] = self.first_header_pointer & 0b11111111
         return bytes(packed)
 
     @classmethod
