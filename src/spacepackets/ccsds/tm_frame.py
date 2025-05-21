@@ -21,8 +21,7 @@ class TransferFrameDataFieldStatus:
     segment_len_id: int
     first_header_pointer: int
 
-    @classmethod
-    def pack(cls, data: TransferFrameDataFieldStatus) -> bytes:
+    def pack(self, data: TransferFrameDataFieldStatus) -> bytes:
         packed = bytearray(2)
         packed[0] = data.secondary_header_flag << 7
         packed[0] = packed[0] | data.sync_flag << 6
@@ -62,8 +61,7 @@ class TmFramePrimaryHeader:
         self.vc_frame_count = vc_frame_count
         self.frame_datafield_status = frame_datafield_status
 
-    @classmethod
-    def pack(cls, data: TmFramePrimaryHeader) -> bytes:
+    def pack(self, data: TmFramePrimaryHeader) -> bytes:
         packed = bytearray(6)
         packed[0] = data.master_channel_id.transfer_frame_version << 6
         packed[0] = packed[0] | data.master_channel_id.spacecraft_id >> 4
@@ -72,7 +70,7 @@ class TmFramePrimaryHeader:
         packed[1] = packed[1] | data.ocf_flag
         packed[2] = data.master_ch_frame_count
         packed[3] = data.vc_frame_count
-        packed[4:6] = TransferFrameDataFieldStatus.pack(data.frame_datafield_status)
+        packed[4:6] = data.frame_datafield_status.pack(data.frame_datafield_status)
         return bytes(packed)
 
     @classmethod
@@ -101,8 +99,7 @@ class TransferFrameSecondaryHeader:
     secondary_header_len: int
     data_field: bytes
 
-    @classmethod
-    def pack(cls, data: TransferFrameSecondaryHeader) -> bytes:
+    def pack(self, data: TransferFrameSecondaryHeader) -> bytes:
         packed = bytearray(1)
         packed[0] = data.version_number << 6
         packed[0] = packed[0] | data.secondary_header_len
@@ -146,12 +143,11 @@ class TmTransferFrame:
         self.op_ctrl_field = op_ctrl_field
         self.frame_error_control = frame_error_control
 
-    @staticmethod
-    def pack(data: TmTransferFrame) -> bytes:
+    def pack(self, data: TmTransferFrame) -> bytes:
         packed = bytearray()
-        packed.extend(TmFramePrimaryHeader.pack(data.primary_header))
+        packed.extend(data.primary_header.pack(data.primary_header))
         if data.primary_header.frame_datafield_status.secondary_header_flag:
-            packed.extend(TransferFrameSecondaryHeader.pack(data.secondary_header))
+            packed.extend(data.secondary_header.pack(data.secondary_header))
         packed.extend(data.data_field)
         if data.op_ctrl_field is not None:
             packed.extend(data.op_ctrl_field)
