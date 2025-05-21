@@ -175,6 +175,7 @@ class TmTransferFrame:
         op_ctrl_field = None
         frame_error_control = None
         if has_error_control_field:
+            # check for too-short fefc
             if primary_header.ocf_flag:
                 len_data = length - current_idx - 6
                 if current_idx + len_data + 6 > len(data):
