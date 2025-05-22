@@ -70,7 +70,7 @@ class TmFramePrimaryHeader:
         packed[1] = packed[1] | self.ocf_flag
         packed[2] = self.master_ch_frame_count
         packed[3] = self.vc_frame_count
-        packed[4:6] = self.frame_datafield_status.pack(self.frame_datafield_status)
+        packed[4:6] = self.frame_datafield_status.pack()
         return bytes(packed)
 
     @classmethod
@@ -145,9 +145,9 @@ class TmTransferFrame:
 
     def pack(self) -> bytes:
         packed = bytearray()
-        packed.extend(self.primary_header.pack(self.primary_header))
+        packed.extend(self.primary_header.pack())
         if self.primary_header.frame_datafield_status.secondary_header_flag:
-            packed.extend(self.secondary_header.pack(self.secondary_header))
+            packed.extend(self.secondary_header.pack())
         packed.extend(self.data_field)
         if self.op_ctrl_field is not None:
             packed.extend(self.op_ctrl_field)
@@ -186,7 +186,7 @@ class TmTransferFrame:
                     raise BytesTooShortError(current_idx + len_data + 2, len(data))
             frame_error_control = data[-2:]
             # CRC16-CCITT checksum
-            if CRC16_CCITT_FUNC(data) != 0:
+            if CRC16_CCITT_FUNC(data[:length]) != 0:
                 raise InvalidCrcCcitt16(data)
             # Used for length checks.
             data_end -= 2
@@ -200,7 +200,7 @@ class TmTransferFrame:
             data_end -= 4
         frame_data_field = data[current_idx:data_end]
         return cls(
-            len(data),
+            length,
             primary_header,
             secondary_header,
             frame_data_field,
