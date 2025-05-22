@@ -111,7 +111,6 @@ class TestUslp(TestCase):
         self.assertEqual(determine_header_type(packed_header), HeaderType.NON_TRUNCATED)
 
         primary_header.vcf_count_len = 1
-        self.assertRaises(ValueError, primary_header.pack)
         primary_header.vcf_count = 0xAF
         header_with_vcf_count = primary_header.pack()
         self.assertEqual(header_with_vcf_count[6] & 0b111, 0x01)
@@ -236,6 +235,21 @@ class TestUslp(TestCase):
         truncated_header.map_id = tmp
         unpacked_truncated = TruncatedPrimaryHeader.unpack(raw_packet=packed_header)
         self.assertEqual(unpacked_truncated.pack(), packed_header)
+
+    def test_invalid_header(self):
+        with self.assertRaises(ValueError):
+            PrimaryHeader(
+                scid=pow(2, 16),
+                map_id=0b0011,
+                src_dest=SourceOrDestField.SOURCE,
+                vcid=0b110111,
+                frame_len=100,
+                op_ctrl_flag=True,
+                vcf_count_len=0,
+                vcf_count=255,
+                prot_ctrl_cmd_flag=ProtocolCommandFlag.PROTOCOL_INFORMATION,
+                bypass_seq_ctrl_flag=BypassSequenceControlFlag.EXPEDITED_QOS,
+            )
 
     def test_frame_pack(self):
         # This sets the correct frame length in the primary header
