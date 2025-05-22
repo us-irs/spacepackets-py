@@ -174,6 +174,8 @@ class PrimaryHeader(PrimaryHeaderBase):
     11. OCF flag (1 bit)
     12. VCF count length (3 bits)
     13. VCF count (0 to 56 bits)
+
+    :raises ValueError: If the given VCF count is not valid for the given VCF count length.
     """
 
     def __init__(
@@ -194,6 +196,8 @@ class PrimaryHeader(PrimaryHeaderBase):
         self.bypass_seq_ctrl_flag = bypass_seq_ctrl_flag
         self.prot_ctrl_cmd_flag = prot_ctrl_cmd_flag
         self.op_ctrl_flag = op_ctrl_flag
+        if vcf_count is not None and vcf_count > ((2 ** (8 * vcf_count_len)) - 1):
+            raise ValueError("VCF count is too large for the given length")
         self.vcf_count_len = vcf_count_len
         self.vcf_count = vcf_count
 
@@ -207,8 +211,8 @@ class PrimaryHeader(PrimaryHeaderBase):
             | (self.op_ctrl_flag << 3)
             | self.vcf_count_len
         )
-        if self.vcf_count_len > 0 and self.vcf_count is None:
-            raise ValueError(f"VCF count is None for VCS count length {self.vcf_count_len}")
+        if self.vcf_count_len == 0 or self.vcf_count is None:
+            return packet
         if self.vcf_count_len == 1:
             packet.append(self.vcf_count)
         elif self.vcf_count_len == 2:
