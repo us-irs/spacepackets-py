@@ -118,7 +118,7 @@ class TestTmFrame(TestCase):
             b"\x10\x00\x00\x00",
             b"\x62\x6a",
         )
-        packed = tm_frame.pack(tm_frame)
+        packed = tm_frame.pack()
         unpacked = tm_frame.unpack(packed, 17, True)
         self.assertEqual(tm_frame.data_field, unpacked.data_field)
         self.assertEqual(tm_frame.op_ctrl_field, unpacked.op_ctrl_field)
@@ -145,7 +145,7 @@ class TestTmFrame(TestCase):
         tm_frame = TmTransferFrame(
             13, primary_header, secondary_header, b"\x00\x01\x02", None, b"\x42\x73"
         )
-        packed = tm_frame.pack(tm_frame)
+        packed = tm_frame.pack()
         unpacked = tm_frame.unpack(packed, 13, True)
         self.assertEqual(tm_frame.data_field, unpacked.data_field)
         self.assertEqual(tm_frame.op_ctrl_field, unpacked.op_ctrl_field)
@@ -177,7 +177,7 @@ class TestTmFrame(TestCase):
             b"\x10\x00\x00\x00",
             None,
         )
-        packed = tm_frame.pack(tm_frame)
+        packed = tm_frame.pack()
         unpacked = tm_frame.unpack(packed, 15, False)
         self.assertEqual(tm_frame.data_field, unpacked.data_field)
         self.assertEqual(tm_frame.op_ctrl_field, unpacked.op_ctrl_field)
@@ -204,7 +204,7 @@ class TestTmFrame(TestCase):
         tm_frame = TmTransferFrame(
             11, primary_header, secondary_header, b"\x00\x01\x02", None, None
         )
-        packed = tm_frame.pack(tm_frame)
+        packed = tm_frame.pack()
         unpacked = tm_frame.unpack(packed, 11, False)
         self.assertEqual(tm_frame.data_field, unpacked.data_field)
         self.assertEqual(tm_frame.op_ctrl_field, unpacked.op_ctrl_field)
@@ -230,7 +230,7 @@ class TestTmFrame(TestCase):
         tm_frame = TmTransferFrame(
             15, primary_header, None, b"\x00\x01\x02", b"\x10\x00\x00\x00", b"\x60\xad"
         )
-        packed = tm_frame.pack(tm_frame)
+        packed = tm_frame.pack()
         unpacked = tm_frame.unpack(packed, 15, True)
         self.assertEqual(tm_frame.data_field, unpacked.data_field)
         self.assertEqual(tm_frame.op_ctrl_field, unpacked.op_ctrl_field)
@@ -256,7 +256,7 @@ class TestTmFrame(TestCase):
         tm_frame = TmTransferFrame(
             11, primary_header, None, b"\x00\x01\x02", None, b"\x8f\x78"
         )
-        packed = tm_frame.pack(tm_frame)
+        packed = tm_frame.pack()
         unpacked = tm_frame.unpack(packed, 11, True)
         self.assertEqual(tm_frame.data_field, unpacked.data_field)
         self.assertEqual(tm_frame.op_ctrl_field, unpacked.op_ctrl_field)
@@ -282,7 +282,7 @@ class TestTmFrame(TestCase):
         tm_frame = TmTransferFrame(
             13, primary_header, None, b"\x00\x01\x02", b"\x10\x00\x00\x00", None
         )
-        packed = tm_frame.pack(tm_frame)
+        packed = tm_frame.pack()
         unpacked = tm_frame.unpack(packed, 13, False)
         self.assertEqual(tm_frame.data_field, unpacked.data_field)
         self.assertEqual(tm_frame.op_ctrl_field, unpacked.op_ctrl_field)
@@ -306,7 +306,7 @@ class TestTmFrame(TestCase):
             frame_datafield_status=dfs,
         )
         tm_frame = TmTransferFrame(9, primary_header, None, b"\x00\x01\x02", None, None)
-        packed = tm_frame.pack(tm_frame)
+        packed = tm_frame.pack()
         unpacked = tm_frame.unpack(packed, 9, False)
         self.assertEqual(tm_frame.data_field, unpacked.data_field)
         self.assertEqual(tm_frame.op_ctrl_field, unpacked.op_ctrl_field)
