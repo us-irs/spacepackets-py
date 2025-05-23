@@ -1,10 +1,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional
 
 from spacepackets.crc import CRC16_CCITT_FUNC
-from spacepackets.exceptions import BytesTooShortError, InvalidCrcCcitt16
+from spacepackets.exceptions import BytesTooShortError, InvalidCrcCcitt16Error
 
 
 @dataclass
@@ -128,10 +127,10 @@ class TmTransferFrame:
         self,
         length: int,
         primary_header: TmFramePrimaryHeader,
-        secondary_header: Optional[TransferFrameSecondaryHeader],
+        secondary_header: None | TransferFrameSecondaryHeader,
         data_field: bytes,
-        op_ctrl_field: Optional[bytes],
-        frame_error_control: Optional[bytes],
+        op_ctrl_field: None | bytes,
+        frame_error_control: None | bytes,
     ) -> None:
         if length < 2048:  # According to CCSDS TM SYNCHRONIZATION AND CHANNEL CODING Blue Book
             self.length = length
@@ -146,7 +145,10 @@ class TmTransferFrame:
     def pack(self) -> bytes:
         packed = bytearray()
         packed.extend(self.primary_header.pack())
-        if self.primary_header.frame_datafield_status.secondary_header_flag:
+        if (
+            self.primary_header.frame_datafield_status.secondary_header_flag
+            and self.secondary_header is not None
+        ):
             packed.extend(self.secondary_header.pack())
         packed.extend(self.data_field)
         if self.op_ctrl_field is not None:
@@ -160,16 +162,12 @@ class TmTransferFrame:
         return bytes(packed)
 
     @classmethod
-    def unpack(
-        cls, data: bytes, length: int, has_error_control_field: bool
-    ) -> TmTransferFrame:
+    def unpack(cls, data: bytes, length: int, has_error_control_field: bool) -> TmTransferFrame:
         primary_header = TmFramePrimaryHeader.unpack(data)
         secondary_header = None
         current_idx = 6
         if primary_header.frame_datafield_status.secondary_header_flag:
-            secondary_header = TransferFrameSecondaryHeader.unpack(
-                data[current_idx:]
-            )
+            secondary_header = TransferFrameSecondaryHeader.unpack(data[current_idx:])
             current_idx += 1 + secondary_header.secondary_header_len
         data_end = len(data)
         op_ctrl_field = None
@@ -187,16 +185,13 @@ class TmTransferFrame:
             frame_error_control = data[-2:]
             # CRC16-CCITT checksum
             if CRC16_CCITT_FUNC(data[:length]) != 0:
-                raise InvalidCrcCcitt16(data)
+                raise InvalidCrcCcitt16Error(data)
             # Used for length checks.
             data_end -= 2
         if primary_header.ocf_flag:
             if current_idx + 4 > len(data):
                 raise BytesTooShortError(current_idx + 4, len(data))
-            if has_error_control_field:
-                op_ctrl_field = data[-6:-2]
-            else:
-                op_ctrl_field = data[-4:]
+            op_ctrl_field = data[-6:-2] if has_error_control_field else data[-4:]
             data_end -= 4
         frame_data_field = data[current_idx:data_end]
         return cls(
