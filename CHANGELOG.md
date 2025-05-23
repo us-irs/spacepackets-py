@@ -8,9 +8,17 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 # [unreleased]
 
+# [v0.29.0] 2025-05-23
+
+## Added
+
+- CCSDS TM Frame impelementation.
+  [109](https://github.com/us-irs/spacepackets-py/pull/109)
+
 ## Fixed
 
-- Bugfix for USLP VCF count handling
+- Bugfix for USLP VCF count handling.
+  [107](https://github.com/us-irs/spacepackets-py/pull/107)
 
 # [v0.28.0] 2025-02-10
 
@@ -593,3 +601,7 @@ Refactored `logging` module usage to be more pythonic.
 
 - Applied formatting with the `black` Python formatter
 - Small tweaks to the NOTICE file
+
+[unreleased]: https://github.com/us-irs/spacepackets-py/compare/v0.29.0...HEAD
+[v0.29.0]: https://github.com/us-irs/spacepackets-py/compare/v0.28.0...v0.29.0
+[v0.28.0]: https://github.com/us-irs/spacepackets-py/compare/v0.27.0...v0.28.0
