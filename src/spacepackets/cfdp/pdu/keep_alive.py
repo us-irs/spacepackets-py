@@ -4,6 +4,8 @@ import copy
 import struct
 from typing import TYPE_CHECKING
 
+from crc import Calculator, Crc16
+
 from spacepackets.cfdp import CrcFlag
 from spacepackets.cfdp.conf import LargeFileFlag, PduConfig
 from spacepackets.cfdp.defs import Direction
@@ -12,7 +14,6 @@ from spacepackets.cfdp.pdu.file_directive import (
     DirectiveType,
     FileDirectivePduBase,
 )
-from spacepackets.crc import CRC16_CCITT_FUNC
 
 if TYPE_CHECKING:
     from spacepackets.cfdp.pdu import PduHeader
@@ -71,7 +72,8 @@ class KeepAlivePdu(AbstractFileDirectiveBase):
         else:
             keep_alive_packet.extend(struct.pack("Q", self.progress))
         if self.pdu_file_directive.pdu_conf.crc_flag == CrcFlag.WITH_CRC:
-            keep_alive_packet.extend(struct.pack("!H", CRC16_CCITT_FUNC(keep_alive_packet)))
+            crc_calc = Calculator(Crc16.IBM_3740)
+            keep_alive_packet.extend(struct.pack("!H", crc_calc.checksum(keep_alive_packet)))
         return keep_alive_packet
 
     @classmethod

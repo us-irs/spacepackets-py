@@ -5,6 +5,8 @@ import enum
 import struct
 from typing import TYPE_CHECKING
 
+from crc import Calculator, Crc16
+
 from spacepackets.cfdp.conf import PduConfig
 from spacepackets.cfdp.defs import ConditionCode, CrcFlag, Direction
 from spacepackets.cfdp.pdu.file_directive import (
@@ -12,7 +14,6 @@ from spacepackets.cfdp.pdu.file_directive import (
     DirectiveType,
     FileDirectivePduBase,
 )
-from spacepackets.crc import CRC16_CCITT_FUNC
 
 if TYPE_CHECKING:
     from spacepackets.cfdp.pdu.header import PduHeader
@@ -114,7 +115,8 @@ class AckPdu(AbstractFileDirectiveBase):
         packet.append((self.directive_code_of_acked_pdu << 4) | self.directive_subtype_code)
         packet.append((self.condition_code_of_acked_pdu << 4) | self.transaction_status)
         if self.pdu_file_directive.pdu_conf.crc_flag == CrcFlag.WITH_CRC:
-            packet.extend(struct.pack("!H", CRC16_CCITT_FUNC(packet)))
+            crc_calc = Calculator(Crc16.IBM_3740)
+            packet.extend(struct.pack("!H", crc_calc.checksum(packet)))
         return packet
 
     def _calculate_directive_field_len(self) -> None:

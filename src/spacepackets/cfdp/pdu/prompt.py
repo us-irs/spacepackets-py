@@ -4,12 +4,13 @@ import copy
 import enum
 import struct
 
+from crc import Calculator, Crc16
+
 from spacepackets.cfdp import CrcFlag
 from spacepackets.cfdp.conf import PduConfig
 from spacepackets.cfdp.defs import Direction
 from spacepackets.cfdp.pdu import AbstractFileDirectiveBase, PduHeader
 from spacepackets.cfdp.pdu.file_directive import DirectiveType, FileDirectivePduBase
-from spacepackets.crc import CRC16_CCITT_FUNC
 from spacepackets.exceptions import BytesTooShortError
 
 
@@ -50,7 +51,8 @@ class PromptPdu(AbstractFileDirectiveBase):
         prompt_pdu = self.pdu_file_directive.pack()
         prompt_pdu.append(self.response_required << 7)
         if self.pdu_file_directive.pdu_conf.crc_flag == CrcFlag.WITH_CRC:
-            prompt_pdu.extend(struct.pack("!H", CRC16_CCITT_FUNC(prompt_pdu)))
+            crc_calc = Calculator(Crc16.IBM_3740)
+            prompt_pdu.extend(struct.pack("!H", crc_calc.checksum(prompt_pdu)))
         return prompt_pdu
 
     def __repr__(self):

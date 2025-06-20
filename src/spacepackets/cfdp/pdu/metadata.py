@@ -5,6 +5,8 @@ import dataclasses
 import struct
 from typing import TYPE_CHECKING
 
+from crc import Calculator, Crc16
+
 from spacepackets.cfdp.conf import LargeFileFlag, PduConfig
 from spacepackets.cfdp.defs import ChecksumType, CrcFlag, Direction
 from spacepackets.cfdp.lv import CfdpLv
@@ -14,7 +16,6 @@ from spacepackets.cfdp.pdu.file_directive import (
     FileDirectivePduBase,
 )
 from spacepackets.cfdp.tlv import CfdpTlv, TlvList
-from spacepackets.crc import CRC16_CCITT_FUNC
 from spacepackets.exceptions import BytesTooShortError
 
 if TYPE_CHECKING:
@@ -193,7 +194,8 @@ class MetadataPdu(AbstractFileDirectiveBase):
             for option in self._options:
                 packet.extend(option.pack())
         if self.pdu_file_directive.pdu_conf.crc_flag == CrcFlag.WITH_CRC:
-            packet.extend(struct.pack("!H", CRC16_CCITT_FUNC(packet)))
+            crc_calc = Calculator(Crc16.IBM_3740)
+            packet.extend(struct.pack("!H", crc_calc.checksum(packet)))
         return packet
 
     @classmethod

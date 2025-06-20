@@ -1,7 +1,8 @@
 import struct
 from unittest import TestCase
 
-from spacepackets.crc import CRC16_CCITT_FUNC
+from crc import Calculator, Crc16
+
 from spacepackets.uslp.defs import (
     UslpFhpVhopFieldMissingError,
     UslpInvalidConstructionRulesError,
@@ -415,7 +416,8 @@ class TestUslp(TestCase):
         self.assertEqual(larger_frame_packed[7 : 7 + 4], bytearray(4))
         self.assertEqual(larger_frame_packed[14 : 14 + 4], bytearray([1, 2, 3, 4]))
         self.assertEqual(larger_frame_packed[18 : 18 + 4], bytearray([4, 3, 2, 1]))
-        crc16 = struct.pack("!H", CRC16_CCITT_FUNC(larger_frame_packed[0:22]))
+        crc_calc = Calculator(Crc16.IBM_3740)
+        crc16 = struct.pack("!H", crc_calc.checksum(larger_frame_packed[0:22]))
         self.assertEqual(larger_frame_packed[22:], crc16)
         with self.assertRaises(UslpInvalidRawPacketOrFrameLenError):
             TransferFrame.unpack(

@@ -5,6 +5,8 @@ import struct
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
+from crc import Calculator, Crc16
+
 from spacepackets.cfdp.conf import PduConfig
 from spacepackets.cfdp.defs import (
     ConditionCode,
@@ -20,7 +22,6 @@ from spacepackets.cfdp.pdu.file_directive import (
 )
 from spacepackets.cfdp.tlv.defs import TlvType
 from spacepackets.cfdp.tlv.tlv import EntityIdTlv, FileStoreResponseTlv
-from spacepackets.crc import CRC16_CCITT_FUNC
 from spacepackets.exceptions import BytesTooShortError
 
 if TYPE_CHECKING:
@@ -201,7 +202,8 @@ class FinishedPdu(AbstractFileDirectiveBase):
         if self.fault_location is not None and self.might_have_fault_location:
             packet.extend(self.fault_location.pack())
         if self.pdu_file_directive.pdu_conf.crc_flag == CrcFlag.WITH_CRC:
-            packet.extend(struct.pack("!H", CRC16_CCITT_FUNC(packet)))
+            crc_calc = Calculator(Crc16.IBM_3740)
+            packet.extend(struct.pack("!H", crc_calc.checksum(packet)))
         return packet
 
     @classmethod

@@ -15,6 +15,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - EOF PDU constructor can now accept the CRC32 checksum in integer format as well.
   [114](https://github.com/us-irs/spacepackets-py/pull/114/files)
 
+## Changed
+
+- Replaced `crcmod` dependency by `crc` for checksum calculation
+  [112](https://github.com/us-irs/spacepackets-py/pull/112)
+
 # [v0.29.0] 2025-05-23
 
 ## Added

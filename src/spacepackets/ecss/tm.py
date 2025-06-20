@@ -8,7 +8,7 @@ import struct
 from abc import abstractmethod
 
 import deprecation
-from crcmod.predefined import PredefinedCrc
+from crc import Calculator, Crc16, TableBasedRegister
 
 from spacepackets.ccsds.spacepacket import (
     CCSDS_HEADER_LEN,
@@ -23,7 +23,6 @@ from spacepackets.ccsds.spacepacket import (
     get_total_space_packet_len_from_len_field,
 )
 from spacepackets.ccsds.time import CdsShortTimestamp
-from spacepackets.crc import CRC16_CCITT_FUNC
 from spacepackets.ecss.defs import PusVersion
 from spacepackets.exceptions import BytesTooShortError
 from spacepackets.util import PrintFormats, get_printable_data_string
@@ -295,18 +294,20 @@ class PusTm(AbstractPusTm):
         tm_packet_raw.extend(self.pus_tm_sec_header.pack())
         tm_packet_raw.extend(self._source_data)
         if self._crc16 is None or recalc_crc:
+            crc_calc = Calculator(Crc16.IBM_3740)
             # CRC16-CCITT checksum
-            self._crc16 = struct.pack("!H", CRC16_CCITT_FUNC(tm_packet_raw))
+            self._crc16 = struct.pack("!H", crc_calc.checksum(tm_packet_raw))
         tm_packet_raw.extend(self._crc16)
         return tm_packet_raw
 
     def calc_crc(self) -> None:
         """Can be called to calculate the CRC16"""
-        crc = PredefinedCrc(crc_name="crc-ccitt-false")
-        crc.update(self.space_packet_header.pack())
-        crc.update(self.pus_tm_sec_header.pack())
-        crc.update(self._source_data)
-        self._crc16 = struct.pack("!H", crc.crcValue)
+        crc_calc = TableBasedRegister(Crc16.IBM_3740)
+        crc_calc.init()
+        crc_calc.update(self.space_packet_header.pack())
+        crc_calc.update(self.pus_tm_sec_header.pack())
+        crc_calc.update(self._source_data)
+        self._crc16 = struct.pack("!H", crc_calc.digest())
 
     @classmethod
     def unpack(cls, data: bytes | bytearray, timestamp_len: int) -> PusTm:
@@ -337,8 +338,9 @@ class PusTm(AbstractPusTm):
             - 2
         ]
         pus_tm._crc16 = bytes(data[expected_packet_len - 2 : expected_packet_len])
+        crc_calc = Calculator(Crc16.IBM_3740)
         # CRC16-CCITT checksum
-        if CRC16_CCITT_FUNC(data[:expected_packet_len]) != 0:
+        if crc_calc.checksum(data[:expected_packet_len]) != 0:
             raise InvalidTmCrc16Error(pus_tm)
         return pus_tm
 

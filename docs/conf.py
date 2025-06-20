@@ -62,7 +62,7 @@ exclude_trees = ["_build"]
 
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),
-    "crcmod": ("https://crcmod.sourceforge.net/", None),
+    "crc": ("https://nicoretti.github.io/crc/", None),
 }
 
 # -- Options for HTML output -------------------------------------------------
