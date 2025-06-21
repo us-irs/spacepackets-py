@@ -174,8 +174,30 @@ class PusTmSecondaryHeader:
 
     def __eq__(self, other: object):
         if isinstance(other, PusTmSecondaryHeader):
-            return self.pack() == other.pack()
+            return (
+                self.subservice == other.subservice
+                and self.service == other.service
+                and self.pus_version == other.pus_version
+                and self.spacecraft_time_ref == other.spacecraft_time_ref
+                and self.message_counter == other.message_counter
+                and self.dest_id == other.dest_id
+                and self.timestamp == other.timestamp
+            )
+
         return False
+
+    def __hash__(self) -> int:
+        return hash(
+            (
+                self.subservice,
+                self.service,
+                self.pus_version,
+                self.spacecraft_time_ref,
+                self.message_counter,
+                self.dest_id,
+                self.timestamp,
+            )
+        )
 
     @property
     def header_size(self) -> int:
@@ -377,6 +399,15 @@ class PusTm(AbstractPusTm):
                 and self._source_data == other._source_data
             )
         return False
+
+    def __hash__(self) -> int:
+        return hash(
+            (
+                self.space_packet_header,
+                self.pus_tm_sec_header,
+                self._source_data,
+            )
+        )
 
     @property
     def packet_seq_control(self) -> PacketSeqCtrl:

@@ -277,3 +277,14 @@ class MetadataPdu(AbstractFileDirectiveBase):
             and self._dest_file_name_lv == other._dest_file_name_lv
             and self._options == other._options
         )
+
+    def __hash__(self) -> int:
+        return hash(
+            (
+                self.pdu_file_directive,
+                self.params,
+                self._source_file_name_lv,
+                self._dest_file_name_lv,
+                self._options,
+            )
+        )

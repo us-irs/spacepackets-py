@@ -276,3 +276,6 @@ class FinishedPdu(AbstractFileDirectiveBase):
             f"{self.__class__.__name__}(params={self._params!r}, "
             f"pdu_conf={self.pdu_file_directive.pdu_conf!r})"
         )
+
+    def __hash__(self) -> int:
+        return hash((self.pdu_file_directive, self._params))

@@ -94,6 +94,9 @@ class PacketFieldEnum(PacketFieldBase):
         num_bytes = self.check_pfc(self.pfc)
         return bytearray(IntByteConversion.to_unsigned(num_bytes, self.val))
 
+    def __hash__(self):
+        return hash((self.pfc, self.val))
+
     def len(self) -> int:
         """Return the length in bytes. This will raise a ValueError for non-byte-aligned
         PFC values."""

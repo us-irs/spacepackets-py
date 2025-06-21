@@ -156,6 +156,9 @@ class Service1Tm(AbstractPusTm):
     def pack(self) -> bytearray:
         return self.pus_tm.pack()
 
+    def __hash__(self) -> int:
+        return hash(self.pus_tm)
+
     @classmethod
     def __empty(cls) -> Service1Tm:
         return cls(apid=0, subservice=Subservice.INVALID, timestamp=b"")

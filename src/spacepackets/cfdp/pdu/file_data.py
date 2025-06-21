@@ -271,6 +271,16 @@ class FileDataPdu(AbstractPduBase):
             return False
         return self.pdu_header == other.pdu_header and self._params == other._params
 
+    def __hash__(self) -> int:
+        return hash(
+            (
+                self.pdu_header,
+                self._params.file_data,
+                self._params.offset,
+                self._params.segment_metadata,
+            )
+        )
+
     def __repr__(self):
         return (
             f"{self.__class__.__name__}(params={self._params!r}, "

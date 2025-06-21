@@ -37,6 +37,9 @@ class AbstractTlvBase(ABC):
             return False
         return self.tlv_type == other.tlv_type and self.value == other.value
 
+    def __hash__(self) -> int:
+        return hash((self.value, self.tlv_type))
+
     def check_type(self, tlv_type: TlvType) -> None:
         if self.tlv_type != tlv_type:
             raise TlvTypeMissmatchError(found=tlv_type, expected=self.tlv_type)

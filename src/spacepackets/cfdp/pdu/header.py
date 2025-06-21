@@ -132,6 +132,18 @@ class AbstractPduBase(abc.ABC):
             and self.packet_len == other.packet_len
         )
 
+    def __hash__(self) -> int:
+        return hash(
+            (
+                self.pdu_type,
+                self.file_flag,
+                self.crc_flag,
+                self.dest_entity_id,
+                self.source_entity_id,
+                self.packet_len,
+            )
+        )
+
     @staticmethod
     def header_len_from_raw(data: bytes | bytearray) -> int:
         entity_id_len = ((data[3] >> 4) & 0b111) + 1

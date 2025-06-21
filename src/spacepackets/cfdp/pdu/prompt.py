@@ -90,3 +90,11 @@ class PromptPdu(AbstractFileDirectiveBase):
             self.pdu_file_directive == other.pdu_file_directive
             and self.response_required == other.response_required
         )
+
+    def __hash__(self) -> int:
+        return hash(
+            (
+                self.pdu_file_directive,
+                self.response_required,
+            )
+        )

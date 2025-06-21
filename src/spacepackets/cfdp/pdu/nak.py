@@ -302,6 +302,16 @@ class NakPdu(AbstractFileDirectiveBase):
             and self.end_of_scope == other.end_of_scope
         )
 
+    def __hash__(self) -> int:
+        return hash(
+            (
+                self.pdu_file_directive,
+                tuple(self._segment_requests),
+                self.start_of_scope,
+                self.end_of_scope,
+            )
+        )
+
     def __repr__(self):
         return (
             f"{self.__class__.__name__}(start_of_scope={self.start_of_scope!r}, "
