@@ -116,6 +116,14 @@ class KeepAlivePdu(AbstractFileDirectiveBase):
             self.pdu_file_directive == other.pdu_file_directive and self.progress == other.progress
         )
 
+    def __hash__(self) -> int:
+        return hash(
+            (
+                self.pdu_file_directive,
+                self.progress,
+            )
+        )
+
     def __repr__(self):
         return (
             f"{self.__class__.__name__}(pdu_conf={self.pdu_file_directive.pdu_conf!r}, "

@@ -170,6 +170,9 @@ class CdsShortTimestamp(CcsdsTimeProvider):
             return (self.ccsds_days == other.ccsds_days) and (self.ms_of_day == other.ms_of_day)
         return False
 
+    def __hash__(self) -> int:
+        return hash((self._ccsds_days, self._ms_of_day))
+
     def __add__(self, timedelta: datetime.timedelta):
         """Allows adding timedelta to the CDS timestamp provider.
 

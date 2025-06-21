@@ -98,9 +98,6 @@ class AbstractFileDirectiveBase(AbstractPduBase):
         """
         return self.pdu_header.packet_len
 
-    def __eq__(self, other: AbstractFileDirectiveBase):
-        return self.pdu_header == other.pdu_header and self.directive_type == other.directive_type
-
 
 class FileDirectivePduBase(AbstractFileDirectiveBase):
     """Base class for file directive PDUs encapsulating all its common components.
@@ -171,6 +168,14 @@ class FileDirectivePduBase(AbstractFileDirectiveBase):
         data.append(self._directive_type)
         return data
 
+    def __hash__(self) -> int:
+        return hash(
+            (
+                self.pdu_header,
+                self._directive_type,
+            )
+        )
+
     @classmethod
     def unpack(cls, raw_packet: bytes | bytearray) -> FileDirectivePduBase:
         """Unpack a raw bytearray into the File Directive PDU object representation.
@@ -219,6 +224,3 @@ class FileDirectivePduBase(AbstractFileDirectiveBase):
             f"directive_param_field_len={self.directive_param_field_len!r}, "
             f"pdu_conf={self.pdu_conf!r})"
         )
-
-    def __eq__(self, other: FileDirectivePduBase):
-        return AbstractFileDirectiveBase.__eq__(self, other)

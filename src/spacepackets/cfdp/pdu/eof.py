@@ -167,6 +167,17 @@ class EofPdu(AbstractFileDirectiveBase):
             and self._fault_location == other._fault_location
         )
 
+    def __hash__(self) -> int:
+        return hash(
+            (
+                self.pdu_file_directive,
+                self.condition_code,
+                self.file_checksum,
+                self.file_size,
+                self._fault_location,
+            )
+        )
+
     def __repr__(self):
         return (
             f"{self.__class__.__name__}(file_checksum={self.file_checksum!r},"

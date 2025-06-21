@@ -22,6 +22,7 @@ from spacepackets.ccsds.spacepacket import (
 )
 from spacepackets.crc import CRC16_CCITT_FUNC
 from spacepackets.ecss.defs import PusVersion
+from spacepackets.ecss.req_id import RequestId
 from spacepackets.version import get_version
 
 
@@ -88,9 +89,20 @@ class PusTcDataFieldHeader:
             f" subservice={self.subservice!r}, ack_flags={self.ack_flags!r} "
         )
 
+    def __hash__(self):
+        return hash(
+            (self.pus_version, self.service, self.subservice, self.source_id, self.ack_flags)
+        )
+
     def __eq__(self, other: object):
         if isinstance(other, PusTcDataFieldHeader):
-            return self.pack() == other.pack()
+            return (
+                other.pus_version == self.pus_version
+                and self.service == other.service
+                and self.subservice == other.subservice
+                and self.source_id == other.source_id
+                and self.ack_flags == other.ack_flags
+            )
         return False
 
     @classmethod
@@ -217,7 +229,6 @@ class PusTc(AbstractSpacePacket):
 
     def __str__(self):
         """Returns string representation of a class instance."""
-        from .req_id import RequestId
 
         return (
             f"PUS TC[{self.pus_tc_sec_header.service},"
@@ -234,6 +245,15 @@ class PusTc(AbstractSpacePacket):
                 and self._app_data == other._app_data
             )
         return False
+
+    def __hash__(self):
+        return hash(
+            (
+                self.sp_header,
+                self.pus_tc_sec_header,
+                self._app_data,
+            )
+        )
 
     def to_space_packet(self) -> SpacePacket:
         """Retrieve the generic CCSDS space packet representation. This also calculates the CRC16

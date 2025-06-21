@@ -540,3 +540,6 @@ class EntityIdTlv(AbstractTlvBase):
         own_id = UnsignedByteField.from_bytes(self.value)
         other_id = UnsignedByteField.from_bytes(other.value)
         return own_id.value == other_id.value
+
+    def __hash__(self) -> int:
+        return super().__hash__()

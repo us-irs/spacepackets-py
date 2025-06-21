@@ -74,8 +74,11 @@ class PacketSeqCtrl:
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, PacketSeqCtrl):
-            return self.raw() == other.raw()
+            return self.seq_flags == other.seq_flags and self.seq_count == other.seq_count
         return False
+
+    def __hash__(self) -> int:
+        return hash((self.seq_flags, self.seq_count))
 
     @classmethod
     def from_raw(cls, raw: int) -> PacketSeqCtrl:
@@ -115,8 +118,21 @@ class PacketId:
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, PacketId):
-            return self.raw() == other.raw()
+            return (
+                self.ptype == other.ptype
+                and self.sec_header_flag == other.sec_header_flag
+                and self.apid == other.apid
+            )
         return False
+
+    def __hash__(self) -> int:
+        return hash(
+            (
+                self.ptype,
+                self.sec_header_flag,
+                self.apid,
+            )
+        )
 
     @classmethod
     def from_raw(cls, raw: int) -> PacketId:
@@ -427,8 +443,23 @@ class SpacePacketHeader(AbstractSpacePacket):
 
     def __eq__(self, other: object):
         if isinstance(other, SpacePacketHeader):
-            return self.pack() == other.pack()
+            return (
+                self._ccsds_version == other._ccsds_version
+                and self._packet_id == other._packet_id
+                and self._psc == other._psc
+                and self.data_len == other.data_len
+            )
         return False
+
+    def __hash__(self) -> int:
+        return hash(
+            (
+                self._ccsds_version,
+                self._packet_id,
+                self._psc,
+                self.data_len,
+            )
+        )
 
 
 SpHeader = SpacePacketHeader
@@ -497,6 +528,9 @@ class SpacePacket:
                 and self.user_data == other.user_data
             )
         return False
+
+    def __hash__(self) -> int:
+        return hash((self.sp_header, self.sec_header, self.user_data))
 
 
 def get_space_packet_id_bytes(

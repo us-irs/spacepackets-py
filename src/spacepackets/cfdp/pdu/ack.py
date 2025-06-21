@@ -87,6 +87,17 @@ class AckPdu(AbstractFileDirectiveBase):
             and self.transaction_status == other.transaction_status
         )
 
+    def __hash__(self) -> int:
+        return hash(
+            (
+                self.pdu_file_directive,
+                self.directive_code_of_acked_pdu,
+                self.directive_subtype_code,
+                self.condition_code_of_acked_pdu,
+                self.transaction_status,
+            )
+        )
+
     @classmethod
     def __empty(cls) -> AckPdu:
         empty_conf = PduConfig.empty()
