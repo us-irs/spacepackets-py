@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 # [unreleased]
 
+## Added
+
+- Various missing `__hash__` impelementations.
+  [113](https://github.com/us-irs/spacepackets-py/pull/113)
+
 # [v0.29.0] 2025-05-23
 
 ## Added
