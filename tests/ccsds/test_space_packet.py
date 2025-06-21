@@ -220,7 +220,6 @@ class TestSpacePacket(TestCase):
         test_dict.update({psc: 2})
         self.assertEqual(test_dict[psc], 2)
 
-
     def test_from_composite_field(self):
         packet_id = PacketId(ptype=PacketType.TC, apid=0x3FF, sec_header_flag=True)
         psc = PacketSeqCtrl(seq_count=0x22, seq_flags=SequenceFlags.UNSEGMENTED)

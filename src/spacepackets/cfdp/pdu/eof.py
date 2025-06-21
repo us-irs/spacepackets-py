@@ -25,7 +25,7 @@ class EofPdu(AbstractFileDirectiveBase):
     def __init__(
         self,
         pdu_conf: PduConfig,
-        file_checksum: bytes,
+        file_checksum: bytes | bytearray | int,
         file_size: int,
         fault_location: EntityIdTlv | None = None,
         condition_code: ConditionCode = ConditionCode.NO_ERROR,
@@ -53,10 +53,13 @@ class EofPdu(AbstractFileDirectiveBase):
             Invalid input, file checksum not 4 bytes long.
         """
         pdu_conf = copy.copy(pdu_conf)
-        if len(file_checksum) != 4:
-            raise ValueError
+        if isinstance(file_checksum, (bytes, bytearray)) and len(file_checksum) != 4:
+            raise ValueError("file checksum must be 4 bytes long")
+        if isinstance(file_checksum, int):
+            self.file_checksum = struct.pack("!I", file_checksum)
+        else:
+            self.file_checksum = bytes(file_checksum)
         self.condition_code = condition_code
-        self.file_checksum = file_checksum
         pdu_conf.direction = Direction.TOWARDS_RECEIVER
         self.pdu_file_directive = FileDirectivePduBase(
             directive_code=DirectiveType.EOF_PDU,

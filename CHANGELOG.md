@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 - Various missing `__hash__` impelementations.
   [113](https://github.com/us-irs/spacepackets-py/pull/113)
+- EOF PDU constructor can now accept the CRC32 checksum in integer format as well.
+  [114](https://github.com/us-irs/spacepackets-py/pull/114/files)
 
 # [v0.29.0] 2025-05-23
 
