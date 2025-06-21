@@ -58,7 +58,7 @@ class TestEofPdu(TestCase):
 
     def test_with_crc(self):
         self.pdu_conf.crc_flag = CrcFlag.WITH_CRC
-        eof = EofPdu(file_checksum=NULL_CHECKSUM_U32, file_size=0, pdu_conf=self.pdu_conf)
+        eof = EofPdu(file_checksum=0, file_size=0, pdu_conf=self.pdu_conf)
         expected_packet_len = eof.header_len + 1 + 4 + 4 + 2
         self.assertEqual(eof.packet_len, expected_packet_len)
         eof_raw = eof.pack()
