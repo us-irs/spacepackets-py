@@ -3,6 +3,8 @@ from __future__ import annotations
 import abc
 import struct
 
+from crc import Calculator, Crc16
+
 from spacepackets.cfdp.conf import (
     PduConfig,
 )
@@ -19,7 +21,6 @@ from spacepackets.cfdp.defs import (
     TransmissionMode,
     UnsupportedCfdpVersionError,
 )
-from spacepackets.crc import CRC16_CCITT_FUNC
 from spacepackets.exceptions import BytesTooShortError
 from spacepackets.util import ByteFieldGenerator, UnsignedByteField
 
@@ -369,9 +370,10 @@ class PduHeader(AbstractPduBase):
     def verify_length_and_checksum(self, data: bytes | bytearray) -> int:
         if len(data) < self.packet_len:
             raise BytesTooShortError(self.packet_len, len(data))
+        crc_calc = Calculator(Crc16.IBM_3740)
         if (
             self.pdu_conf.crc_flag == CrcFlag.WITH_CRC
-            and CRC16_CCITT_FUNC(data[: self.packet_len]) != 0
+            and crc_calc.checksum(data[: self.packet_len]) != 0
         ):
             raise InvalidCrcError(
                 struct.unpack("!H", data[self.packet_len - 2 : self.packet_len])[0]

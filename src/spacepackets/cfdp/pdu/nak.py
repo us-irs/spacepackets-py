@@ -3,6 +3,8 @@ from __future__ import annotations
 import struct
 from typing import TYPE_CHECKING
 
+from crc import Calculator, Crc16
+
 from spacepackets.cfdp import CrcFlag
 from spacepackets.cfdp.conf import PduConfig
 from spacepackets.cfdp.defs import Direction
@@ -12,7 +14,6 @@ from spacepackets.cfdp.pdu.file_directive import (
     FileDirectivePduBase,
     LargeFileFlag,
 )
-from spacepackets.crc import CRC16_CCITT_FUNC
 
 if TYPE_CHECKING:
     from spacepackets.cfdp.pdu import PduHeader
@@ -223,7 +224,8 @@ class NakPdu(AbstractFileDirectiveBase):
                 nak_pdu.extend(struct.pack("!Q", segment_request[0]))
                 nak_pdu.extend(struct.pack("!Q", segment_request[1]))
         if self.pdu_file_directive.pdu_conf.crc_flag == CrcFlag.WITH_CRC:
-            nak_pdu.extend(struct.pack("!H", CRC16_CCITT_FUNC(nak_pdu)))
+            crc_calc = Calculator(Crc16.IBM_3740)
+            nak_pdu.extend(struct.pack("!H", crc_calc.checksum(nak_pdu)))
         return nak_pdu
 
     @classmethod

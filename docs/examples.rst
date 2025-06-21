@@ -42,6 +42,7 @@ small file transfer.
 
 .. testcode:: cfdp
 
+  import struct
   from collections import deque
   from spacepackets.cfdp.conf import ByteFieldU8
   from spacepackets.cfdp.defs import ChecksumType, TransmissionMode
@@ -53,7 +54,7 @@ small file transfer.
       PduConfig,
   )
   from spacepackets.cfdp.pdu.file_data import FileDataParams
-  from crcmod.predefined import PredefinedCrc
+  from crc import Calculator, Crc32
 
   LOCAL_ID = ByteFieldU8(1)
   REMOTE_ID = ByteFieldU8(2)
@@ -76,9 +77,8 @@ small file transfer.
 
   file_transfer_queue.append(fd_pdu)
 
-  crc_calculator = PredefinedCrc("crc32")
-  crc_calculator.update(file_data.encode())
-  crc_32 = crc_calculator.digest()
+  crc_calculator = Calculator(Crc32.CRC32)
+  crc_32 = crc_calculator.checksum(file_data.encode())
   eof_pdu = EofPdu(pdu_conf, crc_32, len(file_data))
   file_transfer_queue.append(eof_pdu)
 

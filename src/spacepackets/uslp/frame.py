@@ -4,7 +4,7 @@ import enum
 import struct
 from typing import Union
 
-from spacepackets.crc import CRC16_CCITT_FUNC
+from crc import Calculator, Crc16
 
 from .defs import (
     UslpChecksumError,
@@ -336,7 +336,8 @@ class TransferFrame:
         elif not truncated and self.header.op_ctrl_flag:
             raise UslpInvalidFrameHeaderError
         if self.has_fecf:
-            frame.extend(struct.pack("!H", CRC16_CCITT_FUNC(frame)))
+            crc_calc = Calculator(Crc16.IBM_3740)
+            frame.extend(struct.pack("!H", crc_calc.checksum(frame)))
         return frame
 
     def set_frame_len_in_header(self) -> None:
@@ -450,7 +451,8 @@ class TransferFrame:
             current_idx += 4
         # Parse Frame Error Control field if present
         if frame_properties.has_fecf:
-            crc_check = CRC16_CCITT_FUNC(raw_frame[0 : current_idx + 2])
+            crc_calc = Calculator(Crc16.IBM_3740)
+            crc_check = crc_calc.checksum(raw_frame[0 : current_idx + 2])
             if crc_check != 0:
                 raise UslpChecksumError
 

@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from spacepackets.crc import CRC16_CCITT_FUNC
+from crc import Calculator, Crc16
+
 from spacepackets.exceptions import BytesTooShortError, InvalidCrcCcitt16Error
 
 
@@ -184,7 +185,8 @@ class TmTransferFrame:
                     raise BytesTooShortError(current_idx + len_data + 2, len(data))
             frame_error_control = data[-2:]
             # CRC16-CCITT checksum
-            if CRC16_CCITT_FUNC(data[:length]) != 0:
+            crc_calc = Calculator(Crc16.IBM_3740)
+            if crc_calc.checksum(data[:length]) != 0:
                 raise InvalidCrcCcitt16Error(data)
             # Used for length checks.
             data_end -= 2
