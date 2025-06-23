@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 # [unreleased]
 
+# [v0.30.0] 2025-06-23
+
 ## Added
 
 - Various missing `__hash__` impelementations.
@@ -614,6 +616,7 @@ Refactored `logging` module usage to be more pythonic.
 - Applied formatting with the `black` Python formatter
 - Small tweaks to the NOTICE file
 
-[unreleased]: https://github.com/us-irs/spacepackets-py/compare/v0.29.0...HEAD
+[unreleased]: https://github.com/us-irs/spacepackets-py/compare/v0.30.0...HEAD
+[v0.29.0]: https://github.com/us-irs/spacepackets-py/compare/v0.29.0...v0.30.0
 [v0.29.0]: https://github.com/us-irs/spacepackets-py/compare/v0.28.0...v0.29.0
 [v0.28.0]: https://github.com/us-irs/spacepackets-py/compare/v0.27.0...v0.28.0
