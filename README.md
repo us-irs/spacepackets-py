@@ -63,7 +63,7 @@ pip install coverage pytest
 Running tests regularly:
 
 ```sh
-pytest .
+pytest
 ```
 
 Running tests with coverage:
