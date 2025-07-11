@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from crc import Calculator, Crc16
+import fastcrc
 
 from spacepackets import PacketType, SpacePacketHeader
 from spacepackets.ccsds.spacepacket import SequenceFlags
@@ -167,20 +167,19 @@ class TestTelecommand(TestCase):
 
     def test_crc_16(self):
         pus_17_telecommand = PusTc(apid=25, service=17, subservice=1, seq_count=25)
-        crc_calc = Calculator(Crc16.IBM_3740)
-        crc = crc_calc.checksum(pus_17_telecommand.pack())
+        crc = fastcrc.crc16.ibm_3740(bytes(pus_17_telecommand.pack()))
         self.assertTrue(crc == 0)
 
         test_data = bytearray([192, 23, 4, 82, 3, 6])
         data_with_crc = generate_crc(test_data)
-        crc = crc_calc.checksum(data_with_crc)
+        crc = fastcrc.crc16.ibm_3740(bytes(data_with_crc))
         self.assertTrue(crc == 0)
 
         packet_raw = pus_17_telecommand.pack()
         packet_raw[len(packet_raw) - 1] += 1
-        self.assertTrue(crc_calc.checksum(packet_raw) != 0)
+        self.assertTrue(fastcrc.crc16.ibm_3740(bytes(packet_raw)) != 0)
         packet_raw = generate_packet_crc(packet_raw)
-        self.assertTrue(crc_calc.checksum(packet_raw) == 0)
+        self.assertTrue(fastcrc.crc16.ibm_3740(packet_raw) == 0)
 
     def test_getter_functions(self):
         pus_17_telecommand = PusTc(apid=26, service=17, subservice=1, seq_count=25)

@@ -3,7 +3,7 @@ from __future__ import annotations
 import abc
 import struct
 
-from crc import Calculator, Crc16
+import fastcrc
 
 from spacepackets.cfdp.conf import (
     PduConfig,
@@ -370,10 +370,9 @@ class PduHeader(AbstractPduBase):
     def verify_length_and_checksum(self, data: bytes | bytearray) -> int:
         if len(data) < self.packet_len:
             raise BytesTooShortError(self.packet_len, len(data))
-        crc_calc = Calculator(Crc16.IBM_3740)
         if (
             self.pdu_conf.crc_flag == CrcFlag.WITH_CRC
-            and crc_calc.checksum(data[: self.packet_len]) != 0
+            and fastcrc.crc16.ibm_3740(bytes(data[: self.packet_len])) != 0
         ):
             raise InvalidCrcError(
                 struct.unpack("!H", data[self.packet_len - 2 : self.packet_len])[0]

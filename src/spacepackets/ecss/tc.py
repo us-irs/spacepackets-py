@@ -7,7 +7,7 @@ from __future__ import annotations
 import struct
 
 import deprecation
-from crc import Calculator, Crc16, TableBasedRegister
+from fastcrc import crc16
 
 from spacepackets import BytesTooShortError
 from spacepackets.ccsds.spacepacket import (
@@ -264,12 +264,10 @@ class PusTc(AbstractSpacePacket):
 
     def calc_crc(self) -> None:
         """Can be called to calculate the CRC16. Also sets the internal CRC16 field."""
-        crc_calc = TableBasedRegister(Crc16.IBM_3740)
-        crc_calc.init()
-        crc_calc.update(self.sp_header.pack())
-        crc_calc.update(self.pus_tc_sec_header.pack())
-        crc_calc.update(self.app_data)
-        self._crc16 = struct.pack("!H", crc_calc.digest())
+        crc_calc = crc16.ibm_3740(bytes(self.sp_header.pack()))
+        crc_calc = crc16.ibm_3740(bytes(self.pus_tc_sec_header.pack()), crc_calc)
+        crc_calc = crc16.ibm_3740(self.app_data, crc_calc)
+        self._crc16 = struct.pack("!H", crc_calc)
 
     def pack(self, recalc_crc: bool = True) -> bytearray:
         """Serializes the TC data fields into a bytearray.
@@ -283,8 +281,7 @@ class PusTc(AbstractSpacePacket):
         packed_data.extend(self.pus_tc_sec_header.pack())
         packed_data += self.app_data
         if self._crc16 is None or recalc_crc:
-            crc_calc = Calculator(Crc16.IBM_3740)
-            self._crc16 = struct.pack("!H", crc_calc.checksum(packed_data))
+            self._crc16 = struct.pack("!H", crc16.ibm_3740(bytes(packed_data)))
         packed_data.extend(self._crc16)
         return packed_data
 
@@ -305,8 +302,7 @@ class PusTc(AbstractSpacePacket):
             raise BytesTooShortError(expected_packet_len, len(data))
         tc_unpacked._app_data = data[header_len : expected_packet_len - 2]
         tc_unpacked._crc16 = bytes(data[expected_packet_len - 2 : expected_packet_len])
-        crc_calc = Calculator(Crc16.IBM_3740)
-        if crc_calc.checksum(data[:expected_packet_len]) != 0:
+        if crc16.ibm_3740(bytes(data[:expected_packet_len])) != 0:
             raise InvalidTcCrc16Error(tc_unpacked)
         return tc_unpacked
 
@@ -407,8 +403,7 @@ def generate_packet_crc(tc_packet: bytearray) -> bytes:
     CRC16 checksum and adds it as correct Packet Error Control Code.
     Reference: ECSS-E70-41A p. 207-212
     """
-    crc_calc = Calculator(Crc16.IBM_3740)
-    crc = crc_calc.checksum(tc_packet[0 : len(tc_packet) - 2])
+    crc = crc16.ibm_3740(bytes(tc_packet[0 : len(tc_packet) - 2]))
     tc_packet[len(tc_packet) - 2] = (crc & 0xFF00) >> 8
     tc_packet[len(tc_packet) - 1] = crc & 0xFF
     return bytes(tc_packet)
@@ -418,7 +413,6 @@ def generate_crc(data: bytearray) -> bytes:
     """Takes the application data, appends the CRC16 checksum and returns resulting bytearray"""
     data_with_crc = bytearray()
     data_with_crc += data
-    crc_calc = Calculator(Crc16.IBM_3740)
-    crc = crc_calc.checksum(data)
+    crc = crc16.ibm_3740(bytes(data))
     data_with_crc.extend(struct.pack("!H", crc))
     return bytes(data_with_crc)

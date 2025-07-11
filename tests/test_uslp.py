@@ -1,7 +1,7 @@
 import struct
 from unittest import TestCase
 
-from crc import Calculator, Crc16
+import fastcrc
 
 from spacepackets.uslp.defs import (
     UslpFhpVhopFieldMissingError,
@@ -416,8 +416,7 @@ class TestUslp(TestCase):
         self.assertEqual(larger_frame_packed[7 : 7 + 4], bytearray(4))
         self.assertEqual(larger_frame_packed[14 : 14 + 4], bytearray([1, 2, 3, 4]))
         self.assertEqual(larger_frame_packed[18 : 18 + 4], bytearray([4, 3, 2, 1]))
-        crc_calc = Calculator(Crc16.IBM_3740)
-        crc16 = struct.pack("!H", crc_calc.checksum(larger_frame_packed[0:22]))
+        crc16 = struct.pack("!H", fastcrc.crc16.ibm_3740(bytes(larger_frame_packed[0:22])))
         self.assertEqual(larger_frame_packed[22:], crc16)
         with self.assertRaises(UslpInvalidRawPacketOrFrameLenError):
             TransferFrame.unpack(

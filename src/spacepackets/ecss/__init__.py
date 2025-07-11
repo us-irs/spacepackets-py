@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from crc import Calculator, Crc16
+import fastcrc
 
 from .defs import PusService, PusVersion
 from .fields import (
@@ -49,5 +49,4 @@ def check_pus_crc(packet: bytes | bytearray) -> bool:
 
     :return: True if the CRC is valid, False otherwise.
     """
-    calculator = Calculator(Crc16.IBM_3740)
-    return calculator.checksum(packet) == 0
+    return fastcrc.crc16.ibm_3740(bytes(packet)) == 0

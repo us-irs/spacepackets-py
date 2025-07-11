@@ -8,7 +8,7 @@ import struct
 from abc import abstractmethod
 
 import deprecation
-from crc import Calculator, Crc16, TableBasedRegister
+from fastcrc import crc16
 
 from spacepackets.ccsds.spacepacket import (
     CCSDS_HEADER_LEN,
@@ -294,20 +294,17 @@ class PusTm(AbstractPusTm):
         tm_packet_raw.extend(self.pus_tm_sec_header.pack())
         tm_packet_raw.extend(self._source_data)
         if self._crc16 is None or recalc_crc:
-            crc_calc = Calculator(Crc16.IBM_3740)
             # CRC16-CCITT checksum
-            self._crc16 = struct.pack("!H", crc_calc.checksum(tm_packet_raw))
+            self._crc16 = struct.pack("!H", crc16.ibm_3740(bytes(tm_packet_raw)))
         tm_packet_raw.extend(self._crc16)
         return tm_packet_raw
 
     def calc_crc(self) -> None:
         """Can be called to calculate the CRC16"""
-        crc_calc = TableBasedRegister(Crc16.IBM_3740)
-        crc_calc.init()
-        crc_calc.update(self.space_packet_header.pack())
-        crc_calc.update(self.pus_tm_sec_header.pack())
-        crc_calc.update(self._source_data)
-        self._crc16 = struct.pack("!H", crc_calc.digest())
+        crc_calc = crc16.ibm_3740(bytes(self.space_packet_header.pack()))
+        crc_calc = crc16.ibm_3740(bytes(self.pus_tm_sec_header.pack()), crc_calc)
+        crc_calc = crc16.ibm_3740(bytes(self._source_data), crc_calc)
+        self._crc16 = struct.pack("!H", crc_calc)
 
     @classmethod
     def unpack(cls, data: bytes | bytearray, timestamp_len: int) -> PusTm:
@@ -338,9 +335,8 @@ class PusTm(AbstractPusTm):
             - 2
         ]
         pus_tm._crc16 = bytes(data[expected_packet_len - 2 : expected_packet_len])
-        crc_calc = Calculator(Crc16.IBM_3740)
         # CRC16-CCITT checksum
-        if crc_calc.checksum(data[:expected_packet_len]) != 0:
+        if crc16.ibm_3740(bytes(data[:expected_packet_len])) != 0:
             raise InvalidTmCrc16Error(pus_tm)
         return pus_tm
 

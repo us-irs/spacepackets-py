@@ -54,7 +54,7 @@ small file transfer.
       PduConfig,
   )
   from spacepackets.cfdp.pdu.file_data import FileDataParams
-  from crc import Calculator, Crc32
+  import fastcrc
 
   LOCAL_ID = ByteFieldU8(1)
   REMOTE_ID = ByteFieldU8(2)
@@ -77,8 +77,7 @@ small file transfer.
 
   file_transfer_queue.append(fd_pdu)
 
-  crc_calculator = Calculator(Crc32.CRC32)
-  crc_32 = crc_calculator.checksum(file_data.encode())
+  crc_32 = fastcrc.crc32.iso_hdlc(file_data.encode())
   eof_pdu = EofPdu(pdu_conf, crc_32, len(file_data))
   file_transfer_queue.append(eof_pdu)
 

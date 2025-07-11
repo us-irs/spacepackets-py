@@ -2,7 +2,7 @@
 import struct
 from unittest import TestCase
 
-from crc import Calculator, Crc16
+import fastcrc
 
 from spacepackets.ccsds.spacepacket import (
     PacketId,
@@ -94,9 +94,8 @@ class TestTelemetry(TestCase):
         self.raw_check_before_stamp()
         self.assertEqual(self.ping_reply_raw[13 : 13 + 7], TEST_STAMP)
         # CRC16-CCITT checksum
-        crc_calc = Calculator(Crc16.IBM_3740)
         data_to_check = self.ping_reply_raw[0:20]
-        crc16 = crc_calc.checksum(data_to_check)
+        crc16 = fastcrc.crc16.ibm_3740(bytes(data_to_check))
         self.assertEqual(crc16, struct.unpack("!H", self.ping_reply_raw[20:22])[0])
 
     def test_state_setting(self):

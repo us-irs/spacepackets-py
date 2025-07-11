@@ -6,7 +6,7 @@ import struct
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from crc import Calculator, Crc16
+import fastcrc
 
 from spacepackets.cfdp import CrcFlag, LargeFileFlag
 from spacepackets.cfdp.conf import PduConfig
@@ -212,8 +212,7 @@ class FileDataPdu(AbstractPduBase):
             file_data_pdu.extend(struct.pack("!Q", self._params.offset))
         file_data_pdu.extend(self._params.file_data)
         if self.pdu_header.crc_flag == CrcFlag.WITH_CRC:
-            crc_calc = Calculator(Crc16.IBM_3740)
-            file_data_pdu.extend(struct.pack("!H", crc_calc.checksum(file_data_pdu)))
+            file_data_pdu.extend(struct.pack("!H", fastcrc.crc16.ibm_3740(bytes(file_data_pdu))))
         return file_data_pdu
 
     @classmethod

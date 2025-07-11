@@ -3,7 +3,7 @@ from __future__ import annotations
 import struct
 from typing import TYPE_CHECKING
 
-from crc import Calculator, Crc16
+import fastcrc
 
 from spacepackets.cfdp import CrcFlag
 from spacepackets.cfdp.conf import PduConfig
@@ -224,8 +224,7 @@ class NakPdu(AbstractFileDirectiveBase):
                 nak_pdu.extend(struct.pack("!Q", segment_request[0]))
                 nak_pdu.extend(struct.pack("!Q", segment_request[1]))
         if self.pdu_file_directive.pdu_conf.crc_flag == CrcFlag.WITH_CRC:
-            crc_calc = Calculator(Crc16.IBM_3740)
-            nak_pdu.extend(struct.pack("!H", crc_calc.checksum(nak_pdu)))
+            nak_pdu.extend(struct.pack("!H", fastcrc.crc16.ibm_3740(bytes(nak_pdu))))
         return nak_pdu
 
     @classmethod

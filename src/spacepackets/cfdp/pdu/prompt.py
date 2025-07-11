@@ -4,7 +4,7 @@ import copy
 import enum
 import struct
 
-from crc import Calculator, Crc16
+import fastcrc
 
 from spacepackets.cfdp import CrcFlag
 from spacepackets.cfdp.conf import PduConfig
@@ -51,8 +51,7 @@ class PromptPdu(AbstractFileDirectiveBase):
         prompt_pdu = self.pdu_file_directive.pack()
         prompt_pdu.append(self.response_required << 7)
         if self.pdu_file_directive.pdu_conf.crc_flag == CrcFlag.WITH_CRC:
-            crc_calc = Calculator(Crc16.IBM_3740)
-            prompt_pdu.extend(struct.pack("!H", crc_calc.checksum(prompt_pdu)))
+            prompt_pdu.extend(struct.pack("!H", fastcrc.crc16.ibm_3740(bytes(prompt_pdu))))
         return prompt_pdu
 
     def __repr__(self):

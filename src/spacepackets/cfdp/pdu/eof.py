@@ -4,7 +4,7 @@ import copy
 import struct
 from typing import TYPE_CHECKING
 
-from crc import Calculator, Crc16
+import fastcrc
 
 from spacepackets.cfdp.conf import PduConfig
 from spacepackets.cfdp.defs import ConditionCode, CrcFlag, Direction
@@ -122,8 +122,7 @@ class EofPdu(AbstractFileDirectiveBase):
         if self.fault_location is not None:
             eof_pdu.extend(self.fault_location.pack())
         if self.pdu_file_directive.pdu_conf.crc_flag == CrcFlag.WITH_CRC:
-            crc_calc = Calculator(Crc16.IBM_3740)
-            eof_pdu.extend(struct.pack("!H", crc_calc.checksum(eof_pdu)))
+            eof_pdu.extend(struct.pack("!H", fastcrc.crc16.ibm_3740(bytes(eof_pdu))))
         return eof_pdu
 
     @classmethod
