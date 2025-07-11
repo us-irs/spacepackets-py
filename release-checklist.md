@@ -11,7 +11,7 @@ The steps shown here are for Ubuntu/MacOS.
 2. Bump version inside the `pyproject.toml` file.
 3. Update `CHANGELOG.md`: Convert `unreleased` section into version section
    with date and new `unreleased`section.
-4. Run tests with `pytest .`
+4. Run tests with `pytest`
 5. Run auto-formatter with `ruff format .`
 6. Run linter with `ruff check .`
 7. Wait for CI/CD results. This also runs the tests on different operating systems
