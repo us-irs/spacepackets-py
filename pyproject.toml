@@ -39,7 +39,8 @@ dependencies = [
 exclude = [
     ".git",
     "venv",
-    "docs"
+    "docs",
+    "benchmarks",
 ]
 line-length = 100
 
@@ -105,3 +106,9 @@ ignore = [
 
 [tool.ruff.lint.pylint]
 max-args = 10
+
+[tool.pytest.ini_options]
+# Run doctest by default as well. Please note that this will not run the doctests inside
+# the docs folder. For this, you have to use `make doctest` inside the docs folder.
+addopts = ["--doctest-modules"]
+testpaths = ["tests"]
