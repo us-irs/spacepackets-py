@@ -63,6 +63,7 @@ exclude_trees = ["_build"]
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),
     "crc": ("https://nicoretti.github.io/crc/", None),
+    "fastcrc": ("https://fastcrc.readthedocs.io/en/latest/", None),
 }
 
 # -- Options for HTML output -------------------------------------------------
