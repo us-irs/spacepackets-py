@@ -17,7 +17,8 @@ Currently, this includes the following components:
 - CCSDS CDS short timestamp implementation according to `CCSDS 301.0-B-4 3.3`_:
   :ref:`API <api/ccsds_time:CDS Time Submodule>`.
 - PUS Telecommand and PUS Telemetry implementation according to the
-  `ECSS-E-ST-70-41C standard`_: :ref:`API <api/ecss:ECSS Package>`
+  `ECSS-E-ST-70-41C standard`_: :ref:`API <api/ecss:ECSS Package>`.
+- PUS A (legacy) support.
 - CCSDS File Delivery Protcol (CFDP) packet implementations according to
   `CCSDS Blue Book 727.0-B-5`_: :ref:`API <api/cfdp:CFDP Package>`
 - Unified Space Data Link Protocol (USLP) frame implementations according to
