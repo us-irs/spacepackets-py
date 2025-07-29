@@ -5,7 +5,6 @@
 from __future__ import annotations
 
 import struct
-from abc import abstractmethod
 
 import deprecation
 from fastcrc import crc16
@@ -13,7 +12,6 @@ from fastcrc import crc16
 from spacepackets.ccsds.spacepacket import (
     CCSDS_HEADER_LEN,
     SPACE_PACKET_HEADER_SIZE,
-    AbstractSpacePacket,
     PacketId,
     PacketSeqCtrl,
     PacketType,
@@ -24,62 +22,26 @@ from spacepackets.ccsds.spacepacket import (
 )
 from spacepackets.ccsds.time import CdsShortTimestamp
 from spacepackets.ecss.defs import PusVersion
+from spacepackets.ecss.tm import AbstractPusTm
 from spacepackets.exceptions import BytesTooShortError
-from spacepackets.util import PrintFormats, get_printable_data_string
+from spacepackets.util import PrintFormats, UnsignedByteField, get_printable_data_string
 from spacepackets.version import get_version
-
-
-class AbstractPusTm(AbstractSpacePacket):
-    """Generic abstraction for PUS TM packets"""
-
-    @property
-    @abstractmethod
-    def sp_header(self) -> SpacePacketHeader:
-        pass
-
-    @deprecation.deprecated(
-        deprecated_in="v0.14.0rc2",
-        details="use sp_header property instead",
-        current_version=get_version(),
-    )
-    def get_sp_header(self) -> SpacePacketHeader:
-        return self.sp_header
-
-    @property
-    @abstractmethod
-    def service(self) -> int:
-        pass
-
-    @property
-    @abstractmethod
-    def timestamp(self) -> bytes:
-        pass
-
-    @property
-    @abstractmethod
-    def subservice(self) -> int:
-        pass
-
-    @property
-    @abstractmethod
-    def source_data(self) -> bytes:
-        pass
 
 
 class PusTmSecondaryHeader:
     """Unpacks the PUS telemetry packet secondary header.
     Currently only supports CDS short timestamps and PUS C"""
 
-    MIN_LEN = 7
+    MIN_LEN = 3
 
     def __init__(
         self,
         service: int,
         subservice: int,
         timestamp: bytes | bytearray,
-        message_counter: int,
-        dest_id: int = 0,
-        spacecraft_time_ref: int = 0,
+        message_counter: int | None,
+        dest_id: UnsignedByteField | None = None,
+        spare_bytes: int = 0,
     ):
         """Create a PUS telemetry secondary header object.
 
@@ -90,21 +52,21 @@ class PusTmSecondaryHeader:
         :param dest_id: Destination ID if PUS C is used
         :param spacecraft_time_ref: Space time reference if PUS C is used
         """
-        self.pus_version = PusVersion.PUS_C
-        self.spacecraft_time_ref = spacecraft_time_ref
+        self.pus_version = PusVersion.PUS_A
         if service > pow(2, 8) - 1 or service < 0:
             raise ValueError(f"Invalid Service {service}")
         if subservice > pow(2, 8) - 1 or subservice < 0:
             raise ValueError(f"Invalid Subservice {subservice}")
         self.service = service
         self.subservice = subservice
-        if message_counter > pow(2, 16) - 1 or message_counter < 0:
+        if message_counter is not None and (message_counter > pow(2, 8) - 1 or message_counter < 0):
             raise ValueError(
                 f"Invalid message count value, larger than {pow(2, 16) - 1} or negative"
             )
         self.message_counter = message_counter
         self.dest_id = dest_id
         self.timestamp = bytes(timestamp)
+        self.spare_bytes = spare_bytes
 
     @classmethod
     def __empty(cls) -> PusTmSecondaryHeader:
@@ -112,21 +74,32 @@ class PusTmSecondaryHeader:
             service=0,
             subservice=0,
             timestamp=b"",
-            message_counter=0,
+            message_counter=None,
         )
 
     def pack(self) -> bytearray:
         secondary_header = bytearray()
-        secondary_header.append(self.pus_version << 4 | self.spacecraft_time_ref)
+        secondary_header.append(self.pus_version << 4)
         secondary_header.append(self.service)
         secondary_header.append(self.subservice)
-        secondary_header.extend(struct.pack("!H", self.message_counter))
-        secondary_header.extend(struct.pack("!H", self.dest_id))
+        if self.message_counter is not None:
+            secondary_header.append(self.message_counter)
+        if self.dest_id is not None:
+            secondary_header.extend(self.dest_id.as_bytes)
         secondary_header.extend(self.timestamp)
+        if self.spare_bytes > 0:
+            secondary_header.extend(b"\x00" * self.spare_bytes)
         return secondary_header
 
     @classmethod
-    def unpack(cls, data: bytes | bytearray, timestamp_len: int) -> PusTmSecondaryHeader:
+    def unpack(
+        cls,
+        data: bytes | bytearray,
+        timestamp_len: int,
+        has_message_counter: bool = False,
+        dest_id_len: None | int = None,
+        spare_bytes: int = 0,
+    ) -> PusTmSecondaryHeader:
         """Unpack the PUS TM secondary header from the raw packet starting at the header index.
 
         :param data: Raw data. Please note that the passed buffer should start where the actual
@@ -140,12 +113,11 @@ class PusTmSecondaryHeader:
         secondary_header = cls.__empty()
         current_idx = 0
         secondary_header.pus_version = (data[current_idx] & 0xF0) >> 4
-        if secondary_header.pus_version != PusVersion.PUS_C:
+        if secondary_header.pus_version != PusVersion.PUS_A:
             raise ValueError(
                 f"PUS version field value {secondary_header.pus_version} "
-                f"found where PUS C {PusVersion.PUS_C} was expected"
+                f"found where PUS A {PusVersion.PUS_A} was expected"
             )
-        secondary_header.spacecraft_time_ref = data[current_idx] & 0x0F
         if secondary_header.header_size > len(data):
             raise BytesTooShortError(secondary_header.header_size, len(data))
         current_idx += 1
@@ -153,13 +125,15 @@ class PusTmSecondaryHeader:
         current_idx += 1
         secondary_header.subservice = data[current_idx]
         current_idx += 1
-        secondary_header.message_counter = struct.unpack("!H", data[current_idx : current_idx + 2])[
-            0
-        ]
-        current_idx += 2
-        secondary_header.dest_id = struct.unpack("!H", data[current_idx : current_idx + 2])[0]
-        current_idx += 2
+        if has_message_counter:
+            secondary_header.message_counter = data[current_idx]
+            current_idx += 1
+        if dest_id_len is not None:
+            secondary_header.dest_id = UnsignedByteField.from_bytes(
+                data[current_idx : current_idx + dest_id_len]
+            )
         secondary_header.timestamp = data[current_idx : current_idx + timestamp_len]
+        secondary_header.spare_bytes = spare_bytes
         return secondary_header
 
     def __repr__(self):
@@ -167,8 +141,7 @@ class PusTmSecondaryHeader:
             f"{self.__class__.__name__}(service={self.service!r},"
             f" subservice={self.subservice!r}, time={self.timestamp!r},"
             f" message_counter={self.message_counter!r}, dest_id={self.dest_id!r},"
-            f" spacecraft_time_ref={self.spacecraft_time_ref!r},"
-            f" pus_version={self.pus_version!r})"
+            f" pus_version={self.pus_version!r}, spare_bytes={self.spare_bytes!r})"
         )
 
     def __eq__(self, other: object):
@@ -177,7 +150,6 @@ class PusTmSecondaryHeader:
                 self.subservice == other.subservice
                 and self.service == other.service
                 and self.pus_version == other.pus_version
-                and self.spacecraft_time_ref == other.spacecraft_time_ref
                 and self.message_counter == other.message_counter
                 and self.dest_id == other.dest_id
                 and self.timestamp == other.timestamp
@@ -191,7 +163,6 @@ class PusTmSecondaryHeader:
                 self.subservice,
                 self.service,
                 self.pus_version,
-                self.spacecraft_time_ref,
                 self.message_counter,
                 self.dest_id,
                 self.timestamp,
@@ -200,9 +171,15 @@ class PusTmSecondaryHeader:
 
     @property
     def header_size(self) -> int:
-        base_len = 7
+        base_len = PusTmSecondaryHeader.MIN_LEN
         if self.timestamp:
             base_len += len(self.timestamp)
+        if self.message_counter is not None:
+            base_len += 1
+        if self.dest_id is not None:
+            base_len += self.dest_id.byte_len
+        if self.spare_bytes > 0:
+            base_len += self.spare_bytes
         return base_len
 
 
@@ -235,7 +212,7 @@ class PusTm(AbstractPusTm):
     >>> ping_tm.subservice
     2
     >>> ping_tm.pack()[:-9].hex(sep=',')
-    '08,01,c0,05,00,0f,20,11,02,00,00,00,00'
+    '08,01,c0,05,00,0b,10,11,02'
     """  # noqa: E501
 
     CDS_SHORT_SIZE = 7
@@ -249,16 +226,21 @@ class PusTm(AbstractPusTm):
         source_data: bytes | bytearray = b"",
         apid: int = 0,
         seq_count: int = 0,
-        message_counter: int = 0,
-        space_time_ref: int = 0b0000,
-        destination_id: int = 0,
+        message_counter: int | None = None,
+        destination_id: None | UnsignedByteField = None,
         packet_version: int = 0b000,
+        sec_header_spare_bytes: int = 0,
     ):
         self._source_data = source_data
         len_stamp = len(timestamp)
+        dest_id_len = None
+        if destination_id is not None:
+            dest_id_len = destination_id.byte_len
         data_length = self.data_len_from_src_len_timestamp_len(
             timestamp_len=len_stamp,
             source_data_len=len(self._source_data),
+            has_message_counter=message_counter is not None,
+            dest_id_len=dest_id_len,
         )
         self.space_packet_header = SpacePacketHeader(
             apid=apid,
@@ -274,8 +256,8 @@ class PusTm(AbstractPusTm):
             subservice=subservice,
             message_counter=message_counter,
             dest_id=destination_id,
-            spacecraft_time_ref=space_time_ref,
             timestamp=timestamp,
+            spare_bytes=sec_header_spare_bytes,
         )
         self._crc16: bytes | None = None
 
@@ -307,36 +289,12 @@ class PusTm(AbstractPusTm):
         self._crc16 = struct.pack("!H", crc_calc)
 
     @classmethod
-    def unpack(cls, data: bytes | bytearray, timestamp_len: int) -> PusTm:
-        """Attempts to construct a generic PusTelemetry class given a raw bytearray while also
-        performing a CRC check.
-
-        :param data: Raw bytes containing the PUS telemetry packet.
-        :param time_reader: Time provider to read the timestamp. If the timestamp field is empty,
-            you can supply None here.
-        :raises BytesTooShortError: Passed bytestream too short.
-        :raises ValueError: Unsupported PUS version.
-        :raises InvalidTmCrc16Error: Invalid CRC16.
-        """
-        return cls.unpack_generic(data, timestamp_len, True)
-
-    @classmethod
-    def unpack_without_crc_check(cls, data: bytes | bytearray, timestamp_len: int) -> PusTm:
-        """Attempts to construct a generic PusTelemetry class given a raw bytearray without
-        performing a CRC check.
-
-        :param data: Raw bytes containing the PUS telemetry packet.
-        :param time_reader: Time provider to read the timestamp. If the timestamp field is empty,
-            you can supply None here.
-        :raises BytesTooShortError: Passed bytestream too short.
-        :raises ValueError: Unsupported PUS version.
-        :raises InvalidTmCrc16Error: Invalid CRC16.
-        """
-        return cls.unpack_generic(data, timestamp_len, False)
-
-    @classmethod
-    def unpack_generic(
-        cls, data: bytes | bytearray, timestamp_len: int, with_crc_check: bool
+    def unpack(
+        cls,
+        data: bytes | bytearray,
+        timestamp_len: int,
+        has_message_counter: bool,
+        dest_id_len: int | None,
     ) -> PusTm:
         """Attempts to construct a generic PusTelemetry class given a raw bytearray.
 
@@ -357,6 +315,8 @@ class PusTm(AbstractPusTm):
         pus_tm.pus_tm_sec_header = PusTmSecondaryHeader.unpack(
             data=data[SPACE_PACKET_HEADER_SIZE:],
             timestamp_len=timestamp_len,
+            has_message_counter=has_message_counter,
+            dest_id_len=dest_id_len,
         )
         if expected_packet_len < pus_tm.pus_tm_sec_header.header_size + SPACE_PACKET_HEADER_SIZE:
             raise ValueError("passed packet too short")
@@ -366,7 +326,7 @@ class PusTm(AbstractPusTm):
         ]
         pus_tm._crc16 = bytes(data[expected_packet_len - 2 : expected_packet_len])
         # CRC16-CCITT checksum
-        if with_crc_check and crc16.ibm_3740(bytes(data[:expected_packet_len])) != 0:
+        if crc16.ibm_3740(bytes(data[:expected_packet_len])) != 0:
             raise InvalidTmCrc16Error(pus_tm)
         return pus_tm
 
@@ -479,11 +439,14 @@ class PusTm(AbstractPusTm):
         return bytes(self._source_data)
 
     @tm_data.setter
-    def tm_data(self, data: bytes | bytearray) -> None:
+    def tm_data(self, data: bytes) -> None:
         self._source_data = data
         stamp_len = len(self.pus_tm_sec_header.timestamp)
+        dest_id_len = 0
+        if self.pus_tm_sec_header.dest_id is not None:
+            dest_id_len = self.pus_tm_sec_header.dest_id.byte_len
         self.space_packet_header.data_len = self.data_len_from_src_len_timestamp_len(
-            stamp_len, len(data)
+            stamp_len, len(data), self.pus_tm_sec_header.message_counter is not None, dest_id_len
         )
 
     @property
@@ -507,7 +470,9 @@ class PusTm(AbstractPusTm):
         return self.space_packet_header.packet_id
 
     @staticmethod
-    def data_len_from_src_len_timestamp_len(timestamp_len: int, source_data_len: int) -> int:
+    def data_len_from_src_len_timestamp_len(
+        timestamp_len: int, source_data_len: int, has_message_counter: bool, dest_id_len: None | int
+    ) -> int:
         """Retrieve size of TM packet data header in bytes. Only support PUS C
         Formula according to PUS Standard: C = (Number of octets in packet source data field) - 1.
         The size of the TM packet is the size of the packet secondary header with
@@ -517,7 +482,12 @@ class PusTm(AbstractPusTm):
         :param source_data_len: Length of the source (user) data
         :param timestamp_len: Length of the used timestamp
         """
-        return PusTmSecondaryHeader.MIN_LEN + timestamp_len + source_data_len + 1
+        data_len = PusTmSecondaryHeader.MIN_LEN + timestamp_len + source_data_len + 1
+        if has_message_counter:
+            data_len += 1
+        if dest_id_len is not None:
+            data_len += dest_id_len
+        return data_len
 
     @property
     def packet_len(self) -> int:

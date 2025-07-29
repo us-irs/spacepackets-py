@@ -8,6 +8,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 # [unreleased]
 
+## Added
+
+- Added back PUS-A support for both TCs and TMs
+- Make CRC calculation for ECSS PUS-C `unpack` classmethods optional by adding a
+  `unpack_without_crc_check` and `unpack_generic` classmethods
+- `spacepackets.ecss.peek_pus_packet_info` to peek the PUS version and SP header from a raw
+  packet
+
+## Changed
+
 # [v0.30.1] 2025-07-11
 
 ## Changed

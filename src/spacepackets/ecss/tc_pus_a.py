@@ -1,5 +1,5 @@
 """This module contains the PUS telecommand class representation to pack telecommands, most notably
-the :py:class:`PusTelecommand` class.
+the :py:class:`PusTelecommand` class for the PUS A standard (version number 0b001).
 """
 
 from __future__ import annotations
@@ -26,71 +26,81 @@ from spacepackets.version import get_version
 
 
 class PusTcDataFieldHeader:
-    PUS_C_SEC_HEADER_LEN = 5
-
     def __init__(
         self,
         service: int,
         subservice: int,
-        source_id: int = 0,
+        source_id: int | None,
         ack_flags: int = 0b1111,
+        spare_bytes: int = 0,
     ):
-        """Create a PUS TC data field header instance
-
-        :param service:
-        :param subservice:
-        :param source_id:
-        :param ack_flags:
-        """
+        """Create a PUS A TC data field header instance"""
         self.service = service
         self.subservice = subservice
         self.source_id = source_id
-        self.pus_version = PusVersion.PUS_C
+        self.pus_version = PusVersion.PUS_A
         self.ack_flags = ack_flags
+        self.spare_bytes = spare_bytes
 
     def pack(self) -> bytearray:
         header_raw = bytearray()
         header_raw.append(self.pus_version << 4 | self.ack_flags)
         header_raw.append(self.service)
         header_raw.append(self.subservice)
-        header_raw.extend(struct.pack("!H", self.source_id))
+        if self.source_id is not None:
+            header_raw.extend(struct.pack("!H", self.source_id))
+        if self.spare_bytes > 0:
+            header_raw.extend(bytearray(self.spare_bytes))
         return header_raw
 
     @classmethod
-    def unpack(cls, data: bytes | bytearray) -> PusTcDataFieldHeader:
-        """Unpack a TC data field header.
+    def unpack(
+        cls, data: bytes | bytearray, has_source_id: bool, spare_bytes: int = 0
+    ) -> PusTcDataFieldHeader:
+        """Unpack a PUS A TC data field header.
 
         :param data: Start of raw data belonging to the TC data field header
+        :raises ValueError: Invalid PUS standard field which is not PUS A.
         :raises BytesTooShortError: Passed data too short.
         :return:
         """
-        min_expected_len = cls.get_header_size()
+        min_expected_len = cls.header_size_for_config(has_source_id, spare_bytes)
         if len(data) < min_expected_len:
             raise BytesTooShortError(min_expected_len, len(data))
         version_and_ack_byte = data[0]
-        pus_version = (version_and_ack_byte & 0xF0) >> 4
-        if pus_version != PusVersion.PUS_C:
-            raise ValueError("This implementation only supports PUS C")
+        pus_version = (version_and_ack_byte >> 4) & 0b111
+        if pus_version != PusVersion.PUS_A:
+            raise ValueError("this implementation only supports PUS A")
         ack_flags = version_and_ack_byte & 0x0F
         service = data[1]
         subservice = data[2]
-        source_id = struct.unpack("!H", data[3:5])[0]
+        source_id = None
+        if has_source_id:
+            source_id = struct.unpack("!H", data[3:5])[0]
         return cls(
             service=service,
             subservice=subservice,
             ack_flags=ack_flags,
             source_id=source_id,
+            spare_bytes=spare_bytes,
         )
 
     def __repr__(self):
         return (
             f"{self.__class__.__name__}(service={self.service!r},"
-            f" subservice={self.subservice!r}, ack_flags={self.ack_flags!r} "
+            f"subservice={self.subservice!r},ack_flags={self.ack_flags!r},"
+            f"source_id={self.source_id!r},spare_bytes={self.spare_bytes!r})"
         )
 
     def __hash__(self):
         return hash(
-            (self.pus_version, self.service, self.subservice, self.source_id, self.ack_flags)
+            (
+                self.pus_version,
+                self.service,
+                self.subservice,
+                self.source_id,
+                self.ack_flags,
+            )
         )
 
     def __eq__(self, other: object):
@@ -104,19 +114,27 @@ class PusTcDataFieldHeader:
             )
         return False
 
+    def header_size(self) -> int:
+        return PusTcDataFieldHeader.header_size_for_config(
+            self.source_id is not None, self.spare_bytes
+        )
+
     @classmethod
-    def get_header_size(cls) -> int:
-        return cls.PUS_C_SEC_HEADER_LEN
+    def header_size_for_config(cls, with_source_id: bool, spare_bytes: int = 0) -> int:
+        base_size = 3 + spare_bytes
+        if with_source_id:
+            base_size += 2
+        return base_size
 
 
 class InvalidTcCrc16Error(Exception):
-    def __init__(self, tc: PusTc | None):
+    def __init__(self, tc: PusTc):
         self.tc = tc
 
 
 class PusTc(AbstractSpacePacket):
     """Class representation of a PUS telecommand. Can be converted to the raw byte representation
-    but also unpacked from a raw byte stream. Only PUS C telecommands are supported.
+    but also unpacked from a raw byte stream.
 
     >>> ping_tc = PusTc(service=17, subservice=1, seq_count=22, apid=0x01)
     >>> ping_tc.service
@@ -124,7 +142,7 @@ class PusTc(AbstractSpacePacket):
     >>> ping_tc.subservice
     1
     >>> ping_tc.pack().hex(sep=',')
-    '18,01,c0,16,00,06,2f,11,01,00,00,ab,62'
+    '18,01,c0,16,00,04,1f,11,01,41,10'
 
     """
 
@@ -134,8 +152,8 @@ class PusTc(AbstractSpacePacket):
         subservice: int,
         apid: int = 0,
         app_data: bytes | bytearray = b"",
+        source_id: int | None = None,
         seq_count: int = 0,
-        source_id: int = 0,
         ack_flags: int = 0b1111,
     ):
         """Initiate a PUS telecommand from the given parameters. The raw byte representation
@@ -147,7 +165,7 @@ class PusTc(AbstractSpacePacket):
         :param seq_count: Source Sequence Count. Application should take care of incrementing this.
             Limited to 2 to the power of 14 by the number of bits in the header
         :param app_data: Application data in the Packet Data Field
-        :param source_id: Source ID will be supplied as well. Can be used to distinguish
+        :param source_id: Source ID can be supplied as well. Can be used to distinguish
             different packet sources (e.g. different ground stations)
         :raises ValueError: Invalid input parameters
         """
@@ -158,7 +176,7 @@ class PusTc(AbstractSpacePacket):
             source_id=source_id,
         )
         data_length = self.get_data_length(
-            secondary_header_len=self.pus_tc_sec_header.get_header_size(),
+            secondary_header_len=self.pus_tc_sec_header.header_size(),
             app_data_len=len(app_data),
         )
         self.sp_header = SpacePacketHeader(
@@ -180,14 +198,14 @@ class PusTc(AbstractSpacePacket):
         service: int,
         subservice: int,
         app_data: bytes = bytes([]),
-        source_id: int = 0,
+        source_id: int | None = None,
         ack_flags: int = 0b1111,
     ) -> PusTc:
         pus_tc = cls.empty()
         sp_header.packet_type = PacketType.TC
         sp_header.sec_header_flag = True
         sp_header.data_len = PusTc.get_data_length(
-            secondary_header_len=PusTcDataFieldHeader.get_header_size(),
+            secondary_header_len=PusTcDataFieldHeader.header_size_for_config(source_id is not None),
             app_data_len=len(app_data),
         )
         pus_tc.sp_header = sp_header
@@ -286,27 +304,7 @@ class PusTc(AbstractSpacePacket):
         return packed_data
 
     @classmethod
-    def unpack(cls, data: bytes | bytearray) -> PusTc:
-        """Create an instance from a raw bytestream, performing a CRC check as well.
-
-        :raises BytesTooShortError: Passed bytestream too short.
-        :raises ValueError: Unsupported PUS version.
-        :raises InvalidTcCrc16Error: Invalid CRC16.
-        """
-        return cls.unpack_generic(data, True)
-
-    @classmethod
-    def unpack_without_crc_check(cls, data: bytes | bytearray) -> PusTc:
-        """Create an instance from a raw bytestream without performing a CRC check.
-
-        :raises BytesTooShortError: Passed bytestream too short.
-        :raises ValueError: Unsupported PUS version.
-        :raises InvalidTcCrc16Error: Invalid CRC16.
-        """
-        return cls.unpack_generic(data, False)
-
-    @classmethod
-    def unpack_generic(cls, data: bytes | bytearray, with_crc_check: bool) -> PusTc:
+    def unpack(cls, data: bytes | bytearray, has_source_id: bool, spare_bytes: int = 0) -> PusTc:
         """Create an instance from a raw bytestream.
 
         :raises BytesTooShortError: Passed bytestream too short.
@@ -315,14 +313,18 @@ class PusTc(AbstractSpacePacket):
         """
         tc_unpacked = cls.empty()
         tc_unpacked.sp_header = SpacePacketHeader.unpack(data=data)
-        tc_unpacked.pus_tc_sec_header = PusTcDataFieldHeader.unpack(data=data[CCSDS_HEADER_LEN:])
-        header_len = CCSDS_HEADER_LEN + tc_unpacked.pus_tc_sec_header.get_header_size()
+        tc_unpacked.pus_tc_sec_header = PusTcDataFieldHeader.unpack(
+            data=data[CCSDS_HEADER_LEN:], has_source_id=has_source_id
+        )
+        header_len = CCSDS_HEADER_LEN + tc_unpacked.pus_tc_sec_header.header_size_for_config(
+            has_source_id, spare_bytes
+        )
         expected_packet_len = tc_unpacked.packet_len
         if len(data) < expected_packet_len:
             raise BytesTooShortError(expected_packet_len, len(data))
         tc_unpacked._app_data = data[header_len : expected_packet_len - 2]
         tc_unpacked._crc16 = bytes(data[expected_packet_len - 2 : expected_packet_len])
-        if with_crc_check and crc16.ibm_3740(bytes(data[:expected_packet_len])) != 0:
+        if crc16.ibm_3740(bytes(data[:expected_packet_len])) != 0:
             raise InvalidTcCrc16Error(tc_unpacked)
         return tc_unpacked
 
@@ -364,7 +366,7 @@ class PusTc(AbstractSpacePacket):
         return self.pus_tc_sec_header.subservice
 
     @property
-    def source_id(self) -> int:
+    def source_id(self) -> int | None:
         return self.pus_tc_sec_header.source_id
 
     @source_id.setter
@@ -416,23 +418,3 @@ class PusTc(AbstractSpacePacket):
 
 
 PusTelecommand = PusTc
-
-
-def generate_packet_crc(tc_packet: bytearray) -> bytes:
-    """Removes current Packet Error Control, calculates new
-    CRC16 checksum and adds it as correct Packet Error Control Code.
-    Reference: ECSS-E70-41A p. 207-212
-    """
-    crc = crc16.ibm_3740(bytes(tc_packet[0 : len(tc_packet) - 2]))
-    tc_packet[len(tc_packet) - 2] = (crc & 0xFF00) >> 8
-    tc_packet[len(tc_packet) - 1] = crc & 0xFF
-    return bytes(tc_packet)
-
-
-def generate_crc(data: bytearray) -> bytes:
-    """Takes the application data, appends the CRC16 checksum and returns resulting bytearray"""
-    data_with_crc = bytearray()
-    data_with_crc += data
-    crc = crc16.ibm_3740(bytes(data))
-    data_with_crc.extend(struct.pack("!H", crc))
-    return bytes(data_with_crc)
