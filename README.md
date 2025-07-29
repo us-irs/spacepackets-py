@@ -18,6 +18,7 @@ Currently, this includes the following components:
   [CCSDS 301.0-B-4 3.3](https://public.ccsds.org/Pubs/301x0b4e1.pdf).
 - PUS Telecommand and PUS Telemetry implementation according to the
   [ECSS-E-ST-70-41C standard](https://ecss.nl/standard/ecss-e-st-70-41c-space-engineering-telemetry-and-telecommand-packet-utilization-15-april-2016/).
+  PUS A (legacy) is supported as well.
 - CCSDS File Delivery Protcol (CFDP) packet implementations according to
   [CCSDS Blue Book 727.0-B-5](https://public.ccsds.org/Pubs/727x0b5.pdf).
 - Unified Space Data Link Protocol (USLP) frame implementations according to

@@ -35,3 +35,19 @@ ECSS PUS 3 Housekeeping Service Submodule
    :members:
    :undoc-members:
    :show-inheritance:
+
+ECSS TC PUS A Submodule
+----------------------------------
+
+.. automodule:: spacepackets.ecss.tc_pus_a
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+ECSS TM PUS A Submodule
+----------------------------------
+
+.. automodule:: spacepackets.ecss.tm_pus_a
+   :members:
+   :undoc-members:
+   :show-inheritance:

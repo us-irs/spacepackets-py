@@ -17,7 +17,7 @@ from .req_id import RequestId
 if TYPE_CHECKING:
     from spacepackets.ccsds import SpacePacketHeader
     from spacepackets.ccsds.spacepacket import PacketId, PacketSeqCtrl
-    from spacepackets.ecss import PusTc
+    from spacepackets.ecss.tc import PusTc
 
 
 class Subservice(enum.IntEnum):
