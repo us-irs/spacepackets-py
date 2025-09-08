@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 - Added back PUS-A support for both TCs and TMs
 - Make CRC calculation for ECSS PUS-C `unpack` classmethods optional by adding a
-  `unpack_without_crc_check` and `unpack_generic` classmethods
+  and `unpack_generic` classmethods which allows disabling the checksum validity check
 - `spacepackets.ecss.peek_pus_packet_info` to peek the PUS version and SP header from a raw
   packet
 - Added support for ECSS TM and ECSS TC modules for no-checksum packets via the `has_checksum`,
