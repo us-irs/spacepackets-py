@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING
 from spacepackets import BytesTooShortError
 from spacepackets.ecss.defs import PusService
 from spacepackets.ecss.fields import PacketFieldEnum
-from spacepackets.ecss.tm import AbstractPusTm, PusTm
+from spacepackets.ecss.tm import AbstractPusTm, ManagedParams, MiscParams, PusTm
 
 from .exceptions import TmSrcDataTooShortError
 from .req_id import RequestId
@@ -69,8 +69,7 @@ class FailureNotice:
 
 
 @dataclass
-class UnpackParams:
-    timestamp_len: int
+class ManagedParamsVerification:
     bytes_step_id: int = 1
     bytes_err_code: int = 1
 
@@ -131,9 +130,8 @@ class Service1Tm(AbstractPusTm):
         timestamp: bytes | bytearray,
         verif_params: VerificationParams | None = None,
         seq_count: int = 0,
-        packet_version: int = 0b000,
-        space_time_ref: int = 0b0000,
         destination_id: int = 0,
+        misc_params: MiscParams | None = None,
     ):
         if verif_params is None:
             self._verif_params = VerificationParams(RequestId.empty())
@@ -145,9 +143,8 @@ class Service1Tm(AbstractPusTm):
             timestamp=timestamp,
             seq_count=seq_count,
             apid=apid,
-            packet_version=packet_version,
-            space_time_ref=space_time_ref,
             destination_id=destination_id,
+            misc_params=misc_params,
         )
         if verif_params is not None:
             verif_params.verify_against_subservice(subservice)
@@ -164,14 +161,16 @@ class Service1Tm(AbstractPusTm):
         return cls(apid=0, subservice=Subservice.INVALID, timestamp=b"")
 
     @classmethod
-    def from_tm(cls, tm: PusTm, params: UnpackParams) -> Service1Tm:
+    def from_tm(cls, tm: PusTm, verif_params: ManagedParamsVerification) -> Service1Tm:
         service_1_tm = cls.__empty()
         service_1_tm.pus_tm = tm
-        cls._unpack_raw_tm(service_1_tm, params)
+        cls._unpack_raw_tm(service_1_tm, verif_params)
         return service_1_tm
 
     @classmethod
-    def unpack(cls, data: bytes, params: UnpackParams) -> Service1Tm:
+    def unpack(
+        cls, data: bytes, managed_params: ManagedParams, verif_params: ManagedParamsVerification
+    ) -> Service1Tm:
         """Parse a service 1 telemetry packet.
 
         :param params:
@@ -182,8 +181,8 @@ class Service1Tm(AbstractPusTm):
         :return:
         """
         service_1_tm = cls.__empty()
-        service_1_tm.pus_tm = PusTm.unpack(data=data, timestamp_len=params.timestamp_len)
-        cls._unpack_raw_tm(service_1_tm, params)
+        service_1_tm.pus_tm = PusTm.unpack_generic(data=data, managed_params=managed_params)
+        cls._unpack_raw_tm(service_1_tm, verif_params)
         return service_1_tm
 
     @property
@@ -219,7 +218,7 @@ class Service1Tm(AbstractPusTm):
         return self.pus_tm.source_data
 
     @classmethod
-    def _unpack_raw_tm(cls, instance: Service1Tm, params: UnpackParams) -> None:
+    def _unpack_raw_tm(cls, instance: Service1Tm, params: ManagedParamsVerification) -> None:
         tm_data = instance.pus_tm.tm_data
         if len(tm_data) < 4:
             raise TmSrcDataTooShortError(4, len(tm_data))
@@ -229,7 +228,7 @@ class Service1Tm(AbstractPusTm):
         else:
             instance._unpack_success_verification(params)
 
-    def _unpack_failure_verification(self, unpack_cfg: UnpackParams) -> None:
+    def _unpack_failure_verification(self, unpack_cfg: ManagedParamsVerification) -> None:
         """Handle parsing a verification failure packet, subservice ID 2, 4, 6 or 8"""
         tm_data = self.pus_tm.tm_data
         subservice = self.pus_tm.subservice
@@ -250,7 +249,7 @@ class Service1Tm(AbstractPusTm):
             tm_data[current_idx:], unpack_cfg.bytes_err_code, len(tm_data) - current_idx
         )
 
-    def _unpack_success_verification(self, unpack_cfg: UnpackParams) -> None:
+    def _unpack_success_verification(self, unpack_cfg: ManagedParamsVerification) -> None:
         if self.pus_tm.subservice == Subservice.TM_STEP_SUCCESS:
             try:
                 self._verif_params.step_id = StepId.unpack(

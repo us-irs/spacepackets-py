@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import dataclasses
 import struct
 from abc import abstractmethod
 
@@ -214,6 +215,21 @@ class InvalidTmCrc16Error(Exception):
         self.tm = tm
 
 
+@dataclasses.dataclass
+class ManagedParams:
+    """Managed parameters are used defined and are usually fixed for a given mission."""
+
+    timestamp_len: int
+    has_checksum: bool = True
+    verify_checksum: bool = True
+
+
+@dataclasses.dataclass
+class MiscParams:
+    spacecraft_time_ref: int = 0b0000
+    packet_version: int = 0b000
+
+
 class PusTm(AbstractPusTm):
     """Generic PUS telemetry class representation.
 
@@ -246,25 +262,28 @@ class PusTm(AbstractPusTm):
         service: int,
         subservice: int,
         timestamp: bytes | bytearray,
+        has_checksum: bool = True,
         source_data: bytes | bytearray = b"",
         apid: int = 0,
         seq_count: int = 0,
         message_counter: int = 0,
-        space_time_ref: int = 0b0000,
         destination_id: int = 0,
-        packet_version: int = 0b000,
+        misc_params: MiscParams | None = None,
     ):
         self._source_data = source_data
         len_stamp = len(timestamp)
-        data_length = self.data_len_from_src_len_timestamp_len(
+        data_length = PusTm.data_len_from_src_len_timestamp_len(
             timestamp_len=len_stamp,
             source_data_len=len(self._source_data),
+            has_checksum=has_checksum,
         )
+        if misc_params is None:
+            misc_params = MiscParams()
         self.space_packet_header = SpacePacketHeader(
             apid=apid,
             packet_type=PacketType.TM,
             sec_header_flag=True,
-            ccsds_version=packet_version,
+            ccsds_version=misc_params.packet_version,
             data_len=data_length,
             seq_count=seq_count,
             seq_flags=SequenceFlags.UNSEGMENTED,
@@ -274,9 +293,10 @@ class PusTm(AbstractPusTm):
             subservice=subservice,
             message_counter=message_counter,
             dest_id=destination_id,
-            spacecraft_time_ref=space_time_ref,
+            spacecraft_time_ref=misc_params.spacecraft_time_ref,
             timestamp=timestamp,
         )
+        self._has_checksum = has_checksum
         self._crc16: bytes | None = None
 
     @classmethod
@@ -293,10 +313,11 @@ class PusTm(AbstractPusTm):
         tm_packet_raw = bytearray(self.space_packet_header.pack())
         tm_packet_raw.extend(self.pus_tm_sec_header.pack())
         tm_packet_raw.extend(self._source_data)
-        if self._crc16 is None or recalc_crc:
-            # CRC16-CCITT checksum
-            self._crc16 = struct.pack("!H", crc16.ibm_3740(bytes(tm_packet_raw)))
-        tm_packet_raw.extend(self._crc16)
+        if self._has_checksum:
+            if self._crc16 is None or recalc_crc:
+                # CRC16-CCITT checksum
+                self._crc16 = struct.pack("!H", crc16.ibm_3740(bytes(tm_packet_raw)))
+            tm_packet_raw.extend(self._crc16)
         return tm_packet_raw
 
     def calc_crc(self) -> None:
@@ -308,8 +329,8 @@ class PusTm(AbstractPusTm):
 
     @classmethod
     def unpack(cls, data: bytes | bytearray, timestamp_len: int) -> PusTm:
-        """Attempts to construct a generic PusTelemetry class given a raw bytearray while also
-        performing a CRC check.
+        """Attempts to construct a generic PusTelemetry class given a raw bytearray. This unpacker
+        method expects a checksum and also verifies it.
 
         :param data: Raw bytes containing the PUS telemetry packet.
         :param time_reader: Time provider to read the timestamp. If the timestamp field is empty,
@@ -318,12 +339,15 @@ class PusTm(AbstractPusTm):
         :raises ValueError: Unsupported PUS version.
         :raises InvalidTmCrc16Error: Invalid CRC16.
         """
-        return cls.unpack_generic(data, timestamp_len, True)
+        return cls.unpack_generic(
+            data,
+            ManagedParams(timestamp_len=timestamp_len, has_checksum=True, verify_checksum=True),
+        )
 
     @classmethod
-    def unpack_without_crc_check(cls, data: bytes | bytearray, timestamp_len: int) -> PusTm:
-        """Attempts to construct a generic PusTelemetry class given a raw bytearray without
-        performing a CRC check.
+    def unpack_no_checksum(cls, data: bytes | bytearray, timestamp_len: int) -> PusTm:
+        """Attempts to construct a generic PusTelemetry class given a raw bytearray without a
+        checksum.
 
         :param data: Raw bytes containing the PUS telemetry packet.
         :param time_reader: Time provider to read the timestamp. If the timestamp field is empty,
@@ -332,12 +356,13 @@ class PusTm(AbstractPusTm):
         :raises ValueError: Unsupported PUS version.
         :raises InvalidTmCrc16Error: Invalid CRC16.
         """
-        return cls.unpack_generic(data, timestamp_len, False)
+        return cls.unpack_generic(
+            data,
+            ManagedParams(timestamp_len=timestamp_len, has_checksum=False, verify_checksum=False),
+        )
 
     @classmethod
-    def unpack_generic(
-        cls, data: bytes | bytearray, timestamp_len: int, with_crc_check: bool
-    ) -> PusTm:
+    def unpack_generic(cls, data: bytes | bytearray, managed_params: ManagedParams) -> PusTm:
         """Attempts to construct a generic PusTelemetry class given a raw bytearray.
 
         :param data: Raw bytes containing the PUS telemetry packet.
@@ -356,18 +381,28 @@ class PusTm(AbstractPusTm):
             raise BytesTooShortError(expected_packet_len, len(data))
         pus_tm.pus_tm_sec_header = PusTmSecondaryHeader.unpack(
             data=data[SPACE_PACKET_HEADER_SIZE:],
-            timestamp_len=timestamp_len,
+            timestamp_len=managed_params.timestamp_len,
         )
         if expected_packet_len < pus_tm.pus_tm_sec_header.header_size + SPACE_PACKET_HEADER_SIZE:
             raise ValueError("passed packet too short")
-        pus_tm._source_data = data[
-            pus_tm.pus_tm_sec_header.header_size + SPACE_PACKET_HEADER_SIZE : expected_packet_len
-            - 2
-        ]
-        pus_tm._crc16 = bytes(data[expected_packet_len - 2 : expected_packet_len])
-        # CRC16-CCITT checksum
-        if with_crc_check and crc16.ibm_3740(bytes(data[:expected_packet_len])) != 0:
-            raise InvalidTmCrc16Error(pus_tm)
+
+        if managed_params.has_checksum:
+            pus_tm._source_data = data[
+                pus_tm.pus_tm_sec_header.header_size
+                + SPACE_PACKET_HEADER_SIZE : expected_packet_len - 2
+            ]
+            pus_tm._crc16 = bytes(data[expected_packet_len - 2 : expected_packet_len])
+            # CRC16-CCITT checksum
+            if (
+                managed_params.verify_checksum
+                and crc16.ibm_3740(bytes(data[:expected_packet_len])) != 0
+            ):
+                raise InvalidTmCrc16Error(pus_tm)
+        else:
+            pus_tm._source_data = data[
+                pus_tm.pus_tm_sec_header.header_size
+                + SPACE_PACKET_HEADER_SIZE : expected_packet_len
+            ]
         return pus_tm
 
     @staticmethod
@@ -388,6 +423,7 @@ class PusTm(AbstractPusTm):
         sp_header: SpacePacketHeader,
         sec_header: PusTmSecondaryHeader,
         tm_data: bytes,
+        has_checksum: bool = True,
     ) -> PusTm:
         pus_tm = cls.empty()
         if sp_header.packet_type == PacketType.TC:
@@ -395,14 +431,21 @@ class PusTm(AbstractPusTm):
         pus_tm.space_packet_header = sp_header
         pus_tm.pus_tm_sec_header = sec_header
         pus_tm._source_data = tm_data
+        pus_tm._has_checksum = has_checksum
+        sp_header.data_len = PusTm.data_len_from_src_len_timestamp_len(
+            timestamp_len=len(sec_header.timestamp),
+            source_data_len=len(tm_data),
+            has_checksum=has_checksum,
+        )
         return pus_tm
 
     def to_space_packet(self) -> SpacePacket:
         """Retrieve the generic CCSDS space packet representation. This also calculates the CRC16
         before converting the PUS TC to a generic Space Packet"""
-        self.calc_crc()
         user_data = bytearray(self._source_data)
-        user_data.extend(self.crc16)  # type: ignore
+        if self._has_checksum:
+            self.calc_crc()
+            user_data.extend(self.crc16)  # type: ignore
         return SpacePacket(self.space_packet_header, self.pus_tm_sec_header.pack(), user_data)
 
     def __str__(self):
@@ -482,8 +525,8 @@ class PusTm(AbstractPusTm):
     def tm_data(self, data: bytes | bytearray) -> None:
         self._source_data = data
         stamp_len = len(self.pus_tm_sec_header.timestamp)
-        self.space_packet_header.data_len = self.data_len_from_src_len_timestamp_len(
-            stamp_len, len(data)
+        self.space_packet_header.data_len = PusTm.data_len_from_src_len_timestamp_len(
+            stamp_len, len(data), self._has_checksum
         )
 
     @property
@@ -507,7 +550,9 @@ class PusTm(AbstractPusTm):
         return self.space_packet_header.packet_id
 
     @staticmethod
-    def data_len_from_src_len_timestamp_len(timestamp_len: int, source_data_len: int) -> int:
+    def data_len_from_src_len_timestamp_len(
+        timestamp_len: int, source_data_len: int, has_checksum: bool
+    ) -> int:
         """Retrieve size of TM packet data header in bytes. Only support PUS C
         Formula according to PUS Standard: C = (Number of octets in packet source data field) - 1.
         The size of the TM packet is the size of the packet secondary header with
@@ -517,7 +562,14 @@ class PusTm(AbstractPusTm):
         :param source_data_len: Length of the source (user) data
         :param timestamp_len: Length of the used timestamp
         """
-        return PusTmSecondaryHeader.MIN_LEN + timestamp_len + source_data_len + 1
+        data_len = PusTmSecondaryHeader.MIN_LEN + timestamp_len + source_data_len
+        if has_checksum:
+            data_len += 2
+        return data_len - 1
+
+    @property
+    def has_checksum(self) -> bool:
+        return self._has_checksum
 
     @property
     def packet_len(self) -> int:

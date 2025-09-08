@@ -132,6 +132,7 @@ class PusTc(AbstractSpacePacket):
         self,
         service: int,
         subservice: int,
+        has_checksum: bool = True,
         apid: int = 0,
         app_data: bytes | bytearray = b"",
         seq_count: int = 0,
@@ -160,6 +161,7 @@ class PusTc(AbstractSpacePacket):
         data_length = self.get_data_length(
             secondary_header_len=self.pus_tc_sec_header.get_header_size(),
             app_data_len=len(app_data),
+            has_checksum=has_checksum,
         )
         self.sp_header = SpacePacketHeader(
             apid=apid,
@@ -169,6 +171,7 @@ class PusTc(AbstractSpacePacket):
             data_len=data_length,
             seq_count=seq_count,
         )
+        self._has_checksum = has_checksum
         self._app_data = app_data
         self._valid = True
         self._crc16: bytes | None = None
@@ -182,6 +185,7 @@ class PusTc(AbstractSpacePacket):
         app_data: bytes = bytes([]),
         source_id: int = 0,
         ack_flags: int = 0b1111,
+        has_checksum: bool = True,
     ) -> PusTc:
         pus_tc = cls.empty()
         sp_header.packet_type = PacketType.TC
@@ -189,6 +193,7 @@ class PusTc(AbstractSpacePacket):
         sp_header.data_len = PusTc.get_data_length(
             secondary_header_len=PusTcDataFieldHeader.get_header_size(),
             app_data_len=len(app_data),
+            has_checksum=has_checksum,
         )
         pus_tc.sp_header = sp_header
         pus_tc.pus_tc_sec_header = PusTcDataFieldHeader(
@@ -198,6 +203,7 @@ class PusTc(AbstractSpacePacket):
             ack_flags=ack_flags,
         )
         pus_tc._app_data = app_data
+        pus_tc._has_checksum = has_checksum
         return pus_tc
 
     @classmethod
@@ -206,6 +212,7 @@ class PusTc(AbstractSpacePacket):
         sp_header: SpacePacketHeader,
         sec_header: PusTcDataFieldHeader,
         app_data: bytes = bytes([]),
+        has_checksum: bool = True,
     ) -> PusTc:
         pus_tc = cls.empty()
         if sp_header.packet_type == PacketType.TM:
@@ -213,6 +220,12 @@ class PusTc(AbstractSpacePacket):
         pus_tc.sp_header = sp_header
         pus_tc.pus_tc_sec_header = sec_header
         pus_tc._app_data = app_data
+        pus_tc._has_checksum = has_checksum
+        sp_header.data_len = PusTc.get_data_length(
+            secondary_header_len=sec_header.get_header_size(),
+            app_data_len=len(app_data),
+            has_checksum=has_checksum,
+        )
         return pus_tc
 
     @classmethod
@@ -257,9 +270,10 @@ class PusTc(AbstractSpacePacket):
     def to_space_packet(self) -> SpacePacket:
         """Retrieve the generic CCSDS space packet representation. This also calculates the CRC16
         before converting the PUS TC to a generic Space Packet"""
-        self.calc_crc()
         user_data = bytearray(self._app_data)
-        user_data.extend(self._crc16)  # type: ignore
+        if self._has_checksum:
+            self.calc_crc()
+            user_data.extend(self._crc16)  # type: ignore
         return SpacePacket(self.sp_header, self.pus_tc_sec_header.pack(), user_data)
 
     def calc_crc(self) -> None:
@@ -280,33 +294,36 @@ class PusTc(AbstractSpacePacket):
         packed_data.extend(self.sp_header.pack())
         packed_data.extend(self.pus_tc_sec_header.pack())
         packed_data += self.app_data
-        if self._crc16 is None or recalc_crc:
-            self._crc16 = struct.pack("!H", crc16.ibm_3740(bytes(packed_data)))
-        packed_data.extend(self._crc16)
+        if self._has_checksum:
+            if self._crc16 is None or recalc_crc:
+                self._crc16 = struct.pack("!H", crc16.ibm_3740(bytes(packed_data)))
+            packed_data.extend(self._crc16)
         return packed_data
 
     @classmethod
     def unpack(cls, data: bytes | bytearray) -> PusTc:
-        """Create an instance from a raw bytestream, performing a CRC check as well.
+        """Create an instance from a raw bytestream, expecting a checksum and verifying it as well.
+
+        :raises BytesTooShortError: Passed bytestream too short.
+        :raises ValueError: Unsupported PUS version.
+        :raises InvalidTcCrc16Error: Invalid CRC16 checksum.
+        """
+        return cls.unpack_generic(data, verify_checksum=True, has_checksum=True)
+
+    @classmethod
+    def unpack_no_checksum(cls, data: bytes | bytearray) -> PusTc:
+        """Create an instance from a raw bytestream with no checksum.
 
         :raises BytesTooShortError: Passed bytestream too short.
         :raises ValueError: Unsupported PUS version.
         :raises InvalidTcCrc16Error: Invalid CRC16.
         """
-        return cls.unpack_generic(data, True)
+        return cls.unpack_generic(data, has_checksum=False, verify_checksum=False)
 
     @classmethod
-    def unpack_without_crc_check(cls, data: bytes | bytearray) -> PusTc:
-        """Create an instance from a raw bytestream without performing a CRC check.
-
-        :raises BytesTooShortError: Passed bytestream too short.
-        :raises ValueError: Unsupported PUS version.
-        :raises InvalidTcCrc16Error: Invalid CRC16.
-        """
-        return cls.unpack_generic(data, False)
-
-    @classmethod
-    def unpack_generic(cls, data: bytes | bytearray, with_crc_check: bool) -> PusTc:
+    def unpack_generic(
+        cls, data: bytes | bytearray, has_checksum: bool, verify_checksum: bool
+    ) -> PusTc:
         """Create an instance from a raw bytestream.
 
         :raises BytesTooShortError: Passed bytestream too short.
@@ -320,10 +337,14 @@ class PusTc(AbstractSpacePacket):
         expected_packet_len = tc_unpacked.packet_len
         if len(data) < expected_packet_len:
             raise BytesTooShortError(expected_packet_len, len(data))
-        tc_unpacked._app_data = data[header_len : expected_packet_len - 2]
-        tc_unpacked._crc16 = bytes(data[expected_packet_len - 2 : expected_packet_len])
-        if with_crc_check and crc16.ibm_3740(bytes(data[:expected_packet_len])) != 0:
-            raise InvalidTcCrc16Error(tc_unpacked)
+        if not has_checksum:
+            tc_unpacked._app_data = data[header_len:expected_packet_len]
+        else:
+            tc_unpacked._app_data = data[header_len : expected_packet_len - 2]
+            if verify_checksum:
+                tc_unpacked._crc16 = bytes(data[expected_packet_len - 2 : expected_packet_len])
+                if verify_checksum and crc16.ibm_3740(bytes(data[:expected_packet_len])) != 0:
+                    raise InvalidTcCrc16Error(tc_unpacked)
         return tc_unpacked
 
     @property
@@ -336,13 +357,16 @@ class PusTc(AbstractSpacePacket):
         return self.sp_header.packet_len
 
     @staticmethod
-    def get_data_length(app_data_len: int, secondary_header_len: int) -> int:
+    def get_data_length(app_data_len: int, secondary_header_len: int, has_checksum: bool) -> int:
         """Retrieve size of TC packet in bytes.
         Formula according to PUS Standard: C = (Number of octets in packet data field) - 1.
         The size of the TC packet is the size of the packet secondary header with
         source ID + the length of the application data + length of the CRC16 checksum - 1
         """
-        return secondary_header_len + app_data_len + 1
+        data_len = secondary_header_len + app_data_len
+        if has_checksum:
+            data_len += 2
+        return data_len - 1
 
     @deprecation.deprecated(
         deprecated_in="v0.14.0rc3",
@@ -358,6 +382,10 @@ class PusTc(AbstractSpacePacket):
     @property
     def service(self) -> int:
         return self.pus_tc_sec_header.service
+
+    @property
+    def has_checksum(self) -> bool:
+        return self._has_checksum
 
     @property
     def subservice(self) -> int:

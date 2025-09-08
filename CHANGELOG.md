@@ -15,8 +15,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   `unpack_without_crc_check` and `unpack_generic` classmethods
 - `spacepackets.ecss.peek_pus_packet_info` to peek the PUS version and SP header from a raw
   packet
+- Added support for ECSS TM and ECSS TC modules for no-checksum packets via the `has_checksum`,
+  `verify_checksum` constructor fields or managed parameters.
+- `ManagedParams` dataclass inside the `ecss.tm` module which needs to be passed to the
+  generic `unapck_generic` constructor.
 
 ## Changed
+
+- Introduced `MiscParams` inside the `ecss.tm` module, which replaces and wraps the
+  `spacecraft_time_ref` and `packet_version` parameters.
+- `ecss.pus_1_verification.UnpackParams` renamed to `VerificationManagedParams`
 
 # [v0.30.1] 2025-07-11
 
