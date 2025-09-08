@@ -4,7 +4,7 @@ import enum
 from typing import TYPE_CHECKING
 
 from spacepackets.ecss.defs import PusService
-from spacepackets.ecss.tm import AbstractPusTm, PusTm
+from spacepackets.ecss.tm import AbstractPusTm, MiscParams, PusTm
 
 if TYPE_CHECKING:
     from spacepackets import SpacePacketHeader
@@ -24,9 +24,8 @@ class Service17Tm(AbstractPusTm):
         timestamp: bytes,
         ssc: int = 0,
         source_data: bytes = b"",
-        packet_version: int = 0b000,
-        space_time_ref: int = 0b0000,
         destination_id: int = 0,
+        misc_params: MiscParams | None = None,
     ):
         self.pus_tm = PusTm(
             service=PusService.S17_TEST,
@@ -35,9 +34,8 @@ class Service17Tm(AbstractPusTm):
             seq_count=ssc,
             source_data=source_data,
             apid=apid,
-            packet_version=packet_version,
-            space_time_ref=space_time_ref,
             destination_id=destination_id,
+            misc_params=misc_params,
         )
 
     @property

@@ -7,10 +7,10 @@ from spacepackets.ecss import PacketFieldEnum, PusTc, RequestId
 from spacepackets.ecss.pus_1_verification import (
     ErrorCode,
     FailureNotice,
+    ManagedParamsVerification,
     Service1Tm,
     StepId,
     Subservice,
-    UnpackParams,
     VerificationParams,
     create_acceptance_failure_tm,
     create_acceptance_success_tm,
@@ -21,6 +21,7 @@ from spacepackets.ecss.pus_1_verification import (
     create_step_failure_tm,
     create_step_success_tm,
 )
+from spacepackets.ecss.tm import ManagedParams
 from tests.ecss.common import TEST_STAMP
 
 
@@ -45,9 +46,7 @@ class Service1TmTest(TestCase):
         self.assertEqual(self.srv1_tm.error_code, None)
 
     def test_other_ctor(self):
-        srv1_tm = Service1Tm.from_tm(
-            self.srv1_tm.pus_tm, UnpackParams(timestamp_len=len(TEST_STAMP))
-        )
+        srv1_tm = Service1Tm.from_tm(self.srv1_tm.pus_tm, ManagedParamsVerification())
         self.assertEqual(srv1_tm, self.srv1_tm)
 
     def test_failure_notice(self):
@@ -148,7 +147,9 @@ class Service1TmTest(TestCase):
         self.assertEqual(srv_1_tm.tc_req_id.tc_packet_id, pus_tc.packet_id)
         self.assertEqual(srv_1_tm.tc_req_id.tc_psc, pus_tc.packet_seq_control)
         srv_1_tm_raw = srv_1_tm.pack()
-        srv_1_tm_unpacked = Service1Tm.unpack(srv_1_tm_raw, UnpackParams(len(TEST_STAMP)))
+        srv_1_tm_unpacked = Service1Tm.unpack(
+            srv_1_tm_raw, ManagedParams(len(TEST_STAMP)), ManagedParamsVerification()
+        )
         self.assertEqual(srv_1_tm_unpacked.tc_req_id.tc_packet_id.raw(), pus_tc.packet_id.raw())
         self.assertEqual(srv_1_tm_unpacked.tc_req_id.tc_psc.raw(), pus_tc.packet_seq_control.raw())
         if step_id is not None and subservice == Subservice.TM_STEP_SUCCESS:
@@ -219,12 +220,14 @@ class Service1TmTest(TestCase):
         self.assertEqual(srv_1_tm.tc_req_id.tc_packet_id, pus_tc.packet_id)
         self.assertEqual(srv_1_tm.tc_req_id.tc_psc, pus_tc.packet_seq_control)
         srv_1_tm_raw = srv_1_tm.pack()
-        unpack_params = UnpackParams(len(TEST_STAMP))
+        unpack_params = ManagedParamsVerification()
         if failure_notice is not None:
             unpack_params.bytes_err_code = failure_notice.code.len()
         if step_id is not None:
             unpack_params.bytes_step_id = step_id.len()
-        srv_1_tm_unpacked = Service1Tm.unpack(srv_1_tm_raw, unpack_params)
+        srv_1_tm_unpacked = Service1Tm.unpack(
+            srv_1_tm_raw, ManagedParams(len(TEST_STAMP)), unpack_params
+        )
         self.assertEqual(srv_1_tm_unpacked.error_code.val, failure_notice.code.val)
         self.assertEqual(srv_1_tm_unpacked.tc_req_id.tc_packet_id.raw(), pus_tc.packet_id.raw())
         self.assertEqual(srv_1_tm_unpacked.tc_req_id.tc_psc.raw(), pus_tc.packet_seq_control.raw())
