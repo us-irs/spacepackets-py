@@ -2,10 +2,10 @@
 all: fmt check test
 
 fmt:
-  ruff format .
+  ruff format
 
 check:
-  ruff check .
+  ruff check
 
 test:
-  pytest .
+  pytest
