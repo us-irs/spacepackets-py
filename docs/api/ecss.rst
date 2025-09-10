@@ -7,7 +7,17 @@ ECSS PUS-C packets:
 - :py:class:`spacepackets.ecss.PusTc`
 - :py:class:`spacepackets.ecss.PusTm`
 
-.. automodule:: spacepackets.ecss
+
+ECSS TC Submodule
+----------------------------------
+.. automodule:: spacepackets.ecss.tc
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+ECSS TM Submodule
+----------------------------------
+.. automodule:: spacepackets.ecss.tm
    :members:
    :undoc-members:
    :show-inheritance:
