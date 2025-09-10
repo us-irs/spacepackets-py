@@ -102,11 +102,11 @@ make doctest
 Linting:
 
 ```sh
-ruff check .
+ruff check
 ```
 
 Formatting:
 
 ```sh
-ruff format .
+ruff format
 ```
