@@ -32,6 +32,12 @@ dependencies = [
     "deprecation ~= 2.1"
 ]
 
+[project.optional-dependencies]
+test = [
+    "pytest",
+    "coverage"
+]
+
 [project.urls]
 "Homepage" = "https://github.com/us-irs/spacepackets-py"
 

@@ -35,16 +35,24 @@ It also contains various helper modules which are commonly used when working wit
 
 You can install this package from PyPI
 
-Linux:
+For example, using [`uv`](https://docs.astral.sh/uv/)
+
+Setting up virtual environment:
 
 ```sh
-python3 -m pip install spacepackets
+uv venv
 ```
 
-Windows:
+Regular install:
 
 ```sh
-py -m pip install spacepackets
+uv pip install -e .
+```
+
+Interactive install with testing support:
+
+```sh
+uv pip install -e ".[test]"
 ```
 
 # Examples
@@ -55,10 +63,10 @@ You can find all examples [inside the documentation](https://spacepackets.readth
 # Tests
 
 If you want to run the tests, it is recommended to install `pytest` and `coverage` (optional)
-first:
+first. You also have to install the package with the optional `test` feature:
 
 ```sh
-pip install coverage pytest
+uv pip install -e ".[test]"
 ```
 
 Running tests regularly:
@@ -71,6 +79,7 @@ Running tests with coverage:
 
 ```sh
 coverage run -m pytest
+coverage report
 ```
 
 # Documentation
