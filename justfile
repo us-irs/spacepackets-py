@@ -1,5 +1,11 @@
 # Run with `just all`
-all: fmt check test
+all: fmt check coverage
+
+setup:
+  uv venv
+
+install:
+  uv pip install -e ".[test]"
 
 fmt:
   ruff format
@@ -9,3 +15,7 @@ check:
 
 test:
   pytest
+
+coverage:
+  coverage run -m pytest
+  coverage report
