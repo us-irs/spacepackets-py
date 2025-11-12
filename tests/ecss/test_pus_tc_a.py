@@ -4,6 +4,7 @@ from spacepackets import PacketType, SpacePacketHeader
 from spacepackets.ccsds.spacepacket import SequenceFlags
 from spacepackets.ecss import check_pus_crc, peek_pus_packet_info
 from spacepackets.ecss.tc_pus_a import InvalidTcCrc16Error, PusTc, PusTcDataFieldHeader, PusVersion
+from spacepackets.util import UnsignedByteField
 
 
 class TestTelecommand(TestCase):
@@ -71,7 +72,7 @@ class TestTelecommand(TestCase):
         self.assertEqual(self.ping_tc, ping_tc_from_sph)
 
     def test_custom_source_id(self):
-        source_id = 0x5FF
+        source_id = UnsignedByteField(0x5FF,2)
         self.ping_tc.source_id = source_id
         raw = self.ping_tc.pack()
         self.assertEqual(raw[9] << 8 | raw[10], 0x5FF)
@@ -79,10 +80,10 @@ class TestTelecommand(TestCase):
     def test_unpack_too_short(self):
         too_short = bytearray([1, 2, 3])
         with self.assertRaises(ValueError):
-            PusTc.unpack(too_short, False)
+            PusTc.unpack(too_short)
 
     def test_equality(self):
-        ping_raw_unpacked = PusTc.unpack(self.ping_tc_raw, False)
+        ping_raw_unpacked = PusTc.unpack(self.ping_tc_raw)
         self.assertEqual(ping_raw_unpacked, self.ping_tc)
 
     def test_print(self):
@@ -111,7 +112,7 @@ class TestTelecommand(TestCase):
             PusTc(apid=55, service=493, subservice=5252, seq_count=99432942)
 
     def test_unpack(self):
-        pus_17_unpacked = PusTc.unpack(data=self.ping_tc_raw, has_source_id=False)
+        pus_17_unpacked = PusTc.unpack(data=self.ping_tc_raw)
         self.assertEqual(pus_17_unpacked.service, 17)
         self.assertEqual(pus_17_unpacked.subservice, 1)
         self.assertEqual(pus_17_unpacked.seq_count, 0x34)
@@ -119,13 +120,13 @@ class TestTelecommand(TestCase):
 
     def test_faulty_unpack(self):
         with self.assertRaises(ValueError):
-            PusTc.unpack(data=self.ping_tc_raw[:9], has_source_id=False)
+            PusTc.unpack(data=self.ping_tc_raw[:9])
 
     def test_invalid_crc(self):
         # Make CRC invalid
         self.ping_tc_raw[-1] = self.ping_tc_raw[-1] + 1
         with self.assertRaises(InvalidTcCrc16Error):
-            PusTc.unpack(data=self.ping_tc_raw, has_source_id=False)
+            PusTc.unpack(data=self.ping_tc_raw)
         self.assertEqual(PusTcDataFieldHeader.header_size_for_config(False), 3)
 
     def test_to_space_packet(self):
@@ -154,7 +155,7 @@ class TestTelecommand(TestCase):
         # Should still calculate CRC
         tc_raw = new_ping_tc.pack(recalc_crc=False)
         # Will throw invalid CRC16 error if CRC was not calculated
-        tc_unpacked = PusTc.unpack(tc_raw, False)
+        tc_unpacked = PusTc.unpack(tc_raw)
         self.assertEqual(tc_unpacked, new_ping_tc)
 
     def test_from_composite_fields(self):
