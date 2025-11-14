@@ -22,6 +22,7 @@ from spacepackets.ccsds.spacepacket import (
 )
 from spacepackets.ecss.defs import PusVersion
 from spacepackets.ecss.req_id import RequestId
+from spacepackets.util import UnsignedByteField
 from spacepackets.version import get_version
 
 
@@ -30,7 +31,7 @@ class PusTcDataFieldHeader:
         self,
         service: int,
         subservice: int,
-        source_id: int | None,
+        source_id: UnsignedByteField | None,
         ack_flags: int = 0b1111,
         spare_bytes: int = 0,
     ):
@@ -48,14 +49,14 @@ class PusTcDataFieldHeader:
         header_raw.append(self.service)
         header_raw.append(self.subservice)
         if self.source_id is not None:
-            header_raw.extend(struct.pack("!H", self.source_id))
+            header_raw.extend(self.source_id.as_bytes)
         if self.spare_bytes > 0:
             header_raw.extend(bytearray(self.spare_bytes))
         return header_raw
 
     @classmethod
     def unpack(
-        cls, data: bytes | bytearray, has_source_id: bool, spare_bytes: int = 0
+        cls, data: bytes | bytearray, source_id_len: None | int = None, spare_bytes: int = 0
     ) -> PusTcDataFieldHeader:
         """Unpack a PUS A TC data field header.
 
@@ -64,7 +65,7 @@ class PusTcDataFieldHeader:
         :raises BytesTooShortError: Passed data too short.
         :return:
         """
-        min_expected_len = cls.header_size_for_config(has_source_id, spare_bytes)
+        min_expected_len = cls.header_size_for_config(source_id_len, spare_bytes)
         if len(data) < min_expected_len:
             raise BytesTooShortError(min_expected_len, len(data))
         version_and_ack_byte = data[0]
@@ -75,8 +76,8 @@ class PusTcDataFieldHeader:
         service = data[1]
         subservice = data[2]
         source_id = None
-        if has_source_id:
-            source_id = struct.unpack("!H", data[3:5])[0]
+        if source_id_len is not None:
+            source_id = UnsignedByteField(data[3:3+source_id_len])
         return cls(
             service=service,
             subservice=subservice,
@@ -115,15 +116,19 @@ class PusTcDataFieldHeader:
         return False
 
     def header_size(self) -> int:
+        source_id_len = None
+        if self.source_id is not None:
+            source_id_len = self.source_id.byte_len
+
         return PusTcDataFieldHeader.header_size_for_config(
-            self.source_id is not None, self.spare_bytes
+            source_id_len, self.spare_bytes
         )
 
     @classmethod
-    def header_size_for_config(cls, with_source_id: bool, spare_bytes: int = 0) -> int:
+    def header_size_for_config(cls, source_id_len: int | None, spare_bytes: int = 0) -> int:
         base_size = 3 + spare_bytes
-        if with_source_id:
-            base_size += 2
+        if source_id_len is not None:
+            base_size += source_id_len
         return base_size
 
 
@@ -152,7 +157,7 @@ class PusTc(AbstractSpacePacket):
         subservice: int,
         apid: int = 0,
         app_data: bytes | bytearray = b"",
-        source_id: int | None = None,
+        source_id: UnsignedByteField | None = None,
         seq_count: int = 0,
         ack_flags: int = 0b1111,
     ):
@@ -198,14 +203,18 @@ class PusTc(AbstractSpacePacket):
         service: int,
         subservice: int,
         app_data: bytes = bytes([]),
-        source_id: int | None = None,
+        source_id: UnsignedByteField | None = None,
+        spare_bytes: int = 0,
         ack_flags: int = 0b1111,
     ) -> PusTc:
         pus_tc = cls.empty()
         sp_header.packet_type = PacketType.TC
         sp_header.sec_header_flag = True
+        source_id_len = None
+        if source_id is not None:
+            source_id_len = source_id.byte_len
         sp_header.data_len = PusTc.get_data_length(
-            secondary_header_len=PusTcDataFieldHeader.header_size_for_config(source_id is not None),
+            secondary_header_len=PusTcDataFieldHeader.header_size_for_config(source_id_len, spare_bytes),
             app_data_len=len(app_data),
         )
         pus_tc.sp_header = sp_header
@@ -304,7 +313,7 @@ class PusTc(AbstractSpacePacket):
         return packed_data
 
     @classmethod
-    def unpack(cls, data: bytes | bytearray, has_source_id: bool, spare_bytes: int = 0) -> PusTc:
+    def unpack(cls, data: bytes | bytearray, source_id_len: int | None= None, spare_bytes: int = 0) -> PusTc:
         """Create an instance from a raw bytestream.
 
         :raises BytesTooShortError: Passed bytestream too short.
@@ -314,10 +323,10 @@ class PusTc(AbstractSpacePacket):
         tc_unpacked = cls.empty()
         tc_unpacked.sp_header = SpacePacketHeader.unpack(data=data)
         tc_unpacked.pus_tc_sec_header = PusTcDataFieldHeader.unpack(
-            data=data[CCSDS_HEADER_LEN:], has_source_id=has_source_id
+            data=data[CCSDS_HEADER_LEN:], source_id_len=source_id_len
         )
         header_len = CCSDS_HEADER_LEN + tc_unpacked.pus_tc_sec_header.header_size_for_config(
-            has_source_id, spare_bytes
+            source_id_len, spare_bytes
         )
         expected_packet_len = tc_unpacked.packet_len
         if len(data) < expected_packet_len:
@@ -366,11 +375,11 @@ class PusTc(AbstractSpacePacket):
         return self.pus_tc_sec_header.subservice
 
     @property
-    def source_id(self) -> int | None:
+    def source_id(self) -> UnsignedByteField | None:
         return self.pus_tc_sec_header.source_id
 
     @source_id.setter
-    def source_id(self, source_id: int) -> None:
+    def source_id(self, source_id: UnsignedByteField) -> None:
         self.pus_tc_sec_header.source_id = source_id
 
     @property
