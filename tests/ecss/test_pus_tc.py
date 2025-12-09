@@ -158,6 +158,7 @@ class TestTelecommand(TestCase):
         pus_17_unpacked = PusTc.unpack_no_checksum(data=self.ping_tc_no_checksum.pack())
         self.common_unpack_checks(pus_17_unpacked)
         self.assertEqual(pus_17_unpacked.app_data, bytearray())
+        self.assertEqual(pus_17_unpacked.has_checksum, False)
 
     def test_unpack_no_crc_check(self):
         pus_17_unpacked = PusTc.unpack_generic(

@@ -337,6 +337,7 @@ class PusTc(AbstractSpacePacket):
         expected_packet_len = tc_unpacked.packet_len
         if len(data) < expected_packet_len:
             raise BytesTooShortError(expected_packet_len, len(data))
+        tc_unpacked._has_checksum = has_checksum
         if not has_checksum:
             tc_unpacked._app_data = data[header_len:expected_packet_len]
         else:

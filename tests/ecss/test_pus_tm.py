@@ -224,6 +224,7 @@ class TestTelemetry(TestCase):
         self.assertEqual(pus_17_tm_unpacked.apid, 0x123)
         self.assertEqual(pus_17_tm_unpacked.source_data, bytearray())
         self.assertEqual(pus_17_tm_unpacked.pus_tm_sec_header.pus_version, PusVersion.PUS_C)
+        self.assertEqual(pus_17_tm_unpacked.has_checksum, False)
 
     def test_unpack_no_checksum_with_data(self):
         source_data = bytearray([0x42, 0x38])
