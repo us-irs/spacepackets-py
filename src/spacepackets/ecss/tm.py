@@ -386,6 +386,7 @@ class PusTm(AbstractPusTm):
         if expected_packet_len < pus_tm.pus_tm_sec_header.header_size + SPACE_PACKET_HEADER_SIZE:
             raise ValueError("passed packet too short")
 
+        pus_tm._has_checksum = managed_params.has_checksum
         if managed_params.has_checksum:
             pus_tm._source_data = data[
                 pus_tm.pus_tm_sec_header.header_size
