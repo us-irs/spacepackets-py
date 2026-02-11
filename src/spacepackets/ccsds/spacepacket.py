@@ -412,7 +412,12 @@ class SpacePacketHeader(AbstractSpacePacket):
     def unpack(cls, data: bytes | bytearray) -> SpacePacketHeader:
         """Unpack a raw space packet into the space packet header instance.
 
-        :raise ValueError: Raw packet length invalid
+        Raises
+        -------
+        BytesTooShortError
+            Raw packet is too short to contain a CCSDS Header
+        ValueError
+            Raw packet length invalid
         """
         if len(data) < SPACE_PACKET_HEADER_SIZE:
             raise BytesTooShortError(SPACE_PACKET_HEADER_SIZE, len(data))
