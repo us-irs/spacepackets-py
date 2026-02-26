@@ -268,7 +268,7 @@ class TestReservedMsg(TestCase):
             1 + self.dir_path_lv.packet_len + self.dir_listing_name_lv.packet_len,
             DirectoryOperationMessageType.LISTING_RESPONSE,
         )
-        success_response = (dir_listing_response_raw[7] >> 7) & 0b1
+        success_response = ((dir_listing_response_raw[7] >> 7) & 0b1) == 0
         dir_path_lv = CfdpLv.unpack(dir_listing_response_raw[8:])
         dir_listing_name_lv = CfdpLv.unpack(dir_listing_response_raw[8 + dir_path_lv.packet_len :])
         self.assertTrue(success_response)
