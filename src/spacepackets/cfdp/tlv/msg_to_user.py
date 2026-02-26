@@ -254,7 +254,7 @@ class ReservedCfdpMessage(AbstractTlvBase):
             raise ValueError(
                 f"value with length {len(self.value)} too small for dir listing response."
             )
-        listing_success = bool((self.value[5] >> 7) & 0b1)
+        listing_success = ((self.value[5] >> 7) & 0b1) == 0
         dir_path_lv = CfdpLv.unpack(self.value[6:])
         dir_file_name_lv = CfdpLv.unpack(self.value[6 + dir_path_lv.packet_len :])
         return listing_success, DirectoryParams(dir_path_lv, dir_file_name_lv)
@@ -395,7 +395,7 @@ class DirectoryListingResponse(ReservedCfdpMessage):
             Parameters specified by the corresponding listing request.
         """
         value = (
-            bytes([listing_success << 7])
+            bytes([0x00 if listing_success else 0x80])
             + dir_params.dir_path.pack()
             + dir_params.dir_file_name.pack()
         )
