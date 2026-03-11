@@ -35,24 +35,16 @@ It also contains various helper modules which are commonly used when working wit
 
 You can install this package from PyPI
 
-For example, using [`uv`](https://docs.astral.sh/uv/)
-
-Setting up virtual environment:
+For example, using [`uv`](https://docs.astral.sh/uv/):
 
 ```sh
-uv venv
+uv sync
 ```
 
-Regular install:
+To include test dependencies:
 
 ```sh
-uv pip install -e .
-```
-
-Interactive install with testing support:
-
-```sh
-uv pip install -e ".[test]"
+uv sync --extra test
 ```
 
 # Examples
@@ -62,24 +54,23 @@ You can find all examples [inside the documentation](https://spacepackets.readth
 
 # Tests
 
-If you want to run the tests, it is recommended to install `pytest` and `coverage` (optional)
-first. You also have to install the package with the optional `test` feature:
+If you want to run the tests, you have to install the package with the optional `test` feature:
 
 ```sh
-uv pip install -e ".[test]"
+uv sync --extra test
 ```
 
 Running tests regularly:
 
 ```sh
-pytest
+uv run pytest
 ```
 
 Running tests with coverage:
 
 ```sh
-coverage run -m pytest
-coverage report
+uv run coverage run -m pytest
+uv run coverage report
 ```
 
 # Documentation
@@ -90,7 +81,7 @@ The documentation is built with Sphinx and new documentation should be written u
 Install the required dependencies first:
 
 ```sh
-pip install -r docs/requirements.txt
+uv pip install -r docs/requirements.txt
 ```
 
 Then the documentation can be built with
@@ -111,11 +102,11 @@ make doctest
 Linting:
 
 ```sh
-ruff check
+uv run ruff check
 ```
 
 Formatting:
 
 ```sh
-ruff format
+uv run ruff format
 ```
