@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import struct
+import warnings
 from unittest import TestCase
 
 import fastcrc
@@ -19,9 +20,9 @@ from spacepackets.ecss.tc import InvalidTcCrc16Error, generate_crc, generate_pac
 
 class TestTelecommand(TestCase):
     def setUp(self) -> None:
-        self.ping_tc = PusTc(service=17, subservice=1, seq_count=0x34, apid=0x02)
+        self.ping_tc = PusTc(service=17, message_subtype=1, seq_count=0x34, apid=0x02)
         self.ping_tc_no_checksum = PusTc(
-            service=17, subservice=1, seq_count=0x34, apid=0x02, has_checksum=False
+            service=17, message_subtype=1, seq_count=0x34, apid=0x02, has_checksum=False
         )
 
     def generic_test_state(self, tc: PusTc, with_checksum: bool):
@@ -74,7 +75,7 @@ class TestTelecommand(TestCase):
         self.assertEqual(tc_raw[6] >> 4 & 0b1111, PusVersion.PUS_C)
         # All ack fields is default
         self.assertEqual(tc_raw[6] & 0b1111, 0b1111)
-        # Service and subservice
+        # Service and message subtype
         self.assertEqual(tc_raw[7], 17)
         self.assertEqual(tc_raw[8], 1)
         # Source ID
@@ -99,7 +100,7 @@ class TestTelecommand(TestCase):
 
     def test_from_sph(self):
         sp = SpacePacketHeader(apid=0x02, packet_type=PacketType.TC, seq_count=0x34, data_len=0)
-        ping_tc_from_sph = PusTc.from_sp_header(sp_header=sp, service=17, subservice=1)
+        ping_tc_from_sph = PusTc.from_sp_header(sp_header=sp, service=17, message_subtype=1)
         self.assertEqual(self.ping_tc, ping_tc_from_sph)
 
     def test_custom_source_id(self):
@@ -124,7 +125,7 @@ class TestTelecommand(TestCase):
     def test_with_app_data(self):
         test_app_data = bytearray([1, 2, 3])
         ping_with_app_data = PusTc(
-            apid=0, service=17, subservice=32, seq_count=52, app_data=test_app_data
+            apid=0, service=17, message_subtype=32, seq_count=52, app_data=test_app_data
         )
         # 6 bytes CCSDS header, 5 bytes secondary header, 2 bytes CRC, 3 bytes app data
         self.assertEqual(ping_with_app_data.packet_len, 16)
@@ -140,11 +141,11 @@ class TestTelecommand(TestCase):
 
     def test_invalid_seq_count(self):
         with self.assertRaises(ValueError):
-            PusTc(apid=55, service=493, subservice=5252, seq_count=99432942)
+            PusTc(apid=55, service=493, message_subtype=5252, seq_count=99432942)
 
     def common_unpack_checks(self, tc: PusTc):
         self.assertEqual(tc.service, 17)
-        self.assertEqual(tc.subservice, 1)
+        self.assertEqual(tc.message_subtype, 1)
         self.assertEqual(tc.seq_count, 0x34)
         self.assertEqual(tc.app_data, bytearray())
         self.assertEqual(tc.apid, 0x2)
@@ -198,14 +199,14 @@ class TestTelecommand(TestCase):
         self.assertEqual(ccsds_packet.pack(), self.ping_tc.pack())
 
     def test_sec_header(self):
-        tc_header_pus_c = PusTcDataFieldHeader(service=1, subservice=2)
+        tc_header_pus_c = PusTcDataFieldHeader(service=1, message_subtype=2)
         tc_header_pus_c_raw = tc_header_pus_c.pack()
         # TODO: Some more tests?
         self.assertEqual(tc_header_pus_c_raw[1], 1)
         self.assertEqual(tc_header_pus_c_raw[2], 2)
 
     def test_calc_crc(self):
-        new_ping_tc = PusTc(apid=27, service=17, subservice=1)
+        new_ping_tc = PusTc(apid=27, service=17, message_subtype=1)
         self.assertIsNone(new_ping_tc.crc16)
         new_ping_tc.calc_crc()
         assert new_ping_tc.crc16 is not None
@@ -213,7 +214,7 @@ class TestTelecommand(TestCase):
         self.assertEqual(len(new_ping_tc.crc16), 2)
 
     def test_crc_always_calced_if_none(self):
-        new_ping_tc = PusTc(apid=28, service=17, subservice=1)
+        new_ping_tc = PusTc(apid=28, service=17, message_subtype=1)
         self.assertIsNone(new_ping_tc.crc16)
         # Should still calculate CRC
         tc_raw = new_ping_tc.pack(recalc_crc=False)
@@ -230,7 +231,7 @@ class TestTelecommand(TestCase):
         self.assertEqual(pus_17_from_composite_fields.pack(), self.ping_tc.pack())
 
     def test_crc_16(self):
-        pus_17_telecommand = PusTc(apid=25, service=17, subservice=1, seq_count=25)
+        pus_17_telecommand = PusTc(apid=25, service=17, message_subtype=1, seq_count=25)
         crc = fastcrc.crc16.ibm_3740(bytes(pus_17_telecommand.pack()))
         self.assertTrue(crc == 0)
 
@@ -246,7 +247,14 @@ class TestTelecommand(TestCase):
         self.assertTrue(fastcrc.crc16.ibm_3740(packet_raw) == 0)
 
     def test_getter_functions(self):
-        pus_17_telecommand = PusTc(apid=26, service=17, subservice=1, seq_count=25)
+        pus_17_telecommand = PusTc(apid=26, service=17, message_subtype=1, seq_count=25)
         self.assertTrue(pus_17_telecommand.seq_count == 25)
         self.assertTrue(pus_17_telecommand.service == 17)
-        self.assertEqual(pus_17_telecommand.subservice, 1)
+        self.assertEqual(pus_17_telecommand.message_subtype, 1)
+
+    def test_legacy_subservice_ctor_and_property(self):
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            pus_17_telecommand = PusTc(apid=26, service=17, subservice=1, seq_count=25)
+            self.assertEqual(pus_17_telecommand.subservice, 1)
+        self.assertGreaterEqual(len(caught), 1)

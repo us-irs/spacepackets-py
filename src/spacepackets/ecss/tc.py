@@ -5,6 +5,7 @@ the :py:class:`PusTelecommand` class.
 from __future__ import annotations
 
 import struct
+import warnings
 
 import deprecation
 from fastcrc import crc16
@@ -24,6 +25,27 @@ from spacepackets.ecss.defs import PusVersion
 from spacepackets.ecss.req_id import RequestId
 from spacepackets.version import get_version
 
+DEPRECATED_IN_SUBSERVICE_ALIAS = "v0.32.0"
+
+
+def _resolve_message_subtype(
+    message_subtype: int | None, subservice: int | None
+) -> int:
+    if message_subtype is None and subservice is None:
+        raise TypeError("either message_subtype or subservice must be provided")
+    if message_subtype is not None and subservice is not None and message_subtype != subservice:
+        raise ValueError("message_subtype and subservice must have the same value")
+    if subservice is not None:
+        warnings.warn(
+            "`subservice` is deprecated for PUS C, use `message_subtype` instead",
+            DeprecationWarning,
+            stacklevel=3,
+        )
+    if message_subtype is not None:
+        return message_subtype
+    assert subservice is not None
+    return subservice
+
 
 class PusTcDataFieldHeader:
     PUS_C_SEC_HEADER_LEN = 5
@@ -31,19 +53,20 @@ class PusTcDataFieldHeader:
     def __init__(
         self,
         service: int,
-        subservice: int,
+        message_subtype: int | None = None,
         source_id: int = 0,
         ack_flags: int = 0b1111,
+        subservice: int | None = None,
     ):
         """Create a PUS TC data field header instance
 
         :param service:
-        :param subservice:
+        :param message_subtype:
         :param source_id:
         :param ack_flags:
         """
         self.service = service
-        self.subservice = subservice
+        self.message_subtype = _resolve_message_subtype(message_subtype, subservice)
         self.source_id = source_id
         self.pus_version = PusVersion.PUS_C
         self.ack_flags = ack_flags
@@ -52,7 +75,7 @@ class PusTcDataFieldHeader:
         header_raw = bytearray()
         header_raw.append(self.pus_version << 4 | self.ack_flags)
         header_raw.append(self.service)
-        header_raw.append(self.subservice)
+        header_raw.append(self.message_subtype)
         header_raw.extend(struct.pack("!H", self.source_id))
         return header_raw
 
@@ -73,11 +96,11 @@ class PusTcDataFieldHeader:
             raise ValueError("This implementation only supports PUS C")
         ack_flags = version_and_ack_byte & 0x0F
         service = data[1]
-        subservice = data[2]
+        message_subtype = data[2]
         source_id = struct.unpack("!H", data[3:5])[0]
         return cls(
             service=service,
-            subservice=subservice,
+            message_subtype=message_subtype,
             ack_flags=ack_flags,
             source_id=source_id,
         )
@@ -85,12 +108,12 @@ class PusTcDataFieldHeader:
     def __repr__(self):
         return (
             f"{self.__class__.__name__}(service={self.service!r},"
-            f" subservice={self.subservice!r}, ack_flags={self.ack_flags!r} "
+            f" message_subtype={self.message_subtype!r}, ack_flags={self.ack_flags!r} "
         )
 
     def __hash__(self):
         return hash(
-            (self.pus_version, self.service, self.subservice, self.source_id, self.ack_flags)
+            (self.pus_version, self.service, self.message_subtype, self.source_id, self.ack_flags)
         )
 
     def __eq__(self, other: object):
@@ -98,11 +121,20 @@ class PusTcDataFieldHeader:
             return (
                 other.pus_version == self.pus_version
                 and self.service == other.service
-                and self.subservice == other.subservice
+                and self.message_subtype == other.message_subtype
                 and self.source_id == other.source_id
                 and self.ack_flags == other.ack_flags
             )
         return False
+
+    @property
+    @deprecation.deprecated(
+        deprecated_in=DEPRECATED_IN_SUBSERVICE_ALIAS,
+        current_version=get_version(),
+        details="use message_subtype property instead",
+    )
+    def subservice(self) -> int:
+        return self.message_subtype
 
     @classmethod
     def get_header_size(cls) -> int:
@@ -118,10 +150,10 @@ class PusTc(AbstractSpacePacket):
     """Class representation of a PUS telecommand. Can be converted to the raw byte representation
     but also unpacked from a raw byte stream. Only PUS C telecommands are supported.
 
-    >>> ping_tc = PusTc(service=17, subservice=1, seq_count=22, apid=0x01)
+    >>> ping_tc = PusTc(service=17, message_subtype=1, seq_count=22, apid=0x01)
     >>> ping_tc.service
     17
-    >>> ping_tc.subservice
+    >>> ping_tc.message_subtype
     1
     >>> ping_tc.pack().hex(sep=',')
     '18,01,c0,16,00,06,2f,11,01,00,00,ab,62'
@@ -131,19 +163,20 @@ class PusTc(AbstractSpacePacket):
     def __init__(
         self,
         service: int,
-        subservice: int,
+        message_subtype: int | None = None,
         has_checksum: bool = True,
         apid: int = 0,
         app_data: bytes | bytearray = b"",
         seq_count: int = 0,
         source_id: int = 0,
         ack_flags: int = 0b1111,
+        subservice: int | None = None,
     ):
         """Initiate a PUS telecommand from the given parameters. The raw byte representation
         can then be retrieved with the :py:meth:`pack` function.
 
         :param service: PUS service number
-        :param subservice: PUS subservice number
+        :param message_subtype: PUS message subtype number
         :param apid: Application Process ID as specified by CCSDS
         :param seq_count: Source Sequence Count. Application should take care of incrementing this.
             Limited to 2 to the power of 14 by the number of bits in the header
@@ -154,7 +187,7 @@ class PusTc(AbstractSpacePacket):
         """
         self.pus_tc_sec_header = PusTcDataFieldHeader(
             service=service,
-            subservice=subservice,
+            message_subtype=_resolve_message_subtype(message_subtype, subservice),
             ack_flags=ack_flags,
             source_id=source_id,
         )
@@ -181,11 +214,12 @@ class PusTc(AbstractSpacePacket):
         cls,
         sp_header: SpacePacketHeader,
         service: int,
-        subservice: int,
+        message_subtype: int | None = None,
         app_data: bytes = bytes([]),
         source_id: int = 0,
         ack_flags: int = 0b1111,
         has_checksum: bool = True,
+        subservice: int | None = None,
     ) -> PusTc:
         pus_tc = cls.empty()
         sp_header.packet_type = PacketType.TC
@@ -198,7 +232,7 @@ class PusTc(AbstractSpacePacket):
         pus_tc.sp_header = sp_header
         pus_tc.pus_tc_sec_header = PusTcDataFieldHeader(
             service=service,
-            subservice=subservice,
+            message_subtype=_resolve_message_subtype(message_subtype, subservice),
             source_id=source_id,
             ack_flags=ack_flags,
         )
@@ -230,7 +264,7 @@ class PusTc(AbstractSpacePacket):
 
     @classmethod
     def empty(cls) -> PusTc:
-        return PusTc(apid=0, service=0, subservice=0)
+        return PusTc(apid=0, service=0, message_subtype=0)
 
     def __repr__(self):
         """Returns the representation of a class instance."""
@@ -244,7 +278,7 @@ class PusTc(AbstractSpacePacket):
 
         return (
             f"PUS TC[{self.pus_tc_sec_header.service},"
-            f" {self.pus_tc_sec_header.subservice}] with Request ID"
+            f" {self.pus_tc_sec_header.message_subtype}] with Request ID"
             f" {RequestId.from_sp_header(self.sp_header).as_u32():#08x}, APID"
             f" {self.apid:#05x}, SSC {self.sp_header.seq_count}"
         )
@@ -389,8 +423,17 @@ class PusTc(AbstractSpacePacket):
         return self._has_checksum
 
     @property
+    def message_subtype(self) -> int:
+        return self.pus_tc_sec_header.message_subtype
+
+    @property
+    @deprecation.deprecated(
+        deprecated_in=DEPRECATED_IN_SUBSERVICE_ALIAS,
+        current_version=get_version(),
+        details="use message_subtype property instead",
+    )
     def subservice(self) -> int:
-        return self.pus_tc_sec_header.subservice
+        return self.pus_tc_sec_header.message_subtype
 
     @property
     def source_id(self) -> int:

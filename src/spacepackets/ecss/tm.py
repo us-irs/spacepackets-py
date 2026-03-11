@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import dataclasses
 import struct
+import warnings
 from abc import abstractmethod
 
 import deprecation
@@ -28,6 +29,27 @@ from spacepackets.ecss.defs import PusVersion
 from spacepackets.exceptions import BytesTooShortError
 from spacepackets.util import PrintFormats, get_printable_data_string
 from spacepackets.version import get_version
+
+DEPRECATED_IN_SUBSERVICE_ALIAS = "v0.32.0"
+
+
+def _resolve_message_subtype(
+    message_subtype: int | None, subservice: int | None
+) -> int:
+    if message_subtype is None and subservice is None:
+        raise TypeError("either message_subtype or subservice must be provided")
+    if message_subtype is not None and subservice is not None and message_subtype != subservice:
+        raise ValueError("message_subtype and subservice must have the same value")
+    if subservice is not None:
+        warnings.warn(
+            "`subservice` is deprecated for PUS C, use `message_subtype` instead",
+            DeprecationWarning,
+            stacklevel=3,
+        )
+    if message_subtype is not None:
+        return message_subtype
+    assert subservice is not None
+    return subservice
 
 
 class AbstractPusTm(AbstractSpacePacket):
@@ -57,9 +79,12 @@ class AbstractPusTm(AbstractSpacePacket):
         pass
 
     @property
-    @abstractmethod
+    def message_subtype(self) -> int:
+        return self.subservice
+
+    @property
     def subservice(self) -> int:
-        pass
+        return self.message_subtype
 
     @property
     @abstractmethod
@@ -76,16 +101,17 @@ class PusTmSecondaryHeader:
     def __init__(
         self,
         service: int,
-        subservice: int,
-        timestamp: bytes | bytearray,
-        message_counter: int,
+        message_subtype: int | None = None,
+        timestamp: bytes | bytearray = b"",
+        message_counter: int = 0,
         dest_id: int = 0,
         spacecraft_time_ref: int = 0,
+        subservice: int | None = None,
     ):
         """Create a PUS telemetry secondary header object.
 
         :param service:
-        :param subservice:
+        :param message_subtype:
         :param time_provider: Time field provider which can provide or read a time field
         :param message_counter: 8 bit counter for PUS A, 16 bit counter for PUS C
         :param dest_id: Destination ID if PUS C is used
@@ -95,10 +121,11 @@ class PusTmSecondaryHeader:
         self.spacecraft_time_ref = spacecraft_time_ref
         if service > pow(2, 8) - 1 or service < 0:
             raise ValueError(f"Invalid Service {service}")
-        if subservice > pow(2, 8) - 1 or subservice < 0:
-            raise ValueError(f"Invalid Subservice {subservice}")
+        message_subtype = _resolve_message_subtype(message_subtype, subservice)
+        if message_subtype > pow(2, 8) - 1 or message_subtype < 0:
+            raise ValueError(f"Invalid message subtype {message_subtype}")
         self.service = service
-        self.subservice = subservice
+        self.message_subtype = message_subtype
         if message_counter > pow(2, 16) - 1 or message_counter < 0:
             raise ValueError(
                 f"Invalid message count value, larger than {pow(2, 16) - 1} or negative"
@@ -111,7 +138,7 @@ class PusTmSecondaryHeader:
     def __empty(cls) -> PusTmSecondaryHeader:
         return PusTmSecondaryHeader(
             service=0,
-            subservice=0,
+            message_subtype=0,
             timestamp=b"",
             message_counter=0,
         )
@@ -120,7 +147,7 @@ class PusTmSecondaryHeader:
         secondary_header = bytearray()
         secondary_header.append(self.pus_version << 4 | self.spacecraft_time_ref)
         secondary_header.append(self.service)
-        secondary_header.append(self.subservice)
+        secondary_header.append(self.message_subtype)
         secondary_header.extend(struct.pack("!H", self.message_counter))
         secondary_header.extend(struct.pack("!H", self.dest_id))
         secondary_header.extend(self.timestamp)
@@ -152,7 +179,7 @@ class PusTmSecondaryHeader:
         current_idx += 1
         secondary_header.service = data[current_idx]
         current_idx += 1
-        secondary_header.subservice = data[current_idx]
+        secondary_header.message_subtype = data[current_idx]
         current_idx += 1
         secondary_header.message_counter = struct.unpack("!H", data[current_idx : current_idx + 2])[
             0
@@ -166,7 +193,7 @@ class PusTmSecondaryHeader:
     def __repr__(self):
         return (
             f"{self.__class__.__name__}(service={self.service!r},"
-            f" subservice={self.subservice!r}, time={self.timestamp!r},"
+            f" message_subtype={self.message_subtype!r}, time={self.timestamp!r},"
             f" message_counter={self.message_counter!r}, dest_id={self.dest_id!r},"
             f" spacecraft_time_ref={self.spacecraft_time_ref!r},"
             f" pus_version={self.pus_version!r})"
@@ -175,7 +202,7 @@ class PusTmSecondaryHeader:
     def __eq__(self, other: object):
         if isinstance(other, PusTmSecondaryHeader):
             return (
-                self.subservice == other.subservice
+                self.message_subtype == other.message_subtype
                 and self.service == other.service
                 and self.pus_version == other.pus_version
                 and self.spacecraft_time_ref == other.spacecraft_time_ref
@@ -189,7 +216,7 @@ class PusTmSecondaryHeader:
     def __hash__(self) -> int:
         return hash(
             (
-                self.subservice,
+                self.message_subtype,
                 self.service,
                 self.pus_version,
                 self.spacecraft_time_ref,
@@ -205,6 +232,15 @@ class PusTmSecondaryHeader:
         if self.timestamp:
             base_len += len(self.timestamp)
         return base_len
+
+    @property
+    @deprecation.deprecated(
+        deprecated_in=DEPRECATED_IN_SUBSERVICE_ALIAS,
+        details="use message_subtype property instead",
+        current_version=get_version(),
+    )
+    def subservice(self) -> int:
+        return self.message_subtype
 
 
 PUS_TM_TIMESTAMP_OFFSET = CCSDS_HEADER_LEN + PusTmSecondaryHeader.MIN_LEN
@@ -245,10 +281,10 @@ class PusTm(AbstractPusTm):
     The following doc example cuts off the timestamp (7 byte CDS Short) and the CRC16 from the ping
     packet because those change regularly.
 
-    >>> ping_tm = PusTm(service=17, subservice=2, seq_count=5, apid=0x01, timestamp=CdsShortTimestamp.now().pack())
+    >>> ping_tm = PusTm(service=17, message_subtype=2, seq_count=5, apid=0x01, timestamp=CdsShortTimestamp.now().pack())
     >>> ping_tm.service
     17
-    >>> ping_tm.subservice
+    >>> ping_tm.message_subtype
     2
     >>> ping_tm.pack()[:-9].hex(sep=',')
     '08,01,c0,05,00,0f,20,11,02,00,00,00,00'
@@ -260,8 +296,8 @@ class PusTm(AbstractPusTm):
     def __init__(
         self,
         service: int,
-        subservice: int,
-        timestamp: bytes | bytearray,
+        message_subtype: int | None = None,
+        timestamp: bytes | bytearray = b"",
         has_checksum: bool = True,
         source_data: bytes | bytearray = b"",
         apid: int = 0,
@@ -269,6 +305,7 @@ class PusTm(AbstractPusTm):
         message_counter: int = 0,
         destination_id: int = 0,
         misc_params: MiscParams | None = None,
+        subservice: int | None = None,
     ):
         self._source_data = source_data
         len_stamp = len(timestamp)
@@ -290,7 +327,7 @@ class PusTm(AbstractPusTm):
         )
         self.pus_tm_sec_header = PusTmSecondaryHeader(
             service=service,
-            subservice=subservice,
+            message_subtype=_resolve_message_subtype(message_subtype, subservice),
             message_counter=message_counter,
             dest_id=destination_id,
             spacecraft_time_ref=misc_params.spacecraft_time_ref,
@@ -301,7 +338,9 @@ class PusTm(AbstractPusTm):
 
     @classmethod
     def empty(cls) -> PusTm:
-        return PusTm(apid=0, service=0, subservice=0, timestamp=CdsShortTimestamp.empty().pack())
+        return PusTm(
+            apid=0, service=0, message_subtype=0, timestamp=CdsShortTimestamp.empty().pack()
+        )
 
     def pack(self, recalc_crc: bool = True) -> bytearray:
         """Serializes the packet into a raw bytearray.
@@ -452,7 +491,7 @@ class PusTm(AbstractPusTm):
     def __str__(self):
         return (
             f"PUS TM[{self.pus_tm_sec_header.service},"
-            f"{self.pus_tm_sec_header.subservice}], APID {self.apid:#05x}, MSG Counter "
+            f"{self.pus_tm_sec_header.message_subtype}], APID {self.apid:#05x}, MSG Counter "
             f"{self.pus_tm_sec_header.message_counter}, Size {self.packet_len}"
         )
 
@@ -505,11 +544,23 @@ class PusTm(AbstractPusTm):
         return self.pus_tm_sec_header.service
 
     @property
+    def message_subtype(self) -> int:
+        """Get the message subtype ID
+        :return: Message subtype ID
+        """
+        return self.pus_tm_sec_header.message_subtype
+
+    @property
+    @deprecation.deprecated(
+        deprecated_in=DEPRECATED_IN_SUBSERVICE_ALIAS,
+        details="use message_subtype property instead",
+        current_version=get_version(),
+    )
     def subservice(self) -> int:
-        """Get the subservice type ID
+        """Get the subservice ID
         :return: Subservice ID
         """
-        return self.pus_tm_sec_header.subservice
+        return self.pus_tm_sec_header.message_subtype
 
     @property
     def source_data(self) -> bytes:

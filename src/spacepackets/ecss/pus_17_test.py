@@ -11,7 +11,7 @@ if TYPE_CHECKING:
     from spacepackets.ccsds.spacepacket import PacketId, PacketSeqCtrl
 
 
-class Subservice(enum.IntEnum):
+class MessageSubtype(enum.IntEnum):
     TC_PING = 1
     TM_REPLY = 2
 
@@ -20,7 +20,7 @@ class Service17Tm(AbstractPusTm):
     def __init__(
         self,
         apid: int,
-        subservice: int,
+        message_subtype: int,
         timestamp: bytes,
         ssc: int = 0,
         source_data: bytes = b"",
@@ -29,7 +29,7 @@ class Service17Tm(AbstractPusTm):
     ):
         self.pus_tm = PusTm(
             service=PusService.S17_TEST,
-            subservice=subservice,
+            message_subtype=message_subtype,
             timestamp=timestamp,
             seq_count=ssc,
             source_data=source_data,
@@ -63,8 +63,8 @@ class Service17Tm(AbstractPusTm):
         return self.pus_tm.timestamp
 
     @property
-    def subservice(self) -> int:
-        return self.pus_tm.subservice
+    def message_subtype(self) -> int:
+        return self.pus_tm.message_subtype
 
     @property
     def source_data(self) -> bytes:
@@ -75,7 +75,7 @@ class Service17Tm(AbstractPusTm):
 
     @classmethod
     def __empty(cls) -> Service17Tm:
-        return cls(apid=0, subservice=0, timestamp=b"")
+        return cls(apid=0, message_subtype=0, timestamp=b"")
 
     @classmethod
     def unpack(cls, data: bytes | bytearray, timestamp_len: int) -> Service17Tm:

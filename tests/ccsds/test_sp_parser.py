@@ -12,7 +12,7 @@ class TestSpParser(TestCase):
         self.tm_packet = PusTm(
             apid=self.def_apid,
             service=17,
-            subservice=2,
+            message_subtype=2,
             timestamp=CdsShortTimestamp.empty().pack(),
         )
         self.packet_ids = (self.tm_packet.packet_id,)
@@ -50,7 +50,7 @@ class TestSpParser(TestCase):
         other_larger_packet = PusTm(
             apid=self.def_apid,
             service=8,
-            subservice=128,
+            message_subtype=128,
             source_data=bytearray(64),
             timestamp=CdsShortTimestamp.empty().pack(),
         )

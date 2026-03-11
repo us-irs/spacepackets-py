@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import struct
+import warnings
 from unittest import TestCase
 
 import fastcrc
@@ -35,7 +36,7 @@ class TestTelemetry(TestCase):
     def setUp(self) -> None:
         self.ping_reply = PusTm(
             service=17,
-            subservice=2,
+            message_subtype=2,
             apid=0x123,
             seq_count=0x234,
             source_data=bytearray(),
@@ -44,7 +45,7 @@ class TestTelemetry(TestCase):
         self.ping_reply_raw = self.ping_reply.pack()
         self.ping_reply_no_checksum = PusTm(
             service=17,
-            subservice=2,
+            message_subtype=2,
             apid=0x123,
             seq_count=0x234,
             source_data=bytearray(),
@@ -60,7 +61,7 @@ class TestTelemetry(TestCase):
         self.assertEqual(get_printable_data_string(PrintFormats.HEX, src_data), "hex []")
         self.assertEqual(get_printable_data_string(PrintFormats.BIN, src_data), "bin []")
         self.assertEqual(src_data, bytearray())
-        self.assertEqual(self.ping_reply.subservice, 2)
+        self.assertEqual(self.ping_reply.message_subtype, 2)
         self.assertEqual(self.ping_reply.service, 17)
         self.assertEqual(self.ping_reply.apid, 0x123)
         self.assertEqual(self.ping_reply.seq_count, 0x234)
@@ -86,7 +87,7 @@ class TestTelemetry(TestCase):
     def test_no_timestamp(self):
         self.ping_reply = PusTm(
             service=17,
-            subservice=2,
+            message_subtype=2,
             apid=0x123,
             seq_count=0x234,
             source_data=bytearray(),
@@ -169,7 +170,7 @@ class TestTelemetry(TestCase):
         self.assertEqual(raw_secondary_packet_header[0], 0x20)
         # Service
         self.assertEqual(raw_secondary_packet_header[1], 17)
-        # Subservice
+        # Message subtype
         self.assertEqual(raw_secondary_packet_header[2], 2)
 
     def test_full_printout(self):
@@ -307,7 +308,7 @@ class TestTelemetry(TestCase):
         self.assertEqual(self.ping_reply, pus_17_tm_unpacked2)
 
     def test_calc_crc(self):
-        new_ping_tm = PusTm(apid=0, service=17, subservice=2, timestamp=TEST_STAMP)
+        new_ping_tm = PusTm(apid=0, service=17, message_subtype=2, timestamp=TEST_STAMP)
         self.assertIsNone(new_ping_tm.crc16)
         new_ping_tm.calc_crc()
         assert new_ping_tm.crc16 is not None
@@ -315,7 +316,7 @@ class TestTelemetry(TestCase):
         self.assertEqual(len(new_ping_tm.crc16), 2)
 
     def test_crc_always_calced_if_none(self):
-        new_ping_tm = PusTm(apid=0, service=17, subservice=2, timestamp=TEST_STAMP)
+        new_ping_tm = PusTm(apid=0, service=17, message_subtype=2, timestamp=TEST_STAMP)
         self.assertIsNone(new_ping_tm.crc16)
         # Should still calculate CRC
         tc_raw = new_ping_tm.pack(recalc_crc=False)
@@ -355,7 +356,7 @@ class TestTelemetry(TestCase):
             # Message Counter too large
             PusTmSecondaryHeader(
                 service=0,
-                subservice=0,
+                message_subtype=0,
                 timestamp=CdsShortTimestamp.now().pack(),
                 message_counter=129302,
             )
@@ -383,3 +384,17 @@ class TestTelemetry(TestCase):
         self.assertEqual(unpack_req_id.tc_psc.raw(), tc_psc.raw())
         with self.assertRaises(ValueError):
             RequestId.unpack(bytes([0, 1, 2]))
+
+    def test_legacy_subservice_ctor_and_property(self):
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            legacy_tm = PusTm(
+                service=17,
+                subservice=2,
+                apid=0x123,
+                seq_count=0x234,
+                source_data=bytearray(),
+                timestamp=TEST_STAMP,
+            )
+            self.assertEqual(legacy_tm.subservice, 2)
+        self.assertGreaterEqual(len(caught), 1)

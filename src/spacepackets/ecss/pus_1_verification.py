@@ -3,13 +3,19 @@
 from __future__ import annotations
 
 import enum
+import warnings
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
+
+import deprecation
 
 from spacepackets import BytesTooShortError
 from spacepackets.ecss.defs import PusService
 from spacepackets.ecss.fields import PacketFieldEnum
 from spacepackets.ecss.tm import AbstractPusTm, ManagedParams, MiscParams, PusTm
+from spacepackets.version import get_version
+
+DEPRECATED_IN_SUBSERVICE_ALIAS = "v0.32.0"
 
 from .exceptions import TmSrcDataTooShortError
 from .req_id import RequestId
@@ -20,7 +26,7 @@ if TYPE_CHECKING:
     from spacepackets.ecss.tc import PusTc
 
 
-class Subservice(enum.IntEnum):
+class MessageSubtype(enum.IntEnum):
     INVALID = 0
     TM_ACCEPTANCE_SUCCESS = 1
     TM_ACCEPTANCE_FAILURE = 2
@@ -30,6 +36,28 @@ class Subservice(enum.IntEnum):
     TM_STEP_FAILURE = 6
     TM_COMPLETION_SUCCESS = 7
     TM_COMPLETION_FAILURE = 8
+
+
+Subservice = MessageSubtype
+
+
+def _resolve_message_subtype(
+    message_subtype: MessageSubtype | int | None, subservice: MessageSubtype | int | None
+) -> MessageSubtype:
+    if message_subtype is None and subservice is None:
+        raise TypeError("either message_subtype or subservice must be provided")
+    if message_subtype is not None and subservice is not None and message_subtype != subservice:
+        raise ValueError("message_subtype and subservice must have the same value")
+    if subservice is not None:
+        warnings.warn(
+            "`subservice` is deprecated for PUS C, use `message_subtype` instead",
+            DeprecationWarning,
+            stacklevel=3,
+        )
+    if message_subtype is not None:
+        return MessageSubtype(message_subtype)
+    assert subservice is not None
+    return MessageSubtype(subservice)
 
 
 ErrorCode = PacketFieldEnum
@@ -99,21 +127,29 @@ class VerificationParams:
             init_len += self.failure_notice.len()
         return init_len
 
-    def verify_against_subservice(self, subservice: Subservice) -> None:
-        if subservice % 2 == 0:
+    def verify_against_message_subtype(self, message_subtype: MessageSubtype) -> None:
+        if message_subtype % 2 == 0:
             if self.failure_notice is None:
                 raise InvalidVerifParamsError("Failure Notice should be something")
-            if subservice == Subservice.TM_STEP_FAILURE and self.step_id is None:
+            if message_subtype == MessageSubtype.TM_STEP_FAILURE and self.step_id is None:
                 raise InvalidVerifParamsError("Step ID should be something")
-            if subservice != Subservice.TM_STEP_FAILURE and self.step_id is not None:
+            if message_subtype != MessageSubtype.TM_STEP_FAILURE and self.step_id is not None:
                 raise InvalidVerifParamsError("Step ID should be empty")
         else:
             if self.failure_notice is not None:
                 raise InvalidVerifParamsError("Failure Notice should be empty")
-            if subservice == Subservice.TM_STEP_SUCCESS and self.step_id is None:
+            if message_subtype == MessageSubtype.TM_STEP_SUCCESS and self.step_id is None:
                 raise InvalidVerifParamsError("Step ID should be something")
-            if subservice != Subservice.TM_STEP_SUCCESS and self.step_id is not None:
+            if message_subtype != MessageSubtype.TM_STEP_SUCCESS and self.step_id is not None:
                 raise InvalidVerifParamsError("Step ID should be empty")
+
+    @deprecation.deprecated(
+        deprecated_in=DEPRECATED_IN_SUBSERVICE_ALIAS,
+        details="use verify_against_message_subtype instead",
+        current_version=get_version(),
+    )
+    def verify_against_subservice(self, subservice: MessageSubtype) -> None:
+        self.verify_against_message_subtype(subservice)
 
 
 class InvalidVerifParamsError(Exception):
@@ -126,20 +162,22 @@ class Service1Tm(AbstractPusTm):
     def __init__(
         self,
         apid: int,
-        subservice: Subservice,
-        timestamp: bytes | bytearray,
+        message_subtype: MessageSubtype | int | None = None,
+        timestamp: bytes | bytearray = b"",
         verif_params: VerificationParams | None = None,
         seq_count: int = 0,
         destination_id: int = 0,
         misc_params: MiscParams | None = None,
+        subservice: MessageSubtype | int | None = None,
     ):
+        resolved_message_subtype = _resolve_message_subtype(message_subtype, subservice)
         if verif_params is None:
             self._verif_params = VerificationParams(RequestId.empty())
         else:
             self._verif_params = verif_params
         self.pus_tm = PusTm(
             service=PusService.S1_VERIFICATION,
-            subservice=subservice,
+            message_subtype=resolved_message_subtype,
             timestamp=timestamp,
             seq_count=seq_count,
             apid=apid,
@@ -147,7 +185,7 @@ class Service1Tm(AbstractPusTm):
             misc_params=misc_params,
         )
         if verif_params is not None:
-            verif_params.verify_against_subservice(subservice)
+            verif_params.verify_against_message_subtype(resolved_message_subtype)
             self.pus_tm.tm_data = bytes(verif_params.pack())
 
     def pack(self) -> bytearray:
@@ -158,7 +196,7 @@ class Service1Tm(AbstractPusTm):
 
     @classmethod
     def __empty(cls) -> Service1Tm:
-        return cls(apid=0, subservice=Subservice.INVALID, timestamp=b"")
+        return cls(apid=0, message_subtype=MessageSubtype.INVALID, timestamp=b"")
 
     @classmethod
     def from_tm(cls, tm: PusTm, verif_params: ManagedParamsVerification) -> Service1Tm:
@@ -175,7 +213,7 @@ class Service1Tm(AbstractPusTm):
 
         :param params:
         :param data:
-        :raises ValueError: Subservice invalid.
+        :raises ValueError: MessageSubtype invalid.
         :raises BytesTooShortError: passed data too short
         :raises TmSourceDataTooShortError: TM source data too short.
         :return:
@@ -210,8 +248,17 @@ class Service1Tm(AbstractPusTm):
         return self.pus_tm.service
 
     @property
+    def message_subtype(self) -> int:
+        return self.pus_tm.message_subtype
+
+    @property
+    @deprecation.deprecated(
+        deprecated_in=DEPRECATED_IN_SUBSERVICE_ALIAS,
+        details="use message_subtype property instead",
+        current_version=get_version(),
+    )
     def subservice(self) -> int:
-        return self.pus_tm.subservice
+        return self.pus_tm.message_subtype
 
     @property
     def source_data(self) -> bytes:
@@ -223,20 +270,20 @@ class Service1Tm(AbstractPusTm):
         if len(tm_data) < 4:
             raise TmSrcDataTooShortError(4, len(tm_data))
         instance.tc_req_id = RequestId.unpack(tm_data[0:4])
-        if instance.pus_tm.subservice % 2 == 0:
+        if instance.pus_tm.message_subtype % 2 == 0:
             instance._unpack_failure_verification(params)
         else:
             instance._unpack_success_verification(params)
 
     def _unpack_failure_verification(self, unpack_cfg: ManagedParamsVerification) -> None:
-        """Handle parsing a verification failure packet, subservice ID 2, 4, 6 or 8"""
+        """Handle parsing a verification failure packet, message subtype ID 2, 4, 6 or 8"""
         tm_data = self.pus_tm.tm_data
-        subservice = self.pus_tm.subservice
+        message_subtype = self.pus_tm.message_subtype
         expected_len = unpack_cfg.bytes_err_code
-        if subservice == 6:
+        if message_subtype == 6:
             expected_len += unpack_cfg.bytes_step_id
-        elif subservice not in [2, 4, 8]:
-            raise ValueError(f"invalid subservice {subservice}")
+        elif message_subtype not in [2, 4, 8]:
+            raise ValueError(f"invalid message subtype {message_subtype}")
         if len(tm_data) < expected_len:
             raise TmSrcDataTooShortError(expected_len, len(tm_data))
         current_idx = 4
@@ -250,7 +297,7 @@ class Service1Tm(AbstractPusTm):
         )
 
     def _unpack_success_verification(self, unpack_cfg: ManagedParamsVerification) -> None:
-        if self.pus_tm.subservice == Subservice.TM_STEP_SUCCESS:
+        if self.pus_tm.message_subtype == MessageSubtype.TM_STEP_SUCCESS:
             try:
                 self._verif_params.step_id = StepId.unpack(
                     pfc=unpack_cfg.bytes_step_id * 8,
@@ -258,8 +305,10 @@ class Service1Tm(AbstractPusTm):
                 )
             except BytesTooShortError as e:
                 raise TmSrcDataTooShortError(e.expected_len, e.bytes_len) from e
-        elif self.pus_tm.subservice not in [1, 3, 7]:
-            raise ValueError(f"invalid subservice {self.pus_tm.subservice}, not in [1, 3, 7]")
+        elif self.pus_tm.message_subtype not in [1, 3, 7]:
+            raise ValueError(
+                f"invalid message subtype {self.pus_tm.message_subtype}, not in [1, 3, 7]"
+            )
 
     @property
     def failure_notice(self) -> FailureNotice | None:
@@ -267,7 +316,7 @@ class Service1Tm(AbstractPusTm):
 
     @property
     def has_failure_notice(self) -> bool:
-        return (self.subservice % 2) == 0
+        return (self.message_subtype % 2) == 0
 
     @property
     def tc_req_id(self) -> RequestId:
@@ -286,9 +335,9 @@ class Service1Tm(AbstractPusTm):
 
     @property
     def is_step_reply(self) -> bool:
-        return self.subservice in (
-            Subservice.TM_STEP_FAILURE,
-            Subservice.TM_STEP_SUCCESS,
+        return self.message_subtype in (
+            MessageSubtype.TM_STEP_FAILURE,
+            MessageSubtype.TM_STEP_SUCCESS,
         )
 
     @property
@@ -305,7 +354,7 @@ class Service1Tm(AbstractPusTm):
 def create_acceptance_success_tm(apid: int, pus_tc: PusTc, timestamp: bytes) -> Service1Tm:
     return Service1Tm(
         apid=apid,
-        subservice=Subservice.TM_ACCEPTANCE_SUCCESS,
+        message_subtype=MessageSubtype.TM_ACCEPTANCE_SUCCESS,
         verif_params=VerificationParams(RequestId.from_sp_header(pus_tc.sp_header)),
         timestamp=timestamp,
     )
@@ -319,7 +368,7 @@ def create_acceptance_failure_tm(
 ) -> Service1Tm:
     return Service1Tm(
         apid=apid,
-        subservice=Subservice.TM_ACCEPTANCE_FAILURE,
+        message_subtype=MessageSubtype.TM_ACCEPTANCE_FAILURE,
         verif_params=VerificationParams(
             req_id=RequestId.from_sp_header(pus_tc.sp_header),
             failure_notice=failure_notice,
@@ -331,7 +380,7 @@ def create_acceptance_failure_tm(
 def create_start_success_tm(apid: int, pus_tc: PusTc, timestamp: bytes) -> Service1Tm:
     return Service1Tm(
         apid=apid,
-        subservice=Subservice.TM_START_SUCCESS,
+        message_subtype=MessageSubtype.TM_START_SUCCESS,
         verif_params=VerificationParams(RequestId.from_sp_header(pus_tc.sp_header)),
         timestamp=timestamp,
     )
@@ -345,7 +394,7 @@ def create_start_failure_tm(
 ) -> Service1Tm:
     return Service1Tm(
         apid=apid,
-        subservice=Subservice.TM_START_FAILURE,
+        message_subtype=MessageSubtype.TM_START_FAILURE,
         verif_params=VerificationParams(
             req_id=RequestId.from_sp_header(pus_tc.sp_header),
             failure_notice=failure_notice,
@@ -362,7 +411,7 @@ def create_step_success_tm(
 ) -> Service1Tm:
     return Service1Tm(
         apid=apid,
-        subservice=Subservice.TM_STEP_SUCCESS,
+        message_subtype=MessageSubtype.TM_STEP_SUCCESS,
         verif_params=VerificationParams(
             req_id=RequestId.from_sp_header(pus_tc.sp_header), step_id=step_id
         ),
@@ -379,7 +428,7 @@ def create_step_failure_tm(
 ) -> Service1Tm:
     return Service1Tm(
         apid=apid,
-        subservice=Subservice.TM_STEP_FAILURE,
+        message_subtype=MessageSubtype.TM_STEP_FAILURE,
         verif_params=VerificationParams(
             req_id=RequestId.from_sp_header(pus_tc.sp_header),
             step_id=step_id,
@@ -392,7 +441,7 @@ def create_step_failure_tm(
 def create_completion_success_tm(apid: int, pus_tc: PusTc, timestamp: bytes) -> Service1Tm:
     return Service1Tm(
         apid=apid,
-        subservice=Subservice.TM_COMPLETION_SUCCESS,
+        message_subtype=MessageSubtype.TM_COMPLETION_SUCCESS,
         verif_params=VerificationParams(RequestId.from_sp_header(pus_tc.sp_header)),
         timestamp=timestamp,
     )
@@ -406,7 +455,7 @@ def create_completion_failure_tm(
 ) -> Service1Tm:
     return Service1Tm(
         apid=apid,
-        subservice=Subservice.TM_COMPLETION_FAILURE,
+        message_subtype=MessageSubtype.TM_COMPLETION_FAILURE,
         verif_params=VerificationParams(
             req_id=RequestId.from_sp_header(pus_tc.sp_header),
             failure_notice=failure_notice,
