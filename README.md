@@ -33,9 +33,26 @@ It also contains various helper modules which are commonly used when working wit
 
 # Install
 
-You can install this package from PyPI
+You can install this package from PyPI:
+
+```sh
+pip install spacepackets
+```
 
 For example, using [`uv`](https://docs.astral.sh/uv/):
+
+```sh
+uv pip install spacepackets
+```
+
+# Examples
+
+You can find all examples [inside the documentation](https://spacepackets.readthedocs.io/en/latest/examples.html).
+
+
+# Contributing
+
+For local development from a checkout, sync the project environment:
 
 ```sh
 uv sync
@@ -46,11 +63,6 @@ To include test dependencies:
 ```sh
 uv sync --extra test
 ```
-
-# Examples
-
-You can find all examples [inside the documentation](https://spacepackets.readthedocs.io/en/latest/examples.html).
-
 
 # Tests
 
