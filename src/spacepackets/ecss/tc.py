@@ -28,9 +28,7 @@ from spacepackets.version import get_version
 DEPRECATED_IN_SUBSERVICE_ALIAS = "v0.32.0"
 
 
-def _resolve_message_subtype(
-    message_subtype: int | None, subservice: int | None
-) -> int:
+def _resolve_message_subtype(message_subtype: int | None, subservice: int | None) -> int:
     if message_subtype is None and subservice is None:
         raise TypeError("either message_subtype or subservice must be provided")
     if message_subtype is not None and subservice is not None and message_subtype != subservice:
