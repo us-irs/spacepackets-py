@@ -291,7 +291,7 @@ class PusTm(AbstractPusTm):
     CDS_SHORT_SIZE = 7
     PUS_TIMESTAMP_SIZE = CDS_SHORT_SIZE
 
-    def __init__(
+    def __init__(  # noqa: PLR0913 — extra param for backward compat
         self,
         service: int,
         message_subtype: int | None = None,
