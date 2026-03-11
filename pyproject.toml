@@ -121,3 +121,8 @@ addopts = [
   "--ignore=benchmarks"
 ]
 testpaths = ["tests"]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.15.5",
+]

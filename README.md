@@ -52,16 +52,16 @@ You can find all examples [inside the documentation](https://spacepackets.readth
 
 # Contributing
 
-For local development from a checkout, sync the project environment:
+For local development from a checkout, sync the project environment and development tools:
 
 ```sh
-uv sync
+uv sync --group dev
 ```
 
 To include test dependencies:
 
 ```sh
-uv sync --extra test
+uv sync --group dev --extra test
 ```
 
 # Tests
@@ -69,7 +69,7 @@ uv sync --extra test
 If you want to run the tests, you have to install the package with the optional `test` feature:
 
 ```sh
-uv sync --extra test
+uv sync --group dev --extra test
 ```
 
 Running tests regularly:
