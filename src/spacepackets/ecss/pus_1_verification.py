@@ -15,10 +15,10 @@ from spacepackets.ecss.fields import PacketFieldEnum
 from spacepackets.ecss.tm import AbstractPusTm, ManagedParams, MiscParams, PusTm
 from spacepackets.version import get_version
 
-DEPRECATED_IN_SUBSERVICE_ALIAS = "v0.32.0"
-
 from .exceptions import TmSrcDataTooShortError
 from .req_id import RequestId
+
+DEPRECATED_IN_SUBSERVICE_ALIAS = "v0.32.0"
 
 if TYPE_CHECKING:
     from spacepackets.ccsds import SpacePacketHeader
