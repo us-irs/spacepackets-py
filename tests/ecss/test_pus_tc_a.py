@@ -72,7 +72,7 @@ class TestTelecommand(TestCase):
         self.assertEqual(self.ping_tc, ping_tc_from_sph)
 
     def test_custom_source_id(self):
-        source_id = UnsignedByteField(0x5FF,2)
+        source_id = UnsignedByteField(0x5FF, 2)
         self.ping_tc.source_id = source_id
         raw = self.ping_tc.pack()
         self.assertEqual(raw[9] << 8 | raw[10], 0x5FF)
