@@ -77,7 +77,7 @@ class PusTcDataFieldHeader:
         subservice = data[2]
         source_id = None
         if source_id_len is not None:
-            source_id = UnsignedByteField.from_bytes(data[3:3+source_id_len])
+            source_id = UnsignedByteField.from_bytes(data[3 : 3 + source_id_len])
         return cls(
             service=service,
             subservice=subservice,
@@ -120,9 +120,7 @@ class PusTcDataFieldHeader:
         if self.source_id is not None:
             source_id_len = self.source_id.byte_len
 
-        return PusTcDataFieldHeader.header_size_for_config(
-            source_id_len, self.spare_bytes
-        )
+        return PusTcDataFieldHeader.header_size_for_config(source_id_len, self.spare_bytes)
 
     @classmethod
     def header_size_for_config(cls, source_id_len: int | None, spare_bytes: int = 0) -> int:
@@ -214,8 +212,9 @@ class PusTc(AbstractSpacePacket):
         if source_id is not None:
             source_id_len = source_id.byte_len
         sp_header.data_len = PusTc.get_data_length(
-            secondary_header_len=PusTcDataFieldHeader.header_size_for_config(source_id_len,
-                                                                              spare_bytes),
+            secondary_header_len=PusTcDataFieldHeader.header_size_for_config(
+                source_id_len, spare_bytes
+            ),
             app_data_len=len(app_data),
         )
         pus_tc.sp_header = sp_header
@@ -314,8 +313,9 @@ class PusTc(AbstractSpacePacket):
         return packed_data
 
     @classmethod
-    def unpack(cls, data: bytes | bytearray, source_id_len: int | None= None,
-                spare_bytes: int = 0) -> PusTc:
+    def unpack(
+        cls, data: bytes | bytearray, source_id_len: int | None = None, spare_bytes: int = 0
+    ) -> PusTc:
         """Create an instance from a raw bytestream.
 
         :raises BytesTooShortError: Passed bytestream too short.
