@@ -80,7 +80,9 @@ class TestPusVerificator(TestCase):
         self.pus_verificator = PusVerificator()
 
     def test_basic(self):
-        suc_set = SuccessSet(self.def_apid, PusTc(apid=self.def_apid, service=17, subservice=1))
+        suc_set = SuccessSet(
+            self.def_apid, PusTc(apid=self.def_apid, service=17, message_subtype=1)
+        )
         self.pus_verificator.add_tc(suc_set.pus_tc)
         check_res = self.pus_verificator.add_tm(suc_set.acc_suc_tm)
         self.assertEqual(check_res.completed, False)
@@ -110,7 +112,7 @@ class TestPusVerificator(TestCase):
 
     def test_complete_verification_clear_completed(self):
         self._regular_success_seq(
-            SuccessSet(self.def_apid, PusTc(apid=self.def_apid, service=17, subservice=1)),
+            SuccessSet(self.def_apid, PusTc(apid=self.def_apid, service=17, message_subtype=1)),
         )
         self.pus_verificator.remove_completed_entries()
         self.assertEqual(len(self.pus_verificator.verif_dict), 0)
@@ -119,20 +121,22 @@ class TestPusVerificator(TestCase):
         self._regular_success_seq(
             SuccessSet(
                 self.def_apid,
-                PusTc(apid=self.def_apid, service=17, subservice=1, seq_count=0),
+                PusTc(apid=self.def_apid, service=17, message_subtype=1, seq_count=0),
             )
         )
         self._regular_success_seq(
             SuccessSet(
                 self.def_apid,
-                PusTc(apid=self.def_apid, service=5, subservice=4, seq_count=1),
+                PusTc(apid=self.def_apid, service=5, message_subtype=4, seq_count=1),
             )
         )
         self.pus_verificator.remove_completed_entries()
         self.assertEqual(len(self.pus_verificator.verif_dict), 0)
 
     def test_complete_verification_remove_manually(self):
-        suc_set = SuccessSet(self.def_apid, PusTc(apid=self.def_apid, service=17, subservice=1))
+        suc_set = SuccessSet(
+            self.def_apid, PusTc(apid=self.def_apid, service=17, message_subtype=1)
+        )
         self._regular_success_seq(suc_set)
         self.assertTrue(self.pus_verificator.remove_entry(suc_set.req_id))
         self.assertEqual(len(self.pus_verificator.verif_dict), 0)
@@ -140,12 +144,12 @@ class TestPusVerificator(TestCase):
     def test_complete_verification_multi_remove_manually(self):
         set_0 = SuccessSet(
             self.def_apid,
-            PusTc(apid=self.def_apid, service=17, subservice=1, seq_count=0),
+            PusTc(apid=self.def_apid, service=17, message_subtype=1, seq_count=0),
         )
         self._regular_success_seq(set_0)
         set_1 = SuccessSet(
             self.def_apid,
-            PusTc(apid=self.def_apid, service=5, subservice=4, seq_count=1),
+            PusTc(apid=self.def_apid, service=5, message_subtype=4, seq_count=1),
         )
         self._regular_success_seq(set_1)
         self.assertTrue(self.pus_verificator.remove_entry(set_0.req_id))
@@ -157,7 +161,7 @@ class TestPusVerificator(TestCase):
         notice = FailureNotice(ErrorCode.with_byte_size(1, 8), data=bytes([0, 1]))
         fail_set = FailureSet(
             self.def_apid,
-            PusTc(apid=self.def_apid, service=17, subservice=1, seq_count=0),
+            PusTc(apid=self.def_apid, service=17, message_subtype=1, seq_count=0),
             notice,
         )
         self.assertTrue(self.pus_verificator.add_tc(fail_set.pus_tc))
@@ -178,7 +182,7 @@ class TestPusVerificator(TestCase):
         notice = FailureNotice(ErrorCode.with_byte_size(1, 8), data=bytes([0, 1]))
         fail_set = FailureSet(
             self.def_apid,
-            PusTc(apid=self.def_apid, service=17, subservice=1, seq_count=0),
+            PusTc(apid=self.def_apid, service=17, message_subtype=1, seq_count=0),
             notice,
         )
         self.assertTrue(self.pus_verificator.add_tc(fail_set.pus_tc))

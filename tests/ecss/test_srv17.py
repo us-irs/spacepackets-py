@@ -11,14 +11,14 @@ from .common import TEST_STAMP, generic_time_provider_mock
 class TestSrv17Tm(TestCase):
     def setUp(self) -> None:
         self.def_apid = 0x05
-        self.srv17_tm = Service17Tm(apid=self.def_apid, subservice=1, timestamp=b"")
+        self.srv17_tm = Service17Tm(apid=self.def_apid, message_subtype=1, timestamp=b"")
         self.srv17_tm.pus_tm.apid = 0x72
         self.time_stamp_provider = generic_time_provider_mock(TEST_STAMP)
 
     def test_state(self):
         self.assertEqual(self.srv17_tm.sp_header, self.srv17_tm.pus_tm.space_packet_header)
         self.assertEqual(self.srv17_tm.service, PusService.S17_TEST)
-        self.assertEqual(self.srv17_tm.subservice, 1)
+        self.assertEqual(self.srv17_tm.message_subtype, 1)
         self.assertEqual(self.srv17_tm.timestamp, b"")
         self.assertEqual(self.srv17_tm.apid, 0x72)
         self.assertEqual(self.srv17_tm.seq_count, 0)
@@ -30,7 +30,7 @@ class TestSrv17Tm(TestCase):
     def test_other_state(self):
         srv17_with_data = Service17Tm(
             apid=self.def_apid,
-            subservice=128,
+            message_subtype=128,
             timestamp=CdsShortTimestamp(0, 0).pack(),
             source_data=bytes([0, 1, 2]),
         )
@@ -41,8 +41,8 @@ class TestSrv17Tm(TestCase):
         )
 
     def test_service_17_tm(self):
-        srv_17_tm = Service17Tm(apid=self.def_apid, subservice=2, timestamp=TEST_STAMP)
-        self.assertEqual(srv_17_tm.pus_tm.subservice, 2)
+        srv_17_tm = Service17Tm(apid=self.def_apid, message_subtype=2, timestamp=TEST_STAMP)
+        self.assertEqual(srv_17_tm.pus_tm.message_subtype, 2)
         srv_17_tm_raw = srv_17_tm.pack()
         srv_17_tm_unpacked = Service17Tm.unpack(data=srv_17_tm_raw, timestamp_len=len(TEST_STAMP))
-        self.assertEqual(srv_17_tm_unpacked.pus_tm.subservice, 2)
+        self.assertEqual(srv_17_tm_unpacked.pus_tm.message_subtype, 2)

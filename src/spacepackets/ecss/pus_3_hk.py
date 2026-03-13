@@ -1,7 +1,7 @@
 import enum
 
 
-class Subservice(enum.IntEnum):
+class MessageSubtype(enum.IntEnum):
     TC_ENABLE_PERIODIC_HK_GEN = 5
     TC_DISABLE_PERIODIC_HK_GEN = 6
     TC_ENABLE_PERIODIC_DIAGNOSTICS_GEN = 7

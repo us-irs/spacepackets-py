@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 # [unreleased]
 
+## Changed
+
+- PUS-C packet APIs and service helpers now use `message_subtype` terminology;
+  legacy `subservice` aliases remain available but are deprecated for
+  compatibility.
+
 # [v0.31.0] 2025-09-10
 
 ## Added

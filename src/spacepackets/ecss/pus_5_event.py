@@ -1,7 +1,7 @@
 import enum
 
 
-class Subservice(enum.IntEnum):
+class MessageSubtype(enum.IntEnum):
     TM_INFO_EVENT = 1
     TM_LOW_SEVERITY_EVENT = 2
     TM_MEDIUM_SEVERITY_EVENT = 3
