@@ -21,3 +21,6 @@ class MessageSubtype(enum.IntEnum):
 
     TC_MODIFY_PARAMETER_REPORT_COLLECTION_INTERVAL = 31
     TC_MODIFY_DIAGNOSTICS_REPORT_COLLECTION_INTERVAL = 32
+
+
+Subservice = MessageSubtype
