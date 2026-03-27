@@ -17,6 +17,8 @@ class CountdownTest(TestCase):
         test_cd.timeout = timedelta(seconds=0.1)
         self.assertEqual(test_cd.timeout.total_seconds(), timedelta(seconds=0.1).total_seconds())
         self.assertEqual(test_cd.timeout_ms, 100)
+        # Updating timeout changes the configuration; reset() explicitly restarts the countdown.
+        test_cd.reset()
         self.assertTrue(test_cd.busy())
         self.assertFalse(test_cd.timed_out())
         time.sleep(0.1)
