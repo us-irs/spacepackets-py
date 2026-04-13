@@ -68,9 +68,9 @@ class KeepAlivePdu(AbstractFileDirectiveBase):
         if not self.pdu_file_directive.pdu_header.large_file_flag_set:
             if self.progress > pow(2, 32) - 1:
                 raise ValueError
-            keep_alive_packet.extend(struct.pack("I", self.progress))
+            keep_alive_packet.extend(struct.pack("!I", self.progress))
         else:
-            keep_alive_packet.extend(struct.pack("Q", self.progress))
+            keep_alive_packet.extend(struct.pack("!Q", self.progress))
         if self.pdu_file_directive.pdu_conf.crc_flag == CrcFlag.WITH_CRC:
             keep_alive_packet.extend(
                 struct.pack("!H", fastcrc.crc16.ibm_3740(bytes(keep_alive_packet)))

@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 # [unreleased]
 
+## Fixed
+
+- Keep Alive PDU progress field endianness is correct now.
+
 ## Changed
 
 - PUS-C packet APIs and service helpers now use `message_subtype` terminology;
