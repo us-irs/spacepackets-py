@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Fixed
 
-- Keep Alive PDU progress field endianness is correct now.
+- Keep Alive PDU progress field endianness is serialized correctly now.
 
 ## Changed
 
