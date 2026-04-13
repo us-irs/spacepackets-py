@@ -16,6 +16,9 @@ class MessageSubtype(enum.IntEnum):
     TM_REPLY = 2
 
 
+Subservice = MessageSubtype
+
+
 class Service17Tm(AbstractPusTm):
     def __init__(
         self,
