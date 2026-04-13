@@ -11,11 +11,13 @@ class TestKeepAlivePdu(TestCase):
         self.pdu_conf = PduConfig.default()
         self.keep_alive_pdu = KeepAlivePdu(pdu_conf=self.pdu_conf, progress=0)
 
-    # TODO: Split into smaller fixtures
-    def test_keep_alive_pdu(self):
+    def test_keep_alive_pdu_state(self):
         self.assertEqual(self.keep_alive_pdu.progress, 0)
         self.assertEqual(self.keep_alive_pdu.direction, Direction.TOWARDS_SENDER)
         self.assertEqual(self.keep_alive_pdu.file_flag, LargeFileFlag.NORMAL)
+        self.assertEqual(self.keep_alive_pdu.packet_len, 12)
+
+    def test_keep_alive_pdu_pack(self):
         keep_alive_pdu_raw = self.keep_alive_pdu.pack()
         self.assertEqual(
             keep_alive_pdu_raw,
@@ -36,10 +38,20 @@ class TestKeepAlivePdu(TestCase):
                 ]
             ),
         )
+
+    def test_pack_unpack(self):
+        self.keep_alive_pdu = KeepAlivePdu(pdu_conf=self.pdu_conf, progress=0x12345678)
+        self.assertEqual(self.keep_alive_pdu.progress, 0x12345678)
+        self.assertEqual(self.keep_alive_pdu.direction, Direction.TOWARDS_SENDER)
+        self.assertEqual(self.keep_alive_pdu.file_flag, LargeFileFlag.NORMAL)
         self.assertEqual(self.keep_alive_pdu.packet_len, 12)
+        keep_alive_pdu_raw = self.keep_alive_pdu.pack()
+        keep_alive_pdu_unpacked = KeepAlivePdu.unpack(data=keep_alive_pdu_raw)
+        self.assertEqual(keep_alive_pdu_unpacked.progress, 0x12345678)
+
+    def test_value_error(self):
         self.keep_alive_pdu.file_flag = LargeFileFlag.NORMAL
         self.assertEqual(self.keep_alive_pdu.file_flag, LargeFileFlag.NORMAL)
-
         self.keep_alive_pdu.progress = pow(2, 32) + 1
         with self.assertRaises(ValueError):
             self.keep_alive_pdu.pack()
