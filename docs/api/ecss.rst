@@ -1,4 +1,4 @@
-ECSS Package 
+ECSS Package
 =======================
 
 The following classes can be used to create and read
@@ -7,6 +7,12 @@ ECSS PUS-C packets:
 - :py:class:`spacepackets.ecss.PusTc`
 - :py:class:`spacepackets.ecss.PusTm`
 
+ECSS Fields
+----------------------------------
+.. automodule:: spacepackets.ecss.fields
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
 ECSS TC Submodule
 ----------------------------------

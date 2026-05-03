@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 # [unreleased]
 
+# [v0.32.0] 2026-03-03
+
 ## Fixed
 
 - Keep Alive PDU progress field endianness is serialized correctly now.
@@ -653,7 +655,8 @@ Refactored `logging` module usage to be more pythonic.
 - Applied formatting with the `black` Python formatter
 - Small tweaks to the NOTICE file
 
-[unreleased]: https://github.com/us-irs/spacepackets-py/compare/v0.31.0...HEAD
+[unreleased]: https://github.com/us-irs/spacepackets-py/compare/v0.32.0...HEAD
+[v0.32.0]: https://github.com/us-irs/spacepackets-py/compare/v0.31.0...v0.32.0
 [v0.31.0]: https://github.com/us-irs/spacepackets-py/compare/v0.30.1...v0.31.0
 [v0.30.1]: https://github.com/us-irs/spacepackets-py/compare/v0.30.0...v0.30.1
 [v0.30.0]: https://github.com/us-irs/spacepackets-py/compare/v0.29.0...v0.30.0
