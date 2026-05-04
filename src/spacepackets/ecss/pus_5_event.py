@@ -8,3 +8,6 @@ class MessageSubtype(enum.IntEnum):
     TM_HIGH_SEVERITY_EVENT = 4
     TC_ENABLE_EVENT_REPORTING = 5
     TC_DISABLE_EVENT_REPORTING = 6
+
+
+Subservice = MessageSubtype
